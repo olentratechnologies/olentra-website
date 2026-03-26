@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 217 91% 50%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 226 70% 55%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 10% 12%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 243 75% 59%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 10% 15%;
+    --input: 240 10% 15%;
+    --ring: 188 100% 50%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-white;
+    margin: 0;
+    font-family: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-background/60 backdrop-blur-xl border border-border/50 shadow-sm transition-all duration-300;
+  }
+
+  /* Performance: content-visibility for off-screen elements helps mobile LCP */
+  #services,
+  #projects,
+  #testimonials,
+  #contact,
+  #process {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 1000px;
+  }
+}
+
+.bg-cyber-grid {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M24 0L0 0 0 24' fill='none' stroke='white' stroke-width='0.5' stroke-opacity='0.1'/%3E%3C/svg%3E");
+}
+
+.bg-cyber-grid-light {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M24 0L0 0 0 24' fill='none' stroke='black' stroke-width='0.5' stroke-opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* Hide unwanted badges/watermarks early via CSS */
+#emergent-badge,
+a[href*="emergent.sh"],
+a[href*="utm_source=emergent-badge"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(155, 155, 155, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Animations */
+@keyframes shine {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shine {
+  animation: shine 2s infinite;
+}
+
+/* Shadow utilities */
+.shadow-brand-cyan-glow {
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.3), 0 0 30px rgba(37, 99, 235, 0.1);
+}
+
+.shadow-brand-purple-glow {
+  box-shadow: 0 0 15px rgba(79, 70, 229, 0.3), 0 0 30px rgba(79, 70, 229, 0.1);
+}
+
+/* Mobile LCP Optimization: Ensure Hero elements paint immediately */
+img,
+svg {
+  shape-rendering: auto;
+}
