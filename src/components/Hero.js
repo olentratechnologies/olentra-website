@@ -70,7 +70,7 @@ export default function Hero() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-[clamp(2rem,6vw,4.1rem)] font-semibold text-white tracking-tight leading-[1.05] sm:leading-[1] mb-6"
             >
-              Engineering platforms that scale,
+              Engineering platforms that scale
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-primary to-blue-600 drop-shadow-[0_0_30px_rgba(37,99,235,0.35)]">
                 {" "}securely and predictably.
               </span>

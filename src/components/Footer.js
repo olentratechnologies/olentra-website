@@ -46,7 +46,7 @@ export default function Footer() {
               </h3>
             </div>
             <p className="text-xs text-muted-foreground font-medium leading-relaxed max-w-xs">
-              Digital marketing & technology agency for businesses across Telangana & Andhra Pradesh. Telugu & English support.
+              Global digital product, marketing, and engineering partner for ambitious teams. Multi-lingual, multi-timezone delivery.
             </p>
           </div>
 
@@ -73,7 +73,7 @@ export default function Footer() {
             <div className="flex flex-col gap-2">
               {quickLinks.map((link) => (
                 <a
-                  key={link.label}
+                  key={link.id}
                   href={link.href}
                   className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider flex items-center gap-2 group"
                 >
@@ -110,13 +110,15 @@ export default function Footer() {
 
               <div className="pt-2">
                 <a
-                  href="#contact"
+                  href={contactInfo.calendlyUrl}
+                  target="_blank"
+                  rel="noreferrer"
                   className="group relative inline-flex items-center gap-2.5 px-5 py-2.5 text-[11px] font-black text-white bg-primary uppercase tracking-widest overflow-hidden transition-all hover:scale-105"
                   style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}
                 >
                   <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                   <span className="relative flex items-center gap-2">
-                    Get Free Consultation
+                    Book a Discovery Call
                     <MessageSquare className="w-2.5 h-2.5" />
                   </span>
                 </a>
@@ -147,11 +149,21 @@ export default function Footer() {
         </div>
 
         {/* Very bottom branding */}
-        <div className="pt-6 border-t border-border/10 flex flex-col md:flex-row justify-between items-center gap-4 text-[9px] font-black text-muted-foreground/40 tracking-[0.2em] uppercase">
-          <p>© {new Date().getFullYear()} OLENTRA LTD. ALL PROTOCOLS RESERVED.</p>
-          <div className="flex items-center gap-6">
-            <p className="flex items-center gap-2">ENGINE_VERSION: <span className="text-primary/60">3.2.0</span></p>
-            <p className="flex items-center gap-2">LOC: <span className="text-primary/60">IN_TS_AP</span></p>
+        <div className="pt-6">
+          <div className="h-px w-full bg-white/10" />
+          <div className="pt-4 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-semibold text-muted-foreground/60 tracking-[0.22em] uppercase">
+            <p>© 2026 Olentra Ltd. All rights reserved.</p>
+            <div className="flex flex-wrap items-center gap-4">
+              {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Security', 'Accessibility'].map((label) => (
+                <a
+                  key={label}
+                  href="#"
+                  className="text-muted-foreground/60 hover:text-white transition-colors"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </div>

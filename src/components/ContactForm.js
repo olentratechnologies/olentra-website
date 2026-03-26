@@ -104,7 +104,7 @@ export default function ContactForm() {
                       Contact Us
                     </h3>
                     <p className="text-muted-foreground mb-6 text-sm md:text-base tracking-wide font-medium" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                      We work with individuals, teams, and companies. Tell us what you&apos;re building.
+                      Global teams trust us for end-to-end delivery across time zones. Tell us what you&apos;re building.
                     </p>
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-start gap-3 p-3 border border-border bg-muted/20 rounded-sm">
@@ -234,7 +234,7 @@ export default function ContactForm() {
                         value={formData.message}
                         onChange={handleChange}
                         placeholder="Tell us about your project, timeline, and goals..."
-                        className="w-full rounded-sm border border-border bg-background/50 dark:bg-muted/20 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/30 font-medium tracking-wide focus:outline-none focus:border-primary focus:bg-primary/5 transition-all resize-none shadow-sm dark:shadow-[inset_0_2px_10_rgba(0,0,0,0.5)]"
+                        className="w-full rounded-sm border border-border bg-background/50 dark:bg-muted/20 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/30 font-medium tracking-wide focus:outline-none focus:border-primary focus:bg-primary/5 transition-all resize-none shadow-sm dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
                         style={{ fontFamily: '"Courier New", Courier, monospace', fontSize: 'clamp(0.78rem,0.78vw,0.88rem)' }}
                       />
                     </div>

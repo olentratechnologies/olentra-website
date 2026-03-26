@@ -3,6 +3,7 @@ export const contactInfo = {
     phoneFull: 'tel:+17175551234',
     email: 'contact@olentratechnologies.com',
     emailFull: 'mailto:contact@olentratechnologies.com',
+    calendlyUrl: 'https://calendly.com/admin-olentratechnologies',
     addresses: [
         {
             label: 'Harrisburg',
@@ -18,7 +19,7 @@ export const contactInfo = {
         },
     ],
     socials: [
-        { label: 'LinkedIn', href: 'https://www.linkedin.com/company/olentra' },
+        { label: 'LinkedIn', href: 'https://www.linkedin.com/company/olentra-technologies/' },
         { label: 'Twitter', href: 'https://x.com/olentra' },
         { label: 'Instagram', href: 'https://www.instagram.com/olentra' },
         { label: 'WhatsApp', href: 'https://wa.me/17175551234' },

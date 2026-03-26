@@ -28,6 +28,13 @@ import {
     Smartphone,
 } from 'lucide-react';
 
+const slugify = (value) =>
+    value
+        .toLowerCase()
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
 export const serviceGroups = [
     {
         category: 'Platform Engineering',
@@ -39,7 +46,7 @@ export const serviceGroups = [
                     'Designing scalable backend systems with robust APIs and seamless third-party integrations—built for security and performance.',
                 tags: ['Scalable', 'APIs', 'Integrations', 'Backend'],
                 Icon: Building2,
-                href: '#services',
+                href: `#services-${slugify('Backend & APIs')}`,
             },
             {
                 title: 'Real-Time Systems',
@@ -47,7 +54,7 @@ export const serviceGroups = [
                     'Building systems capable of handling real-time data and high-throughput backend operations.',
                 tags: ['Realtime', 'Streaming', 'Scale'],
                 Icon: Activity,
-                href: '#services',
+                href: `#services-${slugify('Real-Time Systems')}`,
             },
             {
                 title: 'Developer Platforms',
@@ -55,7 +62,7 @@ export const serviceGroups = [
                     'Building internal platforms, reusable components, and developer workflows that speed up delivery and improve reliability.',
                 tags: ['Automation', 'Workflows', 'Developer Experience'],
                 Icon: Layers3,
-                href: '#services',
+                href: `#services-${slugify('Developer Platforms')}`,
             },
             {
                 title: 'Workflow Automation',
@@ -63,7 +70,7 @@ export const serviceGroups = [
                     'Automating workflows and operational systems to improve efficiency and reduce manual effort.',
                 tags: ['Automation', 'Workflows'],
                 Icon: Repeat,
-                href: '#services',
+                href: `#services-${slugify('Workflow Automation')}`,
             },
         ],
     },
@@ -77,7 +84,7 @@ export const serviceGroups = [
                     'Building AI-powered platforms using LLMs, embeddings, and modern AI frameworks.',
                 tags: ['AI', 'LLM', 'Automation'],
                 Icon: Brain,
-                href: '#services',
+                href: `#services-${slugify('AI Solutions')}`,
             },
             {
                 title: 'Data Engineering',
@@ -85,7 +92,7 @@ export const serviceGroups = [
                     'Designing robust data pipelines and ETL workflows for scalable data processing.',
                 tags: ['ETL', 'Data Pipelines', 'Analytics'],
                 Icon: Database,
-                href: '#services',
+                href: `#services-${slugify('Data Engineering')}`,
             },
             {
                 title: 'Data Analytics',
@@ -93,7 +100,7 @@ export const serviceGroups = [
                     'Turning product and operational data into dashboards, metrics, and decision-ready insights.',
                 tags: ['Analytics', 'Data Pipelines'],
                 Icon: BarChart3,
-                href: '#services',
+                href: `#services-${slugify('Data Analytics')}`,
             },
             {
                 title: 'MLOps',
@@ -101,7 +108,7 @@ export const serviceGroups = [
                     'Operationalizing AI with reliable model packaging, deployment workflows, and production monitoring.',
                 tags: ['AI', 'Automation', 'MLOps'],
                 Icon: Cpu,
-                href: '#services',
+                href: `#services-${slugify('MLOps')}`,
             },
         ],
     },
@@ -115,7 +122,7 @@ export const serviceGroups = [
                     'Designing high-availability cloud infrastructure with CI/CD automation and multi-cloud cost optimization.',
                 tags: ['AWS', 'GCP', 'Azure', 'Docker', 'CI/CD'],
                 Icon: CloudCog,
-                href: '#services',
+                href: `#services-${slugify('Cloud Architecture')}`,
             },
             {
                 title: 'Security & Compliance',
@@ -123,7 +130,7 @@ export const serviceGroups = [
                     'Enterprise-grade security systems with robust identity management (Auth) and compliance frameworks.',
                 tags: ['Security', 'Auth', 'Compliance'],
                 Icon: ShieldCheck,
-                href: '#services',
+                href: `#services-${slugify('Security & Compliance')}`,
             },
         ],
     },
@@ -137,7 +144,7 @@ export const serviceGroups = [
                     'Custom web applications that seamlessly blend intuitive frontend experiences with powerful backend infrastructure—built to scale with your business.',
                 tags: ['Web Applications', 'API Architecture', 'Scalable Systems', 'Performance'],
                 Icon: Code2,
-                href: '#services',
+                href: `#services-${slugify('Web Applications')}`,
             },
             {
                 title: 'Mobile Apps',
@@ -145,7 +152,7 @@ export const serviceGroups = [
                     'Developing scalable mobile apps with smooth performance and intuitive UX.',
                 tags: ['iOS', 'Android'],
                 Icon: Smartphone,
-                href: '#services',
+                href: `#services-${slugify('Mobile Apps')}`,
             },
             {
                 title: 'Commerce Solutions',
@@ -153,7 +160,7 @@ export const serviceGroups = [
                     'Developing scalable e-commerce and multi-vendor platforms.',
                 tags: ['E-Commerce', 'Marketplace'],
                 Icon: ShoppingCart,
-                href: '#services',
+                href: `#services-${slugify('Commerce Solutions')}`,
             },
             {
                 title: 'UI & Design Systems',
@@ -161,7 +168,7 @@ export const serviceGroups = [
                     'Building consistent, accessible UI components and design systems that scale across product surfaces.',
                 tags: ['Web Applications', 'Performance', 'Design Systems'],
                 Icon: LayoutGrid,
-                href: '#services',
+                href: `#services-${slugify('UI & Design Systems')}`,
             },
         ],
     },
@@ -175,7 +182,7 @@ export const serviceGroups = [
                     'Improving crawlability, indexation, and on-page performance to reliably discover and rank your pages.',
                 tags: ['Technical SEO', 'On-Page SEO', 'Performance'],
                 Icon: Search,
-                href: '#services',
+                href: `#services-${slugify('Search Optimization')}`,
             },
             {
                 title: 'Strategy & Performance',
@@ -183,7 +190,7 @@ export const serviceGroups = [
                     'Planning conversion-focused content strategy and tracking impact with clear performance insights.',
                 tags: ['Content Strategy', 'Analytics', 'Keywords'],
                 Icon: LineChart,
-                href: '#services',
+                href: `#services-${slugify('Strategy & Performance')}`,
             },
         ],
     },
@@ -197,7 +204,7 @@ export const serviceGroups = [
                     'Defining unique brand identities and market positioning that align visuals with core business messaging.',
                 tags: ['Identity', 'Branding', 'Positioning', 'Voice'],
                 Icon: BadgeCheck,
-                href: '#services',
+                href: `#services-${slugify('Brand Strategy')}`,
             },
             {
                 title: 'Creative Production',
@@ -205,7 +212,7 @@ export const serviceGroups = [
                     'Producing high-impact visual assets, motion graphics, and product media to elevate storytelling.',
                 tags: ['Design', 'Motion', 'Video', 'Photos'],
                 Icon: Palette,
-                href: '#services',
+                href: `#services-${slugify('Creative Production')}`,
             },
         ],
     },
@@ -219,7 +226,7 @@ export const serviceGroups = [
                     'Launching acquisition campaigns and building funnels that convert intent into qualified leads.',
                 tags: ['Paid Ads', 'Lead Gen', 'Funnels'],
                 Icon: Megaphone,
-                href: '#services',
+                href: `#services-${slugify('Acquisition & Lead Gen')}`,
             },
             {
                 title: 'Lifecycle & CRM Ops',
@@ -227,7 +234,7 @@ export const serviceGroups = [
                     'Optimizing lifecycle marketing and sales operations through CRM automation and personalized messaging.',
                 tags: ['Email/SMS', 'Automation', 'Sales Ops'],
                 Icon: Mail,
-                href: '#services',
+                href: `#services-${slugify('Lifecycle & CRM Ops')}`,
             },
         ],
     },

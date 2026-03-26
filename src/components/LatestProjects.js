@@ -1,45 +1,97 @@
+"use client";
+
+import { useState } from 'react';
 import Image from 'next/image';
-import { ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { projects } from '../data/projects';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 
 export default function LatestProjects() {
+  const categories = ['All', ...new Set(projects.map((p) => p.category))];
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  const filteredProjects = activeCategory === 'All'
+    ? projects
+    : projects.filter((p) => p.category === activeCategory);
+
+
   return (
     <section
       id="projects"
       data-testid="latest-projects-section"
-      className="bg-[#020617] relative font-sans py-16 md:py-24 overflow-hidden transition-colors duration-500"
+      className="bg-white relative font-sans py-16 md:py-24 overflow-hidden transition-colors duration-500"
     >
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] pointer-events-none" />
-      <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.06] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16 md:mb-24">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-12 md:mb-16">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="w-8 h-px bg-primary/40" />
-              <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.5em]">Project Archives</p>
+              <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.5em]">Project Portfolio</p>
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white uppercase leading-[0.9] tracking-tighter">
-              Latest <br /> <span className="text-primary italic">Deployments</span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 uppercase leading-[0.9] tracking-tighter">
+              Recent <br /> <span className="text-primary italic">Engagements</span>
             </h2>
           </div>
           <div className="max-w-[320px] space-y-4 border-l-2 border-primary/20 pl-8 py-1.5">
-            <p className="text-[10px] md:text-[13px] font-semibold text-slate-400 tracking-widest uppercase leading-relaxed">
-              A selection of recent product builds, platform launches, and measurable outcomes.
+            <p className="text-[10px] md:text-[13px] font-semibold text-slate-600 tracking-widest uppercase leading-relaxed">
+              A curated overview of recent launches, platform builds, and measurable results.
             </p>
             <div className="flex items-center gap-2 text-primary font-black text-[9px] tracking-[0.2em] uppercase">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Client-Verified
+              Client-Verified Outcomes
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-16 md:gap-y-24">
-          {projects.map((project, index) => (
-            <ProjectCard key={project.title} project={project} index={index} />
-          ))}
+        {/* Category Filter Dropdown */}
+        <div className="relative mb-16 md:mb-24 flex items-center justify-center max-w-4xl mx-auto px-4">
+          <div className="relative w-full max-w-sm">
+            <Select value={activeCategory} onValueChange={setActiveCategory}>
+              <SelectTrigger
+                aria-label="Filter projects by category"
+                className="w-full rounded-sm border border-slate-200 bg-white pl-4 pr-4 py-2.5 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.12)] focus:ring-0 focus:border-primary/50 gap-3 [&>svg]:opacity-100 [&>svg]:text-primary"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border border-slate-200 bg-white text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+                <SelectGroup>
+                  {categories.map((category) => (
+                    <SelectItem
+                      key={category}
+                      value={category}
+                      className="text-[11px] font-bold uppercase tracking-[0.2em] focus:bg-primary/20 focus:text-white"
+                    >
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        <motion.div
+          layout
+          className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-16 md:gap-y-24"
+        >
+          <AnimatePresence mode="popLayout">
+            {filteredProjects.map((project, index) => (
+              <ProjectCard key={project.title} project={project} index={index} />
+            ))}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </section>
   );
@@ -49,7 +101,14 @@ function ProjectCard({ project, index }) {
   const isLeft = index % 2 === 0;
 
   return (
-    <div className={`relative group flex ${isLeft ? 'justify-end' : 'justify-start'}`}>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.5, delay: index * 0.05 }}
+      className={`relative group flex ${isLeft ? 'justify-end' : 'justify-start'}`}
+    >
       <a
         href={project.href}
         target={project.href.startsWith('http') ? '_blank' : undefined}
@@ -93,6 +152,6 @@ function ProjectCard({ project, index }) {
           </div>
         </div>
       </a>
-    </div>
+    </motion.div>
   );
 }

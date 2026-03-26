@@ -8,7 +8,10 @@ const ImpactStats = dynamic(() => import("@/components/ImpactStats"), { ssr: tru
 const StripeAnimation = dynamic(() => import("@/components/StripeAnimation"), { ssr: true });
 const Testimonials = dynamic(() => import("@/components/Testimonials"), { ssr: true });
 const ServicesTimeline = dynamic(() => import("@/components/ServicesTimeline"), { ssr: true });
+const Products = dynamic(() => import("@/components/Products"), { ssr: true });
 const LatestProjects = dynamic(() => import("@/components/LatestProjects"), { ssr: true });
+const Blogs = dynamic(() => import("@/components/Blogs"), { ssr: true });
+
 const ContactForm = dynamic(() => import("@/components/ContactForm"), { ssr: true });
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 const ScrollToTopProgress = dynamic(() => import("@/components/ScrollToTopProgress"), { ssr: true });
@@ -30,7 +33,10 @@ export default function HomePage() {
       <StripeAnimation />
       <ServicesTimeline />
       <ImpactStats />
+      <Products />
       <LatestProjects />
+      <Blogs />
+
       <Testimonials />
       <ContactForm />
       <Footer />

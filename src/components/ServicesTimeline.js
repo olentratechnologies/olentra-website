@@ -21,6 +21,13 @@ const TAG_PALETTE = [
   'bg-pink-500/10 border-pink-400/30 text-pink-200 group-hover:border-pink-400/55 group-hover:text-pink-100',
 ];
 
+const slugify = (value) =>
+  value
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
 function getTagClasses(tag) {
   // Deterministic hash to consistently pick a color for the same tag
   let hash = 0;
@@ -36,8 +43,9 @@ function TimelineCard({ service, isRightColumn }) {
 
   return (
     <div
+      id={`services-${slugify(service.title)}`}
       className={[
-        "relative w-full mb-12 md:mb-0",
+        "relative w-full mb-12 md:mb-0 scroll-mt-32",
         isRightColumn ? "md:pl-14" : "md:pr-14",
       ].join(" ")}
     >
@@ -113,12 +121,6 @@ export default function ServicesTimeline() {
     damping: 30,
     restDelta: 0.001
   });
-  const slugify = (value) =>
-    value
-      .toLowerCase()
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
 
   return (
     <section

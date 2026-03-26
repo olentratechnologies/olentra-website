@@ -1,6 +1,6 @@
 export const projects = [
     {
-        category: 'E-Commerce',
+        category: 'Development',
         year: '//2026',
         title: 'Urban Psychotic',
         subtitle: 'Streetwear Fashion Store & Shopify Experience',
@@ -30,5 +30,39 @@ export const projects = [
         subtitle: 'Mobile Fitness Application',
         image: 'https://images.unsplash.com/photo-1769285157133-7cd39d6649a0?auto=format&fit=crop&w=1200&q=80',
         href: '#',
+    },
+
+    // Added from WORK
+    {
+        category: 'Development',
+        year: '//2026',
+        title: 'Rami Silks',
+        subtitle: 'E-commerce Platform built with Next.js · Node.js · AWS',
+        image: 'https://images.unsplash.com/photo-1607083206968-13611e3d76db?auto=format&fit=crop&w=1200&q=80',
+        href: 'https://ramisilks.com/',
+    },
+    {
+        category: 'Job Portal',
+        year: '//2025',
+        title: 'Sarkari Job Samachar',
+        subtitle: 'Job Portal powered by Next.js · Appwrite · SEO',
+        image: 'https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=1200&q=80',
+        href: 'https://sarkarijobsamachar.com/',
+    },
+    {
+        category: 'Fintech',
+        year: '//2025',
+        title: 'RiseFund Dashboard',
+        subtitle: 'Fintech Dashboard using React · Vercel · Charts',
+        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
+        href: 'https://chitfund-dashboard-nu.vercel.app/',
+    },
+    {
+        category: 'SaaS',
+        year: '//2025',
+        title: 'AlgoEdge',
+        subtitle: 'Algo Trading SaaS with Tradetron API · Telegram Bot',
+        image: 'https://images.unsplash.com/photo-1642790106117-e829e14a795f?auto=format&fit=crop&w=1200&q=80',
+        href: 'https://algoedge.manastudio.in/',
     },
 ];

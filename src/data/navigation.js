@@ -1,18 +1,20 @@
 export const navLinks = [
-    { label: 'Home', href: '/' },
-    { label: 'About', href: '#about' },
-    { label: 'Services', href: '#services', hasDropdown: true },
-    { label: 'Projects', href: '#projects' },
-    { label: 'Contact', href: '#contact' },
+    { id: 'nav-home', label: 'Home', href: '#hero' },
+    { id: 'nav-about', label: 'About', href: '#about' },
+    { id: 'nav-services', label: 'Services', href: '#services', hasDropdown: true },
+    { id: 'nav-products', label: 'Products', href: '#products' },
+    { id: 'nav-portfolio', label: 'Portfolio', href: '#projects' },
+    { id: 'nav-blogs', label: 'Blogs', href: '#blog-section' },
+
+    { id: 'nav-contact', label: 'Contact', href: '#contact' },
 ];
 
 export const footerLinks = {
     quickLinks: [
-        { label: 'Home', href: '/' },
-        { label: 'All Services', href: '#services' },
-        { label: 'Blog / Articles', href: '#' },
-        { label: 'Portfolio', href: '#projects' },
-        { label: 'FAQ', href: '#' },
-        { label: 'Contact Us', href: '#contact' },
+        { id: 'footer-home', label: 'Home', href: '/' },
+        { id: 'footer-services', label: 'All Services', href: '#services' },
+        { id: 'footer-portfolio', label: 'Portfolio', href: '#projects' },
+        { id: 'footer-faq', label: 'FAQ', href: '#' },
+        { id: 'footer-contact', label: 'Contact Us', href: '#contact' },
     ],
 };
