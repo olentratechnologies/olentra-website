@@ -6,7 +6,7 @@ export const blogs = [
     category: 'Product Delivery',
     date: 'Mar 12, 2026',
     readTime: '6 min read',
-    image: '/urban-psychotic.png',
+    image: '/images/projects/urban-psychotic.png',
     href: '#',
   },
   {
@@ -16,7 +16,7 @@ export const blogs = [
     category: 'AI/ML',
     date: 'Feb 25, 2026',
     readTime: '8 min read',
-    image: '/images/robot-hero.png',
+    image: '/images/products/robot-hero.png',
     href: '#',
   },
   {
@@ -26,7 +26,7 @@ export const blogs = [
     category: 'Engineering',
     date: 'Jan 30, 2026',
     readTime: '5 min read',
-    image: '/cyber-bg.png',
+    image: '/images/backgrounds/cyber-bg.png',
     href: '#',
   },
 ];
