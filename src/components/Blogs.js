@@ -12,7 +12,7 @@ export default function Blogs() {
       className="relative bg-[#020617] text-white py-16 md:py-24 overflow-hidden"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.12),_transparent_55%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.08] pointer-events-none" />
+      <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.08] pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-12 md:mb-16">

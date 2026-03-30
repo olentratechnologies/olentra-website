@@ -32,7 +32,7 @@ export default function Hero() {
             className="relative w-full h-full opacity-30 scale-105"
           >
             <Image
-              src="/cyber-bg.png"
+              src="/images/backgrounds/cyber-bg.png"
               alt="Digital Infrastructure"
               fill
               priority

@@ -36,7 +36,7 @@ export const projects = [
         year: '//2026',
         title: 'Urban Psychotic',
         subtitle: 'Streetwear Fashion Store & Shopify Experience',
-        image: '/urban-psychotic.png',
+        image: '/images/projects/urban-psychotic.png',
         href: 'https://urbanpsychotic.com',
     },
     {

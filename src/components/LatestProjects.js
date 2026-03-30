@@ -58,7 +58,7 @@ export default function LatestProjects() {
       data-testid="latest-projects-section"
       className="bg-white relative font-sans py-16 md:py-24 overflow-hidden transition-colors duration-500 scroll-mt-28"
     >
-      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.06] pointer-events-none" />
+      <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.06] pointer-events-none" />
       <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">

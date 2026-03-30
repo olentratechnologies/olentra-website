@@ -68,22 +68,6 @@ export default function Navbar() {
 
   const primaryLinks = navLinks;
   const accentGradient = 'linear-gradient(135deg, #2563eb, #4f46e5)';
-  const scrollToHash = (href, { closeMobile = false } = {}) => (event) => {
-    if (!href?.startsWith('#')) return;
-    event.preventDefault();
-    if (closeMobile) {
-      setMobileOpen(false);
-      setMobileServicesOpen(false);
-      setMobileProductsOpen(false);
-    }
-    const targetId = href.slice(1);
-    const target = document.getElementById(targetId);
-    if (!target) return;
-    const navEl = document.querySelector('[data-testid="navbar"]');
-    const offset = (navEl?.getBoundingClientRect().height ?? 56) + 12;
-    const y = target.getBoundingClientRect().top + window.scrollY - offset;
-    window.scrollTo({ top: y, behavior: 'smooth' });
-  };
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] px-3 md:px-5 pt-3 pointer-events-none">
@@ -107,7 +91,7 @@ export default function Navbar() {
             <a href="/" className="flex items-center gap-3 group">
               <div className="relative w-8 h-8 group-hover:scale-110 transition-transform duration-300">
                 <Image
-                  src="/images/Logo/Olentra-Logo-Without-Background.png"
+                  src="/images/branding/Logo/Olentra-Logo-Without-Background.png"
                   alt="Olentra Logo"
                   fill
                   sizes="32px"
@@ -144,7 +128,6 @@ export default function Navbar() {
                   >
                     <a
                       href={link.href}
-                      onClick={scrollToHash(link.href)}
                       className={`relative px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all duration-300 flex items-center gap-1 ${isLightSection ? 'text-slate-600 hover:text-primary' : 'text-slate-400 hover:text-white'
                         }`}
                     >
@@ -266,7 +249,6 @@ export default function Navbar() {
                               </div>
                               <a
                                 href="#products"
-                                onClick={scrollToHash('#products')}
                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:opacity-80"
                               >
                                 View All
@@ -277,7 +259,6 @@ export default function Navbar() {
                                 <a
                                   key={product.id}
                                   href={product.href}
-                                  onClick={scrollToHash(product.href)}
                                   className={`group relative overflow-hidden rounded-xl border transition-all duration-300 ${isLightSection
                                     ? 'border-slate-200 bg-white hover:border-primary/60 hover:shadow-[0_16px_40px_rgba(37,99,235,0.18)]'
                                     : 'border-white/10 bg-white/5 hover:border-primary/60 hover:shadow-[0_16px_40px_rgba(37,99,235,0.25)]'
@@ -407,7 +388,7 @@ export default function Navbar() {
                         ) : (
                           <a
                             href={link.href}
-                            onClick={scrollToHash(link.href, { closeMobile: true })}
+                            onClick={() => setMobileOpen(false)}
                             className={`flex items-center justify-between py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${isLightSection ? 'text-slate-600' : 'text-slate-400'
                               } hover:text-primary`}
                           >
@@ -498,7 +479,7 @@ export default function Navbar() {
                                 <a
                                   key={product.id}
                                   href={product.href}
-                                  onClick={scrollToHash(product.href, { closeMobile: true })}
+                                  onClick={() => setMobileOpen(false)}
                                   className={`flex items-center gap-3 py-2 px-2 rounded-lg transition-all ${isLightSection
                                     ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
                                     : 'text-slate-300 hover:text-white hover:bg-white/5'

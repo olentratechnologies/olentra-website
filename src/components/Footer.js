@@ -34,7 +34,7 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 group-hover:scale-110 transition-transform duration-300">
                 <Image
-                  src="/images/Logo/Olentra-Logo-Without-Background.png"
+                  src="/images/branding/Logo/Olentra-Logo-Without-Background.png"
                   alt="Olentra Logo"
                   fill
                   sizes="40px"
