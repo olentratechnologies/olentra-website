@@ -1,7 +1,8 @@
 "use client";
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Zap, CheckCircle2 } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import { products } from '../data/products_data';
 
 export default function Products() {
@@ -47,45 +48,58 @@ function ProductCard({ product, index }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="group relative bg-[#0b1220]/50 backdrop-blur-3xl border border-white/5 p-8 rounded-3xl hover:border-primary/40 transition-all duration-500 hover:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.5)]"
+            className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-3xl transition-all duration-500 hover:border-primary/60 hover:shadow-[0_20px_60px_rgba(37,99,235,0.2)]"
         >
             {/* Glow Effect */}
-            <div className="absolute -inset-px bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/10" />
 
-            <div className="relative z-10">
-                <div className="flex items-start justify-between mb-8">
-                    <div className="p-3.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary group-hover:scale-110 transition-transform duration-500 shadow-[0_0_20px_rgba(37,99,235,0.2)]">
-                        <Icon size={24} strokeWidth={2.5} />
+            <div className="relative">
+                <div className="relative aspect-[16/10] overflow-hidden">
+                    <Image
+                        src={product.image}
+                        alt={product.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 380px"
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-80" />
+                </div>
+            </div>
+
+            <div className="relative z-10 p-6">
+                <div className="flex items-start justify-between mb-5">
+                    <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+                        <Icon size={18} strokeWidth={2.5} />
                     </div>
-                    <div className="px-3 py-1 rounded-full bg-slate-900 border border-white/10 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                    <div className="px-3 py-1 rounded-full bg-slate-900/80 border border-white/10 text-[9px] font-black text-slate-300 uppercase tracking-widest">
                         {product.status}
                     </div>
                 </div>
 
-                <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight mb-4 group-hover:text-primary transition-colors">
+                <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight mb-3 group-hover:text-primary transition-colors">
                     {product.title}
                 </h3>
 
-                <p className="text-slate-400 text-[13px] md:text-[14px] leading-relaxed mb-8 min-h-[80px]">
+                <p className="text-slate-300 text-[12px] md:text-[13px] leading-relaxed mb-6 min-h-[72px]">
                     {product.description}
                 </p>
 
-                <div className="space-y-3 mb-10">
+                <div className="space-y-2.5 mb-6">
                     {product.features.map((feature, i) => (
                         <div key={i} className="flex items-center gap-3">
                             <CheckCircle2 size={14} className="text-primary/60" />
-                            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">{feature}</span>
+                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{feature}</span>
                         </div>
                     ))}
                 </div>
 
-                <div className="pt-8 border-t border-white/5 flex items-center justify-between mt-auto">
+                <div className="pt-5 border-t border-white/10 flex items-center justify-between mt-auto">
                     <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Pricing</p>
-                        <p className="text-[12px] font-bold text-white uppercase tracking-wider">{product.price}</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pricing</p>
+                        <p className="text-[11px] font-bold text-white uppercase tracking-wider">{product.price}</p>
                     </div>
-                    <button className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-primary hover:border-primary transition-all duration-300">
-                        <ArrowUpRight size={18} />
+                    <button className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-primary hover:border-primary transition-all duration-300">
+                        <ArrowUpRight size={16} />
                     </button>
                 </div>
             </div>

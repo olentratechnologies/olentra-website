@@ -9,7 +9,8 @@ export const products = [
         href: '#products',
         features: ['Autonomous Reasoning', 'Multi-Language Support', 'Third-Party App Integrations'],
         status: 'Stable',
-        price: 'Starts at $249/mo'
+        price: 'Starts at $249/mo',
+        image: '/urban-psychotic.png'
     },
     {
         id: '2',
@@ -19,7 +20,8 @@ export const products = [
         href: '#products',
         features: ['Threat Detection', 'Zero-Day Vulnerability Scanning', 'Auto-Remediation'],
         status: 'Beta',
-        price: 'Contact Sales'
+        price: 'Contact Sales',
+        image: '/images/robot-hero.png'
     },
     {
         id: '3',
@@ -29,6 +31,7 @@ export const products = [
         href: '#products',
         features: ['Visual Flow Editor', 'GPU Accelerated Processing', 'One-Click ML Deployment'],
         status: 'Early Access',
-        price: 'Starts at $499/mo'
+        price: 'Starts at $499/mo',
+        image: '/cyber-bg.png'
     }
 ];

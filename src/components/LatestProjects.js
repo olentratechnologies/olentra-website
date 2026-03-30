@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { projects } from '../data/projects';
@@ -18,17 +18,45 @@ import {
 export default function LatestProjects() {
   const categories = ['All', ...new Set(projects.map((p) => p.category))];
   const [activeCategory, setActiveCategory] = useState('All');
+  const DEFAULT_VISIBLE = 6;
+  const [showAll, setShowAll] = useState(false);
+  const sectionRef = useRef(null);
+  const gridRef = useRef(null);
 
-  const filteredProjects = activeCategory === 'All'
+  // First filter by category
+  const filteredByCategory = activeCategory === 'All'
     ? projects
     : projects.filter((p) => p.category === activeCategory);
 
+  // Then decide how many to show
+  const maxCount = filteredByCategory.length;
+  const minCount = Math.min(DEFAULT_VISIBLE, maxCount);
+  const displayedProjects = showAll ? filteredByCategory : filteredByCategory.slice(0, minCount);
+
+  useEffect(() => {
+    setShowAll(false);
+  }, [activeCategory, minCount]);
+
+  const handleToggle = () => {
+    setShowAll((prev) => !prev);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const lastCard = gridRef.current?.querySelector('[data-project-card]:last-child');
+        if (lastCard) {
+          lastCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          return;
+        }
+        sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  };
 
   return (
     <section
       id="projects"
+      ref={sectionRef}
       data-testid="latest-projects-section"
-      className="bg-white relative font-sans py-16 md:py-24 overflow-hidden transition-colors duration-500"
+      className="bg-white relative font-sans py-16 md:py-24 overflow-hidden transition-colors duration-500 scroll-mt-28"
     >
       <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.06] pointer-events-none" />
       <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
@@ -57,7 +85,13 @@ export default function LatestProjects() {
         {/* Category Filter Dropdown */}
         <div className="relative mb-16 md:mb-24 flex items-center justify-center max-w-4xl mx-auto px-4">
           <div className="relative w-full max-w-sm">
-            <Select value={activeCategory} onValueChange={setActiveCategory}>
+            <Select
+              value={activeCategory}
+              onValueChange={(val) => {
+                setActiveCategory(val);
+                setShowAll(false); // Reset showAll when category changes
+              }}
+            >
               <SelectTrigger
                 aria-label="Filter projects by category"
                 className="w-full rounded-sm border border-slate-200 bg-white pl-4 pr-4 py-2.5 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.12)] focus:ring-0 focus:border-primary/50 gap-3 [&>svg]:opacity-100 [&>svg]:text-primary"
@@ -85,13 +119,37 @@ export default function LatestProjects() {
         <motion.div
           layout
           className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-16 md:gap-y-24"
+          ref={gridRef}
         >
           <AnimatePresence mode="popLayout">
-            {filteredProjects.map((project, index) => (
+            {displayedProjects.map((project, index) => (
               <ProjectCard key={project.title} project={project} index={index} />
             ))}
           </AnimatePresence>
         </motion.div>
+
+        {/* Explore More Button */}
+        {filteredByCategory.length > minCount && (
+          <div className="mt-20 md:mt-32 flex justify-center">
+            <button
+              onClick={handleToggle}
+              className="group relative inline-flex items-center gap-4 px-8 py-3 rounded-full border border-slate-200 bg-white text-slate-900 uppercase tracking-[0.24em] text-[10px] md:text-xs font-black transition-all duration-300 hover:border-primary hover:text-primary hover:shadow-[0_16px_36px_rgba(37,99,235,0.18)]"
+            >
+              <span className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/10 via-transparent to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span className="relative z-10">
+                {showAll ? 'Show Less' : 'Show More'}
+              </span>
+              <span
+                className={`relative z-10 inline-flex items-center justify-center w-7 h-7 rounded-full border transition-all duration-300 ${showAll
+                  ? 'bg-primary border-primary text-white'
+                  : 'border-slate-200 text-primary'
+                  }`}
+              >
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAll ? 'rotate-180' : ''}`} />
+              </span>
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -102,6 +160,7 @@ function ProjectCard({ project, index }) {
 
   return (
     <motion.div
+      data-project-card
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
