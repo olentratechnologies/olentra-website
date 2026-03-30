@@ -41,7 +41,7 @@ export default function Navbar() {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const id = entry.target.getAttribute('id');
-          const index = navLinks.findIndex(link => link.href === `#${id || ''}`);
+          const index = navLinks.findIndex(link => link.href.split('#')[1] === (id || ''));
 
           if (index !== -1) setActiveIndex(index);
           else if (!id) setActiveIndex(0);
@@ -68,6 +68,10 @@ export default function Navbar() {
 
   const primaryLinks = navLinks;
   const accentGradient = 'linear-gradient(135deg, #2563eb, #4f46e5)';
+  const resolveHref = useCallback((href) => {
+    if (!href) return href;
+    return href.startsWith('#') ? `/${href}` : href;
+  }, []);
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] px-3 md:px-5 pt-3 pointer-events-none">
@@ -127,7 +131,7 @@ export default function Navbar() {
                     }}
                   >
                     <a
-                      href={link.href}
+                      href={resolveHref(link.href)}
                       className={`relative px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all duration-300 flex items-center gap-1 ${isLightSection ? 'text-slate-600 hover:text-primary' : 'text-slate-400 hover:text-white'
                         }`}
                     >
@@ -203,7 +207,7 @@ export default function Navbar() {
                                   {(serviceGroups[activeServiceGroupIndex]?.services ?? []).map((service) => (
                                     <a
                                       key={service.title}
-                                      href={service.href}
+                                      href={resolveHref(service.href)}
                                       onClick={() => setIsServicesOpen(false)}
                                       className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group/item ${isLightSection
                                         ? 'hover:bg-slate-50'
@@ -248,7 +252,7 @@ export default function Navbar() {
                                 </div>
                               </div>
                               <a
-                                href="#products"
+                                href="/#products"
                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:opacity-80"
                               >
                                 View All
@@ -387,7 +391,7 @@ export default function Navbar() {
                           </div>
                         ) : (
                           <a
-                            href={link.href}
+                            href={resolveHref(link.href)}
                             onClick={() => setMobileOpen(false)}
                             className={`flex items-center justify-between py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${isLightSection ? 'text-slate-600' : 'text-slate-400'
                               } hover:text-primary`}
@@ -441,7 +445,7 @@ export default function Navbar() {
                                         {group.services.map((service) => (
                                           <a
                                             key={service.title}
-                                            href={service.href}
+                                            href={resolveHref(service.href)}
                                             onClick={() => {
                                               setMobileOpen(false);
                                               setMobileServicesOpen(false);

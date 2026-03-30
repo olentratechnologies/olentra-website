@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 import { products } from '../data/products_data';
 
 export default function Products() {
@@ -43,66 +44,68 @@ function ProductCard({ product, index }) {
     const Icon = product.icon;
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-3xl transition-all duration-500 hover:border-primary/60 hover:shadow-[0_20px_60px_rgba(37,99,235,0.2)]"
-        >
-            {/* Glow Effect */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/10" />
+        <Link href={product.href} className="flex">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="group cursor-pointer relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-3xl transition-all duration-500 hover:border-primary/60 hover:shadow-[0_20px_60px_rgba(37,99,235,0.2)] h-full w-full flex flex-col"
+            >
+                {/* Glow Effect */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/10" />
 
-            <div className="relative">
-                <div className="relative aspect-[16/10] overflow-hidden">
-                    <Image
-                        src={product.image}
-                        alt={product.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 380px"
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-80" />
-                </div>
-            </div>
-
-            <div className="relative z-10 p-6">
-                <div className="flex items-start justify-between mb-5">
-                    <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]">
-                        <Icon size={18} strokeWidth={2.5} />
-                    </div>
-                    <div className="px-3 py-1 rounded-full bg-slate-900/80 border border-white/10 text-[9px] font-black text-slate-300 uppercase tracking-widest">
-                        {product.status}
+                <div className="relative">
+                    <div className="relative aspect-[16/10] overflow-hidden">
+                        <Image
+                            src={product.image}
+                            alt={product.title}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 380px"
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-80" />
                     </div>
                 </div>
 
-                <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight mb-3 group-hover:text-primary transition-colors">
-                    {product.title}
-                </h3>
-
-                <p className="text-slate-300 text-[12px] md:text-[13px] leading-relaxed mb-6 min-h-[72px]">
-                    {product.description}
-                </p>
-
-                <div className="space-y-2.5 mb-6">
-                    {product.features.map((feature, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                            <CheckCircle2 size={14} className="text-primary/60" />
-                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{feature}</span>
+                <div className="relative z-10 p-6 flex flex-col flex-1">
+                    <div className="flex items-start justify-between mb-5">
+                        <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+                            <Icon size={18} strokeWidth={2.5} />
                         </div>
-                    ))}
-                </div>
-
-                <div className="pt-5 border-t border-white/10 flex items-center justify-between mt-auto">
-                    <div>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pricing</p>
-                        <p className="text-[11px] font-bold text-white uppercase tracking-wider">{product.price}</p>
+                        <div className="px-3 py-1 rounded-full bg-slate-900/80 border border-white/10 text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                            {product.status}
+                        </div>
                     </div>
-                    <button className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-primary hover:border-primary transition-all duration-300">
-                        <ArrowUpRight size={16} />
-                    </button>
+
+                    <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight mb-3 group-hover:text-primary transition-colors">
+                        {product.title}
+                    </h3>
+
+                    <p className="text-slate-300 text-[12px] md:text-[13px] leading-relaxed mb-6 min-h-[72px]">
+                        {product.description}
+                    </p>
+
+                    <div className="space-y-2.5 mb-6">
+                        {product.features.map((feature, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                                <CheckCircle2 size={14} className="text-primary/60" />
+                                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{feature}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="pt-5 border-t border-white/10 flex items-center justify-between mt-auto">
+                        <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Pricing</p>
+                            <p className="text-[11px] font-bold text-white uppercase tracking-wider">{product.price}</p>
+                        </div>
+                        <div className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white group-hover:bg-primary group-hover:border-primary transition-all duration-300">
+                            <ArrowUpRight size={16} />
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </motion.div>
+            </motion.div>
+        </Link>
     );
 }
