@@ -18,7 +18,6 @@ import {
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ContactForm from "@/components/ContactForm";
 import { olenbot } from "@/data/olenbot";
 
 const fadeInUp = {
@@ -203,7 +202,7 @@ export default function OlenbotPage() {
                 {overview.stats.map((stat) => (
                   <div key={stat.label} className="space-y-2 group">
                     <div className="w-5 h-5 text-primary/40 transition-transform group-hover:scale-110">
-                      {stat.label.includes("Flow") ? <Workflow className="w-5 h-5" /> : stat.label.includes("Queue") ? <Database className="w-5 h-5" /> : stat.label.includes("AI") ? <BrainCircuit className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+                      {stat.label.includes("Fit") ? <Workflow className="w-5 h-5" /> : stat.label.includes("Value") ? <Database className="w-5 h-5" /> : stat.label.includes("Benefit") ? <BrainCircuit className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
                     </div>
                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:text-primary transition-colors">{stat.label}</p>
                     <p className="text-xl font-black text-slate-900">{stat.value}</p>
@@ -279,10 +278,10 @@ export default function OlenbotPage() {
             <motion.div {...fadeInUp} className="space-y-8">
               <div className="flex items-center gap-3">
                 <span className="w-8 h-px bg-primary/40" />
-                <p className="text-[10px] uppercase tracking-[0.4em] text-primary font-black">Workflow Matrix</p>
+                <p className="text-[10px] uppercase tracking-[0.4em] text-primary font-black">User Journey</p>
               </div>
               <h2 className="text-4xl md:text-5xl font-[950] uppercase leading-[0.9] tracking-tighter text-slate-900">
-                Lead-to-Call <br /> <span className="text-primary italic">Architecture</span>
+                How Teams <br /> <span className="text-primary italic">Use Olenbot</span>
               </h2>
 
               <div className="space-y-4 pt-4">
@@ -293,7 +292,6 @@ export default function OlenbotPage() {
                         0{idx + 1}
                       </div>
                       <div className="space-y-1">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-primary/60">{stage.model}</div>
                         <h4 className="text-lg font-[900] text-slate-900 uppercase italic tracking-tight">{stage.stage}</h4>
                         <div className="text-[13px] text-slate-500 font-bold uppercase tracking-tight leading-none">{stage.output}</div>
                       </div>
@@ -308,7 +306,7 @@ export default function OlenbotPage() {
               <div className="rounded-[2.5rem] bg-slate-950 p-10 shadow-2xl text-white">
                 <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-10 flex items-center gap-3">
                   <Terminal className="w-4 h-4" />
-                  Operating Layers
+                  Team Outcomes
                 </h3>
                 <div className="grid grid-cols-1 gap-6">
                   {systems.map((service) => (
@@ -323,9 +321,9 @@ export default function OlenbotPage() {
               </div>
 
               <div className="rounded-2xl border-2 border-primary/10 p-8 bg-slate-50">
-                <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-900 mb-4">Runtime Controls</h3>
+                <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-900 mb-4">Operational Confidence</h3>
                 <p className="text-sm text-slate-500 leading-relaxed font-bold uppercase tracking-tight mb-6">
-                  Compliance, auth, storage, and observability are built into the operating model, not bolted on later.
+                  Outreach teams get compliance, control, and auditability without adding more tools to manage.
                 </p>
                 <div className="space-y-3">
                   {security.slice(0, 4).map((item) => (
@@ -345,16 +343,16 @@ export default function OlenbotPage() {
         <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.05] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 md:px-12 relative">
           <div className="flex flex-col items-center text-center mb-20">
-            <p className="text-primary font-black text-[10px] uppercase tracking-[0.4em] mb-4">Engineering Matrix</p>
+            <p className="text-primary font-black text-[10px] uppercase tracking-[0.4em] mb-4">Experience Layers</p>
             <h2 className="text-[2.6rem] md:text-[4.2rem] font-[950] text-white uppercase tracking-tighter leading-[0.9]">
-              The Stack <span className="text-primary italic">Deep Dive</span>
+              What The Product <span className="text-primary italic">Handles</span>
             </h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <StackColumn title="Collection" icon={<Radar className="w-5 h-5" />} items={techStack.collection} />
-            <StackColumn title="Intelligence" icon={<BrainCircuit className="w-5 h-5" />} items={techStack.intelligence} />
-            <StackColumn title="Delivery" icon={<ShieldCheck className="w-5 h-5" />} items={techStack.delivery} />
+            <StackColumn title="Lead Flow" icon={<Radar className="w-5 h-5" />} items={techStack.collection} />
+            <StackColumn title="Conversation" icon={<BrainCircuit className="w-5 h-5" />} items={techStack.intelligence} />
+            <StackColumn title="Operations" icon={<ShieldCheck className="w-5 h-5" />} items={techStack.delivery} />
           </div>
         </div>
       </section>
@@ -373,7 +371,7 @@ export default function OlenbotPage() {
               </h2>
             </div>
             <p className="max-w-md text-slate-500 text-sm font-bold uppercase tracking-[0.24em] leading-relaxed">
-              The UI model from the product blueprint centers on lead control, live calls, analysis review, and performance reporting.
+              Every view is designed to help teams keep outreach organized, understand what is converting, and follow up without delay.
             </p>
           </div>
 
@@ -394,53 +392,12 @@ export default function OlenbotPage() {
         </div>
       </section>
 
-      <section className="relative py-24 md:py-32 bg-[#020617]" id="pricing">
-        <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.04] pointer-events-none" />
-        <div className="max-w-6xl mx-auto px-6 md:px-12 relative">
-          <div className="text-center mb-16">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3">Investment Model</p>
-            <h2 className="text-4xl font-[900] uppercase text-white tracking-tight italic">Pilot to Scale</h2>
-          </div>
-
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-2xl shadow-black/20">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] text-left border-collapse">
-                <thead>
-                  <tr className="bg-white/[0.04]">
-                    <th className="p-8 border-b border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-400">Service Identifier</th>
-                    {pricing.tiers.map((tier) => (
-                      <th key={tier} className="p-8 border-b border-white/10 text-[15px] font-[950] uppercase tracking-tighter text-primary italic">
-                        {tier}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {pricing.rows.map((row) => (
-                    <tr key={row.label} className="group hover:bg-primary/5 transition-colors">
-                      <td className="p-8 border-b border-white/10 text-sm font-black uppercase tracking-widest text-white group-hover:text-primary">
-                        {row.label}
-                      </td>
-                      {row.values.map((val) => (
-                        <td key={`${row.label}-${val}`} className="p-8 border-b border-white/10 text-[13px] font-bold text-slate-400 group-hover:text-slate-100">
-                          {val}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="relative py-24 md:py-32 bg-white text-slate-900" id="roadmap">
         <div className="absolute inset-0 bg-cyber-grid-light opacity-[0.05] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
           <div className="flex items-center gap-3 mb-16">
             <span className="w-8 h-px bg-primary/60" />
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Delivery Plan</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Rollout Path</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -468,6 +425,47 @@ export default function OlenbotPage() {
         </div>
       </section>
 
+      <section className="relative py-24 md:py-32 bg-[#020617]" id="pricing">
+        <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.04] pointer-events-none" />
+        <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
+          <div className="text-center mb-16">
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3">Adoption Model</p>
+            <h2 className="text-4xl font-[900] uppercase text-white tracking-tight italic">Pilot to Scale</h2>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-2xl shadow-black/30">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] md:min-w-[800px] text-left border-collapse">
+                <thead>
+                  <tr className="bg-white/[0.04]">
+                    <th className="px-3 py-4 md:p-8 border-b border-white/10 text-[9px] md:text-[10px] font-black uppercase tracking-[0.24em] md:tracking-widest text-slate-400">Team Need</th>
+                    {pricing.tiers.map((tier) => (
+                      <th key={tier} className="px-3 py-4 md:p-8 border-b border-white/10 text-[11px] md:text-[15px] font-[950] uppercase tracking-tight md:tracking-tighter text-primary italic">
+                        {tier}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pricing.rows.map((row) => (
+                    <tr key={row.label} className="group hover:bg-white/[0.04] transition-colors">
+                      <td className="px-3 py-4 md:p-8 border-b border-white/10 text-[10px] md:text-sm font-black uppercase tracking-[0.18em] md:tracking-widest text-white group-hover:text-primary align-top">
+                        {row.label}
+                      </td>
+                      {row.values.map((val) => (
+                        <td key={`${row.label}-${val}`} className="px-3 py-4 md:p-8 border-b border-white/10 text-[11px] md:text-[13px] font-bold text-slate-400 group-hover:text-slate-200 leading-relaxed align-top">
+                          {val}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="relative pt-16 md:pt-20 pb-0 bg-[#020617]" id="contact">
         <div className="max-w-6xl mx-auto px-6 md:px-12">
           <div className="relative rounded-3xl overflow-hidden bg-primary p-12 md:p-20 text-center shadow-[0_40px_80px_rgba(37,99,235,0.4)]">
@@ -480,11 +478,11 @@ export default function OlenbotPage() {
                 Launch Your <br /> <span className="italic">Outbound Stack</span>
               </h2>
               <p className="text-lg text-white/80 font-bold leading-relaxed uppercase tracking-tight">
-                Book a technical walkthrough to review Olenbot&apos;s lead pipeline, live voice engine, WhatsApp follow-up, and analytics workflow.
+                Book a product walkthrough to see how Olenbot helps your team qualify leads, automate follow-up, and track conversion performance.
               </p>
               <div className="pt-6">
                 <a
-                  href="#form-top"
+                  href="/#contact"
                   className="inline-flex items-center gap-3 px-10 py-4 text-[13px] font-black uppercase tracking-[0.3em] bg-white text-primary transition-all hover:scale-105 active:scale-95"
                   style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)" }}
                 >
@@ -495,9 +493,6 @@ export default function OlenbotPage() {
             </div>
           </div>
 
-          <div id="form-top" className="mt-10 md:mt-12">
-            <ContactForm />
-          </div>
         </div>
       </section>
 

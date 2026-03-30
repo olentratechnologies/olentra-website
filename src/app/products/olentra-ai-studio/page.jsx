@@ -18,7 +18,6 @@ import {
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ContactForm from "@/components/ContactForm";
 import { olentraAiStudio } from "@/data/olentra_ai_studio";
 
 const fadeInUp = {
@@ -36,7 +35,7 @@ const staggerContainer = {
 };
 
 export default function OlentraAIStudioPage() {
-  const { hero, overview, features, techStack, platforms, aiPipeline, microservices, security, pricing, roadmap } = olentraAiStudio;
+  const { hero, overview, features, techStack, aiPipeline, microservices, security, pricing, roadmap } = olentraAiStudio;
 
   return (
     <main className="relative bg-[#020617] text-white font-sans selection:bg-primary/30 selection:text-white">
@@ -203,10 +202,10 @@ export default function OlentraAIStudioPage() {
               </p>
               <div className="grid grid-cols-2 gap-x-12 gap-y-8 pt-6">
                 {[
-                  { label: 'Uptime Guarantee', value: '99.99%', icon: Activity },
-                  { label: 'Latency', value: '< 150ms', icon: Cpu },
-                  { label: 'Security Level', value: 'Level 4', icon: Lock },
-                  { label: 'Deployment', value: 'Multi-Cloud', icon: Cloud },
+                  { label: 'Best For', value: 'Product Teams', icon: Activity },
+                  { label: 'Team Win', value: 'Faster Delivery', icon: Cpu },
+                  { label: 'Working Style', value: 'Collaborative', icon: Lock },
+                  { label: 'Reach', value: 'Multi-Platform', icon: Cloud },
                 ].map((stat, i) => (
                   <div key={i} className="space-y-2 group">
                     <stat.icon className="w-5 h-5 text-primary/40 transition-transform group-hover:scale-110" />
@@ -288,10 +287,10 @@ export default function OlentraAIStudioPage() {
             <motion.div {...fadeInUp} className="space-y-8">
               <div className="flex items-center gap-3">
                 <span className="w-8 h-px bg-primary/40" />
-                <p className="text-[10px] uppercase tracking-[0.4em] text-primary font-black">Workflow Matrix</p>
+                <p className="text-[10px] uppercase tracking-[0.4em] text-primary font-black">User Journey</p>
               </div>
               <h2 className="text-4xl md:text-5xl font-[950] uppercase leading-[0.9] tracking-tighter text-slate-900">
-                System <br /> <span className="text-primary italic">Architecture</span>
+                How Teams <br /> <span className="text-primary italic">Use It</span>
               </h2>
 
               <div className="space-y-4 pt-4">
@@ -302,7 +301,6 @@ export default function OlentraAIStudioPage() {
                         0{idx + 1}
                       </div>
                       <div className="space-y-1">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-primary/60">{stage.model}</div>
                         <h4 className="text-lg font-[900] text-slate-900 uppercase italic tracking-tight">{stage.stage}</h4>
                         <div className="text-[13px] text-slate-500 font-bold uppercase tracking-tight leading-none">{stage.output}</div>
                       </div>
@@ -319,7 +317,7 @@ export default function OlentraAIStudioPage() {
               <div className="rounded-[2.5rem] bg-slate-950 p-10 shadow-2xl text-white">
                 <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-10 flex items-center gap-3">
                   <Terminal className="w-4 h-4" />
-                  Core Infrastructure
+                  What You Get
                 </h3>
                 <div className="grid grid-cols-1 gap-6">
                   {microservices.map((service) => (
@@ -334,9 +332,9 @@ export default function OlentraAIStudioPage() {
               </div>
 
               <div className="rounded-2xl border-2 border-primary/10 p-8 bg-slate-50">
-                <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-900 mb-4">Transmission Security</h3>
+                <h3 className="text-[13px] font-black uppercase tracking-widest text-slate-900 mb-4">Business Confidence</h3>
                 <p className="text-sm text-slate-500 leading-relaxed font-bold uppercase tracking-tight mb-6">
-                  SOC-2 Compliance managed via deterministic policy orchestration.
+                  The platform is framed around launch confidence, access control, and production readiness.
                 </p>
                 <div className="space-y-3">
                   {security.slice(0, 3).map((item) => (
@@ -357,84 +355,42 @@ export default function OlentraAIStudioPage() {
         <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.05] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 md:px-12 relative">
           <div className="flex flex-col items-center text-center mb-20">
-            <p className="text-primary font-black text-[10px] uppercase tracking-[0.4em] mb-4">Engineering Matrix</p>
+            <p className="text-primary font-black text-[10px] uppercase tracking-[0.4em] mb-4">Experience Layers</p>
             <h2 className="text-[2.6rem] md:text-[4.2rem] font-[950] text-white uppercase tracking-tighter leading-[0.9]">
-              The Stack <span className="text-primary italic">Deep Dive</span>
+              What The Product <span className="text-primary italic">Delivers</span>
             </h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <StackColumn title="Frontend" icon={<Layers className="w-5 h-5" />} items={techStack.frontend} theme="dark" />
-            <StackColumn title="Backend" icon={<Cpu className="w-5 h-5" />} items={techStack.backend} theme="dark" />
-            <StackColumn title="Infra" icon={<ShieldCheck className="w-5 h-5" />} items={techStack.infra} theme="dark" />
+            <StackColumn title="Creation" icon={<Layers className="w-5 h-5" />} items={techStack.frontend} theme="dark" />
+            <StackColumn title="Delivery" icon={<Cpu className="w-5 h-5" />} items={techStack.backend} theme="dark" />
+            <StackColumn title="Confidence" icon={<ShieldCheck className="w-5 h-5" />} items={techStack.infra} theme="dark" />
           </div>
         </div>
       </section>
 
-      {/* --- 6. PRICING (WHITE) --- */}
-      <section className="relative py-24 md:py-32 bg-white text-slate-900" id="pricing">
+      {/* --- 6. ROADMAP (WHITE) --- */}
+      <section className="relative py-24 md:py-32 bg-white text-slate-900" id="roadmap">
         <div className="absolute inset-0 bg-cyber-grid-light opacity-[0.05] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
-          <div className="text-center mb-16">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3">Investment Model</p>
-            <h2 className="text-4xl font-[900] uppercase text-slate-900 tracking-tight italic">Tier Logic</h2>
-          </div>
-
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 backdrop-blur-xl shadow-2xl shadow-slate-200/40">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-100">
-                    <th className="p-8 border-b border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500">Service Identifier</th>
-                    {pricing.tiers.map((tier) => (
-                      <th key={tier} className="p-8 border-b border-slate-200 text-[15px] font-[950] uppercase tracking-tighter text-primary italic">
-                        {tier}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {pricing.rows.map((row) => (
-                    <tr key={row.label} className="group hover:bg-primary/5 transition-colors">
-                      <td className="p-8 border-b border-slate-200 text-sm font-black uppercase tracking-widest text-slate-800 group-hover:text-primary">
-                        {row.label}
-                      </td>
-                      {row.values.map((val, i) => (
-                        <td key={i} className="p-8 border-b border-slate-200 text-[13px] font-bold text-slate-500 group-hover:text-slate-900">
-                          {val}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* --- 7. ROADMAP (DARK) --- */}
-      <section className="relative py-24 md:py-32 bg-[#020617]" id="roadmap">
-        <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.04] pointer-events-none" />
-        <div className="max-w-6xl mx-auto px-6 md:px-12 relative">
           <div className="flex items-center gap-3 mb-16">
             <span className="w-8 h-px bg-primary/60" />
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Future Pipeline</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Rollout Path</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {roadmap.map((phase, idx) => (
-              <div key={phase.phase} className="group relative">
-                <div className="absolute -top-12 left-0 text-7xl font-black text-white/[0.03] group-hover:text-primary/10 transition-colors pointer-events-none">
+              <div key={phase.phase} className="group relative rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-200/40">
+                <div className="absolute top-6 right-6 text-6xl font-black text-slate-100 group-hover:text-primary/10 transition-colors pointer-events-none">
                   0{idx + 1}
                 </div>
                 <div className="relative pt-6 space-y-6">
-                  <h3 className="text-xl font-black uppercase tracking-tighter text-white border-b-2 border-primary/20 pb-4 italic">
+                  <h3 className="text-xl font-black uppercase tracking-tighter text-slate-900 border-b-2 border-primary/20 pb-4 italic">
                     {phase.phase}
                   </h3>
                   <ul className="space-y-4">
                     {phase.highlights.map(item => (
-                      <li key={item} className="flex gap-4 items-start text-[12px] font-black text-slate-400 leading-relaxed uppercase tracking-widest">
+                      <li key={item} className="flex gap-4 items-start text-[12px] font-black text-slate-500 leading-relaxed uppercase tracking-widest">
                         <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                         {item}
                       </li>
@@ -443,6 +399,48 @@ export default function OlentraAIStudioPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- 7. PRICING (DARK) --- */}
+      <section className="relative py-24 md:py-32 bg-[#020617]" id="pricing">
+        <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.04] pointer-events-none" />
+        <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
+          <div className="text-center mb-16">
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-3">Adoption Model</p>
+            <h2 className="text-4xl font-[900] uppercase text-white tracking-tight italic">Fit By Team Stage</h2>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl shadow-2xl shadow-black/30">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] md:min-w-[800px] text-left border-collapse">
+                <thead>
+                  <tr className="bg-white/[0.04]">
+                    <th className="px-3 py-4 md:p-8 border-b border-white/10 text-[9px] md:text-[10px] font-black uppercase tracking-[0.24em] md:tracking-widest text-slate-400">Experience Area</th>
+                    {pricing.tiers.map((tier) => (
+                      <th key={tier} className="px-3 py-4 md:p-8 border-b border-white/10 text-[11px] md:text-[15px] font-[950] uppercase tracking-tight md:tracking-tighter text-primary italic">
+                        {tier}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pricing.rows.map((row) => (
+                    <tr key={row.label} className="group hover:bg-white/[0.04] transition-colors">
+                      <td className="px-3 py-4 md:p-8 border-b border-white/10 text-[10px] md:text-sm font-black uppercase tracking-[0.18em] md:tracking-widest text-white group-hover:text-primary align-top">
+                        {row.label}
+                      </td>
+                      {row.values.map((val, i) => (
+                        <td key={i} className="px-3 py-4 md:p-8 border-b border-white/10 text-[11px] md:text-[13px] font-bold text-slate-400 group-hover:text-slate-200 leading-relaxed align-top">
+                          {val}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
@@ -460,11 +458,11 @@ export default function OlentraAIStudioPage() {
                 Launch Your <br /> <span className="italic">AI Studio</span>
               </h2>
               <p className="text-lg text-white/80 font-bold leading-relaxed uppercase tracking-tight">
-                Book a technical demonstration to see the build pipeline, orchestration model, and global security mesh in action.
+                Book a product walkthrough to see how your team can go from idea to shipped software with less delivery friction.
               </p>
               <div className="pt-6">
                 <a
-                  href="#form-top"
+                  href="/#contact"
                   className="inline-flex items-center gap-3 px-10 py-4 text-[13px] font-black uppercase tracking-[0.3em] bg-white text-primary transition-all hover:scale-105 active:scale-95"
                   style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)" }}
                 >
@@ -475,9 +473,6 @@ export default function OlentraAIStudioPage() {
             </div>
           </div>
 
-          <div id="form-top" className="mt-10 md:mt-12">
-            <ContactForm />
-          </div>
         </div>
       </section>
 

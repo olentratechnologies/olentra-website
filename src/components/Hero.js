@@ -16,7 +16,6 @@ export default function Hero() {
         data-testid="hero-section"
         className="relative min-h-[calc(100vh-80px)] min-h-[calc(100svh-80px)] mt-16 sm:mt-20 overflow-hidden bg-[#020617] flex items-center font-sans selection:bg-primary/30 selection:text-white"
       >
-        {/* Background */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <motion.div
             animate={{
@@ -43,7 +42,6 @@ export default function Hero() {
             />
           </motion.div>
 
-          {/* Overlays */}
           <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/90 via-[#020617]/50 to-[#020617]" />
           <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#020617] to-transparent" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_40%,rgba(37,99,235,0.1),transparent_70%)]" />
@@ -82,11 +80,10 @@ export default function Hero() {
               transition={{ duration: 1, delay: 0.4 }}
               className="text-[0.98rem] md:text-[1.1rem] text-slate-300/90 leading-relaxed mb-10 sm:mb-12 max-w-3xl font-medium"
             >
-              We design, build, and operate production‑grade systems across cloud, data, and AI.
+              We design, build, and operate production-grade systems across cloud, data, and AI.
               Expect disciplined execution, clear milestones, and measurable outcomes.
             </motion.p>
 
-            {/* CTA */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -118,14 +115,13 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.8 }}
               className="mt-10 flex flex-wrap items-center justify-center gap-3 text-[10px] uppercase tracking-[0.25em] text-slate-400"
             >
-              <span className="px-3 py-2 rounded-full border border-white/10 bg-white/5">Security‑First</span>
-              <span className="px-3 py-2 rounded-full border border-white/10 bg-white/5">Milestone‑Based Delivery</span>
-              <span className="px-3 py-2 rounded-full border border-white/10 bg-white/5">Post‑Launch Support</span>
+              <span className="px-3 py-2 rounded-full border border-white/10 bg-white/5">Security-First</span>
+              <span className="px-3 py-2 rounded-full border border-white/10 bg-white/5">Milestone-Based Delivery</span>
+              <span className="px-3 py-2 rounded-full border border-white/10 bg-white/5">Post-Launch Support</span>
             </motion.div>
           </div>
         </div>
 
-        {/* Scrolling Logs */}
         <div className="absolute bottom-0 left-0 right-0 py-3 sm:py-4 bg-primary/5 border-t border-white/5 backdrop-blur-md overflow-hidden">
           <motion.div
             animate={{ x: ['0%', '-50%'] }}

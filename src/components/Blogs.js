@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 import { blogs } from "../data/blogs";
 
 export default function Blogs() {
@@ -36,8 +37,8 @@ export default function Blogs() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {blogs.map((blog) => (
-            <a
+          {blogs.slice(0, 3).map((blog) => (
+            <Link
               key={blog.title}
               href={blog.href}
               className="group relative overflow-hidden rounded-sm border border-white/10 bg-white/5 backdrop-blur-xl transition-all duration-500 hover:border-primary/60 hover:shadow-[0_20px_60px_rgba(37,99,235,0.2)]"
@@ -85,8 +86,19 @@ export default function Blogs() {
                   </span>
                 </div>
               </div>
-            </a>
+            </Link>
           ))}
+        </div>
+
+        <div className="flex justify-center pt-10 md:pt-12">
+          <Link
+            href="/blogs"
+            className="group inline-flex items-center gap-3 px-8 py-4 text-[11px] font-black uppercase tracking-[0.3em] bg-primary text-white transition-all hover:bg-blue-700 shadow-[0_0_25px_rgba(37,99,235,0.35)]"
+            style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)" }}
+          >
+            View All Blogs
+            <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+          </Link>
         </div>
       </div>
     </section>
