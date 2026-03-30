@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { serviceGroups } from '../data/services';
 import { navLinks } from '../data/navigation';
 import { products } from '../data/products_data';
@@ -92,7 +93,7 @@ export default function Navbar() {
         >
           <div className="px-5 md:px-7 h-10 md:h-12 grid grid-cols-[auto,1fr,auto] items-center">
             {/* Logo */}
-            <a href="/" className="flex items-center gap-3 group">
+            <Link href="/" className="flex items-center gap-3 group">
               <div className="relative w-8 h-8 group-hover:scale-110 transition-transform duration-300">
                 <Image
                   src="/images/branding/Logo/Olentra-Logo-Without-Background.png"
@@ -106,7 +107,7 @@ export default function Navbar() {
                 }`}>
                 Olentra
               </span>
-            </a>
+            </Link>
 
             {/* Desktop Links */}
             <div className="hidden md:flex items-center gap-1 justify-self-center">
@@ -130,7 +131,7 @@ export default function Navbar() {
                       if (isProducts) setIsProductsOpen(false);
                     }}
                   >
-                    <a
+                    <Link
                       href={resolveHref(link.href)}
                       className={`relative px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all duration-300 flex items-center gap-1 ${isLightSection ? 'text-slate-600 hover:text-primary' : 'text-slate-400 hover:text-white'
                         }`}
@@ -144,7 +145,7 @@ export default function Navbar() {
                       )}
                       <span className={`absolute bottom-0 left-4 right-4 h-[1.5px] rounded-full transition-transform duration-300 origin-left ${isActive ? 'scale-x-100' : 'scale-x-0'
                         }`} style={{ background: accentGradient }} />
-                    </a>
+                    </Link>
 
                     {/* Desktop Mega Menu Dropdown - Centered Precisely to Link */}
                     {isServices && (
@@ -205,7 +206,7 @@ export default function Navbar() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                   {(serviceGroups[activeServiceGroupIndex]?.services ?? []).map((service) => (
-                                    <a
+                                    <Link
                                       key={service.title}
                                       href={resolveHref(service.href)}
                                       onClick={() => setIsServicesOpen(false)}
@@ -218,7 +219,7 @@ export default function Navbar() {
                                         <service.Icon size={16} />
                                       </div>
                                       <span className="text-[10px] font-bold uppercase tracking-wider">{service.title}</span>
-                                    </a>
+                                    </Link>
                                   ))}
                                 </div>
                               </div>
@@ -251,16 +252,16 @@ export default function Navbar() {
                                   Product Suite
                                 </div>
                               </div>
-                              <a
+                              <Link
                                 href="/#products"
                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:opacity-80"
                               >
                                 View All
-                              </a>
+                              </Link>
                             </div>
                             <div className="grid grid-cols-3 gap-3">
                               {products.map((product) => (
-                                <a
+                                <Link
                                   key={product.id}
                                   href={product.href}
                                   className={`group relative overflow-hidden rounded-xl border transition-all duration-300 ${isLightSection
@@ -297,7 +298,7 @@ export default function Navbar() {
                                       {product.price}
                                     </div>
                                   </div>
-                                </a>
+                                </Link>
                               ))}
                             </div>
                           </motion.div>
@@ -390,7 +391,7 @@ export default function Navbar() {
                             />
                           </div>
                         ) : (
-                          <a
+                          <Link
                             href={resolveHref(link.href)}
                             onClick={() => setMobileOpen(false)}
                             className={`flex items-center justify-between py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${isLightSection ? 'text-slate-600' : 'text-slate-400'
@@ -400,7 +401,7 @@ export default function Navbar() {
                               {activeDot}
                               {link.label}
                             </span>
-                          </a>
+                          </Link>
                         )}
 
                         {/* Mobile Services Sub-menu */}
@@ -443,7 +444,7 @@ export default function Navbar() {
                                         className="overflow-hidden flex flex-col gap-1 pl-3"
                                       >
                                         {group.services.map((service) => (
-                                          <a
+                                          <Link
                                             key={service.title}
                                             href={resolveHref(service.href)}
                                             onClick={() => {
@@ -459,7 +460,7 @@ export default function Navbar() {
                                               <service.Icon size={14} />
                                             </div>
                                             <span className="text-[9px] font-bold uppercase tracking-widest">{service.title}</span>
-                                          </a>
+                                          </Link>
                                         ))}
                                       </motion.div>
                                     )}
@@ -480,7 +481,7 @@ export default function Navbar() {
                               className="overflow-hidden flex flex-col gap-2 pl-4"
                             >
                               {products.map((product) => (
-                                <a
+                                <Link
                                   key={product.id}
                                   href={product.href}
                                   onClick={() => setMobileOpen(false)}
@@ -503,7 +504,7 @@ export default function Navbar() {
                                   <span className="text-[9px] font-semibold uppercase tracking-widest text-primary">
                                     {product.price}
                                   </span>
-                                </a>
+                                </Link>
                               ))}
                             </motion.div>
                           )}
