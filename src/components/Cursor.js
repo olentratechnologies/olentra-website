@@ -51,8 +51,7 @@ export default function Cursor() {
     };
 
     const onPointerClick = (e) => {
-      // Prevent interference with other click handlers
-      e.stopPropagation();
+      // Don't stop propagation - let normal clicks work
 
       const clickX = e.clientX;
       const clickY = e.clientY;
