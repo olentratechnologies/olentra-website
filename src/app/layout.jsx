@@ -2,6 +2,7 @@ import "./globals.css";
 import { Manrope, Inter } from "next/font/google";
 import Script from "next/script";
 import Providers from "./providers";
+import Cursor from "../components/Cursor";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -40,6 +41,7 @@ export default function RootLayout({ children }) {
         </Script>
 
         <Providers>{children}</Providers>
+        <Cursor />
       </body>
     </html>
   );
