@@ -12,6 +12,7 @@ export default function Cursor() {
   const lastMoveTime = useRef(Date.now());
   const idleFactor = useRef(0);
   const particlesRef = useRef([]);
+  const isMobileRef = useRef(false);
 
   // Google brand colors
   const googleColors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853'];
@@ -22,8 +23,13 @@ export default function Cursor() {
 
     if (!cursor || trails.length === 0) return;
 
-    // Hide default cursor
-    document.body.style.cursor = 'none';
+    // Detect mobile device (breakpoint 1024px)
+    isMobileRef.current = window.innerWidth < 1024;
+
+    // Hide default cursor only on desktop
+    if (!isMobileRef.current) {
+      document.body.style.cursor = 'none';
+    }
 
     // Initialize positions array
     positions.current = Array(8).fill(null).map(() => ({ x: 0, y: 0 }));
@@ -200,24 +206,27 @@ export default function Cursor() {
       const finalCursorColor = interpolateColor(cursorFlowingColor, idleColor, idleFactor.current);
 
       // NATIVE SPEED: Use gsap.set for position to avoid sub-frame interpolation lag
-      gsap.set(cursor, {
-        x: positions.current[0].x,
-        y: positions.current[0].y,
-        rotation: Math.atan2(
-          positions.current[1].y - positions.current[0].y,
-          positions.current[1].x - positions.current[0].x
-        ) * (180 / Math.PI),
-        backgroundColor: finalCursorColor
-      });
+      // ONLY UPDATE ON DESKTOP
+      if (!isMobileRef.current) {
+        gsap.set(cursor, {
+          x: positions.current[0].x,
+          y: positions.current[0].y,
+          rotation: Math.atan2(
+            positions.current[1].y - positions.current[0].y,
+            positions.current[1].x - positions.current[0].x
+          ) * (180 / Math.PI),
+          backgroundColor: finalCursorColor
+        });
 
-      // Handle scale separately if needed, but keeping it simple for now
-      gsap.to(cursor, {
-        scaleX: 1 + (Math.sin(Date.now() * 0.003) * 0.15 * (1 - idleFactor.current)),
-        scaleY: 1 + (Math.cos(Date.now() * 0.003 + 1) * 0.15 * (1 - idleFactor.current)),
-        duration: 0.2, // Subtle breathing doesn't need to be instant
-        ease: 'power1.inOut',
-        overwrite: 'auto'
-      });
+        // Handle scale separately if needed, but keeping it simple for now
+        gsap.to(cursor, {
+          scaleX: 1 + (Math.sin(Date.now() * 0.003) * 0.15 * (1 - idleFactor.current)),
+          scaleY: 1 + (Math.cos(Date.now() * 0.003 + 1) * 0.15 * (1 - idleFactor.current)),
+          duration: 0.2, // Subtle breathing doesn't need to be instant
+          ease: 'power1.inOut',
+          overwrite: 'auto'
+        });
+      }
 
       // 3. Animate Trail Segments
       trails.forEach((trail, index) => {
@@ -239,17 +248,20 @@ export default function Cursor() {
           // Interpolate towards solid Blue when idle
           const finalTrailColor = interpolateColor(flowingColor, idleColor, idleFactor.current);
 
-          gsap.to(trail, {
-            x: pos.x,
-            y: pos.y,
-            scale: Math.max(0.1, morphScale),
-            rotation: morphRotation,
-            opacity: Math.max(0.1, 1 - (index * 0.15) + (Math.sin(time + index * 0.5) * 0.1 * noiseDampening)),
-            backgroundColor: finalTrailColor,
-            duration: 0.016, // ~60fps
-            ease: 'none',
-            overwrite: false // Don't overwrite click animations
-          });
+          // ONLY UPDATE POSITION ON DESKTOP
+          if (!isMobileRef.current) {
+            gsap.to(trail, {
+              x: pos.x,
+              y: pos.y,
+              scale: Math.max(0.1, morphScale),
+              rotation: morphRotation,
+              opacity: Math.max(0.1, 1 - (index * 0.15) + (Math.sin(time + index * 0.5) * 0.1 * noiseDampening)),
+              backgroundColor: finalTrailColor,
+              duration: 0.016, // ~60fps
+              ease: 'none',
+              overwrite: false // Don't overwrite click animations
+            });
+          }
         }
       });
 
