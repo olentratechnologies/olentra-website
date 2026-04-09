@@ -9,7 +9,7 @@ import Image from "next/image";
  * Loader - A premium, "Synthetic Editorial" pre-loader.
  * Features the Olentra logo and organic "venom-like" orbital trails.
  */
-export default function Loader() {
+export default function Loader({ isInitialLoad = true }) {
     const [isLoading, setIsLoading] = useState(true);
     const containerRef = useRef(null);
     const orbitalRefs = useRef([]);
@@ -70,6 +70,12 @@ export default function Loader() {
             setIsLoading(false);
         };
 
+        // If this is a route loader (loading.jsx), it stays visible until unmounted by Next.js
+        if (!isInitialLoad) {
+            setIsLoading(true);
+            return;
+        }
+
         if (document.readyState === "complete") {
             // Short delay to allow hydration before hiding
             const timer = setTimeout(finishLoading, 100);
@@ -98,7 +104,7 @@ export default function Loader() {
                         scale: 1.2,
                         transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
                     }}
-                    className="fixed inset-0 z-[1000] flex items-center justify-center bg-[#020617] overflow-hidden"
+                    className={`fixed inset-0 ${isInitialLoad ? 'z-[1000]' : 'z-[50]'} flex items-center justify-center bg-[#020617] overflow-hidden`}
                 >
                     {/* Subtle noise background */}
                     <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.1] pointer-events-none" />

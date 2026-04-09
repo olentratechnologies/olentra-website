@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 
 export default function Cursor() {
@@ -13,6 +13,7 @@ export default function Cursor() {
   const idleFactor = useRef(0);
   const particlesRef = useRef([]);
   const isMobileRef = useRef(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Google brand colors
   const googleColors = ['#4285F4', '#EA4335', '#FBBC05', '#34A853'];
@@ -24,7 +25,9 @@ export default function Cursor() {
     if (!cursor || trails.length === 0) return;
 
     // Detect mobile device (breakpoint 1024px)
-    isMobileRef.current = window.innerWidth < 1024;
+    const mobileCheck = window.innerWidth < 1024;
+    isMobileRef.current = mobileCheck;
+    setIsMobile(mobileCheck);
 
     // Hide default cursor only on desktop
     if (!isMobileRef.current) {
@@ -116,33 +119,37 @@ export default function Cursor() {
         particles.push(particle);
       }
 
-      // Also trigger subtle cursor color change
-      const cursorColor = googleColors[Math.floor(Math.random() * googleColors.length)];
-      setTimeout(() => {
-        gsap.to(cursor, {
-          backgroundColor: cursorColor,
-          duration: 0.2,
-          ease: 'power2.out',
-          yoyo: true,
-          repeat: 1,
-          overwrite: 'auto'
-        });
-      }, 16);
-
-      // Remove trail blast - just subtle color ripple
-      trails.forEach((trail, index) => {
-        const rippleColor = googleColors[Math.floor(Math.random() * googleColors.length)];
+      // Subtle cursor color ripple on click
+      if (cursor && !isMobileRef.current) {
+        const cursorColor = googleColors[Math.floor(Math.random() * googleColors.length)];
         setTimeout(() => {
-          gsap.to(trail, {
-            backgroundColor: rippleColor,
-            duration: 0.15,
+          gsap.to(cursor, {
+            backgroundColor: cursorColor,
+            duration: 0.2,
             ease: 'power2.out',
             yoyo: true,
             repeat: 1,
             overwrite: 'auto'
           });
-        }, 16 + index * 20);
-      });
+        }, 16);
+      }
+
+      // Subtle trail ripple on click
+      if (trails.length > 0 && !isMobileRef.current) {
+        trails.forEach((trail, index) => {
+          const rippleColor = googleColors[Math.floor(Math.random() * googleColors.length)];
+          setTimeout(() => {
+            gsap.to(trail, {
+              backgroundColor: rippleColor,
+              duration: 0.15,
+              ease: 'power2.out',
+              yoyo: true,
+              repeat: 1,
+              overwrite: 'auto'
+            });
+          }, 16 + index * 20);
+        });
+      }
     };
 
     // Venom-like flowing animation
@@ -367,6 +374,8 @@ export default function Cursor() {
       document.body.style.cursor = 'auto';
     };
   }, []);
+
+  if (isMobile) return null;
 
   return (
     <>

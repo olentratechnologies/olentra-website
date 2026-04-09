@@ -96,7 +96,7 @@ export default function RootLayout({ children }) {
         </Script>
 
         <Providers>{children}</Providers>
-        <Loader />
+        <Loader isInitialLoad={true} />
         <CookieConsentBanner />
         <Cursor />
       </body>
