@@ -18,7 +18,9 @@ import {
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import JsonLd from "@/components/JsonLd";
 import { olenbot } from "@/data/olenbot";
+import { breadcrumbSchema, productSchema } from "@/lib/seo";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -48,9 +50,24 @@ export default function OlenbotPage() {
 
   return (
     <main className="relative bg-[#020617] text-white font-sans selection:bg-primary/30 selection:text-white">
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Products", path: "/products" },
+          { name: "Olenbot", path: "/products/olenbot" },
+        ])}
+      />
+      <JsonLd
+        data={productSchema({
+          name: "Olenbot",
+          description: hero.subheading,
+          path: "/products/olenbot",
+          image: hero.heroImage,
+        })}
+      />
       <Navbar />
 
-      <section className="relative min-h-[90vh] mt-16 sm:mt-20 overflow-hidden bg-[#020617] flex items-center">
+      <section className="relative min-h-[90vh] mt-10 sm:mt-12 overflow-hidden bg-[#020617] flex items-center">
         <div className="absolute inset-0 z-0">
           <Image
             src="/images/backgrounds/cyber-bg.png"
@@ -63,7 +80,7 @@ export default function OlenbotPage() {
           <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.05] pointer-events-none" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 w-full pt-12 sm:pt-16 pb-20">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 w-full pt-8 sm:pt-10 pb-20">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.9fr] gap-12 lg:gap-20 items-center">
             <div className="order-1 space-y-10 lg:pr-4 text-left">
               <motion.div
@@ -482,7 +499,7 @@ export default function OlenbotPage() {
               </p>
               <div className="pt-6">
                 <a
-                  href="/#contact"
+                  href="/contact"
                   className="inline-flex items-center gap-3 px-10 py-4 text-[13px] font-black uppercase tracking-[0.3em] bg-white text-primary transition-all hover:scale-105 active:scale-95"
                   style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)" }}
                 >

@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowUpRight, Mail, Phone, MapPin, MessageSquare, Linkedin, Twitter, Instagram, MessageCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, MessageSquare, Linkedin, Twitter, Instagram, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
-import { serviceGroups } from '../data/services';
+import { servicePages } from '../data/service_pages';
 import { footerLinks } from '../data/navigation';
 import { contactInfo } from '../data/contact';
 
@@ -16,13 +17,6 @@ const socialIcons = {
 };
 
 export default function Footer() {
-  const slugify = (value) =>
-    value
-      .toLowerCase()
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-
   return (
     <footer data-testid="footer" className="bg-[#020617] text-white border-t border-white/5 relative overflow-hidden transition-colors duration-500">
       <div className="absolute inset-0 bg-cyber-grid bg-[length:30px_30px] opacity-[0.05] dark:opacity-10 pointer-events-none" />
@@ -54,15 +48,15 @@ export default function Footer() {
           <div className="space-y-4">
             <h4 className="text-[10px] text-primary font-bold tracking-[0.3em] uppercase">Services</h4>
             <div className="flex flex-col gap-2">
-              {serviceGroups.map((group) => (
-                <a
-                  key={group.category}
-                  href={`#services-${slugify(group.category)}`}
+              {servicePages.map((service) => (
+                <Link
+                  key={service.slug}
+                  href={`/services/${service.slug}`}
                   className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider flex items-center gap-2 group"
                 >
                   <span className="w-0 group-hover:w-2 h-px bg-primary transition-all duration-300" />
-                  {group.category}
-                </a>
+                  {service.name}
+                </Link>
               ))}
             </div>
           </div>
@@ -72,14 +66,14 @@ export default function Footer() {
             <h4 className="text-[10px] text-primary font-bold tracking-[0.3em] uppercase">Quick Links</h4>
             <div className="flex flex-col gap-2">
               {quickLinks.map((link) => (
-                <a
+                <Link
                   key={link.id}
                   href={link.href}
                   className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider flex items-center gap-2 group"
                 >
                   <span className="w-0 group-hover:w-2 h-px bg-primary transition-all duration-300" />
                   {link.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -154,14 +148,20 @@ export default function Footer() {
           <div className="pt-4 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-semibold text-muted-foreground/60 tracking-[0.22em] uppercase">
             <p>© 2026 Olentra Ltd. All rights reserved.</p>
             <div className="flex flex-wrap items-center gap-4">
-              {['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Security', 'Accessibility'].map((label) => (
-                <a
-                  key={label}
-                  href="#"
+              {[
+                { label: 'Privacy Policy', href: '/privacy-policy' },
+                { label: 'Terms of Service', href: '/terms-of-service' },
+                { label: 'Cookie Policy', href: '/cookie-policy' },
+                { label: 'Security', href: '/security' },
+                { label: 'Accessibility', href: '/accessibility' },
+              ].map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
                   className="text-muted-foreground/60 hover:text-white transition-colors"
                 >
-                  {label}
-                </a>
+                  {item.label}
+                </Link>
               ))}
             </div>
           </div>

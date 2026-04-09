@@ -32,24 +32,24 @@ export default function ContactForm() {
     setError('');
 
     try {
-      const subject = encodeURIComponent(`New project inquiry from ${formData.name}`);
-      const body = encodeURIComponent(
-        [
-          `Name: ${formData.name}`,
-          `Email: ${formData.email}`,
-          `Phone: ${formData.phone}`,
-          `Company: ${formData.company || 'Not provided'}`,
-          '',
-          'Message:',
-          formData.message,
-        ].join('\n')
-      );
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-      window.location.href = `${contactInfo.emailFull}?subject=${subject}&body=${body}`;
+      const result = await response.json();
+      if (!response.ok) {
+        setError(result.error || 'Unable to submit your request right now. Please try again.');
+        return;
+      }
+
       setIsSubmitted(true);
       setFormData({ name: '', email: '', phone: '', company: '', message: '' });
     } catch (err) {
-      setError('Unable to open your email app. Please email us directly at [EMAIL_ADDRESS]');
+      setError(`Unable to submit right now. Please email us directly at ${contactInfo.email}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,29 +66,29 @@ export default function ContactForm() {
           {isSubmitted ? (
             <div
               data-testid="contact-success"
-              className="rounded-sm border border-primary/30 bg-background/80 p-8 md:p-10 text-center relative overflow-hidden"
+              className="rounded-sm border border-slate-200 bg-white p-8 md:p-10 text-center relative overflow-hidden shadow-[0_12px_40px_rgba(15,23,42,0.08)]"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-brand-cyan-glow" />
-              <div className="w-12 h-12 rounded-sm bg-primary/10 border border-primary/50 flex items-center justify-center mx-auto mb-4 shadow-brand-cyan-glow">
+              <div className="w-12 h-12 rounded-sm bg-primary/10 border border-primary/40 flex items-center justify-center mx-auto mb-4 shadow-brand-cyan-glow">
                 <CheckCircle className="w-6 h-6 text-primary" />
               </div>
               <h3
-                className="text-2xl md:text-3xl font-black text-foreground uppercase tracking-widest mb-2 text-shadow-glow"
+                className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-widest mb-2"
                 style={{ fontFamily: '"Manrope", sans-serif' }}
               >
-                Transmission Sent
+                Request Received
               </h3>
-              <p className="text-primary mb-6 text-sm md:text-base tracking-widest font-medium" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                Signal established. Awaiting response.
+              <p className="text-slate-600 mb-6 text-sm md:text-base tracking-wide font-medium" style={{ fontFamily: '"Manrope", sans-serif' }}>
+                Thank you. Our team will review your inquiry and respond shortly.
               </p>
               <button
                 data-testid="send-another-message"
                 onClick={() => setIsSubmitted(false)}
-                className="group relative inline-flex items-center gap-2.5 px-6 py-2.5 text-[11px] font-bold text-primary-foreground bg-primary uppercase tracking-widest overflow-hidden transition-all"
+                className="group relative inline-flex items-center gap-2.5 px-6 py-2.5 text-[11px] font-bold text-white bg-primary uppercase tracking-widest overflow-hidden transition-all hover:bg-blue-700"
                 style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}
               >
                 <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <span className="relative">INITIATE NEW PING</span>
+                <span className="relative">SEND ANOTHER MESSAGE</span>
               </button>
             </div>
           ) : (
@@ -185,7 +185,7 @@ export default function ContactForm() {
                         value={formData.email}
                         onChange={handleChange}
                         placeholder="name@domain.com"
-                        className="w-full rounded-sm border border-border bg-background/50 dark:bg-muted/20 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/30 font-medium uppercase tracking-wider focus:outline-none focus:border-primary focus:bg-primary/5 transition-all shadow-sm dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
+                        className="w-full rounded-sm border border-border bg-background/50 dark:bg-muted/20 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/30 font-medium tracking-wide focus:outline-none focus:border-primary focus:bg-primary/5 transition-all shadow-sm dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
                         style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.8rem,0.8vw,0.92rem)' }}
                       />
                     </div>

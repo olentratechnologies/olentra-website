@@ -4,6 +4,8 @@ export const products = [
     {
         id: 'studio',
         title: 'Olentra AI Studio',
+        seoTitle: 'Olentra AI Studio',
+        metaDescription: 'Olentra AI Studio is a full-stack enterprise AI product studio for building and launching production-ready applications.',
         description: 'A full-stack AI product studio for turning prompts into production apps with multi-agent orchestration, secure auth, and scalable deployment pipelines.',
         icon: Sparkles,
         href: '/products/olentra-ai-studio',
@@ -15,6 +17,8 @@ export const products = [
     {
         id: 'olenbot',
         title: 'Olenbot',
+        seoTitle: 'Olenbot',
+        metaDescription: 'Olenbot is an AI-powered outbound calling and lead intelligence platform for scalable conversion operations.',
         description: 'AI-powered outbound calling and lead intelligence platform that scrapes, queues, calls, and analyzes conversations to qualify leads at scale.',
         icon: Bot,
         href: '/products/olenbot',
@@ -26,9 +30,11 @@ export const products = [
     {
         id: 'sentinel',
         title: 'SentinelGuard Security Bot',
+        seoTitle: 'SentinelGuard Security Bot',
+        metaDescription: 'SentinelGuard Security Bot is an upcoming AI security automation product for anomaly and threat monitoring.',
         description: 'AI security automation that monitors infrastructure for anomalies, vulnerabilities, and real-time threats with guided remediation workflows.',
         icon: Shield,
-        href: '#products',
+        href: '/products',
         features: ['Threat Detection', 'Zero-Day Vulnerability Scanning', 'Auto-Remediation'],
         status: 'Beta',
         price: 'Contact Sales',

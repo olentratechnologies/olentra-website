@@ -3,6 +3,10 @@ import { Manrope, Inter } from "next/font/google";
 import Script from "next/script";
 import Providers from "./providers";
 import Cursor from "../components/Cursor";
+import Loader from "../components/Loader";
+import CookieConsentBanner from "../components/CookieConsentBanner";
+import { companyInfo } from "@/data/company";
+import { siteConfig } from "@/lib/site";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -17,8 +21,59 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Olentra Technologies | Agency",
-  description: "A product of emergent.sh",
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: siteConfig.defaultTitle,
+    template: siteConfig.titleTemplate,
+  },
+  description: siteConfig.description,
+  applicationName: companyInfo.name,
+  keywords: [
+    "enterprise software engineering",
+    "AI product development",
+    "platform engineering",
+    "cloud architecture",
+    "digital product agency",
+    "enterprise web development",
+  ],
+  authors: [{ name: companyInfo.name }],
+  creator: companyInfo.name,
+  publisher: companyInfo.name,
+  category: "technology",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: siteConfig.defaultTitle,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    siteName: companyInfo.name,
+    locale: siteConfig.locale,
+    type: "website",
+    images: [
+      {
+        url: siteConfig.ogImage,
+        width: 1200,
+        height: 630,
+        alt: companyInfo.name,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.defaultTitle,
+    description: siteConfig.description,
+    images: [siteConfig.ogImage],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+    shortcut: "/icon.png",
+  },
 };
 
 export const viewport = {
@@ -37,10 +92,12 @@ export default function RootLayout({ children }) {
         </Script>
 
         <Script id="posthog" strategy="lazyOnload">
-          {`!(function(t,e){var o,n,p,r;e.__SV||((window.posthog=e),(e._i=[]),(e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&((t=t[o[0]]),(e=o[1])),(t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))});}((p=t.createElement("script")).type="text/javascript"),(p.crossOrigin="anonymous"),(p.async=!0),(p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js"),(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?(u=e[a]=[]):(a="posthog"),u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init me ws ys ps bs capture je Di ks register register_once register_for_session unregister unregister_for_session Ps getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Es $s createPersonProfile Is opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing Ss debug xs getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])}),(e.__SV=1))})(document,window.posthog||[]);posthog.init("phc_xAvL2Iq4tFmANRE7kzbKwaSqp1HJjN7x48s3vr0CMjs",{api_host:"https://us.i.posthog.com",person_profiles:"identified_only",session_recording:{recordCrossOriginIframes:!0,capturePerformance:!1}});`}
+          {`(function(){var CONSENT_KEY="olentra_cookie_consent_v1";var started=false;function boot(){if(started)return;started=true;!(function(t,e){var o,n,p,r;e.__SV||((window.posthog=e),(e._i=[]),(e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&((t=t[o[0]]),(e=o[1])),(t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))});}((p=t.createElement("script")).type="text/javascript"),(p.crossOrigin="anonymous"),(p.async=!0),(p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js"),(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?(u=e[a]=[]):(a="posthog"),u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init me ws ys ps bs capture je Di ks register register_once register_for_session unregister unregister_for_session Ps getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Es $s createPersonProfile Is opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing Ss debug xs getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])}),(e.__SV=1))})(document,window.posthog||[]);posthog.init("phc_xAvL2Iq4tFmANRE7kzbKwaSqp1HJjN7x48s3vr0CMjs",{api_host:"https://us.i.posthog.com",person_profiles:"identified_only",session_recording:{recordCrossOriginIframes:!0,capturePerformance:!1}});}function hasConsent(){try{var raw=window.localStorage.getItem(CONSENT_KEY);if(!raw)return false;var parsed=JSON.parse(raw);return Boolean(parsed&&parsed.analytics);}catch(_){return false;}}if(hasConsent())boot();window.addEventListener("olentra-consent-changed",function(event){if(event&&event.detail&&event.detail.analytics){boot();}});window.__olentraInitPosthog=boot;})();`}
         </Script>
 
         <Providers>{children}</Providers>
+        <Loader />
+        <CookieConsentBanner />
         <Cursor />
       </body>
     </html>

@@ -109,7 +109,13 @@ function TimelineCard({ service, isRightColumn }) {
   );
 }
 
-export default function ServicesTimeline() {
+export default function ServicesTimeline({
+  sectionId = "services",
+  maxGroups,
+  maxServicesPerGroup,
+  ctaHref = "#contact",
+  ctaLabel = "Initiate Request",
+}) {
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -122,9 +128,16 @@ export default function ServicesTimeline() {
     restDelta: 0.001
   });
 
+  const visibleGroups = serviceGroups
+    .slice(0, maxGroups ?? serviceGroups.length)
+    .map((group) => ({
+      ...group,
+      services: group.services.slice(0, maxServicesPerGroup ?? group.services.length),
+    }));
+
   return (
     <section
-      id="services"
+      id={sectionId}
       className="bg-[#020617] py-16 md:py-24 relative overflow-hidden transition-colors duration-500"
     >
       {/* Background Decor */}
@@ -175,7 +188,7 @@ export default function ServicesTimeline() {
               className="absolute left-6 md:left-1/2 top-0 bottom-0 w-[1.5px] bg-gradient-to-b from-primary via-blue-400 to-transparent md:-translate-x-1/2 z-10 shadow-[0_0_12px_rgba(37,99,235,0.4)]"
             />
 
-            {serviceGroups.map((group, groupIndex) => (
+            {visibleGroups.map((group) => (
               <div key={group.category} id={`services-${slugify(group.category)}`} className="mb-20 last:mb-0 scroll-mt-28">
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -209,13 +222,13 @@ export default function ServicesTimeline() {
 
         <div className="mt-16 text-center">
           <a
-            href="#contact"
+            href={ctaHref}
             className="group relative inline-flex w-full sm:w-auto justify-center items-center gap-3 px-7 sm:px-8 py-3.5 sm:py-4 text-[12px] sm:text-[13px] font-bold text-white bg-primary uppercase tracking-[0.12em] sm:tracking-[0.2em] transition-all hover:bg-blue-700 shadow-[0_0_25px_rgba(37,99,235,0.35)]"
             style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)' }}
           >
             <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             <span className="relative flex items-center gap-2">
-              Initiate Request
+              {ctaLabel}
               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             </span>
           </a>

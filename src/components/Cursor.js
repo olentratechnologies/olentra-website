@@ -9,6 +9,8 @@ export default function Cursor() {
   const positions = useRef([]);
   const mouseRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef(null);
+  const lastMoveTime = useRef(Date.now());
+  const idleFactor = useRef(0);
   const particlesRef = useRef([]);
 
   // Google brand colors
@@ -28,6 +30,7 @@ export default function Cursor() {
 
     const onMouseMove = (e) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
+      lastMoveTime.current = Date.now();
     };
 
     const getTouchPos = (touchEvent) => {
@@ -43,7 +46,10 @@ export default function Cursor() {
 
     const onTouchMove = (e) => {
       const pos = getTouchPos(e);
-      if (pos) mouseRef.current = pos;
+      if (pos) {
+        mouseRef.current = pos;
+        lastMoveTime.current = Date.now();
+      }
     };
 
     const onTouchEnd = () => {
@@ -135,10 +141,20 @@ export default function Cursor() {
 
     // Venom-like flowing animation
     const animateVenom = () => {
-      // Smoothly approach pointer movement (native smooth, not ultra soft)
-      const baseSmoothness = 0.26;
-      positions.current[0].x += (mouseRef.current.x - positions.current[0].x) * baseSmoothness;
-      positions.current[0].y += (mouseRef.current.y - positions.current[0].y) * baseSmoothness;
+      // Animate trail segments with organic morphing and Google colors
+      const isIdle = Date.now() - lastMoveTime.current > 500;
+
+      // Smoothly transition idleFactor (0 = moving, 1 = fully idle)
+      if (isIdle) {
+        idleFactor.current = Math.min(1, idleFactor.current + 0.05);
+      } else {
+        idleFactor.current = Math.max(0, idleFactor.current - 0.15);
+      }
+
+      // 1. Update positions for segments
+      // NATIVE SPEED: Head position (0) now maps directly to mouse without lerp for instant response
+      positions.current[0].x = mouseRef.current.x;
+      positions.current[0].y = mouseRef.current.y;
 
       for (let i = 1; i < positions.current.length; i++) {
         const prev = positions.current[i - 1];
@@ -146,16 +162,18 @@ export default function Cursor() {
         const dx = prev.x - current.x;
         const dy = prev.y - current.y;
 
-        // Add organic movement with moderate sine waves
+        // Dampen noise when idle
         const time = Date.now() * 0.0017;
-        const wave1 = Math.sin(time + i * 0.8) * (1.2 - i * 0.15);
-        const wave2 = Math.cos(time * 1.05 + i * 0.5) * (1.0 - i * 0.1);
+        const noiseDampening = 1 - idleFactor.current;
+        const wave1 = Math.sin(time + i * 0.8) * (1.2 - i * 0.15) * noiseDampening;
+        const wave2 = Math.cos(time * 1.05 + i * 0.5) * (1.0 - i * 0.1) * noiseDampening;
 
+        // Trail segments still use smoothing (0.22) for organic flow
         current.x += dx * 0.22 + wave1;
         current.y += dy * 0.22 + wave2;
       }
 
-      // Animate cursor elements with morphing effects and Google colors
+      // 2. Animate Cursor Head
       const cursorTime = Date.now() * 0.001;
       const cursorColorIndex = Math.floor(cursorTime * 1.2 % googleColors.length);
       const cursorNextColorIndex = (cursorColorIndex + 1) % googleColors.length;
@@ -177,59 +195,57 @@ export default function Cursor() {
         cursorEasedProgress
       );
 
-      // Use gsap.to() with very short duration instead of gsap.set() to avoid conflicts
-      gsap.to(cursor, {
+      // Interpolate towards solid Blue (#4285F4) when idle
+      const idleColor = googleColors[0];
+      const finalCursorColor = interpolateColor(cursorFlowingColor, idleColor, idleFactor.current);
+
+      // NATIVE SPEED: Use gsap.set for position to avoid sub-frame interpolation lag
+      gsap.set(cursor, {
         x: positions.current[0].x,
         y: positions.current[0].y,
         rotation: Math.atan2(
           positions.current[1].y - positions.current[0].y,
           positions.current[1].x - positions.current[0].x
         ) * (180 / Math.PI),
-        scaleX: 1 + Math.sin(Date.now() * 0.003) * 0.15,
-        scaleY: 1 + Math.cos(Date.now() * 0.003 + 1) * 0.15,
-        backgroundColor: cursorFlowingColor,
-        duration: 0.016, // ~60fps
-        ease: 'none',
-        overwrite: false // Don't overwrite click animations
+        backgroundColor: finalCursorColor
       });
 
-      // Animate trail segments with organic morphing and Google colors
+      // Handle scale separately if needed, but keeping it simple for now
+      gsap.to(cursor, {
+        scaleX: 1 + (Math.sin(Date.now() * 0.003) * 0.15 * (1 - idleFactor.current)),
+        scaleY: 1 + (Math.cos(Date.now() * 0.003 + 1) * 0.15 * (1 - idleFactor.current)),
+        duration: 0.2, // Subtle breathing doesn't need to be instant
+        ease: 'power1.inOut',
+        overwrite: 'auto'
+      });
+
+      // 3. Animate Trail Segments
       trails.forEach((trail, index) => {
         const pos = positions.current[index + 1];
         if (pos) {
           const time = Date.now() * 0.001;
-          const morphScale = 1 - (index * 0.12) + Math.sin(time + index) * 0.2;
-          const morphRotation = Math.sin(time * 0.5 + index * 0.3) * 20;
+          const noiseDampening = 1 - idleFactor.current;
 
-          // Enhanced color flowing effect with smoother transitions
+          const morphScale = 1 - (index * 0.12) + (Math.sin(time + index) * 0.2 * noiseDampening);
+          const morphRotation = Math.sin(time * 0.5 + index * 0.3) * 20 * noiseDampening;
+
           const colorIndex = Math.floor((time * 1.2 + index * 0.6) % googleColors.length);
           const nextColorIndex = (colorIndex + 1) % googleColors.length;
           const colorProgress = ((time * 1.2 + index * 0.6) % 1);
 
-          // Create smooth color interpolation with easing
-          const currentColor = googleColors[colorIndex];
-          const nextColor = googleColors[nextColorIndex];
-
-          // Enhanced color interpolation with smooth easing
-          const easeInOut = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
           const easedProgress = easeInOut(colorProgress);
+          const flowingColor = interpolateColor(googleColors[colorIndex], googleColors[nextColorIndex], easedProgress);
 
-          const interpolateColor = (color1, color2, factor) => {
-            const c1 = color1.match(/\w\w/g).map(x => parseInt(x, 16));
-            const c2 = color2.match(/\w\w/g).map(x => parseInt(x, 16));
-            const result = c1.map((c, i) => Math.round(c + (c2[i] - c) * factor));
-            return `#${result.map(x => x.toString(16).padStart(2, '0')).join('')}`;
-          };
-
-          const flowingColor = interpolateColor(currentColor, nextColor, easedProgress);
+          // Interpolate towards solid Blue when idle
+          const finalTrailColor = interpolateColor(flowingColor, idleColor, idleFactor.current);
 
           gsap.to(trail, {
             x: pos.x,
             y: pos.y,
             scale: Math.max(0.1, morphScale),
             rotation: morphRotation,
-            opacity: Math.max(0.1, 1 - (index * 0.15) + Math.sin(time + index * 0.5) * 0.1),
-            backgroundColor: flowingColor,
+            opacity: Math.max(0.1, 1 - (index * 0.15) + (Math.sin(time + index * 0.5) * 0.1 * noiseDampening)),
+            backgroundColor: finalTrailColor,
             duration: 0.016, // ~60fps
             ease: 'none',
             overwrite: false // Don't overwrite click animations

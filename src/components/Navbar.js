@@ -5,12 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { serviceGroups } from '../data/services';
 import { navLinks } from '../data/navigation';
 import { products } from '../data/products_data';
 import { contactInfo } from '../data/contact';
+import { servicePages } from '../data/service_pages';
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
@@ -22,6 +25,25 @@ export default function Navbar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeServiceGroupIndex, setActiveServiceGroupIndex] = useState(0);
   const [mobileActiveServiceGroupIndex, setMobileActiveServiceGroupIndex] = useState(0);
+
+  const getGroupRoute = useCallback((groupCategory, serviceTitle) => {
+    const group = servicePages.find((page) => page.name === groupCategory);
+    if (!group) return "/services";
+    const slug = serviceTitle
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    return `/services/${group.slug}#${slug}`;
+  }, []);
+
+  useEffect(() => {
+    const index = navLinks.findIndex((link) => {
+      if (link.href === "/") return pathname === "/";
+      return pathname?.startsWith(link.href);
+    });
+    setActiveIndex(index === -1 ? 0 : index);
+  }, [pathname]);
 
   // Memoized scroll logic
   const handleScroll = useCallback(() => {
@@ -41,12 +63,6 @@ export default function Navbar() {
     const observerCallback = (entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          const id = entry.target.getAttribute('id');
-          const index = navLinks.findIndex(link => link.href.split('#')[1] === (id || ''));
-
-          if (index !== -1) setActiveIndex(index);
-          else if (!id) setActiveIndex(0);
-
           const isLight =
             entry.target.classList.contains('bg-white') ||
             entry.target.classList.contains('bg-slate-50') ||
@@ -70,8 +86,7 @@ export default function Navbar() {
   const primaryLinks = navLinks;
   const accentGradient = 'linear-gradient(135deg, #2563eb, #4f46e5)';
   const resolveHref = useCallback((href) => {
-    if (!href) return href;
-    return href.startsWith('#') ? `/${href}` : href;
+    return href || "/";
   }, []);
 
   return (
@@ -158,7 +173,7 @@ export default function Navbar() {
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             onMouseEnter={() => setIsServicesOpen(true)}
                             onMouseLeave={() => setIsServicesOpen(false)}
-                            className={`absolute top-full left-1/2 w-[640px] p-4 rounded-2xl border shadow-2xl backdrop-blur-3xl z-[110] mt-1 ${isLightSection
+                            className={`absolute top-full left-1/2 w-[640px] p-4 rounded-2xl border shadow-2xl backdrop-blur-3xl z-[110] mt-1 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${isLightSection
                               ? 'bg-white/95 border-slate-200 text-slate-900'
                               : 'bg-slate-950/95 border-white/10 text-white'
                               }`}
@@ -208,7 +223,10 @@ export default function Navbar() {
                                   {(serviceGroups[activeServiceGroupIndex]?.services ?? []).map((service) => (
                                     <Link
                                       key={service.title}
-                                      href={resolveHref(service.href)}
+                                      href={getGroupRoute(
+                                        serviceGroups[activeServiceGroupIndex]?.category,
+                                        service.title
+                                      )}
                                       onClick={() => setIsServicesOpen(false)}
                                       className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group/item ${isLightSection
                                         ? 'hover:bg-slate-50'
@@ -240,7 +258,7 @@ export default function Navbar() {
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             onMouseEnter={() => setIsProductsOpen(true)}
                             onMouseLeave={() => setIsProductsOpen(false)}
-                            className={`absolute top-full left-1/2 w-[560px] p-4 rounded-2xl border shadow-2xl backdrop-blur-3xl z-[110] mt-1 ${isLightSection
+                            className={`absolute top-full left-1/2 w-[560px] p-4 rounded-2xl border shadow-2xl backdrop-blur-3xl z-[110] mt-1 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${isLightSection
                               ? 'bg-white/95 border-slate-200 text-slate-900'
                               : 'bg-slate-950/95 border-white/10 text-white'
                               }`}
@@ -253,7 +271,7 @@ export default function Navbar() {
                                 </div>
                               </div>
                               <Link
-                                href="/#products"
+                                href="/products"
                                 className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:opacity-80"
                               >
                                 View All
@@ -446,7 +464,7 @@ export default function Navbar() {
                                         {group.services.map((service) => (
                                           <Link
                                             key={service.title}
-                                            href={resolveHref(service.href)}
+                                            href={getGroupRoute(group.category, service.title)}
                                             onClick={() => {
                                               setMobileOpen(false);
                                               setMobileServicesOpen(false);
