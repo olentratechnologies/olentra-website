@@ -13,6 +13,7 @@ import LatestProjects from "@/components/LatestProjects";
 import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 import ScrollToTopProgress from "@/components/ScrollToTopProgress";
+import Loader from "@/components/Loader";
 
 function App() {
   useEffect(() => {
@@ -29,6 +30,7 @@ function App() {
       <style jsx global>{`
         #emergent-badge { display: none !important; pointer-events: none !important; visibility: hidden !important; }
       `}</style>
+      <Loader />
       <Navbar />
       <main>
         <div className="relative overflow-hidden">

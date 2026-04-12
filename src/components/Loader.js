@@ -1,156 +1,95 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { gsap } from "gsap";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
-/**
- * Loader - A premium, "Synthetic Editorial" pre-loader.
- * Features the Olentra logo and organic "venom-like" orbital trails.
- */
-export default function Loader({ isInitialLoad = true }) {
-    const [isLoading, setIsLoading] = useState(true);
-    const containerRef = useRef(null);
-    const orbitalRefs = useRef([]);
-    const logoRef = useRef(null);
+const LOGO_SRC = "/images/branding/Logo/Olentra-Logo-Without-Background.png";
+/** Keeps the splash visible briefly so it feels intentional, not a flicker. */
+const MIN_VISIBLE_MS = 550;
+const FADE_OUT_MS = 380;
 
-    // Google brand colors for the organic trails
-    const googleColors = ["#4285F4", "#EA4335", "#FBBC05", "#34A853"];
+export default function Loader() {
+  const [phase, setPhase] = useState("show");
 
-    useEffect(() => {
-        // 1. Initial orbital animations using GSAP
-        const orbitals = orbitalRefs.current;
-        if (!orbitals.length) return;
+  useEffect(() => {
+    let cancelled = false;
+    const t0 = performance.now();
 
-        // Create organic, slightly chaotic orbital movement for 12 segments
-        orbitals.forEach((orbital, i) => {
-            const radius = 60 + Math.random() * 40; // Spread radius
-            const duration = 1.5 + Math.random() * 1.5;
-            const delay = Math.random() * -duration;
-            const angleOffset = (i / orbitals.length) * Math.PI * 2;
+    const scheduleHide = () => {
+      if (cancelled) return;
+      const elapsed = performance.now() - t0;
+      const wait = Math.max(0, MIN_VISIBLE_MS - elapsed);
+      window.setTimeout(() => {
+        if (!cancelled) setPhase("hide");
+      }, wait);
+    };
 
-            // Pulse and orbit
-            gsap.to(orbital, {
-                duration,
-                repeat: -1,
-                ease: "sine.inOut",
-                delay,
-                onUpdate: function () {
-                    const time = Date.now() * 0.001 - delay;
-                    const x = Math.cos(time + angleOffset) * radius;
-                    const y = Math.sin(time + angleOffset) * radius;
-                    const noiseX = Math.sin(time * 2 + i) * 10; // Extra organic "jitter"
-                    const noiseY = Math.cos(time * 2 + i) * 10;
+    if (document.readyState === "complete") {
+      scheduleHide();
+    } else {
+      window.addEventListener("load", scheduleHide, { once: true });
+    }
 
-                    gsap.set(orbital, {
-                        x: x + noiseX,
-                        y: y + noiseY,
-                        scale: 1 + Math.sin(time * 3 + i) * 0.3,
-                        opacity: 0.6 + Math.sin(time * 2 + i) * 0.4,
-                        backgroundColor: googleColors[i % googleColors.length]
-                    });
-                }
-            });
-        });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-        // 2. Logo breathing/glow effect
-        if (logoRef.current) {
-            gsap.to(logoRef.current, {
-                scale: 1.05,
-                duration: 1,
-                repeat: -1,
-                yoyo: true,
-                ease: "power1.inOut"
-            });
-        }
+  useEffect(() => {
+    if (phase !== "hide") return undefined;
+    const t = window.setTimeout(() => setPhase("done"), FADE_OUT_MS);
+    return () => window.clearTimeout(t);
+  }, [phase]);
 
-        // 3. Handling window load
-        const finishLoading = () => {
-            setIsLoading(false);
-        };
+  if (phase === "done") return null;
 
-        // If this is a route loader (loading.jsx), it stays visible until unmounted by Next.js
-        if (!isInitialLoad) {
-            setIsLoading(true);
-            return;
-        }
+  return (
+    <div
+      className={`fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background transition-opacity motion-reduce:transition-none ${
+        phase === "hide" ? "pointer-events-none opacity-0" : "opacity-100"
+      }`}
+      style={{ transitionDuration: `${FADE_OUT_MS}ms` }}
+      aria-busy={phase === "show"}
+      role="status"
+    >
+      <span className="sr-only">Loading Olentra</span>
 
-        if (document.readyState === "complete") {
-            // Short delay to allow hydration before hiding
-            const timer = setTimeout(finishLoading, 100);
-            return () => clearTimeout(timer);
-        } else {
-            window.addEventListener("load", finishLoading);
-            return () => window.removeEventListener("load", finishLoading);
-        }
+      <div className="pointer-events-none fixed inset-0 bg-cyber-grid opacity-[0.05]" aria-hidden />
+      <div
+        className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,0.14),transparent_55%)] dark:bg-[radial-gradient(circle_at_50%_42%,rgba(37,99,235,0.22),transparent_55%)]"
+        aria-hidden
+      />
 
-        return () => {
-            window.removeEventListener("load", finishLoading);
-            gsap.killTweensOf(orbitals);
-            if (logoRef.current) gsap.killTweensOf(logoRef.current);
-        };
-    }, []);
+      <div className="relative z-10 flex flex-col items-center">
+        <div className="relative flex h-[5.5rem] w-[5.5rem] items-center justify-center">
+          <div
+            className="absolute inset-0 rounded-2xl border-2 border-transparent border-t-primary border-r-primary/50 motion-safe:animate-spin motion-reduce:animate-none"
+            style={{ animationDuration: "2.4s" }}
+            aria-hidden
+          />
+          <div className="relative flex h-[4.25rem] w-[4.25rem] items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-card/90 p-2.5 shadow-[0_0_36px_rgba(37,99,235,0.22)] backdrop-blur-sm dark:bg-white/5">
+            <Image
+              src={LOGO_SRC}
+              alt=""
+              width={52}
+              height={52}
+              className="h-full w-full object-contain"
+              priority
+            />
+          </div>
+        </div>
 
-    return (
-        <AnimatePresence>
-            {isLoading && (
-                <motion.div
-                    key="loader"
-                    ref={containerRef}
-                    initial={{ opacity: 1 }}
-                    exit={{
-                        opacity: 0,
-                        scale: 1.2,
-                        transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
-                    }}
-                    className={`fixed inset-0 ${isInitialLoad ? 'z-[1000]' : 'z-[50]'} flex items-center justify-center bg-[#020617] overflow-hidden`}
-                >
-                    {/* Subtle noise background */}
-                    <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.1] pointer-events-none" />
+        <p className="mt-8 font-display text-[10px] font-black uppercase tracking-[0.28em] text-primary">
+          Olentra
+        </p>
 
-                    {/* Logo Glow backing */}
-                    <div className="absolute w-96 h-96 bg-primary/20 blur-[120px] rounded-full animate-pulse pointer-events-none" />
-
-                    {/* Central Orbiting Energy Trails */}
-                    <div className="relative w-48 h-48 flex items-center justify-center">
-                        {Array.from({ length: 12 }, (_, i) => (
-                            <div
-                                key={i}
-                                ref={(el) => (orbitalRefs.current[i] = el)}
-                                className="absolute w-3 h-3 rounded-full blur-[1px] pointer-events-none"
-                                style={{ backgroundColor: googleColors[i % googleColors.length] }}
-                            />
-                        ))}
-
-                        {/* Logo */}
-                        <div ref={logoRef} className="relative z-10 w-24 h-24">
-                            <Image
-                                src="/images/branding/Logo/Olentra-Logo-Without-Background.png"
-                                alt="Olentra Logo"
-                                fill
-                                sizes="96px"
-                                className="object-contain drop-shadow-[0_0_25px_rgba(37,99,235,0.4)]"
-                                priority
-                                loading="eager"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Text reveal bottom-centered - Optional elegant branding */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5, duration: 1 }}
-                        className="absolute bottom-12 flex flex-col items-center gap-2"
-                    >
-                        <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40">
-                            Initializing Enterprise Systems
-                        </span>
-                        <div className="w-12 h-[2px] bg-primary/30 rounded-full" />
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
-    );
+        <div
+          className="mt-5 h-0.5 w-28 overflow-hidden rounded-full bg-border/70"
+          aria-hidden
+        >
+          <div className="h-full w-2/5 rounded-full bg-primary motion-safe:animate-pulse motion-reduce:animate-none" />
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -9,11 +9,12 @@ import { buildMetadata, organizationSchema, websiteSchema } from "@/lib/seo";
 
 const ImpactStats = dynamic(() => import("@/components/ImpactStats"), { ssr: true });
 const StripeAnimation = dynamic(() => import("@/components/StripeAnimation"), { ssr: true });
-const Testimonials = dynamic(() => import("@/components/Testimonials"), { ssr: true });
 const ServicesTimeline = dynamic(() => import("@/components/ServicesTimeline"), { ssr: true });
 const Products = dynamic(() => import("@/components/Products"), { ssr: true });
 const LatestProjects = dynamic(() => import("@/components/LatestProjects"), { ssr: true });
 const Blogs = dynamic(() => import("@/components/Blogs"), { ssr: true });
+const Testimonials = dynamic(() => import("@/components/Testimonials"), { ssr: true });
+const GlobeSection = dynamic(() => import("@/components/GlobeSection"));
 
 const ContactForm = dynamic(() => import("@/components/ContactForm"), { ssr: true });
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
@@ -57,47 +58,29 @@ export default function HomePage() {
       <Products />
       <LatestProjects />
       <Blogs />
-      <section className="relative py-20 md:py-24 bg-[#020617]">
-        <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.05] pointer-events-none" />
+      <Testimonials />
+      
+      {/* Global Presence Section - White Theme */}
+      <section className="bg-white py-12 md:py-16 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.03] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
-          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 md:p-12 backdrop-blur-xl">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4">
-              Explore Olentra
-            </p>
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-[0.9]">
-              Index-ready routes for enterprise discovery
-            </h2>
-            <p className="mt-4 text-slate-300 max-w-3xl leading-relaxed">
-              Explore our services, products, company profile, and trusted policies through dedicated
-              pages designed for search visibility and enterprise credibility.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {[
-                { href: "/about", label: "About" },
-                { href: "/services", label: "Services" },
-                { href: "/products", label: "Products" },
-                { href: "/blogs", label: "Blogs" },
-                { href: "/contact", label: "Contact" },
-                { href: "/privacy-policy", label: "Privacy" },
-              ].map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="inline-flex items-center px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.24em] border border-white/15 text-white hover:border-primary hover:text-primary transition-all"
-                  style={{
-                    clipPath:
-                      "polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)",
-                  }}
-                >
-                  {item.label}
-                </Link>
-              ))}
+          <div className="text-center mb-8">
+            <div className="inline-block px-3 py-1 rounded-full bg-slate-100 border border-slate-200 mb-3 font-black text-[9px] tracking-[0.3em] text-primary uppercase">
+              GLOBAL PRESENCE
             </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+              Global Product Engineering
+            </h2>
+            <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
+              With teams across continents, we deliver enterprise solutions worldwide, ensuring seamless collaboration and 24/7 support for your global ambitions.
+            </p>
           </div>
+
+          {/* Globe Section - White Theme */}
+          <GlobeSection />
         </div>
       </section>
-
-      <Testimonials />
+      
       <ContactForm />
       <Footer />
       <ScrollToTopProgress />

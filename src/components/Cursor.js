@@ -278,59 +278,67 @@ export default function Cursor() {
     animateVenom();
 
     const onMouseEnter = () => {
-      gsap.to(trails, {
-        scale: 1.25,
-        duration: 0.3,
-        ease: 'power2.out',
-        stagger: 0.05
-      });
-      gsap.to(cursor, {
-        scale: 1.4,
-        duration: 0.3,
-        ease: 'power2.out'
-      });
+      if (cursor && trails.length > 0) {
+        gsap.to(trails, {
+          scale: 1.25,
+          duration: 0.3,
+          ease: 'power2.out',
+          stagger: 0.05
+        });
+        gsap.to(cursor, {
+          scale: 1.4,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
     };
 
     const onMouseLeave = () => {
-      gsap.to(trails, {
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.out',
-        stagger: 0.05
-      });
-      gsap.to(cursor, {
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.out'
-      });
+      if (cursor && trails.length > 0) {
+        gsap.to(trails, {
+          scale: 1,
+          duration: 0.3,
+          ease: 'power2.out',
+          stagger: 0.05
+        });
+        gsap.to(cursor, {
+          scale: 1,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
     };
 
     const onLinkEnter = () => {
-      gsap.to(cursor, {
-        scale: 2.2,
-        duration: 0.3,
-        ease: 'power2.out'
-      });
-      gsap.to(trails, {
-        scale: 1.8,
-        duration: 0.3,
-        ease: 'power2.out',
-        stagger: 0.02
-      });
+      if (cursor && trails.length > 0) {
+        gsap.to(cursor, {
+          scale: 2.2,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+        gsap.to(trails, {
+          scale: 1.8,
+          duration: 0.3,
+          ease: 'power2.out',
+          stagger: 0.02
+        });
+      }
     };
 
     const onLinkLeave = () => {
-      gsap.to(cursor, {
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.out'
-      });
-      gsap.to(trails, {
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.out',
-        stagger: 0.02
-      });
+      if (cursor && trails.length > 0) {
+        gsap.to(cursor, {
+          scale: 1,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+        gsap.to(trails, {
+          scale: 1,
+          duration: 0.3,
+          ease: 'power2.out',
+          stagger: 0.02
+        });
+      }
     };
 
     // Add event listeners (mouse + touch for mobile)
