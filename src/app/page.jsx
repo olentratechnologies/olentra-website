@@ -21,7 +21,7 @@ const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 const ScrollToTopProgress = dynamic(() => import("@/components/ScrollToTopProgress"), { ssr: true });
 
 export const metadata = buildMetadata({
-  title: "Enterprise Engineering and AI Product Delivery",
+  title: "",
   description:
     "Olentra Technologies delivers enterprise software engineering, cloud systems, data and AI platforms, and high-performance digital product execution.",
   path: "/",
@@ -32,6 +32,7 @@ export const metadata = buildMetadata({
     "platform engineering partner",
     "cloud and security engineering",
     "digital product delivery",
+    "olentra technologies",
   ],
 });
 

@@ -70,7 +70,7 @@ export const metadata = {
     follow: true,
   },
   icons: {
-    icon: "/icon.png",
+    icon: [{ url: "/favicon.ico" }, { url: "/icon.png", type: "image/png" }],
     apple: "/apple-icon.png",
     shortcut: "/icon.png",
   },
@@ -82,11 +82,13 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`relative dark ${manrope.variable} ${inter.variable}`} suppressHydrationWarning>
-      <head>
-      </head>
+    <html
+      lang="en"
+      className={`relative dark ${manrope.variable} ${inter.variable}`}
+      suppressHydrationWarning
+    >
+      <head></head>
       <body className="relative min-h-screen bg-background">
-
         <Script id="performance-server-timing-fix" strategy="beforeInteractive">
           {`window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);`}
         </Script>
