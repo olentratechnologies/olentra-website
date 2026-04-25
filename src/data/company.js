@@ -4,7 +4,7 @@ export const companyInfo = {
   name: "Olentra Technologies",
   legalName: "Olentra Ltd.",
   shortName: "Olentra",
-  domain: "https://olentratechnologies.com",
+  domain: "https://www.olentratechnologies.com",
   email: contactInfo.email,
   phone: contactInfo.phone,
   phoneHref: contactInfo.phoneFull,
