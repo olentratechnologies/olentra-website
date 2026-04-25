@@ -10,12 +10,15 @@ import SectionIntro from "@/components/site/SectionIntro";
 import { blogs, getBlogBySlug } from "@/data/blogs";
 import { articleSchema, breadcrumbSchema, buildMetadata } from "@/lib/seo";
 
+
+
 export function generateStaticParams() {
   return blogs.map((blog) => ({ slug: blog.slug }));
 }
 
-export function generateMetadata({ params }) {
-  const blog = getBlogBySlug(params.slug);
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const blog = getBlogBySlug(slug);
   if (!blog) {
     return buildMetadata({
       title: "Blog",
@@ -33,8 +36,9 @@ export function generateMetadata({ params }) {
   });
 }
 
-export default function BlogDetailPage({ params }) {
-  const blog = getBlogBySlug(params.slug);
+export default async function BlogDetailPage({ params }) {
+  const { slug } = await params;
+  const blog = getBlogBySlug(slug);
   if (!blog) notFound();
 
   const related = blogs.filter((item) => item.slug !== blog.slug).slice(0, 3);
