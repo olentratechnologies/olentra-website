@@ -82,12 +82,8 @@ export default function OlentraAIStudioPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="inline-flex items-center gap-3 py-1.5 px-4 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm shadow-[0_0_15px_rgba(37,99,235,0.15)] w-fit"
+                className="inline-flex items-center py-1.5 px-4 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm shadow-[0_0_15px_rgba(37,99,235,0.15)] w-fit"
               >
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">AI STUDIO</span>
               </motion.div>
 
@@ -357,7 +353,6 @@ export default function OlentraAIStudioPage() {
                   {security.slice(0, 3).map((item) => (
                     <div key={item.control} className="flex items-center justify-between py-2.5 border-b border-slate-200">
                       <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{item.control}</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                     </div>
                   ))}
                 </div>
@@ -515,7 +510,6 @@ function StackColumn({ title, icon, items, theme = "dark" }) {
       <ul className="space-y-6 flex-1">
         {items.map((item) => (
           <li key={item} className="flex items-center gap-4">
-            <div className={`w-1.5 h-1.5 rounded-full ${isDark ? "bg-primary" : "bg-slate-900"}`} />
             <span className="text-[14px] font-[900] uppercase tracking-tight leading-none italic">{item}</span>
           </li>
         ))}

@@ -1,92 +1,105 @@
 "use client";
 
-import { useId } from "react";
-import { ArrowRight, Terminal } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
 
-import { services } from "../data/services";
+const VIDEO_URL = "/videos/hero-video.mp4";
+const POSTER_URL = "/videos/hero-poster.jpg";
 
-const logs = services.map((s) => s.title);
+const FEATS = [
+  "Digital Transformation",
+  "Data & Analytics",
+  "AI & Automation",
+  "Enterprise Security",
+];
 
 export default function Hero() {
+  const [isEntered, setIsEntered] = useState(false);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      if (!videoRef.current) return;
+      if (query.matches) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      } else {
+        void videoRef.current.play().catch(() => {});
+      }
+    };
+    sync();
+
+    if (query.addEventListener) query.addEventListener("change", sync);
+    else query.addListener(sync);
+
+    const timer = window.setTimeout(() => {
+      setIsEntered(true);
+    }, 3200);
+
+    return () => {
+      if (query.removeEventListener) query.removeEventListener("change", sync);
+      else query.removeListener(sync);
+      clearTimeout(timer);
+    };
+  }, []);
+
   return (
     <>
       <section
         data-testid="hero-section"
-        className="relative min-h-[calc(100vh-80px)] min-h-[calc(100svh-80px)] mt-16 sm:mt-20 overflow-hidden bg-[#020617] flex items-center font-sans selection:bg-primary/30 selection:text-white"
+        className={`cc-hero relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-[#02060f] text-white flex flex-col justify-between ${
+          isEntered ? "is-entered" : ""
+        }`}
       >
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <motion.div
-            animate={{
-              scale: [1, 1.1, 1],
-              x: [0, -20, 0],
-              y: [0, -10, 0],
+        {/* Neural Warp Video Background */}
+        <video
+          ref={videoRef}
+          className="cc-art absolute inset-0 w-full h-full object-cover object-center z-0 pointer-events-none select-none"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          poster={POSTER_URL}
+          src={VIDEO_URL}
+        />
+
+        {/* Atmospheric Radial Veil */}
+        <div className="cc-veil absolute inset-0 z-[1] pointer-events-none" aria-hidden="true" />
+
+        {/* Hero Content */}
+        <div className="relative z-20 flex-1 flex flex-col items-center justify-center text-center px-3 sm:px-4 md:px-6 pt-0 sm:pt-4 md:pt-8 my-auto">
+          {/* Localized Dark Scrim Backdrop to insulate text from the bright video flares */}
+          <div
+            className="pointer-events-none absolute inset-0 max-w-4xl mx-auto rounded-full blur-3xl opacity-80 z-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 70% 55% at 50% 50%, rgba(2, 6, 23, 0.92) 0%, rgba(2, 6, 23, 0.50) 60%, transparent 100%)",
             }}
-            transition={{
-              duration: 25,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-            className="relative w-full h-full opacity-30 scale-105"
-          >
-            <Image
-              src="/images/backgrounds/cyber-bg.png"
-              alt="Digital Infrastructure"
-              fill
-              priority
-              quality={65}
-              fetchPriority="high"
-              sizes="(max-width: 768px) 100vw, 1200px"
-              className="object-cover"
-            />
-          </motion.div>
+            aria-hidden="true"
+          />
 
-          <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/90 via-[#020617]/50 to-[#020617]" />
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#020617] to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_40%,rgba(37,99,235,0.1),transparent_70%)]" />
-          <div className="absolute inset-0 opacity-[0.05]">
-            <GridPattern />
-          </div>
-        </div>
-
-        <div className="max-w-[1440px] mx-auto px-5 sm:px-6 md:px-12 relative z-20 w-full pt-10 sm:pt-8 pb-16">
-          <div className="flex flex-col items-center text-center max-w-5xl mx-auto w-full">
-            <div className="mb-4 flex flex-col items-center">
-              <h1 className="text-sm sm:text-base font-semibold tracking-[0.3em] uppercase text-primary mb-4">
-                Olentra Technologies
-              </h1>
-
-              {/* Existing badge */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] uppercase tracking-[0.35em] text-slate-300"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_12px_rgba(37,99,235,0.8)]" />
-                Enterprise Engineering
-              </motion.div>
-            </div>
-
+          <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center w-full">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-[clamp(2rem,6vw,4.1rem)] font-semibold text-white tracking-tight leading-[1.05] sm:leading-[1] mb-6"
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="text-[clamp(2rem,6vw,4.1rem)] font-semibold text-white tracking-tight leading-[1.05] sm:leading-[1] mb-6 drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]"
             >
-              Engineering platforms that scale
+              Transforming Businesses Through
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-primary to-blue-600 drop-shadow-[0_0_30px_rgba(37,99,235,0.35)]">
                 {" "}
-                securely and predictably.
+                Technology
               </span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.4 }}
-              className="text-[0.98rem] md:text-[1.1rem] text-slate-300/90 leading-relaxed mb-10 sm:mb-12 max-w-3xl font-medium"
+              transition={{ duration: 1, delay: 0.3 }}
+              className="text-[0.98rem] md:text-[1.1rem] text-slate-300/90 leading-relaxed mb-10 sm:mb-12 max-w-3xl font-medium drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]"
             >
               We design, build, and operate production-grade systems across
               cloud, data, and AI. Expect disciplined execution, clear
@@ -96,105 +109,49 @@ export default function Hero() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-6 w-full sm:w-auto"
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex justify-center w-full sm:w-auto"
             >
-              <a
-                href="#contact"
-                className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-3 sm:gap-4 px-6 sm:px-10 py-3.5 sm:py-4 text-[12px] sm:text-[13px] font-bold text-white bg-primary uppercase tracking-[0.12em] sm:tracking-[0.2em] transition-all hover:bg-blue-500 shadow-[0_0_22px_rgba(37,99,235,0.35)]"
-                style={{
-                  clipPath:
-                    "polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)",
-                }}
-              >
-                <Terminal className="w-4 h-4" />
-                Start a Project
-              </a>
-
-              <a
-                href="#services"
-                className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-3 sm:gap-4 px-6 sm:px-10 py-3.5 sm:py-4 text-[12px] sm:text-[13px] font-bold text-slate-400 border border-slate-800 bg-slate-900/50 uppercase tracking-[0.12em] sm:tracking-[0.2em] backdrop-blur transition-all hover:border-slate-600 hover:bg-slate-900 hover:text-white"
-                style={{
-                  clipPath:
-                    "polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)",
-                }}
-              >
-                Explore Capabilities
-                <ArrowRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
-              </a>
+              <div className="snake-border">
+                <a
+                  href="#contact"
+                  className="cc-cta px-5 sm:px-7 md:px-9 py-3 sm:py-3.5 md:py-4 gap-2 sm:gap-2.5 md:gap-3 text-xs sm:text-sm md:text-base font-bold text-white tracking-wide shadow-[0_0_30px_rgba(37,99,235,0.45)] hover:shadow-[0_0_40px_rgba(37,99,235,0.7)]"
+                >
+                  <span>Partner With Us</span>
+                  <svg
+                    className="w-3.5 h-2.5 sm:w-4 sm:h-3 cc-arrow ml-1"
+                    viewBox="0 0 16 11"
+                    aria-hidden="true"
+                  >
+                    <path d="M0 5.5 H14.6 M10.3 1.2 L14.9 5.5 L10.3 9.8" />
+                  </svg>
+                </a>
+              </div>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="mt-10 flex flex-wrap items-center justify-center gap-3 text-[10px] uppercase tracking-[0.25em] text-slate-400"
-            >
-              <span className="px-3 py-2 rounded-full border border-white/10 bg-white/5">
-                Security-First
-              </span>
-              <span className="px-3 py-2 rounded-full border border-white/10 bg-white/5">
-                Milestone-Based Delivery
-              </span>
-              <span className="px-3 py-2 rounded-full border border-white/10 bg-white/5">
-                Post-Launch Support
-              </span>
-            </motion.div>
+            {/* Feature Chevrons */}
+            <ul className="mt-6 sm:mt-8 md:mt-12 flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:gap-8 lg:gap-10 w-full">
+              {FEATS.map((feat, index) => (
+                <li
+                  key={feat}
+                  className={`flex items-center gap-1.5 sm:gap-2 md:gap-2.5 text-[10px] sm:text-xs md:text-sm font-semibold text-slate-100 cc-anim-f${
+                    index + 1
+                  }`}
+                >
+                  <svg
+                    className="w-2 h-3.5 sm:w-2.5 sm:h-4 cc-chev shrink-0 text-primary drop-shadow-[0_0_8px_rgba(37,99,235,0.8)]"
+                    viewBox="0 0 11 20"
+                    aria-hidden="true"
+                  >
+                    <path d="M1.15 1.15 L9.6 10 L1.15 18.85" />
+                  </svg>
+                  <span>{feat}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-
-        <div className="absolute bottom-0 left-0 right-0 py-3 sm:py-4 bg-primary/5 border-t border-white/5 backdrop-blur-md overflow-hidden">
-          <motion.div
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{ duration: 160, repeat: Infinity, ease: "linear" }}
-            className="flex w-max whitespace-nowrap gap-8 sm:gap-12 text-[8px] sm:text-[9px] font-black text-primary/40 tracking-[0.35em] sm:tracking-[0.5em] uppercase"
-          >
-            {logs.map((log, i) => (
-              <span key={i} className="flex items-center gap-3">
-                <span className="text-white/20">//</span>
-                <span className="text-primary font-black">{log}</span>
-              </span>
-            ))}
-            {logs.map((log, i) => (
-              <span key={i + "duplicate"} className="flex items-center gap-3">
-                <span className="text-white/20">//</span>
-                <span className="text-primary font-black">{log}</span>
-              </span>
-            ))}
-          </motion.div>
         </div>
       </section>
     </>
-  );
-}
-
-function GridPattern() {
-  const reactId = useId();
-  const patternId = `grid-${reactId.replace(/:/g, "")}`;
-
-  return (
-    <svg
-      className="w-full h-full"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <defs>
-        <pattern
-          id={patternId}
-          width="50"
-          height="50"
-          patternUnits="userSpaceOnUse"
-        >
-          <path
-            d="M 50 0 L 0 0 0 50"
-            fill="none"
-            stroke="rgba(37,99,235,0.1)"
-            strokeWidth="0.5"
-          />
-          <circle cx="0" cy="0" r="1.2" fill="rgba(37,99,235,0.2)" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill={`url(#${patternId})`} />
-    </svg>
   );
 }

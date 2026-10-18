@@ -255,7 +255,6 @@ export default function ContactForm() {
                       <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                       <span className="relative flex items-center gap-2">
                         {isSubmitting ? 'SENDING...' : 'SEND MESSAGE'}
-                        {!isSubmitting && <span className="w-1.5 h-1.5 bg-primary-foreground rounded-sm" />}
                       </span>
                     </button>
                   </div>

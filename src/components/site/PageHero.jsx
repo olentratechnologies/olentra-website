@@ -55,12 +55,8 @@ export default function PageHero({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="inline-flex items-center gap-3 py-1.5 px-4 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm shadow-[0_0_15px_rgba(37,99,235,0.15)] w-fit"
+              className="inline-flex items-center py-1.5 px-4 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm shadow-[0_0_15px_rgba(37,99,235,0.15)] w-fit"
             >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-              </span>
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">{eyebrow}</span>
             </motion.div>
 

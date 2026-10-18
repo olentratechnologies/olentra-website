@@ -96,7 +96,6 @@ export default function LatestProjects() {
                 aria-label="Filter projects by category"
                 className="w-full rounded-sm border border-slate-200 bg-white pl-4 pr-4 py-2.5 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.12)] focus:ring-0 focus:border-primary/50 gap-3 [&>svg]:opacity-100 [&>svg]:text-primary"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="border border-slate-200 bg-white text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur-xl">

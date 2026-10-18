@@ -49,8 +49,7 @@ export default function Mission() {
         <div className="flex flex-col items-center text-center gap-8 mb-20 md:mb-24">
           {/* Label */}
           <div className="pt-2 flex justify-center w-full">
-            <span className="text-[11px] font-bold text-primary uppercase tracking-[0.3em] flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-[11px] font-bold text-primary uppercase tracking-[0.3em]">
               OUR MISSION
             </span>
           </div>

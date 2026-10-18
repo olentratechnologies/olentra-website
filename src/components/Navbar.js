@@ -118,10 +118,11 @@ export default function Navbar() {
                   className="object-contain"
                 />
               </div>
-              <span className={`text-base md:text-lg font-black uppercase tracking-tighter transition-colors duration-300 ${isLightSection ? 'text-slate-950' : 'text-white'
-                }`}>
-                Olentra
-              </span>
+              <div className="flex items-center gap-1 font-black uppercase tracking-tighter">
+                <span className={`text-base md:text-lg transition-colors duration-300 ${isLightSection ? 'text-slate-700' : 'text-slate-300'
+                  }`}>Olentra</span>
+                <span className="text-base md:text-lg bg-gradient-to-r from-blue-400 via-primary to-blue-600 bg-clip-text text-transparent transition-colors duration-300">Technologies</span>
+              </div>
             </Link>
 
             {/* Desktop Links */}
@@ -340,7 +341,6 @@ export default function Navbar() {
                   }`}
                 style={{ background: isLightSection ? undefined : 'linear-gradient(135deg, rgba(37,99,235,0.25), rgba(79,70,229,0.25))' }}
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                 Book a Discovery Call
               </a>
 
