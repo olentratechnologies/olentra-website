@@ -6,8 +6,6 @@ import {
   Barcode,
   Megaphone,
   Package,
-  Pause,
-  Play,
   ShieldCheck,
   Smartphone,
   Store,
@@ -72,7 +70,6 @@ const TICKS = Array.from({ length: 72 }, (_, i) => {
 
 export default function ModulesOrbitSection() {
   const [activeId, setActiveId] = useState(null);
-  const [paused, setPaused] = useState(false);
   const [frozen, setFrozen] = useState(false);
   const [dragging, setDragging] = useState(false);
 
@@ -90,7 +87,6 @@ export default function ModulesOrbitSection() {
     moved: false,
     prevVelocity: BASE_SPEED,
   });
-  const pausedRef = useRef(paused);
   const frozenRef = useRef(frozen);
   const motionOkRef = useRef(true);
   const hoverRef = useRef(null);
@@ -98,10 +94,6 @@ export default function ModulesOrbitSection() {
   const suppressClickRef = useRef(false);
 
   const active = dailySupplyData.modules.find((module) => module.id === activeId) || null;
-
-  useEffect(() => {
-    pausedRef.current = paused;
-  }, [paused]);
 
   useEffect(() => {
     frozenRef.current = frozen;
@@ -147,8 +139,8 @@ export default function ModulesOrbitSection() {
       const dt = last ? Math.min((now - last) / 1000, 0.05) : 0;
       last = now;
       if (!dragRef.current.active) {
-        const target = frozenRef.current || pausedRef.current ? 0 : BASE_SPEED;
-        /* Stop promptly on pause or hover so a pill cannot drift away from the
+        const target = frozenRef.current ? 0 : BASE_SPEED;
+        /* Stop promptly on hover so a pill cannot drift away from the
            cursor; let flings coast on the longer tau. */
         const tau = target === 0 ? STOP_TAU : DECAY_TAU;
         const k = 1 - Math.exp(-dt / tau);
@@ -333,7 +325,7 @@ export default function ModulesOrbitSection() {
 
         <div
           ref={stageRef}
-          className={`${styles.stage} ${paused ? styles.stagePaused : ''} ${dragging ? styles.stageDragging : ''}`}
+          className={`${styles.stage} ${dragging ? styles.stageDragging : ''}`}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={endDrag}
@@ -463,17 +455,6 @@ export default function ModulesOrbitSection() {
             />
             <span className={styles.centerLabel}>Module system</span>
           </div>
-
-          <button
-            type="button"
-            data-no-drag
-            className={styles.pauseButton}
-            onClick={() => setPaused((current) => !current)}
-            aria-pressed={paused}
-            aria-label={paused ? 'Resume orbit animation' : 'Pause orbit animation'}
-          >
-            {paused ? <Play size={13} aria-hidden="true" /> : <Pause size={13} aria-hidden="true" />}
-          </button>
         </div>
 
         <p className={styles.readout}>

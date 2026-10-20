@@ -2,8 +2,7 @@
    Center: product name. Motion: one rotating wheel (module nodes orbit the
    core, counter-rotated so labels stay upright), data flow along connectors,
    one slow arc on the core. The orbit can be dragged to spin, with the fling
-   decelerating back to idle speed. Everything ambient has a pause control and
-   respects prefers-reduced-motion. */
+   decelerating back to idle speed. Respects prefers-reduced-motion. */
 
 .section {
   position: relative;
@@ -86,11 +85,6 @@
   transform: rotate(var(--orbit-back)) translateZ(0);
   will-change: transform;
 }
-
-/* The explicit pause control stops the ambient flow and core arc; the wheel
-   angle is frozen by the rAF loop itself. */
-.stagePaused .connectors line,
-.stagePaused .centerArc { animation-play-state: paused; }
 
 .node {
   display: inline-flex;
@@ -177,26 +171,6 @@
   padding-left: .32em;
 }
 
-.pauseButton {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 4;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid rgba(148, 163, 184, .3);
-  background: rgba(255, 255, 255, .9);
-  color: #64748b;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: border-color .2s, color .2s, background .2s, box-shadow .2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
-}
-.pauseButton:hover { border-color: #2563eb; color: #2563eb; background: rgba(37, 99, 235, .1); }
-.pauseButton:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
-
 /* ---------- Readout strip ---------- */
 .readout {
   display: flex;
@@ -231,7 +205,6 @@
   .node { padding: 4px 6px 4px 4px; gap: 3px; font-size: 8px; }
   .nodeIcon { width: 13px; height: 13px; background: transparent; border-color: transparent; }
   .nodeIcon svg { width: 10px; height: 10px; }
-  .pauseButton { top: -42px; right: 0; }
   .center { width: 108px; height: 108px; gap: 8px; }
   .centerLogo { width: 56px; }
   .centerLabel { font-size: 7px; letter-spacing: .28em; padding-left: .28em; }
@@ -240,7 +213,6 @@
 @media (prefers-reduced-motion: reduce) {
   .connectors line, .centerArc { animation: none; }
   .readoutItem { animation: none; }
-  .node, .nodeIcon, .pauseButton { transition: none; }
-  .pauseButton { display: none; }
+  .node, .nodeIcon { transition: none; }
   .stage { cursor: default; }
 }

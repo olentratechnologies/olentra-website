@@ -74,13 +74,13 @@ export default function CinematicHero() {
         </div>
       </div>
 
-      <div className={styles.collaboration} role="region" aria-label="Our first collaboration project">
+      <div className={styles.collaboration} role="region" aria-label="Our first collaboration product">
         <span className={styles.collaborationRule} aria-hidden="true" />
-        <span className={styles.collaborationLabel}>Our first collaboration project</span>
+        <span className={styles.collaborationLabel}>Our first collaboration product</span>
         <span className={styles.collaborationRule} aria-hidden="true" />
       </div>
 
-      <div className={styles.founders} aria-label="Our first collaboration project with VitaTech Solutions and BYP Capital">
+      <div className={styles.founders} aria-label="Our first collaboration product with VitaTech Solutions and BYP Capital">
         <figure className={`${styles.founder} ${styles.founderLeft}`}>
 
           <div className={styles.portraitStage}>
