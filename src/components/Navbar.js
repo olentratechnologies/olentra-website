@@ -253,9 +253,9 @@ export default function Navbar() {
                       <AnimatePresence>
                         {isProductsOpen && (
                           <motion.div
-                            initial={{ opacity: 0, y: 10, scale: 0.98, x: "-50%" }}
+                            initial={{ opacity: 0, y: 10, scale: 0.95, x: "-50%" }}
                             animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
-                            exit={{ opacity: 0, y: 10, scale: 0.98, x: "-50%" }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95, x: "-50%" }}
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             onMouseEnter={() => setIsProductsOpen(true)}
                             onMouseLeave={() => setIsProductsOpen(false)}
@@ -264,61 +264,40 @@ export default function Navbar() {
                               : 'bg-slate-950/95 border-white/10 text-white'
                               }`}
                           >
-                            <div className="flex items-center justify-between px-1 pb-4">
-                              <div className="flex items-center gap-3">
-                                <span className="w-6 h-px bg-primary/60" />
-                                <div className={`text-[9px] font-black uppercase tracking-[0.35em] ${isLightSection ? 'text-slate-500' : 'text-slate-400'}`}>
-                                  Product Suite
+                            <div className={`rounded-xl border p-2 ${isLightSection ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
+                              <div className="flex items-center justify-between px-2.5 py-2">
+                                <div className={`text-[9px] font-black uppercase tracking-[0.22em] ${isLightSection ? 'text-slate-500' : 'text-slate-400'}`}>
+                                  Products
                                 </div>
-                              </div>
-                              <Link
-                                href="/products"
-                                className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:opacity-80"
-                              >
-                                View All
-                              </Link>
-                            </div>
-                            <div className="grid grid-cols-3 gap-3">
-                              {products.map((product) => (
                                 <Link
-                                  key={product.id}
-                                  href={product.href}
-                                  className={`group relative overflow-hidden rounded-xl border transition-all duration-300 ${isLightSection
-                                    ? 'border-slate-200 bg-white hover:border-primary/60 hover:shadow-[0_16px_40px_rgba(37,99,235,0.18)]'
-                                    : 'border-white/10 bg-white/5 hover:border-primary/60 hover:shadow-[0_16px_40px_rgba(37,99,235,0.25)]'
-                                    }`}
+                                  href="/products"
+                                  onClick={() => setIsProductsOpen(false)}
+                                  className="text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:opacity-80 transition-opacity"
                                 >
-                                  <div className="relative aspect-[4/3] overflow-hidden">
-                                    <img
-                                      src={product.image}
-                                      alt={product.title}
-                                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-80" />
-                                    <div className="absolute top-3 left-3 flex items-center gap-2">
-                                      <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-primary/20 text-primary">
-                                        {product.status}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="p-3 space-y-2">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div className="text-[10px] font-black uppercase tracking-wider">
-                                        {product.title}
-                                      </div>
-                                      <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                                        <product.icon size={14} />
-                                      </div>
-                                    </div>
-                                    <p className={`text-[9px] font-semibold leading-relaxed ${isLightSection ? 'text-slate-500' : 'text-slate-300'}`}>
-                                      {product.description}
-                                    </p>
-                                    <div className="text-[8px] font-black uppercase tracking-[0.2em] text-primary">
-                                      {product.price}
-                                    </div>
-                                  </div>
+                                  View All
                                 </Link>
-                              ))}
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                {products.map((product) => {
+                                  const IconComponent = product.icon;
+                                  return (
+                                    <Link
+                                      key={product.id}
+                                      href={product.href}
+                                      onClick={() => setIsProductsOpen(false)}
+                                      className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group/item ${isLightSection
+                                        ? 'hover:bg-slate-50'
+                                        : 'hover:bg-white/5'
+                                        }`}
+                                    >
+                                      <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover/item:scale-110 transition-transform duration-300 shrink-0">
+                                        <IconComponent size={16} />
+                                      </div>
+                                      <span className="text-[10px] font-bold uppercase tracking-wider">{product.title}</span>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
                             </div>
                           </motion.div>
                         )}
@@ -496,34 +475,30 @@ export default function Navbar() {
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden flex flex-col gap-2 pl-4"
+                              className="overflow-hidden flex flex-col gap-1 pl-4 pt-1"
                             >
-                              {products.map((product) => (
-                                <Link
-                                  key={product.id}
-                                  href={product.href}
-                                  onClick={() => setMobileOpen(false)}
-                                  className={`flex items-center gap-3 py-2 px-2 rounded-lg transition-all ${isLightSection
-                                    ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
-                                    : 'text-slate-300 hover:text-white hover:bg-white/5'
-                                    }`}
-                                >
-                                  <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-                                    <product.icon size={14} />
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="text-[10px] font-black uppercase tracking-widest">
-                                      {product.title}
+                              {products.map((product) => {
+                                const IconComponent = product.icon;
+                                return (
+                                  <Link
+                                    key={product.id}
+                                    href={product.href}
+                                    onClick={() => {
+                                      setMobileOpen(false);
+                                      setMobileProductsOpen(false);
+                                    }}
+                                    className={`flex items-center gap-3 py-2 px-2 rounded-lg transition-all ${isLightSection
+                                      ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
+                                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                                      }`}
+                                  >
+                                    <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                                      <IconComponent size={14} />
                                     </div>
-                                    <div className={`text-[9px] font-bold uppercase tracking-[0.2em] ${isLightSection ? 'text-slate-400' : 'text-slate-500'}`}>
-                                      {product.status}
-                                    </div>
-                                  </div>
-                                  <span className="text-[9px] font-semibold uppercase tracking-widest text-primary">
-                                    {product.price}
-                                  </span>
-                                </Link>
-                              ))}
+                                    <span className="text-[9px] font-bold uppercase tracking-widest">{product.title}</span>
+                                  </Link>
+                                );
+                              })}
                             </motion.div>
                           )}
                         </AnimatePresence>

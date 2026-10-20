@@ -20,7 +20,8 @@ export default function Cursor() {
 
   useEffect(() => {
     const cursor = cursorRef.current;
-    const trails = trailRefs.current;
+    // Snapshot mounted targets; React can clear the ref array during a resize.
+    const trails = trailRefs.current.filter(Boolean);
 
     if (!cursor || trails.length === 0) return;
 

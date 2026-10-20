@@ -11,6 +11,7 @@ export default function sitemap() {
     "/products",
     "/products/olentra-ai-studio",
     "/products/olenbot",
+    "/products/dailysupply",
     "/blogs",
     "/privacy-policy",
     "/terms-of-service",
