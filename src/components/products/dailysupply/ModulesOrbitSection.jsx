@@ -48,26 +48,6 @@ function nodePoint(index) {
   return { x, y, left: `${x}%`, top: `${y}%` };
 }
 
-const CARDINALS = [
-  { label: '000', angle: -90 },
-  { label: '090', angle: 0 },
-  { label: '180', angle: 90 },
-  { label: '270', angle: 180 },
-];
-
-const TICKS = Array.from({ length: 72 }, (_, i) => {
-  const angle = (i * 5 * Math.PI) / 180;
-  const major = i % 6 === 0;
-  const inner = major ? 48.2 : 48.8;
-  return {
-    major,
-    x1: coordinate(50 + inner * Math.cos(angle)),
-    y1: coordinate(50 + inner * Math.sin(angle)),
-    x2: coordinate(50 + 49.6 * Math.cos(angle)),
-    y2: coordinate(50 + 49.6 * Math.sin(angle)),
-  };
-});
-
 export default function ModulesOrbitSection() {
   const [activeId, setActiveId] = useState(null);
   const [frozen, setFrozen] = useState(false);
@@ -335,38 +315,11 @@ export default function ModulesOrbitSection() {
         >
           <div className={styles.stageGlow} aria-hidden="true" />
 
-          {/* Static dial face: ticks, tracks, cardinal marks */}
+          {/* Static dial face: guide tracks */}
           <svg className={styles.dial} viewBox="0 0 100 100" aria-hidden="true">
-            {TICKS.map((tick, index) => (
-              <line
-                key={index}
-                className={tick.major ? styles.tickMajor : styles.tick}
-                x1={tick.x1}
-                y1={tick.y1}
-                x2={tick.x2}
-                y2={tick.y2}
-              />
-            ))}
             <circle className={styles.trackOrbit} cx="50" cy="50" r={RADIUS} />
             <circle className={styles.trackInner} cx="50" cy="50" r="36.5" />
             <circle className={styles.trackFaint} cx="50" cy="50" r="33" />
-            {CARDINALS.map((cardinal) => {
-              const angle = (cardinal.angle * Math.PI) / 180;
-              const x = coordinate(50 + 41.5 * Math.cos(angle));
-              const y = coordinate(50 + 41.5 * Math.sin(angle));
-              return (
-                <text
-                  key={cardinal.label}
-                  className={styles.cardinal}
-                  x={x}
-                  y={y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                >
-                  {cardinal.label}
-                </text>
-              );
-            })}
           </svg>
 
           {/* Rotating wheel: connectors with outward data flow + module nodes */}
