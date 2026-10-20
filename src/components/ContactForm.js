@@ -107,14 +107,16 @@ export default function ContactForm() {
                       Global teams trust us for end-to-end delivery across time zones. Tell us what you&apos;re building.
                     </p>
                     <div className="space-y-4">
-                      <div className="flex flex-wrap items-start gap-3 p-3 border border-border bg-muted/20 rounded-sm">
-                        <span className="text-primary uppercase tracking-[0.2em] text-[0.7rem] font-bold min-w-[80px]" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                          PHONE:
-                        </span>
-                        <span className="text-foreground leading-tight font-bold tracking-wider" style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.85rem,1vw,1rem)' }}>
-                          {contactInfo.phone}
-                        </span>
-                      </div>
+                      {contactInfo.phone && (
+                        <div className="flex flex-wrap items-start gap-3 p-3 border border-border bg-muted/20 rounded-sm">
+                          <span className="text-primary uppercase tracking-[0.2em] text-[0.7rem] font-bold min-w-[80px]" style={{ fontFamily: '"Manrope", sans-serif' }}>
+                            PHONE:
+                          </span>
+                          <span className="text-foreground leading-tight font-bold tracking-wider" style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.85rem,1vw,1rem)' }}>
+                            {contactInfo.phone}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex flex-wrap items-start gap-3 p-3 border border-border bg-muted/20 rounded-sm">
                         <span className="text-primary uppercase tracking-[0.2em] text-[0.7rem] font-bold min-w-[80px]" style={{ fontFamily: '"Manrope", sans-serif' }}>
                           EMAIL:

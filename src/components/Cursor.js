@@ -2,8 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { usePathname } from 'next/navigation';
 
 export default function Cursor() {
+  const pathname = usePathname();
+  return pathname === '/founders' ? null : <AnimatedCursor />;
+}
+
+function AnimatedCursor() {
   const cursorRef = useRef(null);
   const trailRefs = useRef([]);
   const positions = useRef([]);

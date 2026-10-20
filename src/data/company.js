@@ -16,7 +16,7 @@ export const companyInfo = {
   tagline: "Enterprise engineering, AI systems, and launch-ready digital products.",
   description:
     "Olentra Technologies designs, builds, and operates enterprise-grade software platforms, AI systems, cloud infrastructure, and high-performance digital experiences for ambitious teams.",
-  primaryLocation: "Harrisburg, PA, USA",
+  primaryLocation: "Hyderabad, India",
   serviceArea: "Global",
   locations: contactInfo.addresses.map((address) => address.value),
   socials: contactInfo.socials,

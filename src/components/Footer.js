@@ -82,10 +82,12 @@ export default function Footer() {
           <div className="space-y-4">
             <h4 className="text-[10px] text-primary font-bold tracking-[0.3em] uppercase">Contact</h4>
             <div className="space-y-3">
-              <a href={contactInfo.phoneFull} className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary transition-colors group">
-                <Phone className="w-3.5 h-3.5 text-primary/50 group-hover:text-primary" />
-                {contactInfo.phone}
-              </a>
+              {contactInfo.phone && (
+                <a href={contactInfo.phoneFull} className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary transition-colors group">
+                  <Phone className="w-3.5 h-3.5 text-primary/50 group-hover:text-primary" />
+                  {contactInfo.phone}
+                </a>
+              )}
               <a href={contactInfo.emailFull} className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary transition-colors group">
                 <Mail className="w-3.5 h-3.5 text-primary/50 group-hover:text-primary" />
                 {contactInfo.email}

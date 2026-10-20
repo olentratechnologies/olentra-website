@@ -6,6 +6,7 @@ export default function sitemap() {
   const staticRoutes = [
     "",
     "/about",
+    "/founders",
     "/contact",
     "/services",
     "/products",
