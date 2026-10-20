@@ -53,7 +53,7 @@ export function createLuminousScene(host, { onFailure, onConverged, capture = fa
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
   host.appendChild(renderer.domElement);
-  const renderTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: mobile() ? 0 : 4 });
+  const renderTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
   const composer = new EffectComposer(renderer, renderTarget);
   const renderPass = new RenderPass(scene, camera);
   const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 1.05, .7, .35);
@@ -71,7 +71,7 @@ export function createLuminousScene(host, { onFailure, onConverged, capture = fa
     const rx = 2.4 + i * .08;
     const ry = 0.92 + i * .035;
     const mesh = new THREE.Mesh(
-      ribbonGeometry(rx, ry, i % 3 === 0 ? .045 : .015, i * .55, mobile() ? 150 : 260),
+      ribbonGeometry(rx, ry, i % 3 === 0 ? .045 : .015, i * .55, 260),
       new THREE.MeshBasicMaterial({
         vertexColors: true,
         side: THREE.DoubleSide,
@@ -226,7 +226,7 @@ export function createLuminousScene(host, { onFailure, onConverged, capture = fa
   function resize() {
     if (disposed || failed) return;
     const width = Math.max(1, host.clientWidth), height = Math.max(1, host.clientHeight);
-    const ratio = capture ? 1 : Math.min(window.devicePixelRatio, mobile() || degraded ? 1 : 1.5);
+    const ratio = capture ? 1 : Math.min(window.devicePixelRatio, 1.5);
     renderer.setPixelRatio(ratio); composer.setPixelRatio(ratio);
     renderer.setSize(width, height); composer.setSize(width, height);
     camera.aspect = width / height; camera.updateProjectionMatrix();
@@ -236,9 +236,9 @@ export function createLuminousScene(host, { onFailure, onConverged, capture = fa
       heroSection.style.setProperty('--ring-scale', String(RING_SCALE));
     }
 
-    const responsiveFactor = mobile() ? 0.58 : width < 1000 ? 0.78 : 0.95;
+    const responsiveFactor = mobile() ? 0.65 : width < 1000 ? 0.8 : 0.95;
     root.scale.setScalar(RING_SCALE * responsiveFactor);
-    bloom.strength = mobile() ? .8 : 1.05;
+    bloom.strength = 1.05;
     updateRingCenter();
     draw();
   }
