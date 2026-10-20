@@ -110,9 +110,7 @@ export default function Cursor() {
             ease: 'power2.out',
             delay: Math.random() * 0.15,
             onComplete: () => {
-              if (particle.parentNode) {
-                particle.parentNode.removeChild(particle);
-              }
+              particle?.remove?.();
             }
           }
         );

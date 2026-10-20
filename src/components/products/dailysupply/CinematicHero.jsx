@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowDown, ArrowUpRight, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import RingVideo from './RingVideo';
 import LuminousScene from './LuminousScene';
 import styles from './cinematic.module.css';
@@ -56,21 +55,32 @@ export default function CinematicHero() {
         </div>
 
         <div className={styles.lowerContent}>
-          <p className={styles.description}><span>Your neighborhood. Working together.</span><span>Connect stores, daily supplies, and communities in one seamless experience.</span></p>
           <div className={styles.actions}>
-            <Link href="/contact" className={styles.primaryButton}>Let’s connect <ArrowUpRight size={18} aria-hidden="true" /></Link>
-            <a href="#discover" className={styles.secondaryButton}>Explore DailySupply <ArrowDown size={16} aria-hidden="true" /></a>
+            <div className={`snake-border ${styles.ctaShell}`}>
+              <a
+                href="https://nexaerp-ivory.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cc-cta px-5 sm:px-7 md:px-9 py-3 sm:py-3.5 md:py-4 gap-2 sm:gap-2.5 md:gap-3 text-xs sm:text-sm md:text-base font-bold text-white tracking-wide"
+              >
+                <span>View Product</span>
+                <svg className="w-3.5 h-2.5 sm:w-4 sm:h-3 cc-arrow ml-1" viewBox="0 0 16 11" aria-hidden="true">
+                  <path d="M0 5.5 H14.6 M10.3 1.2 L14.9 5.5 L10.3 9.8" />
+                </svg>
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            </div>
           </div>
-          <div className={styles.collaboration} role="region" aria-label="Collaborators">
-            <span className={styles.collaborationRule} aria-hidden="true" />
-            <span className={styles.collaborationLabel}>In collaboration with</span>
-            <span className={styles.collaborationRule} aria-hidden="true" />
-          </div>
-
         </div>
       </div>
 
-      <div className={styles.founders} aria-label="In collaboration with VitaTech Solutions and BYP Capital">
+      <div className={styles.collaboration} role="region" aria-label="Our first collaboration project">
+        <span className={styles.collaborationRule} aria-hidden="true" />
+        <span className={styles.collaborationLabel}>Our first collaboration project</span>
+        <span className={styles.collaborationRule} aria-hidden="true" />
+      </div>
+
+      <div className={styles.founders} aria-label="Our first collaboration project with VitaTech Solutions and BYP Capital">
         <figure className={`${styles.founder} ${styles.founderLeft}`}>
 
           <div className={styles.portraitStage}>
@@ -115,11 +125,6 @@ export default function CinematicHero() {
         </figure>
       </div>
 
-      <div className={styles.bottom}>
-        <span><i /> Built around your everyday</span>
-        <a href="#discover" aria-label="Discover DailySupply"><span>Discover the connection</span><ArrowDown size={14} aria-hidden="true" /></a>
-        <span className={styles.edition}>An Olentra product / 01</span>
-      </div>
     </section>
   );
 }

@@ -1,5 +1,16 @@
 export const dailySupplyData = {
   description: 'Daily Supply connects neighborhood retailers, daily essentials vendors, and residential communities through billing, inventory, subscriptions, and community ordering.',
+  modules: [
+    { id: 'super-admin', number: '01', title: 'Super Admin Portal', short: 'Super Admin', text: 'Platform-wide control: tenants, roles, configurations, and rollout switches in one place.', icon: 'shield' },
+    { id: 'vendor-owner', number: '02', title: 'Vendor Owner Portal', short: 'Vendor Owner', text: 'Vendors run catalogue, supply runs, orders, and payouts with full visibility.', icon: 'package' },
+    { id: 'store-operations', number: '03', title: 'Store Operations Portal', short: 'Store Ops', text: 'The store back office: billing, inventory, pricing, and daily operations together.', icon: 'store' },
+    { id: 'central-warehouse', number: '04', title: 'Central Warehouse Ops', short: 'Warehouse', text: 'Receiving, allocation, and stock movement coordinated across the network.', icon: 'warehouse' },
+    { id: 'point-of-sale', number: '05', title: 'Point of Sale (POS)', short: 'POS', text: 'Fast counter billing with subscriptions, khata credit, and instant receipts.', icon: 'barcode' },
+    { id: 'resident-app', number: '06', title: 'Resident Mobile App (PWA)', short: 'Resident App', text: 'Residents order essentials, manage subscriptions, and pay from any phone.', icon: 'smartphone' },
+    { id: 'staff-hr', number: '07', title: 'Staff & HR Portal', short: 'Staff & HR', text: 'Shifts, attendance, tasks, and payroll for store and field teams.', icon: 'users' },
+    { id: 'observability', number: '08', title: 'Observability & Logs', short: 'Observability', text: 'Health, events, and audit trails streamed from every module.', icon: 'activity' },
+    { id: 'public-marketing', number: '09', title: 'Public & Marketing', short: 'Public Site', text: 'Storefronts, campaigns, and landing pages that bring customers back.', icon: 'megaphone' },
+  ],
   challenges: [
     { number: '01', title: 'One store. Too many moving parts.', problem: 'Billing at the counter, checking stock, and maintaining customer credit can become separate jobs with separate records.', solution: 'Bring billing, inventory, and digital khata records into a connected store workflow.', label: 'Connected store operations', icon: 'store' },
     { number: '02', title: 'Daily needs. Repeated coordination.', problem: 'Recurring essentials mean keeping track of delivery schedules, changing quantities, and subscription pauses day after day.', solution: 'Organize recurring milk and essentials subscriptions, with schedules that reflect changing household needs.', label: 'Everyday subscriptions', icon: 'milk' },

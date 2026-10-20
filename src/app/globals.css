@@ -210,7 +210,11 @@ svg {
   pointer-events: none;
 }
 
-.cc-hero .cc-cta {
+/* Shared glass CTA. Lives inside .cc-hero on the landing page and is used
+   standalone (e.g. product heroes) — the var() fallbacks supply the hero
+   tokens when there is no .cc-hero ancestor. */
+.cc-hero .cc-cta,
+.cc-cta {
   pointer-events: auto;
   border-radius: 999px;
   background:
@@ -224,11 +228,11 @@ svg {
       rgba(255, 255, 255, 0.11) 26%, rgba(255, 255, 255, 0.07) 42%,
       rgba(255, 255, 255, 0.05) 60%, rgba(255, 255, 255, 0.04) 80%,
       rgba(255, 255, 255, 0.04) 100%);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(0.45);
-  backdrop-filter: blur(var(--blur)) saturate(0.45);
-  box-shadow: 0 calc(var(--u) * -2) calc(var(--u) * 20) rgba(255, 224, 176, 0.20),
-    0 0 var(--glow) rgba(168, 204, 252, 0.16),
-    inset 0 var(--hairline) 0 0 rgba(255, 251, 242, 0.45);
+  -webkit-backdrop-filter: blur(var(--blur, 26px)) saturate(0.45);
+  backdrop-filter: blur(var(--blur, 26px)) saturate(0.45);
+  box-shadow: 0 calc(var(--u, 1px) * -2) calc(var(--u, 1px) * 20) rgba(255, 224, 176, 0.20),
+    0 0 var(--glow, 34px) rgba(168, 204, 252, 0.16),
+    inset 0 var(--hairline, 1.6px) 0 0 rgba(255, 251, 242, 0.45);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -237,17 +241,19 @@ svg {
   transition: transform 0.25s ease, filter 0.25s ease;
 }
 
-.cc-hero .cc-cta:hover {
+.cc-hero .cc-cta:hover,
+.cc-cta:hover {
   transform: translateY(-2px) scale(1.02);
   filter: brightness(1.15);
 }
 
-.cc-hero .cc-cta::before {
+.cc-hero .cc-cta::before,
+.cc-cta::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: var(--hairline);
+  padding: var(--hairline, 1.6px);
   pointer-events: none;
   background:
     linear-gradient(180deg, rgba(255, 252, 246, 0.95) 0%,
@@ -270,9 +276,10 @@ svg {
   stroke-linejoin: round;
 }
 
-.cc-hero .cc-arrow {
+.cc-hero .cc-arrow,
+.cc-arrow {
   fill: none;
-  stroke: var(--ink);
+  stroke: var(--ink, #fff);
   stroke-width: 1.6;
   stroke-linecap: square;
   stroke-linejoin: miter;

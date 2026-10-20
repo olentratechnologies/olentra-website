@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './cinematic.module.css';
 
 export default function LuminousScene({ onConverged, fading = false }) {
   const hostRef = useRef(null);
   const controller = useRef(null);
   const onConvergedRef = useRef(onConverged);
-  const [paused, setPaused] = useState(false);
   const [status, setStatus] = useState('loading');
 
   useEffect(() => {
@@ -132,31 +130,13 @@ export default function LuminousScene({ onConverged, fading = false }) {
     };
   }, []);
 
-  const toggle = useCallback(() => {
-    setPaused((prev) => {
-      const next = !prev;
-      controller.current?.setPaused(next);
-      const section = hostRef.current?.closest('section');
-      if (section) section.dataset.paused = String(next);
-      return next;
-    });
-  }, []);
-
   return (
-    <>
-      <div ref={hostRef} className={`${styles.scene} ${styles.ringScene}`} data-status={status} style={fading ? { opacity: 0, transition: 'opacity 600ms ease' } : undefined} aria-hidden="true" />
-      {status === 'ready' && !fading && (
-        <button
-          type="button"
-          className={styles.motionControl}
-          onClick={toggle}
-          aria-label={paused ? 'Resume animation' : 'Pause animation'}
-          aria-pressed={paused}
-        >
-          {paused ? <Play size={13} aria-hidden="true" /> : <Pause size={13} aria-hidden="true" />}
-          <span>{paused ? 'Resume motion' : 'Pause motion'}</span>
-        </button>
-      )}
-    </>
+    <div
+      ref={hostRef}
+      className={`${styles.scene} ${styles.ringScene}`}
+      data-status={status}
+      style={fading ? { opacity: 0, transition: 'opacity 600ms ease' } : undefined}
+      aria-hidden="true"
+    />
   );
 }

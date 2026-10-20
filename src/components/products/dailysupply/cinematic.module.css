@@ -160,6 +160,8 @@
 .description { color: #98a8c3; font-size: 14px; line-height: 1.65; max-width: min(100%, 480px); margin: 0 auto; font-weight: 400; }
 .description > span { display: block; text-wrap: balance; }
 .actions { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: clamp(14px, 2svh, 20px); flex-wrap: wrap; }
+/* Keeps the snake-border ring hugging the CTA when .actions collapses to a grid. */
+.ctaShell { width: fit-content; justify-self: center; }
 .primaryButton, .secondaryButton { display: inline-flex; justify-content: center; align-items: center; gap: 20px; border-radius: 8px; min-height: 44px; padding: 12px 20px; font-size: 12px; font-weight: 650; text-decoration: none; transition: transform .2s, background .2s, border-color .2s; }
 .primaryButton { background: #edf2ff; color: #101d36; border: 1px solid #fff; box-shadow: 0 0 25px #c2d5ff12, inset 0 -2px 1px #a6b7d44d; }
 .secondaryButton { border: 1px solid #99b5e52e; color: #d2ddf0; background: #ffffff03; }
@@ -170,73 +172,45 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  margin: clamp(16px, 2.5svh, 26px) auto 0;
-  width: min(100%, 460px);
+  position: absolute;
+  bottom: clamp(28px, 4.2svh, 48px);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: min(calc(100% - 96px), 580px);
+  z-index: 2;
+  pointer-events: none;
 }
 .collaborationRule {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(162, 182, 223, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(245, 190, 56, 0.55), transparent);
 }
 .collaborationLabel {
   font-size: clamp(12px, 1.2vw, 15px);
   text-transform: uppercase;
-  letter-spacing: .18em;
-  color: #c7d8f8;
+  letter-spacing: .2em;
+  color: #fde68a;
   font-weight: 600;
   white-space: nowrap;
-  text-shadow: 0 0 16px rgba(169, 189, 246, 0.25);
+  text-shadow: 0 0 16px rgba(245, 190, 56, 0.45);
 }
 .partners { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 3vw, 25px); flex-wrap: wrap; color: #c3cde0; font-size: 17px; font-weight: 700; letter-spacing: -.6px; }
 .partnerLight { font-weight: 400; }
 .partnerDivider { width: 1px; height: 18px; background: #a4b8df29; }
 .byp { letter-spacing: .02em; }
 .byp .partnerLight { font-size: 11px; letter-spacing: .14em; }
-.bottom { position: absolute; bottom: 0; width: calc(100% - 80px); border-top: 1px solid #a2b6df19; padding: 18px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: #7386a5; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
-.bottom > span, .bottom a { display: inline-flex; align-items: center; gap: 10px; }
-.bottom i { width: 4px; height: 4px; border-radius: 50%; background: #a4b8df; }
-.bottom a { color: #b0bfd8; }
+
 .motionControl { position: absolute; z-index: 3; right: 40px; top: 101px; display: flex; align-items: center; gap: 8px; min-height: 44px; min-width: 44px; justify-content: center; padding: 9px 12px; border: 1px solid #a8c6ff20; border-radius: 30px; background: #0a17304d; color: #92a4c1; font-size: 9px; }
 .hero a:focus-visible, .hero button:focus-visible { outline: 2px solid #bdd2ff; outline-offset: 5px; }
+
 @media (prefers-reduced-motion: no-preference) {
   .description, .actions, .collaboration { animation: enter .8s ease-out both; }
   .description { animation-delay: .08s; }
   .actions { animation-delay: .16s; }
-  .collaboration { animation-delay: .24s; }
   @keyframes enter { from { transform: translateY(12px); opacity: .35; } to { transform: translateY(0); opacity: 1; } }
 }
-@media (max-width: 900px) {
-  .edition { display: none !important; }
-}
-@media (max-width: 600px) {
-  .content { grid-template-rows: 1fr clamp(120px, 36vw, 160px) 1fr; }
-  .presentingContainer { gap: 10px; }
-  .presentingText {
-    font-size: clamp(16px, 4.8vw, 24px);
-    letter-spacing: 0.28em;
-    padding-left: 0.28em;
-  }
-  .presentingWing { max-width: clamp(32px, 12vw, 65px); }
-  .wingDot { width: 3px; height: 3px; }
-  .description { font-size: 13px; max-width: 340px; }
-  .actions { gap: 10px; }
-  .primaryButton, .secondaryButton { padding: 13px 14px; gap: 10px; font-size: 11px; }
-  .partners { font-size: 15px; gap: 18px; }
-  .byp .partnerLight { font-size: 9px; }
-  .bottom { width: calc(100% - 40px); font-size: 7px; letter-spacing: .06em; }
-  .motionControl { right: 16px; top: 64px; padding: 8px; }
-  .motionControl span { display: none; }
-}
 @media (prefers-reduced-motion: reduce) { .scene, .primaryButton, .secondaryButton { transition: none; } }
-
-/* Let narrow layouts grow vertically instead of clipping content or shrinking controls. */
-@media (max-width: 380px) {
-  .actions { width: 100%; max-width: 280px; display: grid; grid-template-columns: 1fr; }
-  .presentingText { font-size: clamp(14px, 4vw, 17px); letter-spacing: 0.2em; padding-left: 0.2em; }
-  .partners { font-size: 13px; gap: 10px; }
-  .bottom { justify-content: center; }
-  .bottom > span { display: none; }
-}
 @media (max-height: 600px) and (min-width: 601px) {
   .content { grid-template-rows: 1fr 120px 1fr; gap: 16px; padding-block: 80px; }
   .presentingText { font-size: clamp(20px, 3vw, 28px); }
@@ -319,40 +293,238 @@
 .vitaTech { color: #a9a0ff; background: linear-gradient(105deg, #57bcff, #a78bfa 60%, #f49ccd); background-clip: text; -webkit-text-fill-color: transparent; font-size: clamp(15px, 1.4vw, 20px); font-weight: 750; }
 .capital { color: #83d7da; letter-spacing: .025em; font-size: clamp(16px, 1.5vw, 22px); }
 .capital > span { color: #b2e8df; font-weight: 500; }
-@media (min-width: 1001px) {
-  .lowerContent { max-width: 440px; }
-  .brandStage { width: min(44vw, 580px); }
-}
-@media (max-width: 1000px) {
-  .hero { overflow: visible; }
-  .content { min-height: min(100svh, 740px); padding-bottom: 24px; grid-template-rows: auto clamp(140px, 22svh, 200px) auto; gap: 28px; padding-top: 128px; }
-  .founders { position: relative; inset: auto; width: min(100%, 680px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(16px, 5vw, 48px); padding: 16px 24px 40px; }
-  .founder { position: relative; inset: auto; transform: none; width: 100%; min-width: 0; }
-  .bottom { position: relative; margin-top: auto; }
-  .portraitStage { max-width: 280px; margin-inline: auto; }
-  .founderName { font-size: 20px; }
-}
-@media (max-width: 600px) {
-  .content { min-height: auto; padding-top: 128px; gap: 24px; grid-template-rows: auto clamp(120px, 36vw, 160px) auto; }
-  .founders { padding: 24px 16px 32px; gap: 16px; }
-  .founderBadge { gap: 8px; padding: 4px 12px 4px 10px; }
-  .founderRole { font-size: 9px; letter-spacing: .12em; }
-  .founderName { font-size: 14px; }
-  .founderStar { width: 9px; height: 9px; }
-  .founderDivider { height: 10px; }
-  .founderCompany { font-size: clamp(11px, 3.2vw, 14px); }
-  .founderCaption { gap: 6px; margin-top: -5px; }
-  .collaboration { width: 100%; gap: 10px; margin-top: 14px; }
-  .collaborationLabel { font-size: 11px; letter-spacing: .12em; }
-  .companyLockup { flex-direction: column; gap: 6px; min-height: auto; margin-top: 6px; }
-  .companyLogo { width: 32px; height: 32px; flex-basis: 32px; border-radius: 8px; }
-  .companyLockup .founderCompany { font-size: clamp(11px, 3.2vw, 15px); }
-}
 
-/* The live intro and recorded loop share the same viewport and compositing. */
+/* Base ring and live scene compositing */
 .ringScene { inset: auto; left: 0; top: 50%; width: 100%; aspect-ratio: 2; transform: translateY(-50%); z-index: 0; }
 .ringScene[data-status='ready'] { opacity: 1; }
 .ringVideo { opacity: 0; }
 .ringVideo[data-revealed='true'] { opacity: 1; }
 .ringScene, .ringVideo { mask-image: radial-gradient(ellipse at center, #000 25%, transparent 72%); }
 .brandStage .motionControl { top: auto; bottom: 0; right: 0; }
+
+/* Desktop-only sizing (min-width: 1001px) - preserved exactly */
+@media (min-width: 1001px) {
+  .lowerContent { max-width: 440px; }
+  .brandStage { width: min(44vw, 580px); }
+}
+
+/* Tablet & Landscape Mobile (max-width: 1000px) */
+@media (max-width: 1000px) {
+  .hero {
+    overflow-x: hidden;
+    overflow-y: visible;
+    min-height: auto;
+    padding-bottom: 32px;
+  }
+  .content {
+    min-height: auto;
+    padding: max(96px, env(safe-area-inset-top)) 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    max-width: 640px;
+  }
+  .topContent {
+    width: 100%;
+  }
+  .brandStage {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    height: clamp(150px, 34vw, 210px);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ringScene, .ringVideo {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .productLogo {
+    width: clamp(180px, 32vw, 240px);
+  }
+  .lowerContent {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .actions {
+    margin-top: 4px;
+  }
+  .collaboration {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    width: min(calc(100% - 48px), 460px);
+    margin: clamp(28px, 4.5vh, 40px) auto clamp(16px, 2.5vh, 24px);
+    pointer-events: auto;
+  }
+  .founders {
+    position: relative;
+    inset: auto;
+    width: min(100%, 680px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(20px, 4vw, 44px);
+    padding: 16px 24px 44px;
+    pointer-events: auto;
+  }
+  .founder {
+    position: relative;
+    inset: auto;
+    transform: none;
+    width: 100%;
+    min-width: 0;
+  }
+  .portraitStage {
+    max-width: 260px;
+    margin-inline: auto;
+  }
+  .founderName {
+    font-size: 18px;
+  }
+}
+
+/* Standard Mobile Phones (max-width: 600px) */
+@media (max-width: 600px) {
+  .hero {
+    padding-bottom: 40px;
+  }
+  .content {
+    padding: max(84px, env(safe-area-inset-top)) 16px 14px;
+    gap: 16px;
+    max-width: 100%;
+  }
+  .presentingContainer {
+    gap: 8px;
+    max-width: 320px;
+  }
+  .presentingText {
+    font-size: clamp(13px, 3.8vw, 16px);
+    letter-spacing: 0.22em;
+    padding-left: 0.22em;
+  }
+  .presentingWing {
+    max-width: 44px;
+    height: 14px;
+  }
+  .wingDot {
+    width: 3px;
+    height: 3px;
+  }
+  .brandStage {
+    max-width: min(92vw, 340px);
+    height: clamp(130px, 38vw, 165px);
+    margin: 2px auto;
+  }
+  .productLogo {
+    width: clamp(150px, 42vw, 195px);
+  }
+  .actions {
+    gap: 10px;
+    margin-top: 2px;
+  }
+  .collaboration {
+    width: min(calc(100% - 24px), 380px);
+    gap: 8px;
+    margin: 26px auto 14px;
+  }
+  .collaborationLabel {
+    font-size: clamp(9.5px, 2.5vw, 11px);
+    letter-spacing: .12em;
+  }
+  .founders {
+    width: 100%;
+    max-width: 420px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 8px 14px 36px;
+  }
+  .portraitStage {
+    max-width: 165px;
+  }
+  .founderCaption {
+    gap: 5px;
+    margin-top: -6px;
+  }
+  .founderBadge {
+    gap: 5px;
+    padding: 3px 9px;
+  }
+  .founderRole {
+    font-size: 8px;
+    letter-spacing: .1em;
+    gap: 3px;
+  }
+  .founderStar {
+    width: 7px;
+    height: 7px;
+  }
+  .founderDivider {
+    height: 8px;
+  }
+  .founderName {
+    font-size: 13px;
+  }
+  .companyLockup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 28px;
+    margin-top: 2px;
+  }
+  .companyLogo {
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+  }
+  .founderCompany {
+    font-size: clamp(10.5px, 2.9vw, 12.5px);
+    letter-spacing: -.01em;
+  }
+}
+
+/* Small Mobile Phones (max-width: 360px) */
+@media (max-width: 360px) {
+  .presentingText {
+    font-size: 12px;
+    letter-spacing: 0.18em;
+  }
+  .brandStage {
+    max-width: 280px;
+    height: 125px;
+  }
+  .productLogo {
+    width: 140px;
+  }
+  .collaboration {
+    width: calc(100% - 20px);
+    gap: 8px;
+    margin: 20px auto 10px;
+  }
+  .collaborationLabel {
+    font-size: 9.5px;
+    letter-spacing: .12em;
+  }
+  .founders {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    max-width: 220px;
+    padding: 8px 12px 28px;
+  }
+  .portraitStage {
+    max-width: 170px;
+  }
+}
