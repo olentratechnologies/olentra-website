@@ -18,8 +18,24 @@ const socialIcons = {
 
 export default function Footer() {
   return (
-    <footer data-testid="footer" className="bg-[#020617] text-white border-t border-white/5 relative overflow-hidden transition-colors duration-500">
-      <div className="absolute inset-0 bg-cyber-grid bg-[length:30px_30px] opacity-[0.05] dark:opacity-10 pointer-events-none" />
+    <footer
+      data-testid="footer"
+      className="text-white border-t border-white/10 relative overflow-hidden transition-colors duration-500 isolate"
+      style={{
+        background: "radial-gradient(ellipse at 65% 48%, #152943 0, transparent 50%), linear-gradient(110deg, #070b12, #0b111b)",
+      }}
+    >
+      {/* Founders Hero Grid Texture */}
+      <div
+        className="absolute inset-0 z-[-1] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(#a5c9ff06 1px, transparent 1px), linear-gradient(90deg, #a5c9ff06 1px, transparent 1px)",
+          backgroundSize: "100px 100px",
+          maskImage: "linear-gradient(transparent, #000, transparent)",
+          WebkitMaskImage: "linear-gradient(transparent, #000, transparent)",
+        }}
+      />
       <div className="max-w-6xl mx-auto px-6 md:px-12 pt-12 md:pt-16 pb-10 md:pb-14 relative z-10">
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-8 mb-12">
@@ -114,7 +130,7 @@ export default function Footer() {
                 >
                   <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                   <span className="relative flex items-center gap-2">
-                    Book a Discovery Call
+                    Schedule a Meeting
                     <MessageSquare className="w-2.5 h-2.5" />
                   </span>
                 </a>

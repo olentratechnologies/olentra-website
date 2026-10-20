@@ -14,7 +14,7 @@ export default function LegalPage({ title, description, sections, path }) {
           { label: "Home", href: "/" },
           { label: title },
         ]}
-        primaryCta={{ href: "/contact", label: "Contact Olentra" }}
+        primaryCta={{ href: "/#contact", label: "Contact Olentra" }}
         secondaryCta={{ href: "/services", label: "Explore Services" }}
         image="/images/backgrounds/cyber-bg.png"
         panelLabel={path.replace("/", "").toUpperCase().replace(/-/g, "_")}

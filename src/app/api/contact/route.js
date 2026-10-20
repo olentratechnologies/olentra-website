@@ -16,13 +16,13 @@ function validatePayload(payload) {
   const company = sanitize(payload.company);
   const message = sanitize(payload.message);
 
-  if (!name || !email || !phone || !message) {
+  if (!name || !email || !message) {
     return { error: "Please fill in all required fields." };
   }
   if (!EMAIL_REGEX.test(email)) {
     return { error: "Please enter a valid email address." };
   }
-  if (!PHONE_REGEX.test(phone)) {
+  if (phone && !PHONE_REGEX.test(phone)) {
     return { error: "Please enter a valid phone number." };
   }
   if (message.length < 20) {

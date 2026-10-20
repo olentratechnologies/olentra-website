@@ -32,7 +32,6 @@ export const founders = [
 export const foundersContent = {
   hero: {
     title: ["The minds", "behind", "Olentra."],
-    line: "Great technology begins with people who dare to build differently.",
     description:
       "Meet the founders shaping the vision, engineering culture, and future of Olentra Technologies.",
   },
@@ -64,7 +63,7 @@ export const foundersContent = {
     ],
   },
   thinking: {
-    title: ["Our thinking.", "Our foundation."],
+    title: ["Our Thinking.", "Our Foundation."],
     principles: [
       {
         title: "Think beyond the obvious.",
@@ -125,7 +124,7 @@ export const foundersContent = {
   closing: {
     title: ["The future", "is built."],
     description: "We believe ambitious ideas deserve exceptional engineering.",
-    primary: { label: "Build with Olentra", href: "/contact" },
+    primary: { label: "Build with Olentra", href: "/#contact" },
     secondary: { label: "Explore our work", href: "/#projects" },
   },
 };

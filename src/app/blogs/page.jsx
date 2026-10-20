@@ -45,7 +45,7 @@ export default function BlogsPage() {
           { label: "Home", href: "/" },
           { label: "Blogs" },
         ]}
-        primaryCta={{ href: "/contact", label: "Discuss Your Project" }}
+        primaryCta={{ href: "/#contact", label: "Discuss Your Project" }}
         secondaryCta={{ href: "/services", label: "Explore Services" }}
         image="/images/products/ai-studio-new.png"
         panelLabel="EDITORIAL_OS"
@@ -116,66 +116,6 @@ export default function BlogsPage() {
                 </div>
               </motion.article>
             ))}
-          </motion.div>
-        </div>
-      </section>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1 }}
-      >
-        <PrimaryCtaBand
-          eyebrow="Editorial Focus"
-          title="Ideas backed by hands-on execution."
-          description="Our writing focuses on practical lessons from product delivery, AI systems, frontend performance, and growth operations."
-          primaryCta={{ href: "/contact", label: "Talk to Olentra" }}
-          secondaryCta={{ href: "/services", label: "View Service Areas" }}
-        />
-      </motion.div>
-
-      <section className="relative py-20 md:py-24 bg-[#020617] overflow-hidden">
-        <div className="max-w-6xl mx-auto px-6 md:px-12">
-          <motion.div
-            {...staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left"
-          >
-            {[
-              "Product delivery systems and launch velocity",
-              "AI workflows, observability, and operating models",
-              "Frontend performance and execution quality",
-            ].map((item) => (
-              <motion.div
-                key={item}
-                variants={fadeInUp}
-                className="rounded-2xl border border-white/20 bg-white/10 p-5 text-[11px] font-black uppercase tracking-[0.2em] text-white/90 leading-relaxed"
-              >
-                <div className="flex gap-3 items-start">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{item}</span>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-          <motion.div
-            variants={fadeInUp}
-            initial="initial"
-            whileInView="whileInView"
-            viewport={{ once: true }}
-            className="pt-8"
-          >
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-3 px-8 py-4 text-[11px] font-black uppercase tracking-[0.3em] bg-primary text-white transition-all hover:bg-blue-700 shadow-[0_0_25px_rgba(37,99,235,0.35)]"
-              style={{
-                clipPath:
-                  "polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)",
-              }}
-            >
-              Start a Project
-              <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-            </Link>
           </motion.div>
         </div>
       </section>

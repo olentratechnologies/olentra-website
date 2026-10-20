@@ -10,11 +10,22 @@ export default function Products() {
     return (
         <section
             id="products"
-            className="bg-[#020617] py-24 md:py-32 relative overflow-hidden"
+            className="relative py-24 md:py-32 overflow-hidden isolate"
+            style={{
+                background: "radial-gradient(ellipse at 65% 48%, #152943 0, transparent 50%), linear-gradient(110deg, #070b12, #0b111b)",
+            }}
         >
-            {/* Background Decor */}
-            <div className="absolute inset-0 bg-cyber-grid opacity-[0.03] pointer-events-none" />
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
+            {/* Founders Hero Grid Texture */}
+            <div
+                className="absolute inset-0 z-[-1] pointer-events-none"
+                style={{
+                    backgroundImage:
+                        "linear-gradient(#a5c9ff06 1px, transparent 1px), linear-gradient(90deg, #a5c9ff06 1px, transparent 1px)",
+                    backgroundSize: "100px 100px",
+                    maskImage: "linear-gradient(transparent, #000, transparent)",
+                    WebkitMaskImage: "linear-gradient(transparent, #000, transparent)",
+                }}
+            />
 
             <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
                 <div className="mb-20">
@@ -56,15 +67,21 @@ function ProductCard({ product, index }) {
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/10 via-transparent to-indigo-500/10" />
 
                 <div className="relative">
-                    <div className="relative aspect-[16/10] overflow-hidden">
+                    <div className="relative aspect-[16/10] overflow-hidden bg-white/[0.03] flex items-center justify-center">
                         <Image
                             src={product.image}
                             alt={product.title}
                             fill
                             sizes="(max-width: 768px) 100vw, 380px"
-                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                            className={
+                                product.image.includes('DailySupply.jpeg')
+                                    ? "object-contain p-6 bg-white transition-transform duration-700 group-hover:scale-95"
+                                    : "object-cover transition-transform duration-700 group-hover:scale-105"
+                            }
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-80" />
+                        {!product.image.includes('DailySupply.jpeg') && (
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#070b12] via-transparent to-transparent opacity-80" />
+                        )}
                     </div>
                 </div>
 

@@ -38,7 +38,7 @@ export const metadata = buildMetadata({
 
 export default function HomePage() {
   return (
-    <main className="relative font-sans antialiased bg-[#020617] text-white">
+    <main className="relative font-sans antialiased bg-[#070b12] text-white">
       <JsonLd data={organizationSchema()} />
       <JsonLd data={websiteSchema()} />
       <Navbar />
@@ -50,8 +50,12 @@ export default function HomePage() {
       <StripeAnimation />
       <ServicesTimeline
         sectionId="services"
-        maxGroups={3}
-        maxServicesPerGroup={2}
+        highlightedServices={[
+          "AI Solutions",
+          "Real-Time Systems",
+          "Cloud Architecture",
+          "Security & Compliance"
+        ]}
         ctaHref="/services"
         ctaLabel="View All Services"
       />

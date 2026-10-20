@@ -21,6 +21,23 @@ const TAG_PALETTE = [
   'bg-pink-500/10 border-pink-400/30 text-pink-200 group-hover:border-pink-400/55 group-hover:text-pink-100',
 ];
 
+const TAG_PALETTE_LIGHT = [
+  'bg-blue-50 border-blue-200 text-blue-700',
+  'bg-indigo-50 border-indigo-200 text-indigo-700',
+  'bg-sky-50 border-sky-200 text-sky-700',
+  'bg-violet-50 border-violet-200 text-violet-700',
+  'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700',
+  'bg-emerald-50 border-emerald-200 text-emerald-700',
+  'bg-teal-50 border-teal-200 text-teal-700',
+  'bg-cyan-50 border-cyan-200 text-cyan-700',
+  'bg-rose-50 border-rose-200 text-rose-700',
+  'bg-orange-50 border-orange-200 text-orange-700',
+  'bg-amber-50 border-amber-200 text-amber-700',
+  'bg-lime-50 border-lime-200 text-lime-700',
+  'bg-purple-50 border-purple-200 text-purple-700',
+  'bg-pink-50 border-pink-200 text-pink-700',
+];
+
 const slugify = (value) =>
   value
     .toLowerCase()
@@ -28,63 +45,77 @@ const slugify = (value) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 
-function getTagClasses(tag) {
+function getTagClasses(tag, isLight = false) {
   // Deterministic hash to consistently pick a color for the same tag
   let hash = 0;
   for (let i = 0; i < tag.length; i++) {
     hash = tag.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const index = Math.abs(hash) % TAG_PALETTE.length;
-  return TAG_PALETTE[index];
+  const palette = isLight ? TAG_PALETTE_LIGHT : TAG_PALETTE;
+  const index = Math.abs(hash) % palette.length;
+  return palette[index];
 }
 
-function TimelineCard({ service, isRightColumn }) {
+function TimelineCard({ service, isRightColumn, isLight = false }) {
   const Icon = service.Icon;
 
   return (
     <div
       id={`services-${slugify(service.title)}`}
       className={[
-        "relative w-full mb-12 md:mb-0 scroll-mt-32",
-        isRightColumn ? "md:pl-14" : "md:pr-14",
+        "relative w-full mb-8 md:mb-0 scroll-mt-28",
+        isRightColumn ? "md:pl-10" : "md:pr-10",
       ].join(" ")}
     >
       {/* Connector Line (Desktop) */}
       <div
         className={[
-          "hidden md:block absolute top-1/2 -translate-y-1/2 h-px bg-primary/30 z-0 w-10",
+          "hidden md:block absolute top-1/2 -translate-y-1/2 h-px z-0 w-8",
+          isLight ? "bg-primary/20" : "bg-primary/30",
           isRightColumn ? "left-0" : "right-0",
         ].join(" ")}
       />
 
       {/* Card Content */}
       <motion.div
-        initial={{ opacity: 0, x: isRightColumn ? 40 : -40 }}
+        initial={{ opacity: 0, x: isRightColumn ? 30 : -30 }}
         whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.6, delay: 0.1 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.5, delay: 0.08 }}
         className="w-full group"
       >
-        <article className="relative bg-slate-900/40 backdrop-blur-xl border border-white/5 p-6 md:p-7 rounded-xl hover:border-primary/50 transition-all duration-500 hover:shadow-[0_0_26px_rgba(37,99,235,0.14)] hover:-translate-y-1">
-          {/* Subtle Glow Header */}
-          <div className="flex items-center gap-3.5 mb-5">
-            <div className="p-2.5 rounded-lg bg-primary/10 border border-primary/20 text-primary shadow-brand-cyan-glow group-hover:scale-110 transition-transform duration-500">
-              <Icon size={20} strokeWidth={2} />
+        <article className={`relative backdrop-blur-xl p-4 md:p-5 rounded-xl transition-all duration-500 hover:-translate-y-0.5 ${
+          isLight
+            ? "bg-slate-50/90 border border-slate-200/90 hover:border-primary/50 shadow-md shadow-slate-200/40 hover:shadow-lg hover:shadow-primary/10"
+            : "bg-slate-900/40 border border-white/5 hover:border-primary/50 hover:shadow-[0_0_20px_rgba(37,99,235,0.14)]"
+        }`}>
+          {/* Header */}
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className={`p-2 rounded-lg border group-hover:scale-105 transition-transform duration-500 ${
+              isLight
+                ? "bg-primary/10 border-primary/20 text-primary shadow-sm"
+                : "bg-primary/10 border-primary/20 text-primary shadow-brand-cyan-glow"
+            }`}>
+              <Icon size={16} strokeWidth={2} />
             </div>
-            <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors">
+            <h3 className={`text-sm md:text-base font-black uppercase tracking-tight group-hover:text-primary transition-colors ${
+              isLight ? "text-slate-900" : "text-white"
+            }`}>
               {service.title}
             </h3>
           </div>
 
-          <p className="text-slate-400 font-medium leading-relaxed mb-6 text-[13px] md:text-[14px]">
+          <p className={`font-medium leading-relaxed mb-4 text-[12px] md:text-[12.5px] ${
+            isLight ? "text-slate-600" : "text-slate-400"
+          }`}>
             {service.description}
           </p>
 
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1">
             {service.tags.map((tag) => (
               <span
                 key={tag}
-                className={`px-2.5 py-1 rounded-md border text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all ${getTagClasses(tag)}`}
+                className={`px-2 py-0.5 rounded border text-[8px] md:text-[8.5px] font-bold uppercase tracking-wider transition-all ${getTagClasses(tag, isLight)}`}
               >
                 {tag}
               </span>
@@ -96,13 +127,19 @@ function TimelineCard({ service, isRightColumn }) {
       {/* Timeline Node */}
       <div
         className={[
-          "absolute -left-8 top-0 -translate-x-1/2 z-20",
+          "absolute -left-7 top-0 -translate-x-1/2 z-20",
           isRightColumn ? "md:left-0" : "md:left-full",
           "md:top-1/2 md:-translate-y-1/2",
         ].join(" ")}
       >
-        <div className="w-8 h-8 md:w-10 md:h-10 bg-[#020617] border-2 border-primary/30 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.2)]">
-          <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-primary rounded-full animate-pulse shadow-brand-cyan-glow" />
+        <div className={`w-6 h-6 md:w-7 md:h-7 border-2 rounded-full flex items-center justify-center ${
+          isLight
+            ? "bg-white border-primary/40 shadow-sm shadow-primary/10"
+            : "bg-[#070b12] border-primary/30 shadow-[0_0_12px_rgba(37,99,235,0.2)]"
+        }`}>
+          <div className={`w-2 h-2 bg-primary rounded-full animate-pulse ${
+            isLight ? "shadow-sm shadow-primary/50" : "shadow-brand-cyan-glow"
+          }`} />
         </div>
       </div>
     </div>
@@ -113,9 +150,12 @@ export default function ServicesTimeline({
   sectionId = "services",
   maxGroups,
   maxServicesPerGroup,
+  highlightedServices,
   ctaHref = "#contact",
   ctaLabel = "Initiate Request",
+  theme = "dark",
 }) {
+  const isLight = theme === "light";
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -128,29 +168,61 @@ export default function ServicesTimeline({
     restDelta: 0.001
   });
 
-  const visibleGroups = serviceGroups
-    .slice(0, maxGroups ?? serviceGroups.length)
-    .map((group) => ({
-      ...group,
-      services: group.services.slice(0, maxServicesPerGroup ?? group.services.length),
-    }));
+  // Flat list of all services across groups for highlighted selection
+  const allServices = serviceGroups.flatMap((group) => group.services);
+
+  const visibleGroups = highlightedServices?.length
+    ? null
+    : serviceGroups
+        .slice(0, maxGroups ?? serviceGroups.length)
+        .map((group) => ({
+          ...group,
+          services: group.services.slice(0, maxServicesPerGroup ?? group.services.length),
+        }));
+
+  const activeHighlightedList = highlightedServices?.length
+    ? highlightedServices
+        .map((name) => allServices.find((s) => s.title.toLowerCase() === name.toLowerCase()))
+        .filter(Boolean)
+    : null;
 
   return (
     <section
       id={sectionId}
-      className="bg-[#020617] py-16 md:py-24 relative overflow-hidden transition-colors duration-500"
+      className={`relative py-14 md:py-20 overflow-hidden transition-colors duration-500 isolate ${
+        isLight ? "bg-white text-slate-900" : ""
+      }`}
+      style={
+        isLight
+          ? undefined
+          : {
+              background: "radial-gradient(ellipse at 65% 48%, #152943 0, transparent 50%), linear-gradient(110deg, #070b12, #0b111b)",
+            }
+      }
     >
-      {/* Background Decor */}
-      <div className="absolute inset-0 bg-cyber-grid opacity-[0.03] pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(37,99,235,0.10),transparent_60%)] pointer-events-none" />
+      {/* Grid Texture */}
+      {isLight ? (
+        <div className="absolute inset-0 bg-cyber-grid-light opacity-[0.05] pointer-events-none" />
+      ) : (
+        <div
+          className="absolute inset-0 z-[-1] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(#a5c9ff06 1px, transparent 1px), linear-gradient(90deg, #a5c9ff06 1px, transparent 1px)",
+            backgroundSize: "100px 100px",
+            maskImage: "linear-gradient(transparent, #000, transparent)",
+            WebkitMaskImage: "linear-gradient(transparent, #000, transparent)",
+          }}
+        />
+      )}
 
-      <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="text-center mb-16 md:mb-24">
+      <div className="max-w-5xl mx-auto px-6 md:px-10 relative z-10">
+        <div className="text-center mb-10 md:mb-14">
           <motion.p
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-primary font-black text-[10px] md:text-xs tracking-[0.4em] uppercase mb-3"
+            className="text-primary font-black text-[9px] md:text-[10px] tracking-[0.35em] uppercase mb-2"
           >
             Engineering Excellence
           </motion.p>
@@ -159,64 +231,90 @@ export default function ServicesTimeline({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-[clamp(1.6rem,4vw,3.25rem)] font-black text-white uppercase tracking-wide md:tracking-wider leading-[0.95] sm:leading-[0.9]"
+            className={`text-[clamp(1.4rem,3vw,2.4rem)] font-black uppercase tracking-wide leading-[1.05] ${
+              isLight ? "text-slate-950" : "text-white"
+            }`}
           >
             Systems built
             <span className="hidden sm:inline"> </span>
             <br className="sm:hidden" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-primary">to drive impact</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-500 to-primary">to drive impact</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15 }}
-            className="mt-6 text-slate-300/90 text-[0.95rem] md:text-[1.05rem] leading-relaxed max-w-3xl mx-auto"
+            className={`mt-3 text-[0.88rem] md:text-[0.95rem] leading-relaxed max-w-2xl mx-auto ${
+              isLight ? "text-slate-600" : "text-slate-300/90"
+            }`}
           >
             From design to automation, we ship production-ready systems with performance, and measurable outcomes.
           </motion.p>
         </div>
 
-        <div ref={containerRef} className="relative mt-16">
-          <div className="relative pl-14 md:pl-0">
+        <div ref={containerRef} className="relative mt-10">
+          <div className="relative pl-10 md:pl-0">
             {/* Vertical Central Line */}
-            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-[1.5px] bg-white/5 md:-translate-x-1/2" />
+            <div className={`absolute left-5 md:left-1/2 top-0 bottom-0 w-[1.5px] md:-translate-x-1/2 ${
+              isLight ? "bg-slate-200" : "bg-white/5"
+            }`} />
 
             {/* Animated Progress Line */}
             <motion.div
               style={{ scaleY, originY: 0 }}
-              className="absolute left-6 md:left-1/2 top-0 bottom-0 w-[1.5px] bg-gradient-to-b from-primary via-blue-400 to-transparent md:-translate-x-1/2 z-10 shadow-[0_0_12px_rgba(37,99,235,0.4)]"
+              className={`absolute left-5 md:left-1/2 top-0 bottom-0 w-[1.5px] bg-gradient-to-b from-primary via-blue-400 to-transparent md:-translate-x-1/2 z-10 ${
+                isLight ? "shadow-[0_0_10px_rgba(37,99,235,0.3)]" : "shadow-[0_0_12px_rgba(37,99,235,0.4)]"
+              }`}
             />
 
-            {visibleGroups.map((group) => (
-              <div key={group.category} id={`services-${slugify(group.category)}`} className="mb-20 last:mb-0 scroll-mt-28">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="relative flex items-center justify-start md:justify-center gap-4 mb-20 z-20"
-                >
-                  <div className="flex items-center gap-4 bg-[#020617] px-6 py-2 border border-white/5 rounded-full backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-                    <span className="text-xl md:text-2xl">{group.icon}</span>
-                    <h3 className="text-xs md:text-sm font-black text-white uppercase tracking-[0.3em]">
-                      {group.category}
-                    </h3>
-                  </div>
-                </motion.div>
+            {activeHighlightedList ? (
+              <div className="space-y-8 md:space-y-0 md:grid md:grid-cols-2 md:gap-y-10">
+                {activeHighlightedList.map((service, index) => (
+                  <TimelineCard
+                    key={service.title}
+                    service={service}
+                    isRightColumn={index % 2 === 1}
+                    isLight={isLight}
+                  />
+                ))}
+              </div>
+            ) : (
+              visibleGroups?.map((group) => (
+                <div key={group.category} id={`services-${slugify(group.category)}`} className="mb-14 last:mb-0 scroll-mt-28">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="relative flex items-center justify-start md:justify-center gap-3 mb-10 z-20"
+                  >
+                    <div className={`flex items-center gap-3 px-4 py-1.5 border rounded-full backdrop-blur-md ${
+                      isLight
+                        ? "bg-white/90 border-slate-200 text-slate-900 shadow-sm"
+                        : "bg-[#070b12] border-white/10 text-white shadow-[0_0_16px_rgba(0,0,0,0.5)]"
+                    }`}>
+                      <span className="text-base md:text-lg">{group.icon}</span>
+                      <h3 className={`text-[10px] md:text-xs font-black uppercase tracking-[0.25em] ${
+                        isLight ? "text-slate-900" : "text-white"
+                      }`}>
+                        {group.category}
+                      </h3>
+                    </div>
+                  </motion.div>
 
-                <div className="space-y-12 md:space-y-0 md:grid md:grid-cols-2 md:gap-y-16">
-                  {group.services.map((service, localIndex) => {
-                    return (
+                  <div className="space-y-8 md:space-y-0 md:grid md:grid-cols-2 md:gap-y-10">
+                    {group.services.map((service, localIndex) => (
                       <TimelineCard
                         key={service.title}
                         service={service}
                         isRightColumn={localIndex % 2 === 1}
+                        isLight={isLight}
                       />
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

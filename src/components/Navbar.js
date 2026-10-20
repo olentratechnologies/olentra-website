@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -11,6 +11,31 @@ import { navLinks } from '../data/navigation';
 import { products } from '../data/products_data';
 import { contactInfo } from '../data/contact';
 import { servicePages } from '../data/service_pages';
+
+function CalendarColorfulIcon({ size = 15, className = "" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="3" y="6" width="18" height="15" rx="3" fill="#3B82F6" />
+      <path d="M3 10H21" stroke="#1D4ED8" strokeWidth="1.5" />
+      <path d="M8 2V5" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M16 2V5" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="8" cy="14" r="1.25" fill="#FFFFFF" />
+      <circle cx="12" cy="14" r="1.25" fill="#34D399" />
+      <circle cx="16" cy="14" r="1.25" fill="#F43F5E" />
+      <circle cx="8" cy="17.5" r="1.25" fill="#F472B6" />
+      <circle cx="12" cy="17.5" r="1.25" fill="#FBBF24" />
+      <circle cx="16" cy="17.5" r="1.25" fill="#60A5FA" />
+    </svg>
+  );
+}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -174,15 +199,20 @@ export default function Navbar() {
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             onMouseEnter={() => setIsServicesOpen(true)}
                             onMouseLeave={() => setIsServicesOpen(false)}
-                            className={`absolute top-full left-1/2 w-[640px] p-4 rounded-2xl border shadow-2xl backdrop-blur-3xl z-[110] mt-1 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${isLightSection
-                              ? 'bg-white/95 border-slate-200 text-slate-900'
-                              : 'bg-slate-950/95 border-white/10 text-white'
-                              }`}
+                            className={`absolute top-full left-1/2 w-[640px] p-4 rounded-2xl border shadow-[0_25px_60px_rgba(0,0,0,0.25)] backdrop-blur-3xl z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] transition-colors duration-300 ${
+                              isLightSection
+                                ? 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-300/50'
+                                : 'bg-[#070b12]/95 border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'
+                            }`}
                           >
                             <div className="grid grid-cols-[220px_1fr] gap-3">
                               {/* Left: Sections */}
-                              <div className={`rounded-xl border p-2 ${isLightSection ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                                <div className={`px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.22em] ${isLightSection ? 'text-slate-500' : 'text-slate-400'}`}>
+                              <div className={`rounded-xl border p-2 transition-colors duration-300 ${
+                                isLightSection ? 'border-slate-200 bg-slate-50/90' : 'border-white/10 bg-[#0f1723]/90'
+                              }`}>
+                                <div className={`px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.22em] ${
+                                  isLightSection ? 'text-slate-500' : 'text-slate-400'
+                                }`}>
                                   Sections
                                 </div>
                                 <div className="flex flex-col gap-1">
@@ -194,21 +224,31 @@ export default function Navbar() {
                                         type="button"
                                         onMouseEnter={() => setActiveServiceGroupIndex(groupIdx)}
                                         onFocus={() => setActiveServiceGroupIndex(groupIdx)}
-                                        className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex items-center justify-between gap-3 ${isActiveGroup
-                                          ? (isLightSection ? 'bg-slate-50 text-slate-950' : 'bg-white/10 text-white')
-                                          : (isLightSection ? 'text-slate-600 hover:bg-slate-50' : 'text-slate-300 hover:bg-white/5')
-                                          }`}
+                                        className={`relative w-full text-left px-3 py-2 rounded-lg transition-all duration-300 flex items-center justify-between gap-3 group/item overflow-hidden ${
+                                          isActiveGroup
+                                            ? isLightSection
+                                              ? 'bg-primary/10 text-primary font-bold shadow-sm'
+                                              : 'bg-white/10 text-white shadow-sm'
+                                            : isLightSection
+                                              ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
+                                              : 'text-slate-300 hover:bg-white/5'
+                                        }`}
                                       >
+                                        {/* Left indicator bar on active/hover */}
+                                        <span
+                                          className={`absolute left-0 top-1.5 bottom-1.5 w-[2.5px] rounded-r-full transition-all duration-300 ${
+                                            isActiveGroup
+                                              ? 'opacity-100 scale-y-100'
+                                              : 'opacity-0 scale-y-50 group-hover/item:opacity-100 group-hover/item:scale-y-100'
+                                          }`}
+                                          style={{ background: accentGradient }}
+                                        />
                                         <span className="flex items-center gap-2">
                                           <span className="text-sm leading-none">{group.icon}</span>
                                           <span className="text-[10px] font-bold uppercase tracking-wider">
                                             {group.category}
                                           </span>
                                         </span>
-                                        <span
-                                          className={`h-1.5 w-1.5 rounded-full transition-opacity ${isActiveGroup ? 'opacity-100' : 'opacity-0'}`}
-                                          style={{ background: accentGradient }}
-                                        />
                                       </button>
                                     );
                                   })}
@@ -216,8 +256,12 @@ export default function Navbar() {
                               </div>
 
                               {/* Right: Items */}
-                              <div className={`rounded-xl border p-2 ${isLightSection ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                                <div className={`px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.22em] ${isLightSection ? 'text-slate-500' : 'text-slate-400'}`}>
+                              <div className={`rounded-xl border p-2 transition-colors duration-300 ${
+                                isLightSection ? 'border-slate-200 bg-slate-50/90' : 'border-white/10 bg-[#0f1723]/90'
+                              }`}>
+                                <div className={`px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.22em] ${
+                                  isLightSection ? 'text-slate-500' : 'text-slate-400'
+                                }`}>
                                   {serviceGroups[activeServiceGroupIndex]?.category ?? 'Services'}
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
@@ -229,15 +273,23 @@ export default function Navbar() {
                                         service.title
                                       )}
                                       onClick={() => setIsServicesOpen(false)}
-                                      className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group/item ${isLightSection
-                                        ? 'hover:bg-slate-50'
-                                        : 'hover:bg-white/5'
-                                        }`}
+                                      className={`relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group/item overflow-hidden ${
+                                        isLightSection
+                                          ? 'hover:bg-slate-100 hover:border-slate-200'
+                                          : 'hover:bg-white/5 hover:border hover:border-white/5'
+                                      }`}
                                     >
-                                      <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover/item:scale-110 transition-transform duration-300">
+                                      {/* Left Indicator bar on hover */}
+                                      <span
+                                        className="absolute left-0 top-2.5 bottom-2.5 w-[2.5px] rounded-r-full opacity-0 group-hover/item:opacity-100 transition-all duration-300 scale-y-50 group-hover/item:scale-y-100"
+                                        style={{ background: accentGradient }}
+                                      />
+                                      <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover/item:scale-110 transition-transform duration-300 shrink-0">
                                         <service.Icon size={16} />
                                       </div>
-                                      <span className="text-[10px] font-bold uppercase tracking-wider">{service.title}</span>
+                                      <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                                        isLightSection ? 'text-slate-700 group-hover/item:text-slate-950' : 'text-slate-200 group-hover/item:text-white'
+                                      }`}>{service.title}</span>
                                     </Link>
                                   ))}
                                 </div>
@@ -259,14 +311,19 @@ export default function Navbar() {
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             onMouseEnter={() => setIsProductsOpen(true)}
                             onMouseLeave={() => setIsProductsOpen(false)}
-                            className={`absolute top-full left-1/2 w-[560px] p-4 rounded-2xl border shadow-2xl backdrop-blur-3xl z-[110] mt-1 before:absolute before:-top-2 before:left-0 before:right-0 before:h-2 before:content-[''] ${isLightSection
-                              ? 'bg-white/95 border-slate-200 text-slate-900'
-                              : 'bg-slate-950/95 border-white/10 text-white'
-                              }`}
+                            className={`absolute top-full left-1/2 w-[320px] p-4 rounded-2xl border shadow-[0_25px_60px_rgba(0,0,0,0.25)] backdrop-blur-3xl z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] transition-colors duration-300 ${
+                              isLightSection
+                                ? 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-300/50'
+                                : 'bg-[#070b12]/95 border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'
+                            }`}
                           >
-                            <div className={`rounded-xl border p-2 ${isLightSection ? 'border-slate-200 bg-white' : 'border-white/10 bg-white/5'}`}>
-                              <div className="flex items-center justify-between px-2.5 py-2">
-                                <div className={`text-[9px] font-black uppercase tracking-[0.22em] ${isLightSection ? 'text-slate-500' : 'text-slate-400'}`}>
+                            <div className={`rounded-xl border p-3 transition-colors duration-300 ${
+                              isLightSection ? 'border-slate-200 bg-slate-50/90' : 'border-white/10 bg-[#0f1723]/90'
+                            }`}>
+                              <div className="flex items-center justify-between px-2.5 py-1.5 mb-2">
+                                <div className={`text-[9px] font-black uppercase tracking-[0.22em] ${
+                                  isLightSection ? 'text-slate-500' : 'text-slate-400'
+                                }`}>
                                   Products
                                 </div>
                                 <Link
@@ -277,23 +334,52 @@ export default function Navbar() {
                                   View All
                                 </Link>
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                {products.map((product) => {
-                                  const IconComponent = product.icon;
+                              <div className="flex flex-col gap-1.5">
+                                {products.map((product, pIdx) => {
                                   return (
                                     <Link
                                       key={product.id}
                                       href={product.href}
                                       onClick={() => setIsProductsOpen(false)}
-                                      className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group/item ${isLightSection
-                                        ? 'hover:bg-slate-50'
-                                        : 'hover:bg-white/5'
-                                        }`}
+                                      className={`relative flex items-center justify-between p-3 rounded-xl transition-all duration-300 group/item overflow-hidden ${
+                                        isLightSection
+                                          ? 'hover:bg-slate-100 hover:border-slate-200'
+                                          : 'hover:bg-white/5 hover:border hover:border-white/5'
+                                      }`}
                                     >
-                                      <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover/item:scale-110 transition-transform duration-300 shrink-0">
-                                        <IconComponent size={16} />
+                                      {/* Left Indicator bar on hover */}
+                                      <span
+                                        className="absolute left-0 top-2.5 bottom-2.5 w-[2.5px] rounded-r-full opacity-0 group-hover/item:opacity-100 transition-all duration-300 scale-y-50 group-hover/item:scale-y-100"
+                                        style={{ background: accentGradient }}
+                                      />
+
+                                      <div className="flex items-center gap-3">
+                                        {/* Enterprise Monogram Badge - Highlighted */}
+                                        <div className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all duration-300 shrink-0 shadow-sm ${
+                                          isLightSection
+                                            ? 'bg-blue-600/10 border-blue-500/40 text-blue-600 group-hover/item:bg-blue-600 group-hover/item:border-blue-600 group-hover/item:text-white group-hover/item:shadow-[0_0_10px_rgba(37,99,235,0.4)]'
+                                            : 'bg-blue-500/20 border-blue-400/40 text-blue-400 group-hover/item:bg-blue-600 group-hover/item:border-blue-500 group-hover/item:text-white group-hover/item:shadow-[0_0_12px_rgba(37,99,235,0.6)]'
+                                        }`}>
+                                          <span className="text-[10px] font-mono font-black tracking-tight">
+                                            0{pIdx + 1}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex flex-col">
+                                          <span className={`text-[10px] font-black uppercase tracking-wider transition-colors ${
+                                            isLightSection
+                                              ? 'text-slate-800 group-hover/item:text-primary'
+                                              : 'text-slate-200 group-hover/item:text-white'
+                                          }`}>
+                                            {product.title}
+                                          </span>
+                                          <span className={`text-[8px] font-mono uppercase tracking-[0.2em] transition-colors ${
+                                            isLightSection ? 'text-slate-500' : 'text-slate-500 group-hover/item:text-slate-400'
+                                          }`}>
+                                            {product.status || 'Platform'}
+                                          </span>
+                                        </div>
                                       </div>
-                                      <span className="text-[10px] font-bold uppercase tracking-wider">{product.title}</span>
                                     </Link>
                                   );
                                 })}
@@ -320,7 +406,8 @@ export default function Navbar() {
                   }`}
                 style={{ background: isLightSection ? undefined : 'linear-gradient(135deg, rgba(37,99,235,0.25), rgba(79,70,229,0.25))' }}
               >
-                Book a Discovery Call
+                <CalendarColorfulIcon size={14} />
+                <span>Schedule a Meeting</span>
               </a>
 
               <button
@@ -343,10 +430,7 @@ export default function Navbar() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: '100%', opacity: 0 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className={`md:hidden border-t overflow-hidden rounded-b-xl ${isLightSection
-                  ? 'border-slate-100 bg-white/95'
-                  : 'border-white/5 bg-slate-950/95'
-                  }`}
+                className="md:hidden border-t border-white/10 bg-[#070b12]/98 backdrop-blur-3xl overflow-hidden rounded-b-xl text-white"
               >
                 <div className="px-6 pt-4 pb-6 flex flex-col gap-0.5 max-h-[80vh] overflow-y-auto">
                   {navLinks.map((link, idx) => {
@@ -478,7 +562,6 @@ export default function Navbar() {
                               className="overflow-hidden flex flex-col gap-1 pl-4 pt-1"
                             >
                               {products.map((product) => {
-                                const IconComponent = product.icon;
                                 return (
                                   <Link
                                     key={product.id}
@@ -487,15 +570,12 @@ export default function Navbar() {
                                       setMobileOpen(false);
                                       setMobileProductsOpen(false);
                                     }}
-                                    className={`flex items-center gap-3 py-2 px-2 rounded-lg transition-all ${isLightSection
-                                      ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
-                                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                                    className={`relative pl-4 pr-5 py-3 rounded-lg transition-all border-l-2 border-transparent hover:border-primary/50 ${isLightSection
+                                      ? 'text-slate-900 hover:text-slate-950 hover:bg-slate-50'
+                                      : 'text-white hover:bg-white/5'
                                       }`}
                                   >
-                                    <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
-                                      <IconComponent size={14} />
-                                    </div>
-                                    <span className="text-[9px] font-bold uppercase tracking-widest">{product.title}</span>
+                                    <span className="text-[10px] font-bold tracking-wide">{product.title}</span>
                                   </Link>
                                 );
                               })}
@@ -512,7 +592,8 @@ export default function Navbar() {
                       rel="noreferrer"
                       className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-primary bg-primary text-white"
                     >
-                      Book a Discovery Call
+                      <CalendarColorfulIcon size={15} />
+                      <span>Schedule a Meeting</span>
                     </a>
                   </div>
                 </div>

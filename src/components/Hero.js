@@ -7,10 +7,10 @@ const VIDEO_URL = "/videos/hero-video.mp4";
 const POSTER_URL = "/videos/hero-poster.jpg";
 
 const FEATS = [
-  "Digital Transformation",
-  "Data & Analytics",
-  "AI & Automation",
-  "Enterprise Security",
+  "Enterprise Modernization",
+  "Data Intelligence",
+  "Applied AI",
+  "Cyber Resilience",
 ];
 
 export default function Hero() {
@@ -48,7 +48,7 @@ export default function Hero() {
     <>
       <section
         data-testid="hero-section"
-        className={`cc-hero relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-[#02060f] text-white flex flex-col justify-between ${
+        className={`cc-hero relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-[#070b12] text-white flex flex-col justify-between ${
           isEntered ? "is-entered" : ""
         }`}
       >

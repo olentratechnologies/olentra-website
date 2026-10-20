@@ -76,7 +76,7 @@ export default async function ServiceDetailPage({ params }) {
           { label: "Services", href: "/services" },
           { label: service.name },
         ]}
-        primaryCta={{ href: "/contact", label: "Start Service Discussion" }}
+        primaryCta={{ href: "/#contact", label: "Start Service Discussion" }}
         secondaryCta={{ href: "/services", label: "All Services" }}
         image="/images/backgrounds/cyber-bg.png"
         panelLabel="SERVICE_NODE"
@@ -171,7 +171,7 @@ export default async function ServiceDetailPage({ params }) {
           </div>
           <div className="mt-10">
             <Link
-              href="/contact"
+              href="/#contact"
               className="inline-flex items-center px-8 py-4 text-[12px] font-black uppercase tracking-[0.24em] bg-primary text-white hover:bg-blue-700 transition-all"
               style={{
                 clipPath:
@@ -184,13 +184,6 @@ export default async function ServiceDetailPage({ params }) {
         </div>
       </section>
 
-      <PrimaryCtaBand
-        eyebrow="Engagement"
-        title={`Launch your ${service.name.toLowerCase()} initiative with delivery confidence.`}
-        description="Share your goals and constraints, and we will map a practical execution path that balances speed, quality, and operational control."
-        primaryCta={{ href: "/contact", label: "Book a Service Call" }}
-        secondaryCta={{ href: "/services", label: "Back to Services" }}
-      />
       <Footer />
     </main>
   );

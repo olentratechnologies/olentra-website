@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function PrimaryCtaBand({ eyebrow, title, description, primaryCta, secondaryCta }) {
   return (
-    <section className="relative pt-16 md:pt-20 pb-0 bg-[#020617]">
+    <section className="relative pt-16 md:pt-20 pb-0 bg-[#070b12]">
       <div className="max-w-6xl mx-auto px-6 md:px-12">
         <div className="relative rounded-[32px] overflow-hidden bg-primary p-12 md:p-16 shadow-[0_40px_80px_rgba(37,99,235,0.35)]">
           <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-10 pointer-events-none" />

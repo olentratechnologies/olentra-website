@@ -474,7 +474,7 @@ export default function OlentraAIStudioPage() {
               </p>
               <div className="pt-6">
                 <a
-                  href="/contact"
+                  href="/#contact"
                   className="inline-flex items-center gap-3 px-10 py-4 text-[13px] font-black uppercase tracking-[0.3em] bg-white text-primary transition-all hover:scale-105 active:scale-95"
                   style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)" }}
                 >

@@ -4,24 +4,24 @@
 
 @layer base {
   :root {
-    --background: 240 10% 4%;
+    --background: 218 44% 5%; /* #070b12 Founders background theme */
     --foreground: 0 0% 98%;
-    --card: 240 10% 6%;
+    --card: 217 33% 9%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 6%;
+    --popover: 217 33% 9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 217 91% 50%;
+    --primary: 217 91% 50%; /* Original Olentra vibrant brand blue for buttons */
     --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 226 70% 55%;
+    --secondary: 226 70% 55%; /* Original secondary button color */
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 10% 12%;
+    --muted: 217 28% 14%;
     --muted-foreground: 240 5% 65%;
     --accent: 243 75% 59%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 10% 15%;
-    --input: 240 10% 15%;
+    --border: 217 24% 17%;
+    --input: 217 24% 17%;
     --ring: 188 100% 50%;
     --radius: 0.5rem;
   }

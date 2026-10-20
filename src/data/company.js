@@ -20,7 +20,7 @@ export const companyInfo = {
   serviceArea: "Global",
   locations: contactInfo.addresses.map((address) => address.value),
   socials: contactInfo.socials,
-  navCtaLabel: "Book a Discovery Call",
+  navCtaLabel: "Schedule a Meeting",
   trustHighlights: [
     "Security-first delivery",
     "Milestone-based execution",

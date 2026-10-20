@@ -44,7 +44,7 @@ export default function DailySupplyProductPage() {
           </div>
         </section>
 
-        <section className={styles.closing} data-theme="dark"><div className={styles.container}><p className={styles.eyebrow}>The next everyday connection</p><h2>Discover what Daily Supply<br/>{" "}can bring to <em>your community.</em></h2><Link className={styles.primaryButton} href="/contact">Talk to us about Daily Supply <ArrowUpRight size={19}/></Link><p className={styles.closingCredit}>In collaboration with VitaTech Solutions and BYP Capital</p></div></section>
+        <section className={styles.closing} data-theme="dark"><div className={styles.container}><p className={styles.eyebrow}>The next everyday connection</p><h2>Discover what Daily Supply<br/>{" "}can bring to <em>your community.</em></h2><Link className={styles.primaryButton} href="/#contact">Talk to us about Daily Supply <ArrowUpRight size={19}/></Link><p className={styles.closingCredit}>In collaboration with VitaTech Solutions and BYP Capital</p></div></section>
       </main>
       <Footer />
     </div>

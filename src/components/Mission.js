@@ -39,14 +39,14 @@ export default function Mission() {
       ref={containerRef}
       data-testid="mission-section"
       data-theme="light"
-      className="bg-white py-24 md:py-32 relative overflow-hidden transition-colors duration-500"
+      className="bg-white py-12 md:py-16 relative overflow-hidden transition-colors duration-500"
     >
       {/* Subtle light grid */}
       <div className="absolute inset-0 z-0 pointer-events-none bg-cyber-grid-light" />
 
       <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
         {/* About + Description */}
-        <div className="flex flex-col items-center text-center gap-8 mb-20 md:mb-24">
+        <div className="flex flex-col items-center text-center gap-6 mb-12 md:mb-14">
           {/* Label */}
           <div className="pt-2 flex justify-center w-full">
             <span className="text-[11px] font-bold text-primary uppercase tracking-[0.3em]">
@@ -71,7 +71,7 @@ export default function Mission() {
         </div>
 
         {/* Operational Pillars */}
-        <div className="relative pt-10 mb-20 md:mb-24">
+        <div className="relative pt-6 mb-12 md:mb-14">
           {/* Border top */}
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
@@ -96,17 +96,9 @@ export default function Mission() {
         </div>
 
         {/* INTEGRATED: Visual System Arena (Light Theme) */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center pt-6 md:pt-10">
           {/* Visual Header */}
-          <div className="mb-16 text-center">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="inline-block px-3 py-1 rounded-full bg-slate-100 border border-slate-200 mb-5 font-black text-[9px] tracking-[0.3em] text-primary uppercase"
-            >
-              System Performance Diagnostic
-            </motion.div>
+          <div className="mb-14 md:mb-20 text-center">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}

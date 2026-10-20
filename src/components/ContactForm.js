@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Clock } from 'lucide-react';
 import { contactInfo } from '../data/contact';
 
 export default function ContactForm() {
@@ -23,7 +23,7 @@ export default function ContactForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.phone || !formData.message) {
+    if (!formData.name || !formData.email || !formData.message) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -56,8 +56,25 @@ export default function ContactForm() {
   };
 
   return (
-    <section id="contact" data-testid="contact-section" className="py-16 md:py-24 bg-[#020617] relative overflow-hidden transition-colors duration-500">
-      <div className="absolute inset-0 bg-cyber-grid bg-[length:30px_30px] opacity-[0.05] dark:opacity-[0.03] pointer-events-none mix-blend-screen" />
+    <section
+      id="contact"
+      data-testid="contact-section"
+      className="scroll-mt-24 py-16 md:py-24 relative overflow-hidden transition-colors duration-500 isolate"
+      style={{
+        background: "radial-gradient(ellipse at 65% 48%, #152943 0, transparent 50%), linear-gradient(110deg, #070b12, #0b111b)",
+      }}
+    >
+      {/* Founders Hero Grid Texture */}
+      <div
+        className="absolute inset-0 z-[-1] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(#a5c9ff06 1px, transparent 1px), linear-gradient(90deg, #a5c9ff06 1px, transparent 1px)",
+          backgroundSize: "100px 100px",
+          maskImage: "linear-gradient(transparent, #000, transparent)",
+          WebkitMaskImage: "linear-gradient(transparent, #000, transparent)",
+        }}
+      />
 
       <div className="max-w-5xl mx-auto px-4 md:px-5 relative z-10">
         <div
@@ -137,18 +154,21 @@ export default function ContactForm() {
                   </div>
 
                   <div className="mt-auto pt-8">
-                    <div className="p-3 border border-border bg-muted/40 rounded-sm relative">
-                      <div className="absolute top-0 left-0 w-1.5 h-1.5 border-t-2 border-l-2 border-primary" />
-                      <div className="absolute bottom-0 right-0 w-1.5 h-1.5 border-b-2 border-r-2 border-primary" />
+                    <div className="p-3.5 border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/[0.04] to-transparent rounded-sm relative overflow-hidden shadow-[0_4px_20px_rgba(37,99,235,0.08)]">
+                      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-primary" />
+                      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-primary" />
+                      <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/10 rounded-full blur-xl pointer-events-none" />
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary inline-flex items-center gap-1.5" style={{ fontFamily: '"Manrope", sans-serif' }}>
+                          <Clock className="w-3 h-3 text-primary" />
+                          RESPONSE TIME
+                        </span>
+                      </div>
                       <p
-                        className="text-muted-foreground leading-[1.5] mb-2 italic font-medium"
-                        style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.8rem,0.8vw,0.92rem)' }}
+                        className="text-foreground leading-snug font-semibold"
+                        style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.82rem,0.85vw,0.94rem)' }}
                       >
-                        "Clear execution, fast feedback cycles, and measurable impact from week one."
-                      </p>
-                      <p className="text-foreground uppercase tracking-[0.2em] font-bold text-[10px]" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                        VERIFIED CLIENT
-                        <span className="text-primary font-semibold ml-2">ENTERPRISE TEAM</span>
+                        We review all inquiries within 24 hours.
                       </p>
                     </div>
                   </div>
@@ -195,7 +215,7 @@ export default function ContactForm() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[0.65rem] uppercase tracking-[0.2em] font-bold text-primary mb-1.5" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                          PHONE <span className="text-destructive">*</span>
+                          PHONE
                         </label>
                         <input
                           type="text"

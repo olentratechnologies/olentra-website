@@ -7,7 +7,6 @@ export default function sitemap() {
     "",
     "/about",
     "/founders",
-    "/contact",
     "/services",
     "/products",
     "/products/olentra-ai-studio",

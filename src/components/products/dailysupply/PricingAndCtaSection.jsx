@@ -69,7 +69,7 @@ export function PricingAndCtaSection() {
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="/contact"
+                href="/#contact"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-primary hover:bg-blue-700 px-8 py-4 text-xs font-black uppercase tracking-[0.2em] text-white shadow-[0_10px_25px_rgba(37,99,235,0.35)] transition-all duration-300"
                 style={{
                   clipPath:

@@ -73,7 +73,7 @@ export default async function BlogDetailPage({ params }) {
           { label: "Blogs", href: "/blogs" },
           { label: blog.title },
         ]}
-        primaryCta={{ href: "/contact", label: "Discuss This Topic" }}
+        primaryCta={{ href: "/#contact", label: "Discuss This Topic" }}
         secondaryCta={{ href: "/blogs", label: "Back to Blogs" }}
         image={blog.image}
         panelLabel="ARTICLE_NODE"
@@ -135,13 +135,6 @@ export default async function BlogDetailPage({ params }) {
         </div>
       </section>
 
-      <PrimaryCtaBand
-        eyebrow="Consultation"
-        title="Translate insight into enterprise delivery outcomes."
-        description="If your team is facing similar architecture, product, or execution constraints, Olentra can help design a practical implementation path."
-        primaryCta={{ href: "/contact", label: "Book Strategy Call" }}
-        secondaryCta={{ href: "/services", label: "View Service Areas" }}
-      />
       <Footer />
     </main>
   );

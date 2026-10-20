@@ -47,7 +47,7 @@ export default function ProductsPage() {
           { label: "Home", href: "/" },
           { label: "Products" },
         ]}
-        primaryCta={{ href: "/contact", label: "Request Product Demo" }}
+        primaryCta={{ href: "/#contact", label: "Request Product Demo" }}
         secondaryCta={{ href: "/services", label: "Explore Services" }}
         image="/images/products/ai-studio-new.png"
         panelLabel="PRODUCT_SUITE"
@@ -56,84 +56,6 @@ export default function ProductsPage() {
 
       <Products />
 
-      <section className="relative py-24 md:py-28 bg-white text-slate-900 overflow-hidden">
-        <div className="absolute inset-0 bg-cyber-grid-light opacity-[0.05] pointer-events-none" />
-        <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
-          <motion.div {...fadeInUp}>
-            <SectionIntro
-              eyebrow="Launch Portfolio"
-              title="Current and upcoming"
-              accent="product tracks"
-              description="Active product lines available for demo, deployment support, and tailored rollout planning."
-            />
-          </motion.div>
-
-          <motion.div
-            {...staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
-            {liveProducts.map((product) => (
-              <motion.article
-                key={product.id}
-                variants={fadeInUp}
-                className="rounded-2xl border border-slate-200 bg-slate-50/80 p-8 shadow-lg shadow-slate-200/40"
-              >
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-primary mb-3">
-                  Active Product
-                </p>
-                <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">
-                  {product.title}
-                </h3>
-                <p className="mt-3 text-slate-600 leading-relaxed">{product.description}</p>
-                <Link
-                  href={product.href}
-                  className="mt-6 inline-flex items-center px-6 py-3 text-[11px] font-black uppercase tracking-[0.24em] border border-slate-300 text-slate-900 hover:border-primary hover:text-primary transition-all"
-                  style={{
-                    clipPath:
-                      "polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)",
-                  }}
-                >
-                  Open product page
-                </Link>
-              </motion.article>
-            ))}
-
-            {upcomingProducts.map((product) => (
-              <motion.article
-                key={product.id}
-                variants={fadeInUp}
-                className="rounded-2xl border border-slate-200 bg-slate-50/80 p-8 shadow-lg shadow-slate-200/40"
-              >
-                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-primary mb-3">
-                  Upcoming Product
-                </p>
-                <h3 className="text-2xl font-black uppercase tracking-tight text-slate-900">
-                  {product.title}
-                </h3>
-                <p className="mt-3 text-slate-600 leading-relaxed">{product.description}</p>
-                <p className="mt-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-                  Status: {product.status} | Commercial model: {product.price}
-                </p>
-              </motion.article>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1 }}
-      >
-        <PrimaryCtaBand
-          eyebrow="Product Discovery"
-          title="Choose the product lane that matches your goals."
-          description="Whether you need AI product acceleration or conversion-focused outbound operations, we can map the right deployment path."
-          primaryCta={{ href: "/contact", label: "Book Product Call" }}
-          secondaryCta={{ href: "/blogs", label: "Read Insights" }}
-        />
-      </motion.div>
       <Footer />
     </main>
   );

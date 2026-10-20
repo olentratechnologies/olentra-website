@@ -1,64 +1,84 @@
 "use client";
 
 import dynamic from 'next/dynamic';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 
 const Globe = dynamic(() => import('react-globe.gl'), { ssr: false });
 
-// Globe data for company locations
+// Globe data: only India location with prominent red marker
 const globeData = [
-  { lat: 40.2737, lng: -76.8844, size: 0.15, color: '#00d4ff', label: 'Harrisburg, PA, USA' },
-  { lat: 17.3850, lng: 78.4867, size: 0.15, color: '#00d4ff', label: 'Hyderabad, India' },
+  { lat: 17.3850, lng: 78.4867, size: 0.5, color: '#ef4444', label: 'Hyderabad, India (HQ)' },
 ];
 
-// Arcs data for connectivity
-const arcsData = [
+const ringsData = [
+  { lat: 17.3850, lng: 78.4867, maxR: 7, propagationSpeed: 2, repeatPeriod: 1400, color: () => '#ef4444' },
+];
+
+const htmlData = [
   {
-    startLat: 40.2737,
-    startLng: -76.8844,
-    endLat: 17.3850,
-    endLng: 78.4867,
-    color: '#00d4ff',
-    stroke: 1,
+    lat: 17.3850,
+    lng: 78.4867,
+    name: 'Hyderabad, India',
   },
 ];
 
 export default function GlobeSection() {
   const globeRef = useRef();
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (globeRef.current) {
+        globeRef.current.pointOfView({ lat: 20.5937, lng: 78.9629, altitude: 1.9 }, 0);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="flex items-center justify-center py-4 md:py-6 w-full">
+    <div className="flex flex-col items-center justify-center py-4 md:py-6 w-full">
       <div className="flex items-center justify-center w-full">
         <Globe
           ref={globeRef}
           globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
           backgroundColor="#ffffff"
-          width={300}
-          height={300}
-          initialLatitude={10}
+          width={360}
+          height={360}
+          initialLatitude={17.3850}
           initialLongitude={78.4867}
-          initialCameraDistance={1.8}
+          initialCameraDistance={1.85}
           pointsData={globeData}
           pointColor="color"
-          pointAltitude={0.15}
-          pointRadius={0.08}
+          pointAltitude={0.08}
+          pointRadius={0.55}
           pointLabel="label"
-          arcsData={arcsData}
-          arcColor="color"
-          arcStroke={0.8}
-          arcDashLength={0.4}
-          arcDashGap={0.2}
-          arcDashAnimateTime={2000}
-          atmosphereColor="#ffffff"
-          atmosphereAltitude={0.1}
+          ringsData={ringsData}
+          ringColor="color"
+          ringMaxRadius="maxR"
+          ringPropagationSpeed="propagationSpeed"
+          ringRepeatPeriod="repeatPeriod"
+          htmlElementsData={htmlData}
+          htmlElement={(d) => {
+            const el = document.createElement('div');
+            el.innerHTML = `
+              <div style="display:flex;align-items:center;gap:6px;transform:translate(-50%, -140%);pointer-events:none;">
+                <div style="background:#ef4444;color:#ffffff;font-size:11px;font-weight:800;letter-spacing:0.05em;padding:3px 8px;border-radius:4px;box-shadow:0 4px 12px rgba(239,68,68,0.45);font-family:sans-serif;white-space:nowrap;border:1px solid #ffffff;">
+                  📍 HYDERABAD, INDIA
+                </div>
+              </div>
+            `;
+            return el;
+          }}
+          atmosphereColor="#ef4444"
+          atmosphereAltitude={0.08}
           animateIn={false}
           onGlobeReady={() => {
             if (globeRef.current) {
               const controls = globeRef.current.controls();
-              controls.autoRotate = true;
-              controls.autoRotateSpeed = 2.0;
+              controls.autoRotate = false;
               controls.enableDamping = true;
               controls.dampingFactor = 0.05;
+              // Explicitly lock camera to face India directly towards viewer
+              globeRef.current.pointOfView({ lat: 20.5937, lng: 78.9629, altitude: 1.9 }, 0);
             }
           }}
           onPointClick={(point) => {

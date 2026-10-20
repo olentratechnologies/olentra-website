@@ -34,7 +34,7 @@ export default function ServicesPage() {
           { label: "Home", href: "/" },
           { label: "Services" },
         ]}
-        primaryCta={{ href: "/contact", label: "Book a Discovery Call" }}
+        primaryCta={{ href: "/#contact", label: "Schedule a Meeting" }}
         secondaryCta={{ href: "/products", label: "View Products" }}
         image="/images/backgrounds/cyber-bg.png"
         panelLabel="SERVICE_CLUSTER"
@@ -49,23 +49,9 @@ export default function ServicesPage() {
       >
         <ServicesTimeline
           sectionId="services"
-          ctaHref="/contact"
+          ctaHref="/#contact"
           ctaLabel="Start Service Discussion"
-        />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-      >
-        <PrimaryCtaBand
-          eyebrow="Engagement Path"
-          title="Choose a service lane and start execution."
-          description="We map your scope, sequence delivery milestones, and launch with transparent operational control."
-          primaryCta={{ href: "/contact", label: "Talk to Olentra" }}
-          secondaryCta={{ href: "/about", label: "About Olentra" }}
+          theme="light"
         />
       </motion.div>
       <Footer />

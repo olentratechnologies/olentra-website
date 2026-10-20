@@ -194,7 +194,7 @@ export function PricingCalculator() {
             </p>
           </div>
           <a
-            href={custom ? "/contact" : "tel:+919100125055"}
+            href={custom ? "/#contact" : "tel:+919100125055"}
             className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
           >
             {custom ? "Request a custom quote" : "Talk to us about this plan"}

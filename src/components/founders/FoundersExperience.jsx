@@ -90,65 +90,12 @@ function Portrait({ founder, hero = false, index }) {
     </figure>
   );
 }
-function VisionArt() {
-  return (
-    <div className={styles.visionArt} aria-hidden="true">
-      <svg viewBox="0 0 1000 520" fill="none">
-        <defs>
-          <linearGradient id="visionLine">
-            <stop stopColor="#2563eb" stopOpacity="0" />
-            <stop offset=".5" stopColor="#9ad7ff" />
-            <stop offset="1" stopColor="#2563eb" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <ellipse
-          cx="500"
-          cy="280"
-          rx="400"
-          ry="145"
-          stroke="url(#visionLine)"
-          transform="rotate(-18 500 280)"
-        />
-        <ellipse
-          cx="500"
-          cy="280"
-          rx="400"
-          ry="145"
-          stroke="url(#visionLine)"
-          transform="rotate(18 500 280)"
-        />
-        <ellipse
-          cx="500"
-          cy="280"
-          rx="330"
-          ry="92"
-          stroke="#68bdf5"
-          strokeOpacity=".12"
-        />
-        <path
-          d="M70 390 Q250 390 500 250 Q750 110 930 110 M70 110 Q250 110 500 250 Q750 390 930 390"
-          stroke="url(#visionLine)"
-          strokeWidth="2"
-        />
-        <circle cx="230" cy="174" r="4" fill="#a6d8ff" />
-        <circle cx="770" cy="386" r="4" fill="#a6d8ff" />
-      </svg>
-      <div className={styles.core}>
-        <div />
-        <div />
-        <div />
-      </div>
-      <span className={styles.artLabel}>
-        Independent minds. Shared momentum.
-      </span>
-    </div>
-  );
-}
 function FutureDirection() {
   const [active, setActive] = useState(0);
   return (
     <section
       className={`${styles.section} ${styles.future}`}
+      data-theme="dark"
       aria-labelledby="future-heading"
     >
       <div id="future-heading">
@@ -254,7 +201,8 @@ export default function FoundersExperience() {
       <a className={styles.skip} href="#shared-vision">
         Skip to shared vision
       </a>
-      <section className={styles.hero} aria-labelledby="founders-title">
+      {/* 1. HERO - BLACK THEME */}
+      <section className={styles.hero} data-theme="dark" aria-labelledby="founders-title">
         <div className={styles.heroTop}>
           {content.hero.eyebrow ? (
             <Label>{content.hero.eyebrow}</Label>
@@ -272,7 +220,7 @@ export default function FoundersExperience() {
                 </span>
               ))}
             </h1>
-            <p>{content.hero.line}</p>
+            {content.hero.line && <p>{content.hero.line}</p>}
           </div>
           <div className={styles.heroPortraits}>
             {founders.map((founder, index) => (
@@ -290,9 +238,12 @@ export default function FoundersExperience() {
         <i />
         <span>Infinite possibilities.</span>
       </div>
+
+      {/* 2. VISION - WHITE THEME */}
       <section
         id="shared-vision"
-        className={`${styles.section} ${styles.vision}`}
+        data-theme="light"
+        className={`${styles.section} ${styles.vision} ${styles.lightSection}`}
         aria-labelledby="vision-title"
       >
         <div data-reveal>
@@ -303,7 +254,6 @@ export default function FoundersExperience() {
             {content.vision.description}
           </p>
         </div>
-        <VisionArt />
         <div className={styles.visionPrinciples}>
           {content.vision.principles.map((principle, index) => (
             <article key={principle.title} data-reveal>
@@ -314,8 +264,11 @@ export default function FoundersExperience() {
           ))}
         </div>
       </section>
+
+      {/* 3. THINKING - BLACK THEME */}
       <section
         className={`${styles.section} ${styles.thinking}`}
+        data-theme="dark"
         aria-labelledby="thinking-title"
       >
         <div className={styles.thinkingHeading}>
@@ -347,8 +300,11 @@ export default function FoundersExperience() {
           ))}
         </div>
       </section>
+
+      {/* 4. BELIEF MESSAGE - WHITE THEME */}
       <section
-        className={`${styles.section} ${styles.message}`}
+        className={`${styles.section} ${styles.message} ${styles.lightSection}`}
+        data-theme="light"
         aria-labelledby="message-title"
         data-reveal
       >
@@ -373,9 +329,14 @@ export default function FoundersExperience() {
           ))}
         </div>
       </section>
+
+      {/* 5. FUTURE DIRECTION - BLACK THEME */}
       <FutureDirection />
+
+      {/* 6. CLOSING CTA - WHITE THEME */}
       <section
-        className={`${styles.section} ${styles.closing}`}
+        className={`${styles.section} ${styles.closing} ${styles.lightSection}`}
+        data-theme="light"
         aria-labelledby="closing-title"
         data-reveal
       >

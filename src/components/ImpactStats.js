@@ -6,8 +6,11 @@ import { useInView, motion, animate, useMotionValue, useTransform } from 'framer
 import { stats } from '../data/stats';
 
 function RollingNumber({ value, suffix }) {
+  const isDecimal = Number(value) % 1 !== 0;
   const count = useMotionValue(0);
-  const rounded = useTransform(count, (latest) => Math.round(latest));
+  const rounded = useTransform(count, (latest) =>
+    isDecimal ? latest.toFixed(2) : Math.round(latest)
+  );
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.4 });
   const hasAnimatedRef = useRef(false);

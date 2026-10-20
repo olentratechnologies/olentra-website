@@ -1171,6 +1171,195 @@
     display: block;
   }
 }
+
+/* ==========================================================================
+   White Theme Section Patterns (.lightSection / [data-theme="light"])
+   ========================================================================== */
+.lightSection {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+.lightSection .heading,
+.lightSection h1,
+.lightSection h2,
+.lightSection h3 {
+  color: #0f172a !important;
+}
+
+.lightSection .muted,
+.lightSection .sectionDescription,
+.lightSection p,
+.lightSection span {
+  color: #475569;
+}
+
+.lightSection .label {
+  color: #2563eb !important;
+}
+
+.lightSection .label > span {
+  color: #2563eb !important;
+}
+
+/* Vision in White Theme */
+.vision.lightSection {
+  background: radial-gradient(ellipse at 80% 50%, #f1f5f9 0, #ffffff 70%) !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+.vision.lightSection .heading,
+.vision.lightSection .heading span,
+.vision.lightSection #vision-title h2 {
+  color: #0f172a !important;
+}
+
+.vision.lightSection .heading span:first-child {
+  color: #0f172a !important;
+}
+
+.vision.lightSection .heading span.muted,
+.vision.lightSection .heading span:last-child {
+  color: #334155 !important;
+}
+
+.vision.lightSection .sectionDescription {
+  color: #334155 !important;
+  font-size: clamp(16px, 1.4vw, 20px) !important;
+  line-height: 1.65 !important;
+  max-width: 600px !important;
+}
+
+.vision.lightSection .visionPrinciples {
+  margin-top: 55px !important;
+}
+
+.vision.lightSection .visionPrinciples article {
+  border-top: 1px solid #cbd5e1 !important;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.vision.lightSection .visionPrinciples article > span {
+  color: #0f172a !important;
+  font-weight: 800;
+}
+
+.vision.lightSection .visionPrinciples h3 {
+  color: #0f172a !important;
+  font-weight: 800;
+}
+
+.vision.lightSection .visionPrinciples p {
+  color: #475569 !important;
+  font-weight: 500;
+}
+
+.vision.lightSection .core {
+  filter: drop-shadow(0 10px 30px rgba(15, 23, 42, 0.35)) !important;
+}
+
+.vision.lightSection .core > div {
+  border: 1.5px solid #0f172a !important;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.95)) !important;
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
+}
+
+.vision.lightSection .artLabel {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.2em !important;
+  background: #ffffff;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  border: 1px solid #0f172a;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
+  display: inline-block;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+}
+
+/* Belief Message in White Theme */
+.message.lightSection {
+  background: radial-gradient(ellipse at 80% 50%, #f1f5f9 0, #ffffff 70%) !important;
+  border-top: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.message.lightSection h2 {
+  color: #0f172a !important;
+}
+
+.message.lightSection .quoteMark {
+  color: rgba(148, 163, 184, 0.12) !important;
+}
+
+.message.lightSection blockquote,
+.message.lightSection .messagePlaceholder p {
+  color: #334155 !important;
+}
+
+.message.lightSection .signOff > span {
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+.message.lightSection .signOff small {
+  color: #64748b !important;
+}
+
+/* Closing CTA in White Theme */
+.closing.lightSection {
+  background: radial-gradient(ellipse at 50% 100%, #eff6ff 0, #ffffff 70%) !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+.closing.lightSection h2 {
+  color: #0f172a !important;
+}
+
+.closing.lightSection h2 span:last-child {
+  color: #2563eb !important;
+}
+
+.closing.lightSection > p {
+  color: #64748b !important;
+}
+
+.closing.lightSection .actions a:first-child {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #0f172a !important;
+}
+
+.closing.lightSection .actions a:first-child:hover {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.closing.lightSection .actions a:last-child {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.closing.lightSection .actions a:last-child:hover {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+}
+
+.closing.lightSection .related a {
+  color: #64748b !important;
+}
+
+.closing.lightSection .related a:hover {
+  color: #0f172a !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page *,
   .page *:before,
