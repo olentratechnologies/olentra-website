@@ -73,11 +73,19 @@
 .trackFaint { fill: none; stroke: rgba(100, 116, 139, .15); stroke-width: .25; }
 .cardinal { fill: #64748b; font-size: 2.1px; font-weight: 600; letter-spacing: .5px; }
 
-.wheel { position: absolute; inset: 0; transform: rotate(var(--orbit)); }
+.wheel {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--orbit)) translateZ(0);
+  will-change: transform;
+}
 .connectors line { stroke-width: .3; stroke-dasharray: 1.5 2.3; animation: flow 2.8s linear infinite; }
 
 .nodePos { position: absolute; transform: translate(-50%, -50%); }
-.nodeCounter { transform: rotate(var(--orbit-back)); }
+.nodeCounter {
+  transform: rotate(var(--orbit-back)) translateZ(0);
+  will-change: transform;
+}
 
 /* The explicit pause control stops the ambient flow and core arc; the wheel
    angle is frozen by the rAF loop itself. */

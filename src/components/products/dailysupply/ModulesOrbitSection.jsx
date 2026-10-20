@@ -33,11 +33,11 @@ const NODE_COUNT = dailySupplyData.modules.length;
 const RADIUS = 46; // % of the stage, matches the connector line endpoints
 const DEG = 180 / Math.PI;
 
-const BASE_SPEED = 4; // deg per second: one idle revolution every 90s
-const MAX_FLING_SPEED = 720; // deg per second
-const DECAY_TAU = 0.9; // seconds for a fling to settle back to idle speed
-const STOP_TAU = 0.25; // faster settle when pausing or inspecting a node
-const CENTER_DEAD_ZONE = 0.05; // share of stage width where atan2 is unstable
+const BASE_SPEED = 5; // deg per second: smooth ambient revolution
+const MAX_FLING_SPEED = 2400; // deg per second: allows super fast spin on flick
+const DECAY_TAU = 2.4; // seconds for a fling to coast smoothly and gradually settle
+const STOP_TAU = 0.35; // settle when pausing or inspecting a node
+const CENTER_DEAD_ZONE = 0.03; // share of stage width where atan2 is unstable
 
 function coordinate(value) {
   return Math.round(value * 1e6) / 1e6;
@@ -114,8 +114,8 @@ export default function ModulesOrbitSection() {
     drag.active = false;
     /* A press that never moved is a click: keep the speed it had. */
     if (!drag.moved) velocityRef.current = drag.prevVelocity ?? BASE_SPEED;
-    /* Releasing after a pause should not fling: drop stale velocity. */
-    else if (performance.now() - (drag.lastTime || 0) > 120) velocityRef.current = 0;
+    /* Releasing after a pause should not fling: drop stale velocity only if held still for a while. */
+    else if (performance.now() - (drag.lastTime || 0) > 240) velocityRef.current = 0;
     setDragging(false);
     window.removeEventListener('pointerup', endDrag);
     window.removeEventListener('pointercancel', endDrag);
@@ -246,8 +246,8 @@ export default function ModulesOrbitSection() {
       return;
     }
     if (!drag.moved) {
-      /* Small presses stay clicks on the module pills; only real movement spins. */
-      if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 5) {
+      /* Small movement threshold so tap still registers as click, but tiny swipe immediately spins */
+      if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 3) {
         drag.lastAngle = angle;
         drag.lastTime = now;
         return;
@@ -268,10 +268,16 @@ export default function ModulesOrbitSection() {
     if (delta > 180) delta -= 360;
     else if (delta < -180) delta += 360;
     drag.lastAngle = angle;
-    const dt = Math.max((now - drag.lastTime) / 1000, 0.008);
+    const dt = Math.max((now - drag.lastTime) / 1000, 0.005);
     drag.lastTime = now;
-    const instant = Math.max(-MAX_FLING_SPEED, Math.min(MAX_FLING_SPEED, delta / dt));
-    velocityRef.current += (instant - velocityRef.current) * 0.35;
+    
+    // Higher fling velocity multiplier on mobile/touch screens for instant fast spin
+    const isTouch = event.pointerType === 'touch';
+    const flingMultiplier = isTouch ? 1.8 : 1.2;
+    const instant = Math.max(-MAX_FLING_SPEED, Math.min(MAX_FLING_SPEED, (delta / dt) * flingMultiplier));
+    
+    // Responsive blend toward instantaneous flick speed
+    velocityRef.current = velocityRef.current * 0.4 + instant * 0.6;
     angleRef.current += delta;
     stage.style.setProperty('--orbit', `${angleRef.current}deg`);
     stage.style.setProperty('--orbit-back', `${-angleRef.current}deg`);
