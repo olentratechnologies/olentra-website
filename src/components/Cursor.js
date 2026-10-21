@@ -85,7 +85,7 @@ function AnimatedCursor() {
       for (let i = 0; i < particleCount; i++) {
         // Create particle element
         const particle = document.createElement('div');
-        particle.className = 'fixed pointer-events-none z-30 rounded-full';
+        particle.className = 'fixed pointer-events-none z-[298] rounded-full';
         particle.style.width = '6px';
         particle.style.height = '6px';
         particle.style.left = clickX + 'px';
@@ -392,10 +392,10 @@ function AnimatedCursor() {
 
   return (
     <>
-      {/* Main cursor (Venom head - now with Google colors) */}
+      {/* Keep the cursor above modal overlays (DailySupply uses z-index 210/211). */}
       <div
         ref={cursorRef}
-        className="fixed top-0 left-0 w-4 h-4 rounded-full pointer-events-none z-50"
+        className="fixed top-0 left-0 w-4 h-4 rounded-full pointer-events-none z-[300]"
         style={{ transform: 'translate(-50%, -50%)' }}
       />
 
@@ -404,7 +404,7 @@ function AnimatedCursor() {
         <div
           key={i}
           ref={(el) => (trailRefs.current[i] = el)}
-          className="fixed top-0 left-0 w-3 h-3 rounded-full pointer-events-none z-40"
+          className="fixed top-0 left-0 w-3 h-3 rounded-full pointer-events-none z-[299]"
           style={{
             transform: 'translate(-50%, -50%)',
             opacity: 0.8 - (i * 0.1),

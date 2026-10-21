@@ -50,18 +50,12 @@ export default function Loader() {
       style={{
         transitionDuration: `${FADE_OUT_MS}ms`,
         transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-        background: "radial-gradient(ellipse at 50% 45%, #0f1c2d 0%, #070b12 55%, #04070a 100%)",
+        background: "#000000",
       }}
       aria-busy={phase === "show"}
       role="status"
     >
       <span className="sr-only">Loading Olentra</span>
-
-      {/* Ambient soft glow directly behind brand icon */}
-      <div
-        className="pointer-events-none absolute h-64 w-64 rounded-full bg-blue-500/15 blur-3xl"
-        aria-hidden
-      />
 
       <div className="relative z-10 flex flex-col items-center">
         {/* Apple/Linear style minimal pulsing logo */}

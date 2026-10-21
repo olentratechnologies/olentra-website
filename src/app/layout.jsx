@@ -4,7 +4,7 @@ import Script from "next/script";
 import Providers from "./providers";
 import Cursor from "../components/Cursor";
 import Loader from "../components/Loader";
-import CookieConsentBanner from "../components/CookieConsentBanner";
+import DailySupplyWelcome from "../components/welcome/DailySupplyWelcome";
 import { companyInfo } from "@/data/company";
 import { siteConfig } from "@/lib/site";
 
@@ -99,7 +99,7 @@ export default function RootLayout({ children }) {
 
         <Providers>{children}</Providers>
         <Loader isInitialLoad={true} />
-        <CookieConsentBanner />
+        <DailySupplyWelcome />
         <Cursor />
       </body>
     </html>
