@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from 'react';
+import Image from 'next/image';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Zap, Shield, Cpu, Globe, Terminal } from 'lucide-react';
 import { missionData } from '../data/about';
@@ -132,9 +133,14 @@ export default function Mission() {
             </div>
 
             {/* Central Core */}
-            <div className="relative z-20 w-20 h-20 md:w-28 md:h-28 bg-white border border-slate-200 rounded-[2rem] flex items-center justify-center shadow-lg overflow-hidden group hover:border-primary/40 transition-colors">
-              <div className="absolute inset-0 bg-primary/5 animate-pulse" />
-              <Cpu className="text-primary w-8 h-8 md:w-12 md:h-12 relative z-10" />
+            <div className="relative z-20 w-20 h-20 md:w-28 md:h-28 flex items-center justify-center">
+              <Image
+                src="/images/branding/Logo/Olentra-Logo-Without-Background.png"
+                alt="Olentra"
+                width={96}
+                height={96}
+                className="relative z-10 w-16 h-16 md:w-24 md:h-24 object-contain"
+              />
             </div>
 
             {/* Orbiting System Container */}

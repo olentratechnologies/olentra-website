@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, Calendar } from 'lucide-react';
 import Image from 'next/image';
@@ -12,7 +12,10 @@ import { products } from '../data/products_data';
 import { contactInfo } from '../data/contact';
 import { servicePages } from '../data/service_pages';
 
-function CalendarColorfulIcon({ size = 15, className = "" }) {
+function RingingPhoneIcon({ size = 15, active = true, className = "" }) {
+  const uniqueId = useId();
+  const gradId = `phone-grad-${uniqueId.replace(/:/g, '')}`;
+
   return (
     <svg
       width={size}
@@ -20,20 +23,329 @@ function CalendarColorfulIcon({ size = 15, className = "" }) {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={`overflow-visible ${className}`}
       aria-hidden="true"
     >
-      <rect x="3" y="6" width="18" height="15" rx="3" fill="#3B82F6" />
-      <path d="M3 10H21" stroke="#1D4ED8" strokeWidth="1.5" />
-      <path d="M8 2V5" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M16 2V5" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
-      <circle cx="8" cy="14" r="1.25" fill="#FFFFFF" />
-      <circle cx="12" cy="14" r="1.25" fill="#34D399" />
-      <circle cx="16" cy="14" r="1.25" fill="#F43F5E" />
-      <circle cx="8" cy="17.5" r="1.25" fill="#F472B6" />
-      <circle cx="12" cy="17.5" r="1.25" fill="#FBBF24" />
-      <circle cx="16" cy="17.5" r="1.25" fill="#60A5FA" />
+      <defs>
+        <linearGradient id={gradId} x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#DBEAFE" />
+        </linearGradient>
+      </defs>
+
+      {/* Radiating sound waves from the earpiece */}
+      <motion.path
+        d="M14 6.5A5.5 5.5 0 0 1 18.5 11"
+        stroke={active ? "#93C5FD" : "currentColor"}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        animate={active ? {
+          opacity: [0, 1, 0],
+          scale: [0.75, 1.1, 1.3],
+        } : { opacity: 0.6 }}
+        transition={{
+          duration: 2.2,
+          repeat: Infinity,
+          ease: "easeOut",
+          repeatDelay: 0.8,
+        }}
+        style={{ transformOrigin: "14px 11px" }}
+      />
+      <motion.path
+        d="M14 2.5A9.5 9.5 0 0 1 22.5 11"
+        stroke={active ? "#FFFFFF" : "currentColor"}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        animate={active ? {
+          opacity: [0, 1, 0],
+          scale: [0.65, 1.05, 1.35],
+        } : { opacity: 0.5 }}
+        transition={{
+          duration: 2.2,
+          repeat: Infinity,
+          ease: "easeOut",
+          delay: 0.15,
+          repeatDelay: 0.8,
+        }}
+        style={{ transformOrigin: "14px 11px" }}
+      />
+
+      {/* Ringing Handset */}
+      <motion.g
+        animate={active ? {
+          rotate: [0, -14, 14, -10, 10, -5, 5, 0],
+          scale: [1, 1.06, 1, 1.04, 1],
+        } : { rotate: 0, scale: 1 }}
+        transition={{
+          duration: 2.2,
+          repeat: Infinity,
+          ease: "easeInOut",
+          repeatDelay: 0.8,
+        }}
+        style={{ transformOrigin: "12px 14px" }}
+      >
+        <path
+          d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"
+          fill={active ? `url(#${gradId})` : "none"}
+          stroke={active ? "#1877F2" : "currentColor"}
+          strokeWidth={active ? "0.5" : "1.6"}
+          strokeLinejoin="round"
+        />
+      </motion.g>
     </svg>
+  );
+}
+
+function AnimatedCalendarIcon({ size = 15, active = true, className = "" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`overflow-visible ${className}`}
+      aria-hidden="true"
+    >
+      {/* Calendar body & binder pins with lively pendulum sway movement */}
+      <motion.g
+        animate={active ? {
+          rotate: [0, -10, 10, -7, 7, -3, 3, 0],
+          y: [0, -2, 0, -1.5, 0],
+        } : { rotate: 0, y: 0 }}
+        transition={{
+          duration: 2.4,
+          repeat: Infinity,
+          ease: "easeInOut",
+          repeatDelay: 0.8,
+        }}
+        style={{ transformOrigin: "12px 3px" }}
+      >
+        {/* Calendar Body */}
+        <rect
+          x="3"
+          y="6"
+          width="18"
+          height="15"
+          rx="3"
+          fill={active ? "#FFFFFF" : "none"}
+          stroke={active ? "none" : "currentColor"}
+          strokeWidth="1.5"
+        />
+        <path d="M3 10H21" stroke={active ? "#1877F2" : "currentColor"} strokeWidth="1.75" />
+
+        {/* Binder Pins */}
+        <path d="M8 2V5" stroke={active ? "#1877F2" : "currentColor"} strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M16 2V5" stroke={active ? "#1877F2" : "currentColor"} strokeWidth="2.5" strokeLinecap="round" />
+
+        {/* Date dots with pulsing twinkle */}
+        <circle cx="8" cy="13.5" r="1.3" fill={active ? "#1877F2" : "currentColor"} />
+        <motion.circle
+          cx="12"
+          cy="13.5"
+          r="1.3"
+          fill={active ? "#60A5FA" : "currentColor"}
+          animate={active ? { scale: [1, 1.6, 1], opacity: [0.8, 1, 0.8] } : {}}
+          transition={{ duration: 1.4, repeat: Infinity, delay: 0.2 }}
+        />
+        <circle cx="16" cy="13.5" r="1.3" fill={active ? "#1877F2" : "currentColor"} />
+        <motion.circle
+          cx="8"
+          cy="17"
+          r="1.3"
+          fill={active ? "#60A5FA" : "currentColor"}
+          animate={active ? { scale: [1, 1.6, 1], opacity: [0.8, 1, 0.8] } : {}}
+          transition={{ duration: 1.4, repeat: Infinity, delay: 0.4 }}
+        />
+        <circle cx="12" cy="17" r="1.3" fill={active ? "#1877F2" : "currentColor"} />
+        <motion.circle
+          cx="16"
+          cy="17"
+          r="1.3"
+          fill={active ? "#60A5FA" : "currentColor"}
+          animate={active ? { scale: [1, 1.6, 1], opacity: [0.8, 1, 0.8] } : {}}
+          transition={{ duration: 1.4, repeat: Infinity, delay: 0.6 }}
+        />
+      </motion.g>
+
+      {/* Dynamic event ping badge on the calendar */}
+      {active && (
+        <motion.circle
+          cx="19.5"
+          cy="4.5"
+          r="2.2"
+          fill="#38BDF8"
+          stroke="#FFFFFF"
+          strokeWidth="0.8"
+          animate={{ scale: [1, 1.4, 1], opacity: [0.8, 1, 0.8] }}
+          transition={{ duration: 1.2, repeat: Infinity }}
+        />
+      )}
+    </svg>
+  );
+}
+
+function DynamicNavCta({
+  mode = 'contact',
+  onToggle,
+  onActionClick,
+  isLightSection = false,
+  isMobile = false,
+  className = "",
+  layoutScope = "desktop",
+}) {
+  const isContact = mode === 'contact';
+
+  const handleActionClick = (e) => {
+    onActionClick?.();
+    if (isContact) {
+      if (typeof window !== 'undefined' && window.location.pathname === '/') {
+        const contactSection = document.getElementById('contact');
+        if (contactSection) {
+          e.preventDefault();
+          setTimeout(() => {
+            const navbarOffset = isMobile ? 85 : 95;
+            const elementPosition = contactSection.getBoundingClientRect().top + window.pageYOffset;
+            const offsetPosition = Math.max(0, elementPosition - navbarOffset);
+
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth',
+            });
+            window.history.pushState(null, '', '#contact');
+          }, 100);
+        }
+      }
+    }
+  };
+
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      {/* Toggling Part: Completely transparent and borderless */}
+      <div
+        role="group"
+        aria-label="Toggle between Contact Us and Schedule a Meeting"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggle?.();
+        }}
+        className="relative inline-flex items-center gap-1 select-none cursor-pointer"
+      >
+        {/* Left Slot: Phone (Contact) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle?.();
+          }}
+          title="Switch to Contact Us"
+          aria-label="Contact Us"
+          className={`relative rounded-full flex items-center justify-center cursor-pointer focus:outline-hidden transition-transform active:scale-95 ${
+            isMobile ? 'w-9 h-9' : 'w-8 h-8'
+          }`}
+        >
+          {isContact && (
+            <motion.div
+              layoutId={`nav-cta-active-knob-${layoutScope}`}
+              className="absolute inset-0 rounded-full bg-[#1877F2] shadow-[0_0_12px_rgba(24,119,242,0.5)] pointer-events-none"
+              transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 32,
+                mass: 0.8,
+              }}
+            />
+          )}
+          <span className={`relative z-10 flex items-center justify-center transition-opacity duration-200 ${
+            isContact
+              ? 'opacity-100'
+              : isLightSection
+                ? 'opacity-60 hover:opacity-100 text-slate-600'
+                : 'opacity-60 hover:opacity-100 text-slate-400'
+          }`}>
+            <RingingPhoneIcon size={isMobile ? 15 : 14} active={isContact} />
+          </span>
+        </button>
+
+        {/* Right Slot: Calendar (Schedule) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle?.();
+          }}
+          title="Switch to Schedule a Meeting"
+          aria-label="Schedule a Meeting"
+          className={`relative rounded-full flex items-center justify-center cursor-pointer focus:outline-hidden transition-transform active:scale-95 ${
+            isMobile ? 'w-9 h-9' : 'w-8 h-8'
+          }`}
+        >
+          {!isContact && (
+            <motion.div
+              layoutId={`nav-cta-active-knob-${layoutScope}`}
+              className="absolute inset-0 rounded-full bg-[#1877F2] shadow-[0_0_12px_rgba(24,119,242,0.5)] pointer-events-none"
+              transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 32,
+                mass: 0.8,
+              }}
+            />
+          )}
+          <span className={`relative z-10 flex items-center justify-center transition-opacity duration-200 ${
+            !isContact
+              ? 'opacity-100'
+              : isLightSection
+                ? 'opacity-60 hover:opacity-100 text-slate-600'
+                : 'opacity-60 hover:opacity-100 text-slate-400'
+          }`}>
+            <AnimatedCalendarIcon size={isMobile ? 15 : 14} active={!isContact} />
+          </span>
+        </button>
+      </div>
+
+      {/* Main CTA Button: Vibrant solid blue pill matching user reference image */}
+      <a
+        href={isContact ? "/#contact" : contactInfo.calendlyUrl}
+        target={isContact ? undefined : "_blank"}
+        rel={isContact ? undefined : "noreferrer"}
+        onClick={handleActionClick}
+        className={`inline-flex items-center justify-center rounded-full font-bold text-white bg-[#1877F2] hover:bg-[#1565d8] transition-all duration-300 shadow-[0_0_20px_rgba(24,119,242,0.35)] hover:shadow-[0_0_25px_rgba(24,119,242,0.5)] select-none focus:outline-hidden shrink-0 active:scale-[0.98] ${
+          isMobile
+            ? 'flex-1 h-10 px-4 text-xs'
+            : 'h-[36px] w-[160px] lg:w-[174px] text-[12px]'
+        }`}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          {isContact ? (
+            <motion.div
+              key="contact-cta"
+              initial={{ opacity: 0, y: 2 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -2 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center justify-center whitespace-nowrap"
+            >
+              <span>Contact Us</span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="schedule-cta"
+              initial={{ opacity: 0, y: 2 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -2 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center justify-center whitespace-nowrap"
+            >
+              <span>Schedule a Meeting</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </a>
+    </div>
   );
 }
 
@@ -50,6 +362,11 @@ export default function Navbar() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeServiceGroupIndex, setActiveServiceGroupIndex] = useState(0);
   const [mobileActiveServiceGroupIndex, setMobileActiveServiceGroupIndex] = useState(0);
+  const [ctaMode, setCtaMode] = useState('contact');
+
+  const toggleCtaMode = () => {
+    setCtaMode((prev) => (prev === 'contact' ? 'schedule' : 'contact'));
+  };
 
   const getGroupRoute = useCallback((groupCategory, serviceTitle) => {
     const group = servicePages.find((page) => page.name === groupCategory);
@@ -114,24 +431,20 @@ export default function Navbar() {
     return href || "/";
   }, []);
 
+  // Opaque surfaces prevent scrolling content from blending through the theme switch.
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] px-3 md:px-5 pt-3 pointer-events-none">
       <div className="max-w-6xl mx-auto w-full relative pointer-events-auto">
         <nav
           data-testid="navbar"
-          className={`w-full transition-all duration-500 border ${isLightSection
-            ? 'bg-white/80 backdrop-blur-2xl border-slate-200'
-            : 'bg-slate-950/40 backdrop-blur-2xl border-white/10'
+          className={`w-full transition-none border ${isLightSection
+            ? 'bg-white border-slate-200'
+            : 'bg-black border-white/10'
             } ${scrolled ? 'shadow-lg shadow-black/5' : 'shadow-none'
             } ${mobileOpen ? 'rounded-xl' : 'rounded-[20px] md:rounded-[28px]'
             } overflow-visible`}
-          style={{
-            animation: 'nav-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            opacity: 0,
-            transform: 'translateY(-10px)'
-          }}
         >
-          <div className="px-5 md:px-7 h-10 md:h-12 grid grid-cols-[auto,1fr,auto] items-center">
+          <div className="px-4 md:px-6 h-10 md:h-12 grid grid-cols-[auto,1fr,auto] items-center">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
               <div className="relative w-8 h-8 group-hover:scale-110 transition-transform duration-300">
@@ -144,14 +457,14 @@ export default function Navbar() {
                 />
               </div>
               <div className="flex items-center gap-1 font-black uppercase tracking-tighter">
-                <span className={`text-base md:text-lg transition-colors duration-300 ${isLightSection ? 'text-slate-700' : 'text-slate-300'
+                <span className={`text-base md:text-lg transition-none ${isLightSection ? 'text-slate-700' : 'text-slate-300'
                   }`}>Olentra</span>
-                <span className="text-base md:text-lg bg-gradient-to-r from-blue-400 via-primary to-blue-600 bg-clip-text text-transparent transition-colors duration-300">Technologies</span>
+                <span className="text-base md:text-lg bg-gradient-to-r from-blue-400 via-primary to-blue-600 bg-clip-text text-transparent transition-none">Technologies</span>
               </div>
             </Link>
 
             {/* Desktop Links */}
-            <div className="hidden md:flex items-center gap-1 justify-self-center">
+            <div className="hidden md:flex items-center gap-0.5 lg:gap-1 justify-self-center">
               {primaryLinks.map((link, idx) => {
                 const isActive = hoveredIndex === null ? activeIndex === idx : hoveredIndex === idx;
                 const isServices = link.label === 'Services';
@@ -174,7 +487,7 @@ export default function Navbar() {
                   >
                     <Link
                       href={resolveHref(link.href)}
-                      className={`relative px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-all duration-300 flex items-center gap-1 ${isLightSection ? 'text-slate-600 hover:text-primary' : 'text-slate-400 hover:text-white'
+                      className={`relative px-2.5 lg:px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-[transform,opacity,box-shadow] duration-300 flex items-center gap-1 ${isLightSection ? 'text-slate-600 hover:text-primary' : 'text-slate-400 hover:text-white'
                         }`}
                     >
                       <span className="relative z-10">{link.label}</span>
@@ -184,7 +497,7 @@ export default function Navbar() {
                           className={`transition-transform duration-300 ${(isServices && isServicesOpen) || (isProducts && isProductsOpen) ? 'rotate-180' : ''}`}
                         />
                       )}
-                      <span className={`absolute bottom-0 left-4 right-4 h-[1.5px] rounded-full transition-transform duration-300 origin-left ${isActive ? 'scale-x-100' : 'scale-x-0'
+                      <span className={`absolute bottom-0 left-2.5 lg:left-3.5 right-2.5 lg:right-3.5 h-[1.5px] rounded-full transition-transform duration-300 origin-left ${isActive ? 'scale-x-100' : 'scale-x-0'
                         }`} style={{ background: accentGradient }} />
                     </Link>
 
@@ -199,15 +512,15 @@ export default function Navbar() {
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             onMouseEnter={() => setIsServicesOpen(true)}
                             onMouseLeave={() => setIsServicesOpen(false)}
-                            className={`absolute top-full left-1/2 w-[640px] p-4 rounded-2xl border shadow-[0_25px_60px_rgba(0,0,0,0.25)] backdrop-blur-3xl z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] transition-colors duration-300 ${
+                            className={`absolute top-full left-1/2 w-[640px] p-4 rounded-2xl border shadow-[0_25px_60px_rgba(0,0,0,0.25)] z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] transition-none ${
                               isLightSection
-                                ? 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-300/50'
-                                : 'bg-[#070b12]/95 border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'
+                                ? 'bg-white border-slate-200 text-slate-900 shadow-slate-300/50'
+                                : 'bg-black border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'
                             }`}
                           >
                             <div className="grid grid-cols-[220px_1fr] gap-3">
                               {/* Left: Sections */}
-                              <div className={`rounded-xl border p-2 transition-colors duration-300 ${
+                              <div className={`rounded-xl border p-2 transition-none ${
                                 isLightSection ? 'border-slate-200 bg-slate-50/90' : 'border-white/10 bg-[#0f1723]/90'
                               }`}>
                                 <div className={`px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.22em] ${
@@ -224,7 +537,7 @@ export default function Navbar() {
                                         type="button"
                                         onMouseEnter={() => setActiveServiceGroupIndex(groupIdx)}
                                         onFocus={() => setActiveServiceGroupIndex(groupIdx)}
-                                        className={`relative w-full text-left px-3 py-2 rounded-lg transition-all duration-300 flex items-center justify-between gap-3 group/item overflow-hidden ${
+                                        className={`relative w-full text-left px-3 py-2 rounded-lg transition-[transform,opacity,box-shadow] duration-300 flex items-center justify-between gap-3 group/item overflow-hidden ${
                                           isActiveGroup
                                             ? isLightSection
                                               ? 'bg-primary/10 text-primary font-bold shadow-sm'
@@ -236,7 +549,7 @@ export default function Navbar() {
                                       >
                                         {/* Left indicator bar on active/hover */}
                                         <span
-                                          className={`absolute left-0 top-1.5 bottom-1.5 w-[2.5px] rounded-r-full transition-all duration-300 ${
+                                          className={`absolute left-0 top-1.5 bottom-1.5 w-[2.5px] rounded-r-full transition-[transform,opacity,box-shadow] duration-300 ${
                                             isActiveGroup
                                               ? 'opacity-100 scale-y-100'
                                               : 'opacity-0 scale-y-50 group-hover/item:opacity-100 group-hover/item:scale-y-100'
@@ -256,7 +569,7 @@ export default function Navbar() {
                               </div>
 
                               {/* Right: Items */}
-                              <div className={`rounded-xl border p-2 transition-colors duration-300 ${
+                              <div className={`rounded-xl border p-2 transition-none ${
                                 isLightSection ? 'border-slate-200 bg-slate-50/90' : 'border-white/10 bg-[#0f1723]/90'
                               }`}>
                                 <div className={`px-2.5 py-2 text-[9px] font-black uppercase tracking-[0.22em] ${
@@ -273,7 +586,7 @@ export default function Navbar() {
                                         service.title
                                       )}
                                       onClick={() => setIsServicesOpen(false)}
-                                      className={`relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group/item overflow-hidden ${
+                                      className={`relative flex items-center gap-3 p-3 rounded-xl transition-[transform,opacity,box-shadow] duration-300 group/item overflow-hidden ${
                                         isLightSection
                                           ? 'hover:bg-slate-100 hover:border-slate-200'
                                           : 'hover:bg-white/5 hover:border hover:border-white/5'
@@ -281,13 +594,13 @@ export default function Navbar() {
                                     >
                                       {/* Left Indicator bar on hover */}
                                       <span
-                                        className="absolute left-0 top-2.5 bottom-2.5 w-[2.5px] rounded-r-full opacity-0 group-hover/item:opacity-100 transition-all duration-300 scale-y-50 group-hover/item:scale-y-100"
+                                        className="absolute left-0 top-2.5 bottom-2.5 w-[2.5px] rounded-r-full opacity-0 group-hover/item:opacity-100 transition-[transform,opacity,box-shadow] duration-300 scale-y-50 group-hover/item:scale-y-100"
                                         style={{ background: accentGradient }}
                                       />
                                       <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover/item:scale-110 transition-transform duration-300 shrink-0">
                                         <service.Icon size={16} />
                                       </div>
-                                      <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                                      <span className={`text-[10px] font-bold uppercase tracking-wider transition-none ${
                                         isLightSection ? 'text-slate-700 group-hover/item:text-slate-950' : 'text-slate-200 group-hover/item:text-white'
                                       }`}>{service.title}</span>
                                     </Link>
@@ -311,13 +624,13 @@ export default function Navbar() {
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             onMouseEnter={() => setIsProductsOpen(true)}
                             onMouseLeave={() => setIsProductsOpen(false)}
-                            className={`absolute top-full left-1/2 w-[320px] p-4 rounded-2xl border shadow-[0_25px_60px_rgba(0,0,0,0.25)] backdrop-blur-3xl z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] transition-colors duration-300 ${
+                            className={`absolute top-full left-1/2 w-[320px] p-4 rounded-2xl border shadow-[0_25px_60px_rgba(0,0,0,0.25)] z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] transition-none ${
                               isLightSection
-                                ? 'bg-white/95 border-slate-200 text-slate-900 shadow-slate-300/50'
-                                : 'bg-[#070b12]/95 border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'
+                                ? 'bg-white border-slate-200 text-slate-900 shadow-slate-300/50'
+                                : 'bg-black border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'
                             }`}
                           >
-                            <div className={`rounded-xl border p-3 transition-colors duration-300 ${
+                            <div className={`rounded-xl border p-3 transition-none ${
                               isLightSection ? 'border-slate-200 bg-slate-50/90' : 'border-white/10 bg-[#0f1723]/90'
                             }`}>
                               <div className="flex items-center justify-between px-2.5 py-1.5 mb-2">
@@ -341,7 +654,7 @@ export default function Navbar() {
                                       key={product.id}
                                       href={product.href}
                                       onClick={() => setIsProductsOpen(false)}
-                                      className={`relative flex items-center justify-between p-3 rounded-xl transition-all duration-300 group/item overflow-hidden ${
+                                      className={`relative flex items-center justify-between p-3 rounded-xl transition-[transform,opacity,box-shadow] duration-300 group/item overflow-hidden ${
                                         isLightSection
                                           ? 'hover:bg-slate-100 hover:border-slate-200'
                                           : 'hover:bg-white/5 hover:border hover:border-white/5'
@@ -349,13 +662,13 @@ export default function Navbar() {
                                     >
                                       {/* Left Indicator bar on hover */}
                                       <span
-                                        className="absolute left-0 top-2.5 bottom-2.5 w-[2.5px] rounded-r-full opacity-0 group-hover/item:opacity-100 transition-all duration-300 scale-y-50 group-hover/item:scale-y-100"
+                                        className="absolute left-0 top-2.5 bottom-2.5 w-[2.5px] rounded-r-full opacity-0 group-hover/item:opacity-100 transition-[transform,opacity,box-shadow] duration-300 scale-y-50 group-hover/item:scale-y-100"
                                         style={{ background: accentGradient }}
                                       />
 
                                       <div className="flex items-center gap-3">
                                         {/* Enterprise Monogram Badge - Highlighted */}
-                                        <div className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all duration-300 shrink-0 shadow-sm ${
+                                        <div className={`w-6 h-6 rounded-md border flex items-center justify-center transition-[transform,opacity,box-shadow] duration-300 shrink-0 shadow-sm ${
                                           isLightSection
                                             ? 'bg-blue-600/10 border-blue-500/40 text-blue-600 group-hover/item:bg-blue-600 group-hover/item:border-blue-600 group-hover/item:text-white group-hover/item:shadow-[0_0_10px_rgba(37,99,235,0.4)]'
                                             : 'bg-blue-500/20 border-blue-400/40 text-blue-400 group-hover/item:bg-blue-600 group-hover/item:border-blue-500 group-hover/item:text-white group-hover/item:shadow-[0_0_12px_rgba(37,99,235,0.6)]'
@@ -366,14 +679,14 @@ export default function Navbar() {
                                         </div>
 
                                         <div className="flex flex-col">
-                                          <span className={`text-[10px] font-black uppercase tracking-wider transition-colors ${
+                                          <span className={`text-[10px] font-black uppercase tracking-wider transition-none ${
                                             isLightSection
                                               ? 'text-slate-800 group-hover/item:text-primary'
                                               : 'text-slate-200 group-hover/item:text-white'
                                           }`}>
                                             {product.title}
                                           </span>
-                                          <span className={`text-[8px] font-mono uppercase tracking-[0.2em] transition-colors ${
+                                          <span className={`text-[8px] font-mono uppercase tracking-[0.2em] transition-none ${
                                             isLightSection ? 'text-slate-500' : 'text-slate-500 group-hover/item:text-slate-400'
                                           }`}>
                                             {product.status || 'Platform'}
@@ -396,25 +709,18 @@ export default function Navbar() {
 
             {/* CTA & Mobile Toggle */}
             <div className="flex items-center gap-3 justify-self-end">
-              <a
-                href={contactInfo.calendlyUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={`hidden md:flex items-center gap-2 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border transition-all duration-300 ${isLightSection
-                  ? 'border-slate-200 text-slate-950 hover:border-primary hover:bg-slate-50'
-                  : 'border-white/10 text-white hover:border-primary hover:shadow-[0_0_12px_rgba(37,99,235,0.3)]'
-                  }`}
-                style={{ background: isLightSection ? undefined : 'linear-gradient(135deg, rgba(37,99,235,0.25), rgba(79,70,229,0.25))' }}
-              >
-                <CalendarColorfulIcon size={14} />
-                <span>Schedule a Meeting</span>
-              </a>
+              <DynamicNavCta
+                mode={ctaMode}
+                onToggle={toggleCtaMode}
+                isLightSection={isLightSection}
+                className="hidden md:flex"
+              />
 
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-label={mobileOpen ? "Close menu" : "Open menu"}
                 aria-expanded={mobileOpen}
-                className={`md:hidden p-1.5 rounded-full border transition-colors ${isLightSection ? 'border-slate-200 text-slate-950' : 'border-white/10 text-white'
+                className={`md:hidden p-1.5 rounded-full border transition-none ${isLightSection ? 'border-slate-200 text-slate-950' : 'border-white/10 text-white'
                   }`}
               >
                 {mobileOpen ? <X size={16} /> : <Menu size={16} />}
@@ -430,7 +736,11 @@ export default function Navbar() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: '100%', opacity: 0 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="md:hidden border-t border-white/10 bg-[#070b12]/98 backdrop-blur-3xl overflow-hidden rounded-b-xl text-white"
+                className={`md:hidden border-t overflow-hidden rounded-b-xl transition-none ${
+                  isLightSection
+                    ? 'bg-white border-slate-200 text-slate-900'
+                    : 'bg-black border-white/10 text-white'
+                }`}
               >
                 <div className="px-6 pt-4 pb-6 flex flex-col gap-0.5 max-h-[80vh] overflow-y-auto">
                   {navLinks.map((link, idx) => {
@@ -460,7 +770,7 @@ export default function Navbar() {
                           >
                             <button
                               type="button"
-                              className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${isLightSection ? 'text-slate-600' : 'text-slate-400'
+                              className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-none ${isLightSection ? 'text-slate-600' : 'text-slate-400'
                                 } hover:text-primary`}
                             >
                               {activeDot}
@@ -468,14 +778,14 @@ export default function Navbar() {
                             </button>
                             <ChevronDown
                               size={14}
-                              className={`transition-transform duration-300 ${(isServices && mobileServicesOpen) || (isProducts && mobileProductsOpen) ? 'rotate-180' : ''} ${isLightSection ? 'text-slate-400' : 'text-slate-600'}`}
+                              className={`transition-transform duration-300 ${(isServices && mobileServicesOpen) || (isProducts && mobileProductsOpen) ? 'rotate-180' : ''} ${isLightSection ? 'text-slate-400' : 'text-slate-500'}`}
                             />
                           </div>
                         ) : (
                           <Link
                             href={resolveHref(link.href)}
                             onClick={() => setMobileOpen(false)}
-                            className={`flex items-center justify-between py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${isLightSection ? 'text-slate-600' : 'text-slate-400'
+                            className={`flex items-center justify-between py-2 text-[11px] font-bold uppercase tracking-wider transition-none ${isLightSection ? 'text-slate-600' : 'text-slate-400'
                               } hover:text-primary`}
                           >
                             <span className="flex items-center gap-2">
@@ -532,7 +842,7 @@ export default function Navbar() {
                                               setMobileOpen(false);
                                               setMobileServicesOpen(false);
                                             }}
-                                            className={`flex items-center gap-3 py-2 px-2 rounded-lg transition-all ${isLightSection
+                                            className={`flex items-center gap-3 py-2 px-2 rounded-lg transition-[transform,opacity,box-shadow] ${isLightSection
                                               ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-50'
                                               : 'text-slate-300 hover:text-white hover:bg-white/5'
                                               }`}
@@ -570,7 +880,7 @@ export default function Navbar() {
                                       setMobileOpen(false);
                                       setMobileProductsOpen(false);
                                     }}
-                                    className={`relative pl-4 pr-5 py-3 rounded-lg transition-all border-l-2 border-transparent hover:border-primary/50 ${isLightSection
+                                    className={`relative pl-4 pr-5 py-3 rounded-lg transition-[transform,opacity,box-shadow] border-l-2 border-transparent hover:border-primary/50 ${isLightSection
                                       ? 'text-slate-900 hover:text-slate-950 hover:bg-slate-50'
                                       : 'text-white hover:bg-white/5'
                                       }`}
@@ -585,16 +895,16 @@ export default function Navbar() {
                       </div>
                     );
                   })}
-                  <div className="pt-4">
-                    <a
-                      href={contactInfo.calendlyUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-primary bg-primary text-white"
-                    >
-                      <CalendarColorfulIcon size={15} />
-                      <span>Schedule a Meeting</span>
-                    </a>
+                  <div className="pt-4 flex justify-center">
+                    <DynamicNavCta
+                      mode={ctaMode}
+                      onToggle={toggleCtaMode}
+                      onActionClick={() => setMobileOpen(false)}
+                      isLightSection={isLightSection}
+                      isMobile={true}
+                      layoutScope="mobile"
+                      className="w-full justify-center"
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -603,11 +913,6 @@ export default function Navbar() {
         </nav>
       </div>
 
-      <style jsx global>{`
-        @keyframes nav-in {
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }

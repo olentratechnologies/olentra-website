@@ -2,7 +2,6 @@ import "./globals.css";
 import { Manrope, Inter } from "next/font/google";
 import Script from "next/script";
 import Providers from "./providers";
-import Cursor from "../components/Cursor";
 import Loader from "../components/Loader";
 import DailySupplyWelcome from "../components/welcome/DailySupplyWelcome";
 import { companyInfo } from "@/data/company";
@@ -100,7 +99,6 @@ export default function RootLayout({ children }) {
         <Providers>{children}</Providers>
         <Loader isInitialLoad={true} />
         <DailySupplyWelcome />
-        <Cursor />
       </body>
     </html>
   );

@@ -1,30 +1,67 @@
 "use client";
 
 import { useState } from 'react';
-import { CheckCircle, Clock } from 'lucide-react';
+import { CheckCheck, CheckCircle, ChevronDown, Upload } from 'lucide-react';
 import { contactInfo } from '../data/contact';
+
+const BUDGET_OPTIONS = [
+  'Still Evaluating',
+  'Less than $5K',
+  '$5K - $15K',
+  '$15K - $35K',
+  'More than $35K',
+];
+
+const fieldBase =
+  'w-full bg-transparent border-0 border-b border-white/25 text-white placeholder:text-white/50 text-[15px] md:text-[16px] pb-3 pr-8 outline-none transition-colors duration-200 focus:border-[#3B82F6]';
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    company: '',
     message: '',
+    budget: '',
   });
+  const [attachment, setAttachment] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    setError('');
+  };
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0] || null;
+    setAttachment(file);
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      setError('Please fill in all required fields.');
+
+    const name = formData.name.trim();
+    const email = formData.email.trim();
+    const phone = formData.phone.trim();
+    const message = formData.message.trim();
+
+    if (!name || !email || !phone) {
+      setError('Please fill in your name, email and contact number.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!formData.budget) {
+      setError('Please select your budget range.');
+      return;
+    }
+    if (message.length < 20) {
+      setError('Please add a little more project detail (at least 20 characters).');
       return;
     }
 
@@ -34,10 +71,16 @@ export default function ContactForm() {
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          message,
+          company: '',
+          budget: formData.budget,
+          attachment: attachment?.name || '',
+        }),
       });
 
       const result = await response.json();
@@ -47,7 +90,14 @@ export default function ContactForm() {
       }
 
       setIsSubmitted(true);
-      setFormData({ name: '', email: '', phone: '', company: '', message: '' });
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        message: '',
+        budget: '',
+      });
+      setAttachment(null);
     } catch (err) {
       setError(`Unable to submit right now. Please email us directly at ${contactInfo.email}`);
     } finally {
@@ -55,236 +105,260 @@ export default function ContactForm() {
     }
   };
 
+  const isNameFilled = formData.name.trim().length > 0;
+  const isEmailFilled = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim());
+  const isPhoneFilled = formData.phone.trim().length >= 7;
+  const isBudgetFilled = Boolean(formData.budget);
+  const isMessageFilled = formData.message.trim().length >= 20;
+
   return (
     <section
       id="contact"
       data-testid="contact-section"
-      className="scroll-mt-24 py-16 md:py-24 relative overflow-hidden transition-colors duration-500 isolate"
-      style={{
-        background: "radial-gradient(ellipse at 65% 48%, #152943 0, transparent 50%), linear-gradient(110deg, #070b12, #0b111b)",
-      }}
+      className="scroll-mt-28 md:scroll-mt-32 relative overflow-hidden bg-[#05070b] py-16 md:py-24 isolate"
+      style={{ fontFamily: 'var(--font-manrope), ui-sans-serif, system-ui, sans-serif' }}
     >
-      {/* Founders Hero Grid Texture */}
+      {/* Blue ambience */}
+      <div className="absolute -top-32 right-0 w-[520px] h-[520px] rounded-full bg-[#1877F2]/[0.07] blur-[130px] pointer-events-none" />
       <div
         className="absolute inset-0 z-[-1] pointer-events-none"
         style={{
           backgroundImage:
-            "linear-gradient(#a5c9ff06 1px, transparent 1px), linear-gradient(90deg, #a5c9ff06 1px, transparent 1px)",
-          backgroundSize: "100px 100px",
-          maskImage: "linear-gradient(transparent, #000, transparent)",
-          WebkitMaskImage: "linear-gradient(transparent, #000, transparent)",
+            'linear-gradient(#a5c9ff06 1px, transparent 1px), linear-gradient(90deg, #a5c9ff06 1px, transparent 1px)',
+          backgroundSize: '100px 100px',
+          maskImage: 'linear-gradient(transparent, #000, transparent)',
+          WebkitMaskImage: 'linear-gradient(transparent, #000, transparent)',
         }}
       />
 
-      <div className="max-w-5xl mx-auto px-4 md:px-5 relative z-10">
-        <div
-          className="rounded-sm border border-border bg-card/10 backdrop-blur-xl p-2.5 md:p-3 shadow-[0_0_40px_rgba(0,0,0,0.1)] dark:shadow-[0_0_40px_rgba(0,0,0,0.5)]"
-        >
-          {isSubmitted ? (
-            <div
-              data-testid="contact-success"
-              className="rounded-sm border border-slate-200 bg-white p-8 md:p-10 text-center relative overflow-hidden shadow-[0_12px_40px_rgba(15,23,42,0.08)]"
+      <div className="relative z-10 mx-auto w-full max-w-4xl px-5 md:px-8">
+        {isSubmitted ? (
+          <div
+            data-testid="contact-success"
+            className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-12 md:py-16 text-center"
+          >
+            <div className="w-14 h-14 rounded-full bg-[#1877F2]/15 border border-[#1877F2]/40 flex items-center justify-center mx-auto mb-5">
+              <CheckCircle className="w-7 h-7 text-[#3B82F6]" />
+            </div>
+            <h3 className="text-white text-2xl md:text-3xl font-semibold tracking-tight mb-3">
+              Request Received
+            </h3>
+            <p className="text-white/55 text-sm md:text-base mb-8 max-w-md mx-auto leading-relaxed">
+              Thank you. Our team will review your inquiry and respond shortly — usually within 24 hours.
+            </p>
+            <button
+              data-testid="send-another-message"
+              onClick={() => setIsSubmitted(false)}
+              className="inline-flex items-center justify-center rounded-full bg-[#1877F2] hover:bg-[#1565d8] px-7 py-3 text-[13px] font-semibold text-white transition-colors"
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent shadow-brand-cyan-glow" />
-              <div className="w-12 h-12 rounded-sm bg-primary/10 border border-primary/40 flex items-center justify-center mx-auto mb-4 shadow-brand-cyan-glow">
-                <CheckCircle className="w-6 h-6 text-primary" />
-              </div>
-              <h3
-                className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-widest mb-2"
-                style={{ fontFamily: '"Manrope", sans-serif' }}
-              >
-                Request Received
-              </h3>
-              <p className="text-slate-600 mb-6 text-sm md:text-base tracking-wide font-medium" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                Thank you. Our team will review your inquiry and respond shortly.
-              </p>
-              <button
-                data-testid="send-another-message"
-                onClick={() => setIsSubmitted(false)}
-                className="group relative inline-flex items-center gap-2.5 px-6 py-2.5 text-[11px] font-bold text-white bg-primary uppercase tracking-widest overflow-hidden transition-all hover:bg-blue-700"
-                style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}
-              >
-                <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                <span className="relative">SEND ANOTHER MESSAGE</span>
-              </button>
+              Send another message
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} data-testid="contact-form" noValidate>
+            <div className="text-center mb-10 md:mb-14">
+              <h2 className="text-3xl sm:text-4xl md:text-[42px] font-bold tracking-tight leading-tight bg-gradient-to-r from-[#60A5FA] via-[#3B82F6] to-[#2563EB] bg-clip-text text-transparent">
+                Share Your Project Details
+              </h2>
             </div>
-          ) : (
-            <div className="glass-card overflow-hidden relative">
-              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-secondary" />
-              <div className="grid grid-cols-1 lg:grid-cols-2">
-                <div className="px-5 md:px-6 py-6 md:py-8 border-b lg:border-b-0 lg:border-r border-border flex flex-col min-h-[400px] bg-background/30">
-                  <div>
-                    <h3
-                      className="text-[1.4rem] md:text-[1.6rem] text-foreground font-black uppercase tracking-widest mb-6"
-                      style={{ fontFamily: '"Manrope", sans-serif', textShadow: '0 0 10px rgba(var(--foreground),0.05)' }}
-                    >
-                      Contact Us
-                    </h3>
-                    <p className="text-muted-foreground mb-6 text-sm md:text-base tracking-wide font-medium" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                      Global teams trust us for end-to-end delivery across time zones. Tell us what you&apos;re building.
-                    </p>
-                    <div className="space-y-4">
-                      {contactInfo.phone && (
-                        <div className="flex flex-wrap items-start gap-3 p-3 border border-border bg-muted/20 rounded-sm">
-                          <span className="text-primary uppercase tracking-[0.2em] text-[0.7rem] font-bold min-w-[80px]" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                            PHONE:
-                          </span>
-                          <span className="text-foreground leading-tight font-bold tracking-wider" style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.85rem,1vw,1rem)' }}>
-                            {contactInfo.phone}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex flex-wrap items-start gap-3 p-3 border border-border bg-muted/20 rounded-sm">
-                        <span className="text-primary uppercase tracking-[0.2em] text-[0.7rem] font-bold min-w-[80px]" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                          EMAIL:
-                        </span>
-                        <span className="text-foreground leading-tight font-bold tracking-wider" style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.85rem,1vw,1rem)' }}>
-                          {contactInfo.email}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-start gap-3 p-3 border border-border bg-muted/20 rounded-sm">
-                        <span className="text-primary uppercase tracking-[0.2em] text-[0.7rem] font-bold min-w-[80px]" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                          HEADQUARTERS:
-                        </span>
-                        <span className="text-muted-foreground leading-[1.4] font-medium max-w-xl text-[12px] md:text-[13px] border-l-2 border-secondary pl-2.5">
-                          {contactInfo.addresses[0].value}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="mt-auto pt-8">
-                    <div className="p-3.5 border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/[0.04] to-transparent rounded-sm relative overflow-hidden shadow-[0_4px_20px_rgba(37,99,235,0.08)]">
-                      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-primary" />
-                      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-primary" />
-                      <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/10 rounded-full blur-xl pointer-events-none" />
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary inline-flex items-center gap-1.5" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                          <Clock className="w-3 h-3 text-primary" />
-                          RESPONSE TIME
-                        </span>
-                      </div>
-                      <p
-                        className="text-foreground leading-snug font-semibold"
-                        style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.82rem,0.85vw,0.94rem)' }}
-                      >
-                        We review all inquiries within 24 hours.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+              {/* Full Name */}
+              <div className="relative">
+                <input
+                  type="text"
+                  name="name"
+                  data-testid="contact-name-input"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Full Name"
+                  aria-label="Full Name"
+                  autoComplete="name"
+                  className={fieldBase}
+                />
+                {isNameFilled && (
+                  <CheckCheck
+                    size={19}
+                    strokeWidth={2.5}
+                    className="pointer-events-none absolute right-0 bottom-3 text-[#10B981] transition-all"
+                  />
+                )}
+              </div>
 
-                <form
-                  onSubmit={handleSubmit}
-                  data-testid="contact-form"
-                  className="px-5 md:px-6 py-6 md:py-8 bg-muted/30 dark:bg-black/20 backdrop-blur-sm"
+              {/* Email */}
+              <div className="relative">
+                <input
+                  type="email"
+                  name="email"
+                  data-testid="contact-email-input"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Email*"
+                  aria-label="Email"
+                  autoComplete="email"
+                  className={fieldBase}
+                />
+                {isEmailFilled && (
+                  <CheckCheck
+                    size={19}
+                    strokeWidth={2.5}
+                    className="pointer-events-none absolute right-0 bottom-3 text-[#10B981] transition-all"
+                  />
+                )}
+              </div>
+
+              {/* Budget */}
+              <div className="relative">
+                <select
+                  name="budget"
+                  value={formData.budget}
+                  onChange={handleChange}
+                  aria-label="Select a Budget Range*"
+                  required
+                  className={`${fieldBase} appearance-none pr-12 cursor-pointer ${
+                    formData.budget ? 'text-white' : 'text-white/45'
+                  }`}
                 >
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-[0.65rem] uppercase tracking-[0.2em] font-bold text-primary mb-1.5" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                        NAME <span className="text-destructive">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        data-testid="contact-name-input"
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="Enter your name"
-                        className="w-full rounded-sm border border-border bg-background/50 dark:bg-muted/20 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/30 font-medium uppercase tracking-wider focus:outline-none focus:border-primary focus:bg-primary/5 transition-all shadow-sm dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
-                        style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.8rem,0.8vw,0.92rem)' }}
-                      />
-                    </div>
+                  <option value="" disabled className="bg-[#0b111b] text-white/60">
+                    Select a Budget Range*
+                  </option>
+                  {BUDGET_OPTIONS.map((option) => (
+                    <option key={option} value={option} className="bg-[#0b111b] text-white">
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute right-1 bottom-3.5 flex items-center gap-1.5">
+                  {isBudgetFilled && (
+                    <CheckCheck size={19} strokeWidth={2.5} className="text-[#10B981]" />
+                  )}
+                  <ChevronDown size={16} className="text-white/70" />
+                </div>
+              </div>
 
-                    <div>
-                      <label className="block text-[0.65rem] uppercase tracking-[0.2em] font-bold text-primary mb-1.5" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                        CONTACT EMAIL <span className="text-destructive">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        data-testid="contact-email-input"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="name@domain.com"
-                        className="w-full rounded-sm border border-border bg-background/50 dark:bg-muted/20 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/30 font-medium tracking-wide focus:outline-none focus:border-primary focus:bg-primary/5 transition-all shadow-sm dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
-                        style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.8rem,0.8vw,0.92rem)' }}
-                      />
-                    </div>
+              {/* Phone */}
+              <div className="relative">
+                <input
+                  type="tel"
+                  name="phone"
+                  data-testid="contact-phone-input"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="Contact Number*"
+                  aria-label="Contact Number"
+                  autoComplete="tel"
+                  className={fieldBase}
+                />
+                {isPhoneFilled && (
+                  <CheckCheck
+                    size={19}
+                    strokeWidth={2.5}
+                    className="pointer-events-none absolute right-0 bottom-3 text-[#10B981] transition-all"
+                  />
+                )}
+              </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[0.65rem] uppercase tracking-[0.2em] font-bold text-primary mb-1.5" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                          PHONE
-                        </label>
-                        <input
-                          type="text"
-                          name="phone"
-                          data-testid="contact-phone-input"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          placeholder="+1 (000) 000-0000"
-                          className="w-full rounded-sm border border-border bg-background/50 dark:bg-muted/20 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/30 font-medium uppercase tracking-wider focus:outline-none focus:border-primary focus:bg-primary/5 transition-all shadow-sm dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
-                          style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.8rem,0.8vw,0.92rem)' }}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[0.65rem] uppercase tracking-[0.2em] font-bold text-primary mb-1.5" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                          COMPANY / ORGANIZATION
-                        </label>
-                        <input
-                          type="text"
-                          name="company"
-                          data-testid="contact-company-input"
-                          value={formData.company}
-                          onChange={handleChange}
-                          placeholder="Company name"
-                          className="w-full rounded-sm border border-border bg-background/50 dark:bg-muted/20 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/30 font-medium uppercase tracking-wider focus:outline-none focus:border-primary focus:bg-primary/5 transition-all shadow-sm dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
-                          style={{ fontFamily: '"Manrope", sans-serif', fontSize: 'clamp(0.8rem,0.8vw,0.92rem)' }}
-                        />
-                      </div>
-                    </div>
+              {/* Project description */}
+              <div className="md:col-span-2 relative">
+                <textarea
+                  name="message"
+                  data-testid="contact-message-input"
+                  rows={3}
+                  value={formData.message}
+                  onChange={handleChange}
+                  placeholder="Describe your project… (Minimum 20 characters required)"
+                  aria-label="Describe your project"
+                  className={`${fieldBase} resize-y min-h-[110px] leading-relaxed pr-8`}
+                />
+                {isMessageFilled && (
+                  <CheckCheck
+                    size={19}
+                    strokeWidth={2.5}
+                    className="pointer-events-none absolute right-0 top-3 text-[#10B981] transition-all"
+                  />
+                )}
+                <div className="flex items-center justify-between pt-1.5 text-[12px]">
+                  <span
+                    className={`transition-colors ${
+                      isMessageFilled ? 'text-[#10B981] font-medium' : 'text-white/45'
+                    }`}
+                  >
+                    {isMessageFilled
+                      ? '✓ Minimum requirement met'
+                      : 'Minimum 20 characters required'}
+                  </span>
+                  <span
+                    className={`tabular-nums transition-colors ${
+                      isMessageFilled ? 'text-[#10B981] font-semibold' : 'text-white/40'
+                    }`}
+                  >
+                    {formData.message.trim().length}/20 min
+                  </span>
+                </div>
+              </div>
 
-                    <div>
-                      <label className="block text-[0.65rem] uppercase tracking-[0.2em] font-bold text-primary mb-1.5" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                        MESSAGE
-                      </label>
-                      <textarea
-                        name="message"
-                        data-testid="contact-message-input"
-                        rows={3}
-                        value={formData.message}
-                        onChange={handleChange}
-                        placeholder="Tell us about your project, timeline, and goals..."
-                        className="w-full rounded-sm border border-border bg-background/50 dark:bg-muted/20 px-3 py-2.5 text-foreground placeholder:text-muted-foreground/30 font-medium tracking-wide focus:outline-none focus:border-primary focus:bg-primary/5 transition-all resize-none shadow-sm dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
-                        style={{ fontFamily: '"Courier New", Courier, monospace', fontSize: 'clamp(0.78rem,0.78vw,0.88rem)' }}
-                      />
-                    </div>
+              {/* File attachment */}
+              <div className="md:col-span-2">
+                <label className="flex items-center justify-between gap-4 border-0 border-b border-white/25 pb-3 cursor-pointer transition-colors duration-200 focus-within:border-[#3B82F6] hover:border-white/40">
+                  <span
+                    className={`truncate text-[15px] md:text-[16px] ${attachment ? 'text-white' : 'text-white/45'}`}
+                  >
+                    {attachment ? attachment.name : 'Attach PDF/Doc File'}
+                  </span>
+                  {attachment ? (
+                    <CheckCheck size={20} strokeWidth={2.5} className="text-[#10B981] shrink-0" />
+                  ) : (
+                    <Upload size={20} className="text-white shrink-0" />
+                  )}
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleFile}
+                    className="sr-only"
+                    aria-label="Attach PDF or Doc file"
+                  />
+                </label>
+              </div>
 
-                    {error && (
-                      <p data-testid="contact-error" className="text-[11px] text-destructive font-bold tracking-widest uppercase border-l-2 border-destructive pl-2 bg-destructive/10 py-1" style={{ fontFamily: '"Manrope", sans-serif' }}>
-                        ERR: {error}
-                      </p>
-                    )}
+              {/* Trust signals */}
+              <div className="md:col-span-2 flex flex-wrap items-center justify-start gap-4 md:gap-8 pt-1 text-left">
+                <p className="flex items-center gap-3 text-white text-[14px] md:text-[15px]">
+                  <CheckCheck size={22} className="text-[#2563EB] shrink-0" strokeWidth={2.4} />
+                  <span>
+                    Get a response in <strong className="font-bold">2 minutes</strong>
+                  </span>
+                </p>
+                <p className="flex items-center gap-3 text-white text-[14px] md:text-[15px]">
+                  <CheckCheck size={22} className="text-[#2563EB] shrink-0" strokeWidth={2.4} />
+                  <span>
+                    Your details are 100% protected
+                  </span>
+                </p>
+              </div>
 
-                    <button
-                      type="submit"
-                      data-testid="contact-submit-button"
-                      disabled={isSubmitting}
-                      className="group relative w-full inline-flex items-center justify-center px-4 py-3 text-[12px] font-bold text-primary-foreground bg-primary uppercase tracking-widest overflow-hidden transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}
-                    >
-                      <span className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                      <span className="relative flex items-center gap-2">
-                        {isSubmitting ? 'SENDING...' : 'SEND MESSAGE'}
-                      </span>
-                    </button>
-                  </div>
-                </form>
+              {error && (
+                <p
+                  data-testid="contact-error"
+                  className="md:col-span-2 text-[13px] font-medium text-red-400 border-l-2 border-red-400/70 pl-3 py-1"
+                >
+                  {error}
+                </p>
+              )}
+
+              {/* Submit */}
+              <div className="md:col-span-2 flex justify-center pt-4">
+                <button
+                  type="submit"
+                  data-testid="contact-submit-button"
+                  disabled={isSubmitting}
+                  className="inline-flex h-14 w-full sm:w-auto sm:min-w-[280px] items-center justify-center rounded-full bg-[#2563EB] hover:bg-[#1D4ED8] px-10 text-[15px] font-semibold text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Submitting…' : 'Submit'}
+                </button>
               </div>
             </div>
-          )}
-        </div>
+          </form>
+        )}
       </div>
     </section>
   );

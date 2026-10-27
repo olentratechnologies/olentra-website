@@ -7,32 +7,20 @@ const LOGO_SRC = "/images/branding/Logo/Olentra-Logo-Without-Background.png";
 const MIN_VISIBLE_MS = 600;
 const FADE_OUT_MS = 400;
 
-export default function Loader() {
+export default function Loader({ isInitialLoad = true }) {
+  // Never cover server-rendered content while JavaScript is still downloading.
+  const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState("show");
 
   useEffect(() => {
-    let cancelled = false;
-    const t0 = performance.now();
+    setMounted(true);
+    // Route fallbacks stay visible until Next.js replaces them with the page.
+    if (!isInitialLoad) return undefined;
 
-    const scheduleHide = () => {
-      if (cancelled) return;
-      const elapsed = performance.now() - t0;
-      const wait = Math.max(0, MIN_VISIBLE_MS - elapsed);
-      window.setTimeout(() => {
-        if (!cancelled) setPhase("hide");
-      }, wait);
-    };
-
-    if (document.readyState === "complete") {
-      scheduleHide();
-    } else {
-      window.addEventListener("load", scheduleHide, { once: true });
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    // Images, fonts and third-party resources must not block access to the page.
+    const timer = window.setTimeout(() => setPhase("hide"), MIN_VISIBLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [isInitialLoad]);
 
   useEffect(() => {
     if (phase !== "hide") return undefined;
@@ -40,7 +28,7 @@ export default function Loader() {
     return () => window.clearTimeout(t);
   }, [phase]);
 
-  if (phase === "done") return null;
+  if ((isInitialLoad && !mounted) || phase === "done") return null;
 
   return (
     <div

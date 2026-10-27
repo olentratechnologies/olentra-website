@@ -36,21 +36,32 @@
     font-family: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
   }
+
+  /* Prevent browser autofill from breaking dark mode aesthetics */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  textarea:-webkit-autofill:active,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus,
+  select:-webkit-autofill:active {
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    -webkit-box-shadow: 0 0 0 1000px #05070b inset !important;
+    box-shadow: 0 0 0 1000px #05070b inset !important;
+    transition: background-color 50000s ease-in-out 0s !important;
+    font-family: inherit !important;
+  }
 }
 
 @layer components {
   .glass-card {
     @apply bg-background/60 backdrop-blur-xl border border-border/50 shadow-sm transition-all duration-300;
-  }
-
-  /* Performance: content-visibility for off-screen elements helps mobile LCP */
-  #services,
-  #projects,
-  #testimonials,
-  #contact,
-  #process {
-    content-visibility: auto;
-    contain-intrinsic-size: 1px 1000px;
   }
 }
 
@@ -785,4 +796,143 @@ svg {
     transform: scale(0.68);
   }
 }
+
+/* Dynamic Navbar CTA Animations */
+@keyframes phone-ring {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  10%, 30% {
+    transform: rotate(-13deg) scale(1.08);
+  }
+  20%, 40% {
+    transform: rotate(13deg) scale(1.08);
+  }
+  50% {
+    transform: rotate(-7deg) scale(1.03);
+  }
+  60% {
+    transform: rotate(7deg) scale(1.03);
+  }
+  70% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes phone-wave-1 {
+  0%, 12% {
+    opacity: 0;
+    transform: scale(0.65) translate(-1px, 1px);
+  }
+  28%, 65% {
+    opacity: 0.95;
+    transform: scale(1) translate(0, 0);
+  }
+  82%, 100% {
+    opacity: 0;
+    transform: scale(1.25) translate(1px, -1px);
+  }
+}
+
+@keyframes phone-wave-2 {
+  0%, 22% {
+    opacity: 0;
+    transform: scale(0.6) translate(-1px, 1px);
+  }
+  42%, 75% {
+    opacity: 1;
+    transform: scale(1.1) translate(0, 0);
+  }
+  90%, 100% {
+    opacity: 0;
+    transform: scale(1.35) translate(2px, -2px);
+  }
+}
+
+@keyframes calendar-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-1.5px) rotate(-3deg);
+  }
+}
+
+@keyframes calendar-dot-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.45);
+    opacity: 1;
+    filter: drop-shadow(0 0 2px currentColor);
+  }
+}
+
+.animate-phone-ring {
+  animation: phone-ring 2.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 65%;
+}
+
+.animate-phone-wave-1 {
+  animation: phone-wave-1 2.4s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: bottom left;
+}
+
+.animate-phone-wave-2 {
+  animation: phone-wave-2 2.4s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: bottom left;
+}
+
+.animate-calendar-float {
+  animation: calendar-float 2.8s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center center;
+}
+
+.animate-calendar-dot-1,
+.animate-calendar-dot-2,
+.animate-calendar-dot-3,
+.animate-calendar-dot-4,
+.animate-calendar-dot-5,
+.animate-calendar-dot-6 {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.animate-calendar-dot-1 {
+  animation: calendar-dot-pulse 2s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+.animate-calendar-dot-2 {
+  animation: calendar-dot-pulse 2s ease-in-out infinite;
+  animation-delay: 0.35s;
+}
+
+.animate-calendar-dot-3 {
+  animation: calendar-dot-pulse 2s ease-in-out infinite;
+  animation-delay: 0.7s;
+}
+
+.animate-calendar-dot-4 {
+  animation: calendar-dot-pulse 2s ease-in-out infinite;
+  animation-delay: 1.05s;
+}
+
+.animate-calendar-dot-5 {
+  animation: calendar-dot-pulse 2s ease-in-out infinite;
+  animation-delay: 1.4s;
+}
+
+.animate-calendar-dot-6 {
+  animation: calendar-dot-pulse 2s ease-in-out infinite;
+  animation-delay: 1.75s;
+}
+
+
 

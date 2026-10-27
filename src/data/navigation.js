@@ -5,7 +5,6 @@ export const navLinks = [
     { id: 'nav-services', label: 'Services', href: '/services', hasDropdown: true },
     { id: 'nav-products', label: 'Products', href: '/products' },
     { id: 'nav-blogs', label: 'Blogs', href: '/blogs' },
-    { id: 'nav-contact', label: 'Contact', href: '/#contact' },
 ];
 
 export const footerLinks = {

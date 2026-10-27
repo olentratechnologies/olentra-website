@@ -74,9 +74,12 @@ export default function GlobeSection() {
           onGlobeReady={() => {
             if (globeRef.current) {
               const controls = globeRef.current.controls();
+              controls.enabled = false;
               controls.autoRotate = false;
-              controls.enableDamping = true;
-              controls.dampingFactor = 0.05;
+              controls.enableZoom = false;
+              controls.enableRotate = false;
+              controls.enablePan = false;
+              controls.enableDamping = false;
               // Explicitly lock camera to face India directly towards viewer
               globeRef.current.pointOfView({ lat: 20.5937, lng: 78.9629, altitude: 1.9 }, 0);
             }

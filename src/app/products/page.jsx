@@ -54,7 +54,7 @@ export default function ProductsPage() {
         panelTag="Launch-Ready Platforms"
       />
 
-      <Products />
+      <Products light />
 
       <Footer />
     </main>

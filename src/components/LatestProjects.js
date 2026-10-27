@@ -1,215 +1,395 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { ArrowUpRight, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-
+import { ArrowLeft, ArrowRight, ArrowUpRight, Layers, Clock3 } from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { projects } from '../data/projects';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
+import styles from './latest-projects.module.css';
+
+const projectDetails = [
+  ['Built an e-commerce experience that brings silk collections, product discovery, and online shopping together.', 'Next.js · Node.js', 'Cloud infrastructure on AWS'],
+  ['Created a job discovery platform that makes finding government opportunities and career updates simpler.', 'Search-friendly discovery', 'Powered by Appwrite'],
+  ['Built a fintech dashboard that turns financial data into clear, accessible insights.', 'Interactive data charts', 'React · Vercel'],
+  ['Created an AI-powered trading platform with strategy insights and automated reporting.', 'GPT strategy insights', 'Automated reporting'],
+  ['Built a streetwear shopping experience that puts bold collections and effortless discovery first.', 'Fashion commerce', 'Shopify experience'],
+  ['Redesigned an e-commerce platform around intuitive browsing and a considered shopping experience.', 'Product discovery', 'E-commerce redesign'],
+  ['Designed a SaaS dashboard that brings analytics and everyday workflows into one clear interface.', 'Dashboard design', 'Analytics experience'],
+  ['Designed a mobile fitness experience that makes everyday activity easier to explore.', 'Mobile-first design', 'Fitness experience'],
+];
 
 export default function LatestProjects() {
-  const categories = ['All', ...new Set(projects.map((p) => p.category))];
-  const [activeCategory, setActiveCategory] = useState('All');
-  const DEFAULT_VISIBLE = 6;
-  const [showAll, setShowAll] = useState(false);
-  const sectionRef = useRef(null);
-  const gridRef = useRef(null);
-
-  // First filter by category
-  const filteredByCategory = activeCategory === 'All'
-    ? projects
-    : projects.filter((p) => p.category === activeCategory);
-
-  // Then decide how many to show
-  const maxCount = filteredByCategory.length;
-  const minCount = Math.min(DEFAULT_VISIBLE, maxCount);
-  const displayedProjects = showAll ? filteredByCategory : filteredByCategory.slice(0, minCount);
-
-  useEffect(() => {
-    setShowAll(false);
-  }, [activeCategory, minCount]);
-
-  const handleToggle = () => {
-    setShowAll((prev) => !prev);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const lastCard = gridRef.current?.querySelector('[data-project-card]:last-child');
-        if (lastCard) {
-          lastCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
-          return;
-        }
-        sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    });
-  };
-
   return (
-    <section
-      id="projects"
-      ref={sectionRef}
-      data-testid="latest-projects-section"
-      className="bg-white relative font-sans py-16 md:py-24 overflow-hidden transition-colors duration-500 scroll-mt-28"
-    >
-      <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.06] pointer-events-none" />
-      <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
-
-      <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-12 md:mb-16">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-px bg-primary/40" />
-              <p className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.5em]">Project Portfolio</p>
-            </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 uppercase leading-[0.9] tracking-tighter">
-              Recent <br /> <span className="text-primary italic">Engagements</span>
-            </h2>
-          </div>
-          <div className="max-w-[320px] space-y-4 border-l-2 border-primary/20 pl-8 py-1.5">
-            <p className="text-[10px] md:text-[13px] font-semibold text-slate-600 tracking-widest uppercase leading-relaxed">
-              A curated overview of recent launches, platform builds, and measurable results.
-            </p>
-            <div className="flex items-center gap-2 text-primary font-black text-[9px] tracking-[0.2em] uppercase">
-              Client-Verified Outcomes
-            </div>
-          </div>
-        </div>
-
-        {/* Category Filter Dropdown */}
-        <div className="relative mb-16 md:mb-24 flex items-center justify-center max-w-4xl mx-auto px-4">
-          <div className="relative w-full max-w-sm">
-            <Select
-              value={activeCategory}
-              onValueChange={(val) => {
-                setActiveCategory(val);
-                setShowAll(false); // Reset showAll when category changes
-              }}
-            >
-              <SelectTrigger
-                aria-label="Filter projects by category"
-                className="w-full rounded-sm border border-slate-200 bg-white pl-4 pr-4 py-2.5 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.12)] focus:ring-0 focus:border-primary/50 gap-3 [&>svg]:opacity-100 [&>svg]:text-primary"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border border-slate-200 bg-white text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur-xl">
-                <SelectGroup>
-                  {categories.map((category) => (
-                    <SelectItem
-                      key={category}
-                      value={category}
-                      className="text-[11px] font-bold uppercase tracking-[0.2em] focus:bg-primary/20 focus:text-white"
-                    >
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <motion.div
-          layout
-          className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-16 md:gap-y-24"
-          ref={gridRef}
-        >
-          <AnimatePresence mode="popLayout">
-            {displayedProjects.map((project, index) => (
-              <ProjectCard key={project.title} project={project} index={index} />
-            ))}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* Explore More Button */}
-        {filteredByCategory.length > minCount && (
-          <div className="mt-20 md:mt-32 flex justify-center">
-            <button
-              onClick={handleToggle}
-              className="group relative inline-flex items-center gap-4 px-8 py-3 rounded-full border border-slate-200 bg-white text-slate-900 uppercase tracking-[0.24em] text-[10px] md:text-xs font-black transition-all duration-300 hover:border-primary hover:text-primary hover:shadow-[0_16px_36px_rgba(37,99,235,0.18)]"
-            >
-              <span className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/10 via-transparent to-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative z-10">
-                {showAll ? 'Show Less' : 'Show More'}
-              </span>
-              <span
-                className={`relative z-10 inline-flex items-center justify-center w-7 h-7 rounded-full border transition-all duration-300 ${showAll
-                  ? 'bg-primary border-primary text-white'
-                  : 'border-slate-200 text-primary'
-                  }`}
-              >
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAll ? 'rotate-180' : ''}`} />
-              </span>
-            </button>
-          </div>
-        )}
+    <section id="projects" data-theme="light" data-testid="latest-projects-section" className={styles.section} aria-labelledby="portfolio-title">
+      <div className={styles.heading}>
+        <h2 id="portfolio-title">Innovation, Engineered by Olentra</h2>
+        <span className="sr-only">Project Portfolio</span>
       </div>
+      <ProjectCarousel items={projects} />
     </section>
   );
 }
 
-function ProjectCard({ project, index }) {
-  const isLeft = index % 2 === 0;
+function ProjectCarousel({ items }) {
+  const [viewportRef, api] = useEmblaCarousel({ loop: items.length > 2, align: 'center', containScroll: false, duration: 18, skipSnaps: true });
+  const [selected, setSelected] = useState(0);
+  const [canPrevious, setCanPrevious] = useState(false);
+  const [canNext, setCanNext] = useState(items.length > 1);
+  const carouselRef = useRef(null);
+  const inertiaIdRef = useRef(null);
+  const isCoastingRef = useRef(false);
+  const paintRef = useRef(null);
+
+  useEffect(() => {
+    if (!api) return undefined;
+    const root = api.rootNode();
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const paint = () => {
+      if (!root) return;
+      const viewport = root.getBoundingClientRect();
+      if (!viewport.width) return;
+      const center = viewport.left + viewport.width / 2;
+      const slides = api.slideNodes();
+      if (!slides || !slides.length) return;
+      const gap = Number.parseFloat(window.getComputedStyle(slides[0]).marginRight) || 0;
+      const bounds = slides.map((slide) => slide.getBoundingClientRect());
+      if (!bounds[0] || bounds[0].width === 0) return;
+
+      const windowWidth = window.innerWidth;
+      // Refined wheel arc divisor:
+      // Mobile: 0.20 rad (~11.5 deg) gives a subtle, premium curve without clipping card bottoms
+      // Tablet: 0.25 rad (~14.3 deg)
+      // Desktop: 0.30 rad (~17.2 deg)
+      const divisor = windowWidth < 640 ? 0.20 : windowWidth < 1024 ? 0.25 : 0.30;
+      const radius = (bounds[0].width + gap) / divisor;
+
+      slides.forEach((slide, index) => {
+        const rect = bounds[index];
+        const offset = rect.left + rect.width / 2 - center;
+        const angle = offset / radius;
+        const card = slide.firstElementChild;
+        if (!card) return;
+        if (reducedMotion.matches) {
+          card.style.transform = 'none';
+          card.style.visibility = 'visible';
+          return;
+        }
+        card.style.visibility = Math.abs(angle) > Math.PI / 2 ? 'hidden' : 'visible';
+        const x = radius * Math.sin(angle) - offset;
+        const y = radius * (1 - Math.cos(angle));
+        card.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad)`;
+      });
+    };
+
+    paintRef.current = paint;
+
+    const sync = () => {
+      setSelected(api.selectedScrollSnap());
+      setCanPrevious(api.canScrollPrev());
+      setCanNext(api.canScrollNext());
+      paint();
+    };
+
+    api.on('scroll', paint).on('select', sync).on('reInit', sync);
+    reducedMotion.addEventListener('change', paint);
+
+    let resizeObserver;
+    if (typeof ResizeObserver !== 'undefined' && root) {
+      resizeObserver = new ResizeObserver(() => {
+        api.reInit();
+        sync();
+      });
+      resizeObserver.observe(root);
+    }
+    const handleResize = () => {
+      sync();
+    };
+    window.addEventListener('resize', handleResize, { passive: true });
+
+    sync();
+
+    return () => {
+      api.off('scroll', paint).off('select', sync).off('reInit', sync);
+      reducedMotion.removeEventListener('change', paint);
+      window.removeEventListener('resize', handleResize);
+      if (resizeObserver) resizeObserver.disconnect();
+    };
+  }, [api]);
+
+  useEffect(() => {
+    if (!api) return undefined;
+    const root = api.rootNode();
+    const doc = root.ownerDocument;
+    let isTouch = false;
+    let previousX = 0;
+    let samples = [];
+
+    const stopInertia = () => {
+      if (inertiaIdRef.current) {
+        cancelAnimationFrame(inertiaIdRef.current);
+        inertiaIdRef.current = null;
+      }
+      isCoastingRef.current = false;
+    };
+
+    const rememberStart = (event) => {
+      stopInertia();
+      isTouch = Boolean(event.touches);
+      previousX = event.touches ? event.touches[0].clientX : event.clientX;
+      const now = performance.now();
+      samples = [{ x: previousX, time: now }];
+    };
+
+    const accelerate = (event) => {
+      const engine = api.internalEngine();
+      if (!engine.dragHandler.pointerDown()) return;
+      if (event.touches && event.touches.length !== 1) return;
+      const x = event.touches ? event.touches[0].clientX : event.clientX;
+      const delta = x - previousX;
+      previousX = x;
+
+      if (!event.defaultPrevented) return;
+      const now = performance.now();
+      samples.push({ x, time: now });
+      samples = samples.filter((sample) => now - sample.time <= 120);
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // 1:1 on touchscreens for natural direct-manipulation; responsive 2.4 on mouse pointer
+      const speed = reduced || isTouch ? 1 : 2.4;
+      if (speed > 1) {
+        engine.target.add(engine.axis.direction(delta * (speed - 1)));
+        engine.scrollBody.useDuration(0);
+      }
+    };
+
+    const stop = () => {
+      doc.removeEventListener('mousemove', accelerate);
+      doc.removeEventListener('touchmove', accelerate);
+    };
+
+    const release = () => {
+      stop();
+      stopInertia();
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const engine = api.internalEngine();
+
+      if (reduced || samples.length < 2) {
+        engine.scrollBody.useDuration(25).useFriction(0.72);
+        engine.scrollTo.distance(0, true);
+        engine.animation.start();
+        return;
+      }
+
+      const now = performance.now();
+      const first = samples[0];
+      const last = samples[samples.length - 1];
+      const elapsed = last.time - first.time;
+      const idle = now - last.time;
+
+      // If user paused before letting go, gently settle on nearest card
+      if (elapsed < 10 || idle > 120) {
+        engine.scrollBody.useDuration(25).useFriction(0.72);
+        engine.scrollTo.distance(0, true);
+        engine.animation.start();
+        return;
+      }
+
+      // Exact pointer velocity in px/ms at release time
+      const rawVelocity = ((last.x - first.x) / elapsed) * Math.max(0, 1 - idle / 120);
+      if (Math.abs(rawVelocity) < 0.06) {
+        engine.scrollBody.useDuration(25).useFriction(0.72);
+        engine.scrollTo.distance(0, true);
+        engine.animation.start();
+        return;
+      }
+
+      // Convert to track coordinate velocity per 16.67ms frame
+      const dir = engine.axis.direction(1);
+      const dragMultiplier = isTouch ? 1.0 : 2.4;
+      let velocity = rawVelocity * dir * 16.67 * dragMultiplier;
+
+      // Generous max velocity cap for fast flick spins
+      const maxVelocity = isTouch ? 45 : 75;
+      velocity = Math.max(-maxVelocity, Math.min(maxVelocity, velocity));
+
+      // Stop Embla's internal animation while custom coasting runs
+      engine.animation.stop();
+      isCoastingRef.current = true;
+
+      // Friction per frame: 0.958 produces a smooth, gradual deceleration over ~1.5 to 2.5 seconds
+      const friction = isTouch ? 0.945 : 0.958;
+      let lastTime = performance.now();
+
+      const coast = (currentTime) => {
+        const deltaMs = Math.min(currentTime - lastTime, 34);
+        lastTime = currentTime;
+        const timeScale = deltaMs / 16.67;
+
+        // Step location forward
+        const step = velocity * timeScale;
+        engine.location.add(step);
+        engine.offsetLocation.set(engine.location.get());
+        engine.target.set(engine.location.get());
+        engine.previousLocation.set(engine.location.get());
+
+        // Handle loop wrap
+        engine.scrollLooper.loop(Math.sign(velocity));
+        engine.slideLooper.loop();
+
+        // Translate track DOM
+        engine.translate.to(engine.offsetLocation.get());
+
+        // Update wheel 3D card rotation & layout
+        paintRef.current?.();
+        engine.eventHandler.emit('scroll');
+
+        // Gradually slow down
+        velocity *= Math.pow(friction, timeScale);
+
+        // Continue until velocity slows down to a gentle roll
+        if (Math.abs(velocity) > 0.6) {
+          inertiaIdRef.current = requestAnimationFrame(coast);
+        } else {
+          inertiaIdRef.current = null;
+          isCoastingRef.current = false;
+          // Smoothly settle and center the nearest card
+          engine.scrollBody.useDuration(26).useFriction(0.74);
+          engine.scrollTo.distance(0, true);
+          engine.animation.start();
+        }
+      };
+
+      inertiaIdRef.current = requestAnimationFrame(coast);
+      samples = [];
+    };
+
+    const cancelMomentum = () => {
+      stopInertia();
+      samples = [];
+    };
+
+    const start = () => {
+      stop();
+      doc.addEventListener('mousemove', accelerate, { passive: true });
+      doc.addEventListener('touchmove', accelerate, { passive: true });
+    };
+
+    root.addEventListener('mousedown', rememberStart, true);
+    root.addEventListener('touchstart', rememberStart, { capture: true, passive: true });
+    root.addEventListener('touchcancel', cancelMomentum, true);
+    root.addEventListener('contextmenu', cancelMomentum, true);
+    api.on('pointerDown', start).on('pointerUp', release).on('reInit', stop);
+
+    return () => {
+      stop();
+      stopInertia();
+      root.removeEventListener('mousedown', rememberStart, true);
+      root.removeEventListener('touchstart', rememberStart, true);
+      root.removeEventListener('touchcancel', cancelMomentum, true);
+      root.removeEventListener('contextmenu', cancelMomentum, true);
+      api.off('pointerDown', start).off('pointerUp', release).off('reInit', stop);
+    };
+  }, [api]);
+
+  useEffect(() => {
+    // Remove keyboard focus from a card that is no longer the active slide.
+    const focused = document.activeElement;
+    if (focused?.closest('[data-project-card]') && carouselRef.current?.contains(focused)) carouselRef.current.focus({ preventScroll: true });
+  }, [selected]);
+
+  const navigate = useCallback((direction) => {
+    if (inertiaIdRef.current) {
+      cancelAnimationFrame(inertiaIdRef.current);
+      inertiaIdRef.current = null;
+    }
+    isCoastingRef.current = false;
+    const instant = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (direction < 0) api?.scrollPrev(instant);
+    else api?.scrollNext(instant);
+  }, [api]);
+
+  const select = (index) => {
+    if (inertiaIdRef.current) {
+      cancelAnimationFrame(inertiaIdRef.current);
+      inertiaIdRef.current = null;
+    }
+    isCoastingRef.current = false;
+    api?.scrollTo(index, window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  };
 
   return (
-    <motion.div
-      data-project-card
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.5, delay: index * 0.05 }}
-      className={`relative group flex ${isLeft ? 'justify-end' : 'justify-start'}`}
-    >
-      <a
-        href={project.href}
-        target={project.href.startsWith('http') ? '_blank' : undefined}
-        rel={project.href.startsWith('http') ? 'noreferrer' : undefined}
-        className="block glass-card backdrop-blur-3xl overflow-hidden shadow-[0_15_60px_rgba(0,0,0,0.4)] transition-all duration-700 hover:shadow-primary/20 border-border/10 hover:border-primary/50 w-full md:max-w-[380px]"
-      >
-        <div className="relative aspect-[4/5] overflow-hidden">
-          <Image
-            src={project.image}
-            alt={project.title}
-            fill
-            sizes="(max-width: 768px) 100vw, 380px"
-            className="object-cover transition-transform duration-1000 group-hover:scale-110 brightness-75 group-hover:brightness-90"
-            loading={index < 2 ? undefined : "lazy"}
-            priority={index < 2}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-60" />
-
-          <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-20">
-            <span className="px-3 py-1.5 bg-primary/20 backdrop-blur-xl border border-primary/50 text-white text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em]">
-              {project.category}
-            </span>
-            <span className="text-white/40 font-mono text-[11px] tracking-widest font-bold">
-              {project.year}
-            </span>
-          </div>
-
-          <div className="absolute bottom-8 left-8 right-8 z-20">
-            <div className="space-y-3">
-              <h3 className="text-2xl md:text-3xl lg:text-4xl font-black text-white uppercase tracking-tighter leading-[0.9]">
-                {project.title}
-              </h3>
-              <p className="text-xs md:text-[13px] text-primary font-bold tracking-[0.1em] uppercase opacity-0 group-hover:opacity-100 transform translate-y-3 group-hover:translate-y-0 transition-all duration-500 delay-100">
-                {project.subtitle}
-              </p>
-            </div>
-          </div>
-
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-transform duration-500 ease-out z-30">
-            <ArrowUpRight className="w-6 h-6" />
-          </div>
+    <div ref={carouselRef} className={styles.carousel} role="region" aria-roledescription="carousel" aria-label="Project portfolio" tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+          event.preventDefault();
+          navigate(event.key === 'ArrowLeft' ? -1 : 1);
+        }
+      }}>
+      <div className={styles.navigation}>
+        <button type="button" className={styles.arrow} aria-label="Previous project" disabled={!canPrevious} onClick={() => navigate(-1)}><ArrowLeft size={19} /></button>
+        <div className={styles.selectors} aria-label="Choose a project">
+          <button type="button" onClick={() => select(Math.max(0, selected - 1))}>{items[Math.max(0, selected - 1)]?.title || ''}</button>
+          <button type="button" aria-pressed="true" onClick={() => select(selected)}>{items[selected]?.title || ''}</button>
+          <button type="button" onClick={() => select(Math.min(items.length - 1, selected + 1))}>{items[Math.min(items.length - 1, selected + 1)]?.title || ''}</button>
         </div>
-      </a>
-    </motion.div>
+        <button type="button" className={styles.arrow} aria-label="Next project" disabled={!canNext} onClick={() => navigate(1)}><ArrowRight size={19} /></button>
+      </div>
+      <div ref={viewportRef} className={styles.viewport}>
+        <div className={styles.track}>
+          {items.map((project, index) => {
+            const active = index === selected;
+            // Existing placeholder destinations point to the homepage contact section.
+            const href = project.href === '/contact' ? '/#contact' : project.href;
+            const external = href.startsWith('http');
+            return (
+              <div key={project.title} className={styles.slide} role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${items.length}: ${project.title}`} aria-hidden={!active}>
+                <a data-project-card className={styles.card} data-active={active}
+                  href={href} target={external ? '_blank' : undefined}
+                  rel={external ? 'noopener noreferrer' : undefined}
+                  tabIndex={active ? 0 : -1} draggable={false}
+                  onClickCapture={(event) => {
+                    if (isCoastingRef.current) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      if (inertiaIdRef.current) {
+                        cancelAnimationFrame(inertiaIdRef.current);
+                        inertiaIdRef.current = null;
+                      }
+                      isCoastingRef.current = false;
+                      const engine = api?.internalEngine();
+                      if (engine) {
+                        engine.scrollBody.useDuration(26).useFriction(0.74);
+                        engine.scrollTo.distance(0, true);
+                        engine.animation.start();
+                      }
+                    }
+                  }}
+                  aria-label={`${external ? 'Visit' : 'Enquire about'} ${project.title}`}>
+
+                  <div className={styles.cardCopy}>
+                    <div className={styles.brandRow}>
+                      <span className={styles.brandMark} aria-hidden="true">{project.title.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span>
+                      <h3>{project.title}</h3>
+                    </div>
+                    <p>{projectDetails[index][0]}</p>
+                    <div className={styles.features}>
+                      <div><Layers strokeWidth={1.6} /><span>{projectDetails[index][1]}</span></div>
+                      <div><Clock3 strokeWidth={1.6} /><span>{projectDetails[index][2]}</span></div>
+                    </div>
+                  </div>
+                  <div className={styles.preview}>
+                    <Image src={project.image} alt={`${project.title} project preview`} fill sizes="(max-width: 640px) 84vw, (max-width: 1024px) 46vw, 460px" className={styles.image} draggable={false} />
+                    <span className={styles.visit} aria-hidden="true">{external ? 'View site' : 'Enquire'}<ArrowUpRight size={18} /></span>
+                  </div>
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className={styles.pagination} aria-label="Project pagination">{items.map((project, index) => <button key={project.title} type="button" aria-label={`Show ${project.title}`} aria-pressed={selected === index} onClick={() => select(index)}><span /></button>)}</div>
+      <span className="sr-only" aria-live="polite" aria-atomic="true">{items[selected].title}, project {selected + 1} of {items.length}</span>
+    </div>
   );
 }
