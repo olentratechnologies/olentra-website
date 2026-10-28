@@ -36,12 +36,19 @@ export default function ContactForm() {
 
   const handleFile = (e) => {
     const file = e.target.files?.[0] || null;
+    if (file && (file.size > 5 * 1024 * 1024 || !/\.(pdf|doc|docx)$/i.test(file.name))) {
+      e.target.value = '';
+      setAttachment(null);
+      setError('Please choose a PDF, DOC or DOCX file up to 5 MB.');
+      return;
+    }
     setAttachment(file);
     setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const name = formData.name.trim();
     const email = formData.email.trim();
@@ -69,22 +76,18 @@ export default function ContactForm() {
     setError('');
 
     try {
+      const body = new FormData();
+      Object.entries({ name, email, phone, message, budget: formData.budget })
+        .forEach(([key, value]) => body.append(key, value));
+      if (attachment) body.append('attachment', attachment);
       const response = await fetch('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          message,
-          company: '',
-          budget: formData.budget,
-          attachment: attachment?.name || '',
-        }),
+        body,
+        signal: AbortSignal.timeout(25_000),
       });
 
       const result = await response.json();
-      if (!response.ok) {
+      if (!response.ok || !result.success) {
         setError(result.error || 'Unable to submit your request right now. Please try again.');
         return;
       }
@@ -168,6 +171,7 @@ export default function ContactForm() {
                 <input
                   type="text"
                   name="name"
+                  maxLength={100}
                   data-testid="contact-name-input"
                   value={formData.name}
                   onChange={handleChange}
@@ -190,6 +194,7 @@ export default function ContactForm() {
                 <input
                   type="email"
                   name="email"
+                  maxLength={254}
                   data-testid="contact-email-input"
                   value={formData.email}
                   onChange={handleChange}
@@ -241,6 +246,7 @@ export default function ContactForm() {
                 <input
                   type="tel"
                   name="phone"
+                  maxLength={20}
                   data-testid="contact-phone-input"
                   value={formData.phone}
                   onChange={handleChange}
@@ -262,6 +268,7 @@ export default function ContactForm() {
               <div className="md:col-span-2 relative">
                 <textarea
                   name="message"
+                  maxLength={10000}
                   data-testid="contact-message-input"
                   rows={3}
                   value={formData.message}
@@ -303,7 +310,7 @@ export default function ContactForm() {
                   <span
                     className={`truncate text-[15px] md:text-[16px] ${attachment ? 'text-white' : 'text-white/45'}`}
                   >
-                    {attachment ? attachment.name : 'Attach PDF/Doc File'}
+                    {attachment ? attachment.name : 'Attach PDF/Doc File (max 5 MB)'}
                   </span>
                   {attachment ? (
                     <CheckCheck size={20} strokeWidth={2.5} className="text-[#10B981] shrink-0" />
@@ -339,6 +346,7 @@ export default function ContactForm() {
               {error && (
                 <p
                   data-testid="contact-error"
+                  role="alert"
                   className="md:col-span-2 text-[13px] font-medium text-red-400 border-l-2 border-red-400/70 pl-3 py-1"
                 >
                   {error}
