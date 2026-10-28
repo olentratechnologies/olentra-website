@@ -1,14 +1,28 @@
 "use client";
 
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
 import { ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { products } from '../data/products_data';
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 export default function Products({ light = false }) {
+    const section = useRef(null);
+    useGSAP(() => {
+        const cards = gsap.utils.toArray('[data-product-card]', section.current);
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        gsap.fromTo(cards, { y: 36, autoAlpha: 0 }, {
+            y: 0, autoAlpha: 1, duration: 0.65, stagger: 0.11, ease: 'power3.out', immediateRender: false,
+            scrollTrigger: { trigger: section.current, start: 'top 78%', once: true },
+        });
+    }, { scope: section });
     return (
         <section
+            ref={section}
             id="products"
             className="relative py-24 md:py-32 overflow-hidden isolate"
             style={{
@@ -56,11 +70,7 @@ function ProductCard({ product, index, light }) {
 
     return (
         <Link href={product.href} className="flex">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+            <div data-product-card
                 className={`group cursor-pointer relative overflow-hidden rounded-2xl border ${light ? "border-slate-200" : "border-white/10"} ${light ? "bg-white" : "bg-white/5"} backdrop-blur-3xl transition-all duration-500 hover:border-primary/60 hover:shadow-[0_20px_60px_rgba(37,99,235,0.2)] h-full w-full flex flex-col`}
             >
                 {/* Glow Effect */}
@@ -122,7 +132,7 @@ function ProductCard({ product, index, light }) {
                         </div>
                     </div>
                 </div>
-            </motion.div>
+            </div>
         </Link>
     );
 }

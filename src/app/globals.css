@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+html { scroll-behavior: auto; scroll-padding-top: 7rem; }
+section[id], [id^="services-"] { scroll-margin-top: 7rem; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+}
+
 @layer base {
   :root {
     --background: 218 44% 5%; /* #070b12 Founders background theme */

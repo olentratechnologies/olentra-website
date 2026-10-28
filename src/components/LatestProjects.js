@@ -38,82 +38,80 @@ function ProjectCarousel({ items }) {
   const carouselRef = useRef(null);
   const inertiaIdRef = useRef(null);
   const isCoastingRef = useRef(false);
-  const paintRef = useRef(null);
 
   useEffect(() => {
     if (!api) return undefined;
-    const root = api.rootNode();
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    const paint = () => {
-      if (!root) return;
-      const viewport = root.getBoundingClientRect();
-      if (!viewport.width) return;
-      const center = viewport.left + viewport.width / 2;
+    let geometry;
+
+    // Embla already measures the untransformed layout on initialization/resize.
+    // Reuse it so animation frames only calculate positions and write transforms.
+    const measure = () => {
+      const engine = api.internalEngine();
       const slides = api.slideNodes();
-      if (!slides || !slides.length) return;
+      const width = engine.containerRect.width;
+      const first = engine.slideRects[0];
+      if (!width || !first?.width) {
+        geometry = null;
+        return;
+      }
       const gap = Number.parseFloat(window.getComputedStyle(slides[0]).marginRight) || 0;
-      const bounds = slides.map((slide) => slide.getBoundingClientRect());
-      if (!bounds[0] || bounds[0].width === 0) return;
-
-      const windowWidth = window.innerWidth;
-      // Refined wheel arc divisor:
-      // Mobile: 0.20 rad (~11.5 deg) gives a subtle, premium curve without clipping card bottoms
-      // Tablet: 0.25 rad (~14.3 deg)
-      // Desktop: 0.30 rad (~17.2 deg)
-      const divisor = windowWidth < 640 ? 0.20 : windowWidth < 1024 ? 0.25 : 0.30;
-      const radius = (bounds[0].width + gap) / divisor;
-
-      slides.forEach((slide, index) => {
-        const rect = bounds[index];
-        const offset = rect.left + rect.width / 2 - center;
-        const angle = offset / radius;
-        const card = slide.firstElementChild;
-        if (!card) return;
-        if (reducedMotion.matches) {
-          card.style.transform = 'none';
-          card.style.visibility = 'visible';
-          return;
-        }
-        card.style.visibility = Math.abs(angle) > Math.PI / 2 ? 'hidden' : 'visible';
-        const x = radius * Math.sin(angle) - offset;
-        const y = radius * (1 - Math.cos(angle));
-        card.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad)`;
-      });
+      const divisor = window.innerWidth < 640 ? 0.20 : window.innerWidth < 1024 ? 0.25 : 0.30;
+      geometry = {
+        engine,
+        radius: (first.width + gap) / divisor,
+        cards: slides.map((slide, index) => ({
+          node: slide.firstElementChild,
+          center: engine.slideRects[index].left - engine.containerRect.left
+            + engine.slideRects[index].width / 2 - width / 2,
+          loopPoint: engine.slideLooper.loopPoints.find((point) => point.index === index),
+        })),
+      };
     };
 
-    paintRef.current = paint;
+    const paint = () => {
+      if (!geometry) return;
+      const { engine, radius, cards } = geometry;
+      // Use the rendered (interpolated) position, including each slide's loop shift,
+      // so the arc and track stay aligned on every display refresh.
+      const trackOffset = engine.axis.direction(engine.offsetLocation.get());
+      cards.forEach(({ node, center, loopPoint }) => {
+        if (!node) return;
+        if (reducedMotion.matches) {
+          node.style.transform = 'none';
+          node.style.visibility = 'visible';
+          return;
+        }
+        const loopOffset = loopPoint ? engine.axis.direction(loopPoint.slideLocation.get()) : 0;
+        const offset = center + trackOffset + loopOffset;
+        const angle = offset / radius;
+        node.style.visibility = Math.abs(angle) > Math.PI / 2 ? 'hidden' : 'visible';
+        const x = radius * Math.sin(angle) - offset;
+        const y = radius * (1 - Math.cos(angle));
+        node.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad)`;
+      });
+    };
 
     const sync = () => {
       setSelected(api.selectedScrollSnap());
       setCanPrevious(api.canScrollPrev());
       setCanNext(api.canScrollNext());
+    };
+    const refresh = () => {
+      measure();
+      sync();
       paint();
     };
 
-    api.on('scroll', paint).on('select', sync).on('reInit', sync);
+    api.on('scroll', paint).on('settle', paint).on('select', sync).on('reInit', refresh);
     reducedMotion.addEventListener('change', paint);
-
-    let resizeObserver;
-    if (typeof ResizeObserver !== 'undefined' && root) {
-      resizeObserver = new ResizeObserver(() => {
-        api.reInit();
-        sync();
-      });
-      resizeObserver.observe(root);
-    }
-    const handleResize = () => {
-      sync();
-    };
-    window.addEventListener('resize', handleResize, { passive: true });
-
-    sync();
+    // Embla's resize observer handles viewport and slide size changes.
+    refresh();
 
     return () => {
-      api.off('scroll', paint).off('select', sync).off('reInit', sync);
+      api.off('scroll', paint).off('settle', paint).off('select', sync).off('reInit', refresh);
       reducedMotion.removeEventListener('change', paint);
-      window.removeEventListener('resize', handleResize);
-      if (resizeObserver) resizeObserver.disconnect();
     };
   }, [api]);
 
@@ -133,8 +131,22 @@ function ProjectCarousel({ items }) {
       isCoastingRef.current = false;
     };
 
+    const alignToRenderedPosition = () => {
+      const engine = api.internalEngine();
+      const position = engine.offsetLocation.get();
+      engine.animation.stop();
+      engine.location.set(position);
+      engine.previousLocation.set(position);
+      engine.target.set(position);
+      // Reset residual physics without moving the visible track. Embla's next
+      // drag/settle update restores its normal duration and friction.
+      engine.scrollBody.useDuration(0).seek();
+    };
+
     const rememberStart = (event) => {
+      if (event.button !== undefined && event.button !== 0) return;
       stopInertia();
+      alignToRenderedPosition();
       isTouch = Boolean(event.touches);
       previousX = event.touches ? event.touches[0].clientX : event.clientX;
       const now = performance.now();
@@ -159,7 +171,9 @@ function ProjectCarousel({ items }) {
       const speed = reduced || isTouch ? 1 : 2.4;
       if (speed > 1) {
         engine.target.add(engine.axis.direction(delta * (speed - 1)));
-        engine.scrollBody.useDuration(0);
+        // Keep Embla's interpolated drag physics (0.75 duration / 0.3 friction).
+        // Duration zero collapses previous/current positions, producing 60 Hz
+        // steps even when the display renders at 120 or 144 Hz.
       }
     };
 
@@ -214,7 +228,7 @@ function ProjectCarousel({ items }) {
       velocity = Math.max(-maxVelocity, Math.min(maxVelocity, velocity));
 
       // Stop Embla's internal animation while custom coasting runs
-      engine.animation.stop();
+      alignToRenderedPosition();
       isCoastingRef.current = true;
 
       // Friction per frame: 0.958 produces a smooth, gradual deceleration over ~1.5 to 2.5 seconds
@@ -241,7 +255,6 @@ function ProjectCarousel({ items }) {
         engine.translate.to(engine.offsetLocation.get());
 
         // Update wheel 3D card rotation & layout
-        paintRef.current?.();
         engine.eventHandler.emit('scroll');
 
         // Gradually slow down

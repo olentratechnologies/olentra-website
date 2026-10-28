@@ -80,7 +80,7 @@ export default function DailySupplyWelcome() {
     <Dialog.Root open={open} onOpenChange={(value) => { if (!value) dismiss(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className={styles.overlay} />
-        <Dialog.Content className={styles.modal} onCloseAutoFocus={(event) => {
+        <Dialog.Content data-lenis-prevent className={styles.modal} onCloseAutoFocus={(event) => {
           event.preventDefault();
           if (previousFocus.current?.isConnected) previousFocus.current.focus();
         }}>

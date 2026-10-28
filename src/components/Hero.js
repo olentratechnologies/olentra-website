@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useRef } from "react";
+import { gsap } from "gsap";
+import { useGSAP } from "@gsap/react";
+gsap.registerPlugin(useGSAP);
 
 const VIDEO_URL = "/videos/hero-video.mp4";
 const POSTER_URL = "/videos/hero-poster.jpg";
@@ -14,8 +16,18 @@ const FEATS = [
 ];
 
 export default function Hero() {
-  const [isEntered, setIsEntered] = useState(false);
   const videoRef = useRef(null);
+  const root = useRef(null);
+
+  useGSAP(() => {
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.fromTo("[data-hero-enter]", { autoAlpha: 0, y: 18 }, {
+        autoAlpha: 1, y: 0, duration: 0.75, stagger: 0.12, ease: "power3.out", delay: 1.25,
+      });
+    });
+    return () => media.revert();
+  }, { scope: root });
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -33,14 +45,9 @@ export default function Hero() {
     if (query.addEventListener) query.addEventListener("change", sync);
     else query.addListener(sync);
 
-    const timer = window.setTimeout(() => {
-      setIsEntered(true);
-    }, 3200);
-
     return () => {
       if (query.removeEventListener) query.removeEventListener("change", sync);
       else query.removeListener(sync);
-      clearTimeout(timer);
     };
   }, []);
 
@@ -48,9 +55,8 @@ export default function Hero() {
     <>
       <section
         data-testid="hero-section"
-        className={`cc-hero relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-[#070b12] text-white flex flex-col justify-between ${
-          isEntered ? "is-entered" : ""
-        }`}
+        ref={root}
+        className="cc-hero is-entered relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-[#070b12] text-white flex flex-col justify-between"
       >
         {/* Neural Warp Video Background */}
         <video
@@ -82,10 +88,7 @@ export default function Hero() {
           />
 
           <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center w-full">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
+            <h1 data-hero-enter
               className="text-[clamp(2rem,6vw,4.1rem)] font-semibold text-white tracking-tight leading-[1.05] sm:leading-[1] mb-6 drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]"
             >
               Transforming Businesses Through
@@ -93,23 +96,17 @@ export default function Hero() {
                 {" "}
                 Technology
               </span>
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.3 }}
+            <p data-hero-enter
               className="text-[0.98rem] md:text-[1.1rem] text-slate-300/90 leading-relaxed mb-10 sm:mb-12 max-w-3xl font-medium drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]"
             >
               We design, build, and operate production-grade systems across
               cloud, data, and AI. Expect disciplined execution, clear
               milestones, and measurable outcomes.
-            </motion.p>
+            </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+            <div data-hero-enter
               className="flex justify-center w-full sm:w-auto"
             >
               <div className="snake-border">
@@ -127,12 +124,12 @@ export default function Hero() {
                   </svg>
                 </a>
               </div>
-            </motion.div>
+            </div>
 
             {/* Feature Chevrons */}
             <ul className="mt-6 sm:mt-8 md:mt-12 flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:gap-8 lg:gap-10 w-full">
               {FEATS.map((feat, index) => (
-                <li
+                <li data-hero-enter
                   key={feat}
                   className={`flex items-center gap-1.5 sm:gap-2 md:gap-2.5 text-[10px] sm:text-xs md:text-sm font-semibold text-slate-100 cc-anim-f${
                     index + 1

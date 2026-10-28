@@ -157,12 +157,14 @@ export function MotionShowcaseSection() {
       );
     }
 
+    let inView = false;
+    const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            runEntrance();
-          }
+          inView = entry.isIntersecting;
+          if (inView) runEntrance();
+          syncAnimation();
         });
       },
       { threshold: 0.15 }
@@ -170,27 +172,28 @@ export function MotionShowcaseSection() {
     observer.observe(stageEl);
 
     // 6. RAF TICK & VISIBILITY HANDLING
-    let rafId;
+    let rafId = null;
     let lastTime = 0;
 
     function tick(t) {
       if (!lastTime) lastTime = t;
       const dt = Math.min((t - lastTime) / 1000, 0.1);
       lastTime = t;
-      const prefersReduced = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
-      if (!prefersReduced) {
-        phase -= 1.8 * dt;
-      }
+      phase -= 1.8 * dt;
       placeCards(phase);
       rafId = requestAnimationFrame(tick);
     }
 
-    function handleVisibility() {
+    function syncAnimation() {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = null;
       lastTime = 0;
+      if (inView && !document.hidden && !reduceQuery.matches) {
+        rafId = requestAnimationFrame(tick);
+      }
     }
-    document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener("visibilitychange", syncAnimation);
+    reduceQuery.addEventListener('change', syncAnimation);
 
     function handleResize() {
       updateScale();
@@ -204,7 +207,7 @@ export function MotionShowcaseSection() {
 
     updateScale();
     placeCards(phase);
-    rafId = requestAnimationFrame(tick);
+    syncAnimation();
 
     return () => {
       cancelAnimationFrame(rafId);
@@ -213,7 +216,8 @@ export function MotionShowcaseSection() {
       if (window.visualViewport) {
         window.visualViewport.removeEventListener("resize", handleResize);
       }
-      document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("visibilitychange", syncAnimation);
+      reduceQuery.removeEventListener('change', syncAnimation);
     };
   }, []);
 

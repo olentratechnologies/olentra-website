@@ -1,38 +1,34 @@
 "use client";
 
 import { useEffect, useRef } from 'react';
-import { useInView, motion, animate, useMotionValue, useTransform } from 'framer-motion';
+import { useInView, motion, useReducedMotion } from 'framer-motion';
+import { gsap } from 'gsap';
+import { useGSAP } from '@gsap/react';
 
 import { stats } from '../data/stats';
 
 function RollingNumber({ value, suffix }) {
-  const isDecimal = Number(value) % 1 !== 0;
-  const count = useMotionValue(0);
-  const rounded = useTransform(count, (latest) =>
-    isDecimal ? latest.toFixed(2) : Math.round(latest)
-  );
   const ref = useRef(null);
+  const numberRef = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.4 });
   const hasAnimatedRef = useRef(false);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (hasAnimatedRef.current) return;
     if (!isInView && typeof IntersectionObserver !== 'undefined') return;
 
     hasAnimatedRef.current = true;
-    if (value === 0) return;
-
-    const controls = animate(count, value, {
-      duration: 2,
-      ease: [0.16, 1, 0.3, 1], // easeOutQuart
-    });
-    return () => controls.stop();
-  }, [isInView, count, value]);
-
+    if (value === 0 || reducedMotion) return;
+    const counter = { value: 0 };
+    const tween = gsap.to(counter, { value, duration: 2, ease: 'power3.out', onUpdate: () => {
+      if (numberRef.current) numberRef.current.textContent = Number(value) % 1 ? counter.value.toFixed(2) : Math.round(counter.value);
+    }});
+    return () => tween.kill();
+  }, [isInView, value, suffix, reducedMotion]);
   return (
     <span ref={ref} className="inline-flex items-baseline whitespace-nowrap tabular-nums">
-      <motion.span className="whitespace-nowrap">{rounded}</motion.span>
-      <span className="whitespace-nowrap">{suffix}</span>
+      <><motion.span ref={numberRef} className="whitespace-nowrap">{`${value}`}</motion.span><span>{suffix}</span></>
     </span>
   );
 }

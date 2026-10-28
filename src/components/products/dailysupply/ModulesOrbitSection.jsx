@@ -109,10 +109,11 @@ export default function ModulesOrbitSection() {
 
     let frame = null;
     let last = 0;
+    let displayedAngle = angleRef.current;
 
     const apply = () => {
-      stage.style.setProperty('--orbit', `${angleRef.current}deg`);
-      stage.style.setProperty('--orbit-back', `${-angleRef.current}deg`);
+      stage.style.setProperty('--orbit', `${displayedAngle}deg`);
+      stage.style.setProperty('--orbit-back', `${-displayedAngle}deg`);
     };
 
     const tick = (now) => {
@@ -127,10 +128,14 @@ export default function ModulesOrbitSection() {
         let next = velocityRef.current + (target - velocityRef.current) * k;
         if (Math.abs(next - target) < 0.01) next = target;
         velocityRef.current = next;
-        const before = angleRef.current;
         angleRef.current += next * dt;
-        if (angleRef.current !== before) apply();
       }
+      // Render on display frames, not irregular pointer-event intervals. The
+      // short, time-based follow keeps the same angle and fling speed targets.
+      const previous = displayedAngle;
+      displayedAngle += (angleRef.current - displayedAngle) * (1 - Math.exp(-dt / 0.035));
+      if (Math.abs(angleRef.current - displayedAngle) < 0.001) displayedAngle = angleRef.current;
+      if (previous !== displayedAngle) apply();
       frame = requestAnimationFrame(tick);
     };
 
@@ -251,8 +256,6 @@ export default function ModulesOrbitSection() {
     // Responsive blend toward instantaneous flick speed
     velocityRef.current = velocityRef.current * 0.4 + instant * 0.6;
     angleRef.current += delta;
-    stage.style.setProperty('--orbit', `${angleRef.current}deg`);
-    stage.style.setProperty('--orbit-back', `${-angleRef.current}deg`);
   }, []);
 
   const syncFreeze = useCallback(() => {

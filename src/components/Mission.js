@@ -2,35 +2,26 @@
 
 import { useRef } from 'react';
 import Image from 'next/image';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useGSAP } from '@gsap/react';
 import { Zap, Shield, Cpu, Globe, Terminal } from 'lucide-react';
 import { missionData } from '../data/about';
 
 const aboutText = missionData.aboutText;
-
-function HighlightWord({ children, progress, range }) {
-  const opacity = useTransform(progress, range, [0.15, 1]);
-  const color = useTransform(progress, range, [
-    "rgba(15, 23, 42, 0.4)", // Dimmed slate
-    "#0f172a",               // Slate 950 (Black)
-  ]);
-
-  return (
-    <motion.span
-      style={{ opacity, color, display: 'inline-block' }}
-      className="mr-2 transition-colors duration-200"
-    >
-      {children}
-    </motion.span>
-  );
-}
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 export default function Mission() {
   const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start 100%", "start 10%"]
-  });
+  const reducedMotion = useReducedMotion();
+  useGSAP(() => {
+    const words = gsap.utils.toArray('.mission-word', containerRef.current);
+    if (reducedMotion) return;
+    gsap.to(words, { color: '#0f172a', stagger: 0.02, ease: 'none', scrollTrigger: {
+      trigger: containerRef.current, start: 'top 90%', end: 'top 15%', scrub: 0.4,
+    }});
+  }, { scope: containerRef, dependencies: [reducedMotion] });
 
   const words = aboutText.split(" ");
 
@@ -61,11 +52,7 @@ export default function Mission() {
               {words.map((word, i) => {
                 const start = i / words.length;
                 const end = (i + 1) / words.length;
-                return (
-                  <HighlightWord key={i} progress={scrollYProgress} range={[start, end]}>
-                    {word}
-                  </HighlightWord>
-                );
+                return <span key={i} className="mission-word mr-2" style={{color: reducedMotion ? '#0f172a' : 'rgba(15,23,42,.4)'}}>{word}</span>;
               })}
             </p>
           </div>
