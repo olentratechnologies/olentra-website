@@ -15,6 +15,7 @@ export const footerLinks = {
         { id: 'footer-services', label: 'All Services', href: '/services' },
         { id: 'footer-products', label: 'Products', href: '/products' },
         { id: 'footer-blogs', label: 'Insights', href: '/blogs' },
+        { id: 'footer-dashboard', label: 'Enterprise Hub', href: '/dashboard' },
         { id: 'footer-contact', label: 'Contact Us', href: '/#contact' },
     ],
 };
