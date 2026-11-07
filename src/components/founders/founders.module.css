@@ -8,6 +8,10 @@
   font-family: var(--font-manrope), sans-serif;
   overflow: clip;
 }
+.page[id] {
+  /* The document's scroll padding already clears the fixed navbar. */
+  scroll-margin-top: 0;
+}
 .page * {
   box-sizing: border-box;
 }
@@ -1205,7 +1209,11 @@
 
 /* Vision in White Theme */
 .vision.lightSection {
-  background: radial-gradient(ellipse at 80% 50%, #f1f5f9 0, #ffffff 70%) !important;
+  background: radial-gradient(
+    ellipse at 80% 50%,
+    #f1f5f9 0,
+    #ffffff 70%
+  ) !important;
   border-top: 1px solid #e2e8f0 !important;
 }
 
@@ -1264,7 +1272,11 @@
 
 .vision.lightSection .core > div {
   border: 1.5px solid #0f172a !important;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.95)) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.85),
+    rgba(30, 41, 59, 0.95)
+  ) !important;
   box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.15) !important;
 }
 
@@ -1285,7 +1297,11 @@
 
 /* Belief Message in White Theme */
 .message.lightSection {
-  background: radial-gradient(ellipse at 80% 50%, #f1f5f9 0, #ffffff 70%) !important;
+  background: radial-gradient(
+    ellipse at 80% 50%,
+    #f1f5f9 0,
+    #ffffff 70%
+  ) !important;
   border-top: 1px solid #e2e8f0 !important;
   border-bottom: 1px solid #e2e8f0 !important;
 }
@@ -1314,7 +1330,11 @@
 
 /* Closing CTA in White Theme */
 .closing.lightSection {
-  background: radial-gradient(ellipse at 50% 100%, #eff6ff 0, #ffffff 70%) !important;
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    #eff6ff 0,
+    #ffffff 70%
+  ) !important;
   border-top: 1px solid #e2e8f0 !important;
 }
 

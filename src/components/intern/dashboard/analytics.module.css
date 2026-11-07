@@ -1,0 +1,815 @@
+.rangeSelect {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 39px;
+  padding: 0 12px;
+  color: #284475;
+  border: 1px solid #cbdaff;
+  border-top-color: #fff;
+  border-radius: 11px;
+  background: linear-gradient(130deg, #ffffff8a, #e5edffb8);
+  box-shadow: 0 2px 5px #4870c210;
+}
+.rangeSelect select {
+  appearance: none;
+  outline: none;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+.rangeSelect option {
+  color: #27416f;
+  background: #f4f7ff;
+}
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.42fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 19px;
+}
+.performancePanel,
+.funnelPanel,
+.comparisonPanel,
+.comparisonTablePanel,
+.skillsPanel,
+.detailedFunnelPanel {
+  min-width: 0;
+  padding: 20px 22px;
+}
+.chartHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 17px;
+}
+.chartHeader h2,
+.sectionTitle {
+  margin: 0;
+  color: #10214e;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.55px;
+}
+.chartHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 17px;
+  color: #536ba0;
+  font-size: 11px;
+}
+.legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.legend i,
+.chartTooltip i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.blueDot {
+  background: #369dff;
+}
+.purpleDot {
+  background: #9b63ff;
+}
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  color: #7c94c5;
+  border: 0;
+  border-radius: 8px;
+  background: #eaf0ff;
+}
+.iconButton:hover {
+  color: #2e6ee4;
+  background: #dee8ff;
+}
+.barChart {
+  position: relative;
+  height: 300px;
+  min-width: 0;
+}
+.barChart svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  font-family: var(--font-inter), Arial, sans-serif;
+}
+.barChart svg g[role="button"] {
+  cursor: pointer;
+  outline: none;
+}
+.barChart svg g[role="button"]:focus-visible rect:first-child {
+  stroke: #88aeff;
+  stroke-width: 1;
+}
+.chartTooltip {
+  position: absolute;
+  top: 2px;
+  z-index: 2;
+  display: grid;
+  gap: 5px;
+  min-width: 148px;
+  padding: 10px 12px;
+  border: 1px solid #d6e1ff;
+  border-radius: 10px;
+  background: #fffffff5;
+  color: #273f70;
+  font-size: 11px;
+  box-shadow: 0 6px 20px #3555a221;
+  pointer-events: none;
+}
+.chartTooltip > strong {
+  font-size: 12px;
+  margin-bottom: 1px;
+}
+.chartTooltip > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chartTooltip b {
+  margin-left: auto;
+  font-weight: 600;
+}
+.chartFootnote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #dce5fc;
+  color: #8293b4;
+  font-size: 10px;
+}
+.chartFootnote > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #4a8e86;
+}
+.funnel {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  width: 100%;
+  height: 289px;
+  margin-top: 15px;
+}
+.funnelDiagram {
+  display: block;
+  flex: 0 1 50%;
+  width: 50%;
+  height: 100%;
+  overflow: visible;
+}
+.funnelStages {
+  list-style: none;
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  flex: 1;
+  min-width: 0;
+  gap: 0;
+  margin: 9px 0 0;
+  padding: 0 0 7px;
+}
+.funnelStages li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #3b5285;
+  font-size: 12px;
+}
+.funnelStages strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #102558;
+}
+.funnelStages small {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+  color: #8798ba;
+}
+.funnelFootnote {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #dce5fc;
+  padding-top: 13px;
+  color: #8394b6;
+  font-size: 10px;
+}
+.funnelFootnote strong {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #09a978;
+  font-weight: 600;
+}
+.comparisonPanel {
+  margin-top: 19px;
+}
+.comparisonCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 13px;
+}
+.trackSummary {
+  padding: 17px 18px;
+  border: 1px solid #d7e2ff;
+  border-radius: 13px;
+  background: linear-gradient(120deg, #edf5ff70, #e8eeff45);
+}
+.trackSummary > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.trackSummary > div:first-child > span:last-child {
+  color: #8293b4;
+  font-size: 11px;
+}
+.trackSummary > strong {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-top: 13px;
+  font-size: 26px;
+  letter-spacing: -0.8px;
+  color: #153364;
+}
+.trackSummary > strong small {
+  color: #7186b0;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.trackSummaryBottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  color: #7287b2;
+  font-size: 11px;
+}
+.trackSummaryBottom > span:last-child {
+  color: #438e82;
+}
+.comparisonTablePanel {
+  margin-top: 18px;
+}
+.comparisonTablePanel h2 {
+  margin-bottom: 18px;
+}
+.positive {
+  color: #08a371;
+  font-weight: 600;
+}
+.conversionGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 19px;
+}
+.description {
+  margin: 7px 0 0;
+  color: #7c8fb5;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.periodNote {
+  color: #7e93b9;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.detailedFunnelPanel .chartHeader {
+  margin-bottom: 0;
+}
+.detailedFunnel {
+  height: 332px;
+  margin-top: 19px;
+}
+.detailedFunnel .funnelStages li {
+  font-size: 13px;
+}
+.detailedFunnel .funnelStages strong {
+  font-size: 17px;
+}
+.conversionSteps {
+  display: grid;
+  gap: 15px;
+}
+.conversionStep {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  min-width: 0;
+  padding: 23px;
+}
+.stepIndex {
+  align-self: flex-start;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 35px;
+  height: 35px;
+  border: 1px solid #d2dfff;
+  border-radius: 11px;
+  background: #e7efff;
+  color: #5d8cda;
+  font-size: 12px;
+}
+.conversionStep > div:nth-child(2) {
+  flex: 1;
+}
+.conversionStep > div:nth-child(2) > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #7287b0;
+}
+.conversionStep strong {
+  display: block;
+  margin: 8px 0 5px;
+  color: #213d73;
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -1px;
+}
+.conversionStep small {
+  color: #7e92b9;
+  font-size: 10px;
+}
+.conversionProgress {
+  flex-basis: 100%;
+  height: 5px;
+  margin-top: 2px;
+  overflow: hidden;
+  background: #e0e9fc;
+  border-radius: 5px;
+}
+.conversionProgress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.skillsPanel {
+  margin-top: 19px;
+}
+.skillSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 0 11px;
+  height: 36px;
+  border: 1px solid #cfddff;
+  border-radius: 10px;
+  background: #ffffff70;
+  color: #6d8abd;
+}
+.skillSearch input {
+  width: 140px;
+  outline: none;
+  border: none;
+  color: #365684;
+  background: transparent;
+  font-size: 11px;
+}
+.skillSearch input::placeholder {
+  color: #8b9cbb;
+}
+.skillsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px 38px;
+  padding: 16px 0 10px;
+}
+.skillRow {
+  min-width: 0;
+}
+.skillRow > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.skillRank {
+  color: #9babca;
+  font-size: 10px;
+}
+.skillRow strong {
+  font-size: 12px;
+  color: #3a5281;
+  font-weight: 550;
+}
+.skillRow > div:first-child > span:last-child {
+  margin-left: auto;
+  color: #7e93b9;
+  font-size: 10px;
+}
+.skillBar {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #e4ebfc;
+}
+.skillBar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.expandedChart {
+  min-width: 0;
+}
+.expandedChart .legend {
+  margin: 16px 0 4px;
+}
+.largeChart {
+  height: 330px;
+}
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.filterCount {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  background: #ffffff36;
+  border-radius: 5px;
+  font-size: 10px;
+}
+.internTabsRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 19px;
+}
+.internSearch {
+  width: 230px;
+  flex: none;
+  padding-bottom: 8px;
+}
+.filterPanel {
+  padding: 17px 20px;
+  margin: 0 0 15px;
+}
+.filterFields {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 17px;
+}
+.filterFields label {
+  display: grid;
+  gap: 7px;
+  color: #7188b1;
+  font-size: 11px;
+}
+.filterFields select {
+  min-width: 180px;
+  height: 36px;
+  padding: 0 30px 0 11px;
+  color: #385281;
+  background: #ffffffa6;
+  border: 1px solid #cfddff;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.filterFields option {
+  color: #385281;
+  background: #f6f9ff;
+}
+.internTablePanel {
+  padding: 0;
+  overflow: hidden;
+}
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  text-align: left;
+  white-space: nowrap;
+}
+.sortButton svg {
+  opacity: 0.65;
+}
+.sortButton:hover {
+  color: #246be8;
+}
+.internPerson {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #253f72;
+  text-decoration: none;
+}
+.internPerson strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 550;
+}
+.internPerson small {
+  display: block;
+  color: #8b9bbd;
+  font-size: 10px;
+  margin-top: 4px;
+}
+.internPerson:hover strong {
+  color: #246fff;
+}
+.projectLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #3c598c;
+  font-size: 11px;
+  text-decoration: none;
+}
+.projectLink:hover {
+  color: #2673e6;
+}
+.projectLink > span {
+  color: #8497bc;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: #e8eeff;
+  font-size: 9px;
+}
+.unassigned {
+  color: #9ba9c5;
+  font-size: 11px;
+}
+.batchText {
+  font-size: 11px;
+  color: #536c99;
+}
+.actionsHeading {
+  text-align: right;
+}
+.rowActions {
+  text-align: right;
+}
+@media (max-width: 1280px) {
+  .analyticsGrid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 14px;
+  }
+  .performancePanel,
+  .funnelPanel {
+    padding: 18px 16px;
+  }
+  .funnel {
+    gap: 8px;
+  }
+  .funnelStages li {
+    font-size: 11px;
+    gap: 7px;
+  }
+  .funnelStages strong {
+    font-size: 12px;
+  }
+  .legend {
+    gap: 10px;
+    font-size: 10px;
+  }
+  .chartHeaderRight {
+    gap: 8px;
+  }
+  .chartFootnote > span:last-child {
+    display: none;
+  }
+}
+@media (max-width: 1030px) {
+  .analyticsGrid {
+    grid-template-columns: 1fr;
+  }
+  .barChart {
+    height: 285px;
+  }
+  .funnel {
+    max-width: 550px;
+    margin: 8px auto 0;
+    height: 270px;
+  }
+  .funnelStages li {
+    font-size: 13px;
+  }
+  .funnelStages strong {
+    font-size: 15px;
+  }
+  .conversionGrid {
+    grid-template-columns: 1fr;
+  }
+  .conversionSteps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .conversionStep {
+    gap: 10px;
+    padding: 17px;
+  }
+  .stepIndex {
+    width: 29px;
+    height: 29px;
+  }
+  .conversionStep > div:nth-child(2) {
+    min-width: 110px;
+  }
+  .conversionStep > div:nth-child(2) > span {
+    font-size: 10px;
+  }
+  .skillsGrid {
+    gap: 24px;
+  }
+}
+@media (max-width: 760px) {
+  .chartHeader {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .chartHeader h2,
+  .sectionTitle {
+    font-size: 15px;
+  }
+  .chartHeaderRight {
+    margin-left: auto;
+  }
+  .internTabsRow {
+    align-items: stretch;
+    flex-direction: column-reverse;
+    gap: 4px;
+  }
+  .internSearch {
+    width: 100%;
+    max-width: 320px;
+    padding-bottom: 3px;
+  }
+  .conversionSteps {
+    grid-template-columns: 1fr;
+  }
+  .conversionStep > div:nth-child(2) {
+    min-width: 0;
+  }
+  .conversionStep {
+    gap: 14px;
+  }
+  .skillsGrid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .skillSearch {
+    width: 100%;
+  }
+  .skillSearch input {
+    width: 100%;
+  }
+  .skillsPanel .chartHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 520px) {
+  .analyticsGrid,
+  .conversionGrid {
+    gap: 13px;
+    margin-top: 15px;
+  }
+  .performancePanel,
+  .funnelPanel,
+  .comparisonPanel,
+  .comparisonTablePanel,
+  .skillsPanel,
+  .detailedFunnelPanel {
+    padding: 17px 14px;
+  }
+  .chartHeader {
+    margin-bottom: 10px;
+  }
+  .chartHeader h2 {
+    font-size: 14px;
+  }
+  .barChart {
+    height: 235px;
+  }
+  .legend {
+    font-size: 9px;
+    gap: 9px;
+  }
+  .legend i {
+    height: 6px;
+    width: 6px;
+  }
+  .iconButton {
+    width: 25px;
+    height: 25px;
+  }
+  .chartTooltip {
+    min-width: 132px;
+    padding: 9px;
+    font-size: 10px;
+  }
+  .funnel {
+    height: 238px;
+  }
+  .funnelStages li {
+    font-size: 11px;
+  }
+  .funnelStages strong {
+    font-size: 13px;
+  }
+  .funnelStages small {
+    font-size: 9px;
+    line-height: 1.4;
+  }
+  .funnelFootnote {
+    padding-top: 11px;
+  }
+  .comparisonCards {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+  .trackSummary {
+    padding: 14px;
+  }
+  .comparisonTablePanel h2 {
+    font-size: 14px;
+  }
+  .detailedFunnel {
+    height: 280px;
+  }
+  .detailedFunnel .funnelStages li {
+    font-size: 11px;
+  }
+  .detailedFunnel .funnelStages strong {
+    font-size: 14px;
+  }
+  .description {
+    font-size: 11px;
+  }
+  .headerActions {
+    gap: 6px;
+  }
+  .rangeSelect {
+    height: 35px;
+    padding: 0 9px;
+    gap: 6px;
+  }
+  .rangeSelect select {
+    font-size: 11px;
+  }
+  .filterFields {
+    gap: 13px;
+  }
+  .filterFields label {
+    flex: 1;
+  }
+  .filterFields select {
+    min-width: 130px;
+    width: 100%;
+  }
+  .internPerson {
+    gap: 8px;
+  }
+  .internPerson strong {
+    font-size: 11px;
+  }
+  .internPerson small {
+    font-size: 9px;
+  }
+}

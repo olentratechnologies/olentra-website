@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useId } from 'react';
+import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, Calendar } from 'lucide-react';
 import Image from 'next/image';
@@ -351,6 +351,7 @@ function DynamicNavCta({
 
 export default function Navbar() {
   const pathname = usePathname();
+  const isInternPage = pathname === "/intern" || pathname === "/intern/login";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
@@ -358,7 +359,8 @@ export default function Navbar() {
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [scrolled, setScrolled] = useState(false);
-  const [isLightSection, setIsLightSection] = useState(false);
+  const [isLightSection, setIsLightSection] = useState(isInternPage);
+  const headerRowRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeServiceGroupIndex, setActiveServiceGroupIndex] = useState(0);
   const [mobileActiveServiceGroupIndex, setMobileActiveServiceGroupIndex] = useState(0);
@@ -396,34 +398,51 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    const observerOptions = {
-      root: null,
-      rootMargin: '-10% 0px -85% 0px',
-      threshold: 0
+    const targets = Array.from(document.querySelectorAll('section, footer'));
+    let observer;
+    let sampleY = 0;
+
+    const updateTheme = () => {
+      let currentSection;
+      for (const target of targets) {
+        const bounds = target.getBoundingClientRect();
+        // Gaps keep the preceding section's theme, including when scrolling upward.
+        if (bounds.height > 0 && bounds.top <= sampleY) currentSection = target;
+      }
+      if (!currentSection) return;
+      setIsLightSection(
+        currentSection.classList.contains('bg-white') ||
+        currentSection.classList.contains('bg-slate-50') ||
+        currentSection.getAttribute('data-theme') === 'light'
+      );
     };
 
-    const observerCallback = (entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const isLight =
-            entry.target.classList.contains('bg-white') ||
-            entry.target.classList.contains('bg-slate-50') ||
-            entry.target.getAttribute('data-theme') === 'light';
-
-          setIsLightSection(isLight);
-        }
+    const observeSections = () => {
+      observer?.disconnect();
+      const bar = headerRowRef.current?.getBoundingClientRect();
+      sampleY = Math.max(0, Math.min(window.innerHeight - 1, (bar?.top || 12) + (bar?.height || 40) / 2));
+      // Use a one-pixel band behind the bar; percentage margins depend on screen width.
+      observer = new IntersectionObserver(updateTheme, {
+        root: null,
+        rootMargin: `-${Math.max(0, sampleY - 1)}px 0px -${Math.max(0, window.innerHeight - sampleY)}px 0px`,
+        threshold: 0,
       });
+      targets.forEach(target => observer.observe(target));
+      updateTheme();
     };
 
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
-    const targets = document.querySelectorAll('section, footer');
-    targets.forEach(t => observer.observe(t));
+    observeSections();
+    window.addEventListener('resize', observeSections);
+    const barResizeObserver = new ResizeObserver(observeSections);
+    if (headerRowRef.current) barResizeObserver.observe(headerRowRef.current);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      observer.disconnect();
+      window.removeEventListener('resize', observeSections);
+      barResizeObserver.disconnect();
+      observer?.disconnect();
     };
-  }, [handleScroll]);
+  }, [handleScroll, pathname]);
 
   const primaryLinks = navLinks;
   const accentGradient = 'linear-gradient(135deg, #2563eb, #4f46e5)';
@@ -444,10 +463,10 @@ export default function Navbar() {
             } ${mobileOpen ? 'rounded-xl' : 'rounded-[20px] md:rounded-[28px]'
             } overflow-visible`}
         >
-          <div className="px-4 md:px-6 h-10 md:h-12 grid grid-cols-[auto,1fr,auto] items-center">
+          <div ref={headerRowRef} className="px-4 md:px-6 h-10 md:h-12 grid grid-cols-[auto,1fr,auto] items-center">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative w-8 h-8 group-hover:scale-110 transition-transform duration-300">
+            <Link href="/" className={`flex items-center group ${isInternPage ? 'gap-1.5 min-[420px]:gap-3' : 'gap-3'}`}>
+              <div className={`relative group-hover:scale-110 transition-transform duration-300 ${isInternPage ? 'w-7 h-7 min-[420px]:w-8 min-[420px]:h-8' : 'w-8 h-8'}`}>
                 <Image
                   src="/images/branding/Logo/Olentra-Logo-Without-Background.png"
                   alt="Olentra Logo"
@@ -457,14 +476,14 @@ export default function Navbar() {
                 />
               </div>
               <div className="flex items-center gap-1 font-black uppercase tracking-tighter">
-                <span className={`text-base md:text-lg transition-none ${isLightSection ? 'text-slate-700' : 'text-slate-300'
+                <span className={`${isInternPage ? 'text-[12px] min-[420px]:text-base md:text-lg' : 'text-base md:text-lg'} transition-none ${isLightSection ? 'text-slate-700' : 'text-slate-300'
                   }`}>Olentra</span>
-                <span className="text-base md:text-lg bg-gradient-to-r from-blue-400 via-primary to-blue-600 bg-clip-text text-transparent transition-none">Technologies</span>
+                <span className={`${isInternPage ? 'text-[12px] min-[420px]:text-base md:text-lg' : 'text-base md:text-lg'} bg-gradient-to-r from-blue-400 via-primary to-blue-600 bg-clip-text text-transparent transition-none`}>Technologies</span>
               </div>
             </Link>
 
             {/* Desktop Links */}
-            <div className="hidden md:flex items-center gap-0.5 lg:gap-1 justify-self-center">
+            <div className={`${isInternPage ? 'hidden min-[1200px]:flex' : 'hidden min-[1100px]:flex'} items-center gap-0.5 lg:gap-1 justify-self-center`}>
               {primaryLinks.map((link, idx) => {
                 const isActive = hoveredIndex === null ? activeIndex === idx : hoveredIndex === idx;
                 const isServices = link.label === 'Services';
@@ -709,18 +728,19 @@ export default function Navbar() {
 
             {/* CTA & Mobile Toggle */}
             <div className="flex items-center gap-3 justify-self-end">
-              <DynamicNavCta
+              {isInternPage ? <div className="hidden min-[1200px]:flex items-center gap-3"><Link href="/intern/login" className="inline-flex items-center justify-center h-9 px-4 rounded-full border border-blue-200 text-blue-700 hover:bg-blue-50 text-[11px] font-semibold whitespace-nowrap">Login</Link><a href="/intern#internship-application" className="inline-flex items-center justify-center h-9 px-4 rounded-full bg-[#1877F2] hover:bg-[#1565d8] text-white text-[11px] font-semibold whitespace-nowrap">Apply Now</a></div> : <DynamicNavCta
                 mode={ctaMode}
                 onToggle={toggleCtaMode}
                 isLightSection={isLightSection}
-                className="hidden md:flex"
-              />
+                className={isInternPage ? "hidden min-[1200px]:flex" : "hidden min-[1100px]:flex"}
+              />}
+              {isInternPage && <a href="/intern#internship-application" className="hidden min-[360px]:inline-flex min-[1200px]:hidden items-center justify-center h-8 px-3 rounded-full bg-[#1877F2] text-white text-[10px] font-semibold whitespace-nowrap">Apply Now</a>}
 
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-label={mobileOpen ? "Close menu" : "Open menu"}
                 aria-expanded={mobileOpen}
-                className={`md:hidden p-1.5 rounded-full border transition-none ${isLightSection ? 'border-slate-200 text-slate-950' : 'border-white/10 text-white'
+                className={`${isInternPage ? 'min-[1200px]:hidden' : 'min-[1100px]:hidden'} p-1.5 rounded-full border transition-none ${isLightSection ? 'border-slate-200 text-slate-950' : 'border-white/10 text-white'
                   }`}
               >
                 {mobileOpen ? <X size={16} /> : <Menu size={16} />}
@@ -736,7 +756,7 @@ export default function Navbar() {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: '100%', opacity: 0 }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className={`md:hidden border-t overflow-hidden rounded-b-xl transition-none ${
+                className={`${isInternPage ? 'min-[1200px]:hidden' : 'min-[1100px]:hidden'} border-t overflow-hidden rounded-b-xl transition-none ${
                   isLightSection
                     ? 'bg-white border-slate-200 text-slate-900'
                     : 'bg-black border-white/10 text-white'
@@ -896,7 +916,7 @@ export default function Navbar() {
                     );
                   })}
                   <div className="pt-4 flex justify-center">
-                    <DynamicNavCta
+                    {isInternPage ? <div className="grid grid-cols-2 gap-2 w-full"><Link href="/intern/login" onClick={() => setMobileOpen(false)} className="inline-flex items-center justify-center min-h-10 px-3 rounded-full border border-blue-100 bg-blue-50 text-blue-700 text-xs font-semibold">Login</Link><a href="/intern#internship-application" onClick={() => setMobileOpen(false)} className="inline-flex items-center justify-center min-h-10 px-4 rounded-full bg-[#1877F2] text-white text-xs font-semibold">Apply Now</a></div> : <DynamicNavCta
                       mode={ctaMode}
                       onToggle={toggleCtaMode}
                       onActionClick={() => setMobileOpen(false)}
@@ -904,7 +924,7 @@ export default function Navbar() {
                       isMobile={true}
                       layoutScope="mobile"
                       className="w-full justify-center"
-                    />
+                    />}
                   </div>
                 </div>
               </motion.div>

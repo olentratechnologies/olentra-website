@@ -1,0 +1,293 @@
+"use client";
+
+import Link from "next/link";
+import {
+  ArrowRight,
+  Award,
+  BriefcaseBusiness,
+  CalendarDays,
+  Check,
+  ClipboardCheck,
+  Clock3,
+  Sparkles,
+} from "lucide-react";
+import { useInternship } from "@/components/intern/InternshipProvider";
+import { PlanetArtwork } from "../dashboard/DashboardVisuals";
+import {
+  EmptyState,
+  Heading,
+  Loading,
+  Notice,
+  Panel,
+  Progress,
+  Status,
+  formatDate,
+} from "./PortalUI";
+import styles from "./portal.module.css";
+
+export default function PortalDashboard() {
+  const { ready, account, my } = useInternship();
+  if (!ready) return <Loading />;
+  const application = my.application;
+  const tasks = my.tasks || [];
+  const approved = tasks.filter((task) => task.status === "Approved").length;
+  const active =
+    application?.status === "Joined" && my.intern?.status === "Active";
+  const completed = my.intern?.status === "Completed";
+  const canViewWork = active || (application?.status === "Joined" && completed);
+  const steps = [
+    { label: "Application", done: Boolean(application) },
+    {
+      label: "Offer accepted",
+      done:
+        my.offer?.status === "Accepted" ||
+        application?.status === "Joined" ||
+        my.onboarding?.status === "Approved",
+    },
+    { label: "Onboarding", done: my.onboarding?.status === "Approved" },
+    {
+      label: "Internship",
+      done: completed,
+      status: active
+        ? "In progress"
+        : my.intern?.status === "Dropped"
+          ? "Ended"
+          : null,
+    },
+  ];
+  return (
+    <>
+      <Heading
+        title={`Welcome back, ${account?.name?.split(" ")[0] || "there"}! 👋`}
+        description="Your next chapter at Olentra, all in one place."
+      />
+      <section className={styles.welcomeBanner}>
+        <div>
+          <span className={styles.eyebrow}>
+            <Sparkles size={14} /> YOUR OLENTRA JOURNEY
+          </span>
+          <h2>
+            {completed
+              ? "Look at everything you’ve built."
+              : active
+                ? "Big ideas. Real-world impact."
+                : "A little closer to what’s next."}
+          </h2>
+          <p>
+            {completed
+              ? "Revisit your work, read your feedback, and celebrate your achievement."
+              : active
+                ? "Your projects, tasks, and team feedback are ready when you are."
+                : "Track your application, review your offer, and get ready to learn by doing."}
+          </p>
+          <Link
+            href={
+              canViewWork
+                ? "/intern/portal/projects"
+                : "/intern/portal/application"
+            }
+            className={styles.bannerLink}
+          >
+            {canViewWork ? "Explore my projects" : "View my application"}
+            <ArrowRight size={15} />
+          </Link>
+        </div>
+        <PlanetArtwork className={styles.bannerPlanet} />
+      </section>
+      {my.offer?.status === "Sent" && (
+        <Notice>
+          <div>
+            <strong>Your offer is here! 🎉</strong>
+            <p>
+              Review the details and take the next step in your Olentra journey.
+            </p>
+          </div>
+          <Link href="/intern/portal/application">
+            Review offer <ArrowRight size={14} />
+          </Link>
+        </Notice>
+      )}
+      {my.offer?.status === "Accepted" &&
+        my.onboarding?.status !== "Approved" && (
+          <Notice>
+            <div>
+              <strong>
+                {my.onboarding?.status === "Submitted"
+                  ? "Your onboarding is under review"
+                  : "Let’s get you ready for day one"}
+              </strong>
+              <p>
+                {my.onboarding?.status === "Submitted"
+                  ? "The Olentra team is reviewing your details. We’ll notify you when your workspace opens."
+                  : "Complete your profile and upload your resume to finish onboarding."}
+              </p>
+            </div>
+            <Link href="/intern/portal/onboarding">
+              View onboarding <ArrowRight size={14} />
+            </Link>
+          </Notice>
+        )}
+      <div className={styles.summaryGrid}>
+        {[
+          {
+            label: "Application status",
+            value: application?.status || "Not started",
+            icon: ClipboardCheck,
+            tone: "blue",
+          },
+          {
+            label: "Assigned projects",
+            value: canViewWork ? (my.projects || []).length : "—",
+            icon: BriefcaseBusiness,
+            tone: "purple",
+          },
+          {
+            label: "Approved tasks",
+            value: canViewWork ? `${approved} / ${tasks.length}` : "—",
+            icon: Check,
+            tone: "green",
+          },
+          {
+            label: "Certificates",
+            value: (my.certificates || []).length,
+            icon: Award,
+            tone: "orange",
+          },
+        ].map(({ label, value, icon: Icon, tone }) => (
+          <Panel key={label} className={styles.summaryCard}>
+            <span className={styles.summaryIcon} data-tone={tone}>
+              <Icon size={22} />
+            </span>
+            <div>
+              <strong>{value}</strong>
+              <span>{label}</span>
+            </div>
+          </Panel>
+        ))}
+      </div>
+      <div className={styles.twoColumns}>
+        <Panel>
+          <div className={styles.panelHeader}>
+            <h2>Your journey</h2>
+            {application && <Status value={application.status} />}
+          </div>
+          <ol className={styles.journey}>
+            {steps.map((step, index) => (
+              <li key={step.label} data-complete={step.done}>
+                <span>{step.done ? <Check size={16} /> : index + 1}</span>
+                <div>
+                  <strong>{step.label}</strong>
+                  <small>
+                    {step.done ? "Complete" : step.status || "Coming up next"}
+                  </small>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <Link href="/intern/portal/application" className={styles.textLink}>
+            View application timeline <ArrowRight size={14} />
+          </Link>
+        </Panel>
+        <Panel>
+          <div className={styles.panelHeader}>
+            <h2>{canViewWork ? "Up next" : "Your program"}</h2>
+            <Clock3 size={18} />
+          </div>
+          {canViewWork ? (
+            tasks
+              .filter(
+                (task) => !["Approved", "Under review"].includes(task.status),
+              )
+              .slice(0, 3)
+              .map((task) => (
+                <Link
+                  href={`/intern/portal/projects/${task.projectId}`}
+                  className={styles.upNext}
+                  key={task.id}
+                >
+                  <span className={styles.taskCheck}>
+                    <ClipboardCheck size={17} />
+                  </span>
+                  <div>
+                    <strong>{task.title}</strong>
+                    <small>
+                      {task.dueOn
+                        ? `Due ${formatDate(task.dueOn)}`
+                        : "Ready when you are"}
+                    </small>
+                  </div>
+                  <ArrowRight size={16} />
+                </Link>
+              ))
+          ) : (
+            <div className={styles.programOverview}>
+              <span className={styles.summaryIcon} data-tone="purple">
+                <BriefcaseBusiness size={24} />
+              </span>
+              <h3>{application?.program || "Olentra Internship Program"}</h3>
+              <p>
+                Practical experience, meaningful projects, and a community to
+                grow with.
+              </p>
+              {my.offer?.startOn && (
+                <span>
+                  <CalendarDays size={15} /> Starts{" "}
+                  {formatDate(my.offer.startOn)}
+                </span>
+              )}
+            </div>
+          )}
+          {canViewWork &&
+            !tasks.some(
+              (task) => !["Approved", "Under review"].includes(task.status),
+            ) && (
+              <EmptyState
+                title="You’re all caught up"
+                description="Keep an eye on your notifications for new tasks and feedback."
+              />
+            )}
+        </Panel>
+      </div>
+      {canViewWork && (my.projects || []).length > 0 && (
+        <Panel className={styles.sectionGap}>
+          <div className={styles.panelHeader}>
+            <h2>My projects</h2>
+            <Link href="/intern/portal/projects" className={styles.textLink}>
+              View all <ArrowRight size={14} />
+            </Link>
+          </div>
+          <div className={styles.dashboardProjects}>
+            {my.projects.slice(0, 3).map((project) => {
+              const assigned = tasks.filter(
+                (task) => task.projectId === project.id,
+              );
+              const value = assigned.length
+                ? (assigned.filter((task) => task.status === "Approved")
+                    .length /
+                    assigned.length) *
+                  100
+                : 0;
+              return (
+                <Link
+                  href={`/intern/portal/projects/${project.id}`}
+                  key={project.id}
+                >
+                  <span className={styles.projectMiniIcon}>
+                    <BriefcaseBusiness size={21} />
+                  </span>
+                  <h3>{project.name}</h3>
+                  <p>{assigned.length} assigned tasks</p>
+                  <Progress
+                    value={value}
+                    label={`${project.name} task completion`}
+                  />
+                  <small>{Math.round(value)}% of your tasks approved</small>
+                </Link>
+              );
+            })}
+          </div>
+        </Panel>
+      )}
+    </>
+  );
+}

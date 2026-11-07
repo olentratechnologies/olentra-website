@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const LOGO_SRC = "/images/branding/Logo/Olentra-Logo-Without-Background.png";
@@ -8,6 +9,7 @@ const MIN_VISIBLE_MS = 600;
 const FADE_OUT_MS = 400;
 
 export default function Loader({ isInitialLoad = true }) {
+  const pathname = usePathname();
   // Never cover server-rendered content while JavaScript is still downloading.
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState("show");
@@ -28,7 +30,7 @@ export default function Loader({ isInitialLoad = true }) {
     return () => window.clearTimeout(t);
   }, [phase]);
 
-  if ((isInitialLoad && !mounted) || phase === "done") return null;
+  if ((pathname.startsWith("/intern/") && pathname !== "/intern/") || (isInitialLoad && !mounted) || phase === "done") return null;
 
   return (
     <div

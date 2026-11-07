@@ -1,17 +1,54 @@
-# Founders page
+# Founders within About
 
-`/founders` uses the existing Next.js App Router, header, footer, fonts, brand blue, and metadata utilities. Navigation and sitemap include the route. The work CTA uses the existing home-page `#projects` anchor.
+The former founders experience is the content of `/about`, also reached through
+`/about#founders`. Its portraits, vision, thinking, founder message, and closing
+calls to action make up the About page.
+
+The shared desktop and mobile navigation use `src/data/navigation.js`. About is
+the top-level destination; Founders is no longer a separate navbar item. The
+footer keeps a useful **Founders** shortcut to `/about#founders`.
+
+`next.config.js` permanently redirects `/founders` to `/about#founders` with HTTP 308.
+The sitemap lists `/about` as the destination and excludes the redirected
+`/founders` route. Metadata and structured data belong to the About page.
 
 ## Content handoff
 
-Edit `src/data/founders.js` for profiles and chapter copy. Portraits use the existing `public/Founders Images/mani.jpg` and `Abhi.png` files, associated by their filenames. Confirm those associations and image usage approval before public release. Originals are unchanged; Next Image delivers responsive optimized images. The existing Abhi.png was untracked before this work and must be included in any deployment.
+Edit `src/data/founders.js` for founder profiles and chapter copy. Portraits use
+`public/Founders Images/mani.jpg` and `Abhi.png`; Next Image supplies responsive
+optimized versions. The original portrait assets remain unchanged.
 
-Still needed: approved biographies, expertise, professional URLs, founder message, and any photographer credits. No qualifications, executive titles, quotes, or career history have been invented. Empty fields render explicit placeholders or omit optional lists. Add authentic optional `mobileImage`, `alternateImage`, `focalPoint`, and `credit` values as needed. No signatures are fabricated.
+Names, titles, portraits, image alternatives, focal points, credits, and chapter
+copy continue to come from the existing data file. No new biographies or
+professional claims are added. The internship module remains unchanged.
+
+The closing contact CTA uses the existing `/#contact` destination. The work CTA
+uses the existing `/#projects` anchor. Both continue to work from the About page.
 
 ## Interaction and accessibility
 
-Native scrolling, portrait anchor links, expandable professional details, and keyboard/tap/focus-accessible focus-area buttons. Desktop has a sticky thinking heading; mobile reads vertically. Essential text is rendered before hydration. Reveals use a one-shot browser animation with IntersectionObserver cleanup. Reduced motion disables reveals and CSS animation. Decorative vision lighting pauses out of view. SVG and CSS provide the dimensional scene without WebGL or additional dependencies. The site's existing global custom cursor is omitted on this route so the normal pointer remains available.
+The About experience keeps document scrolling, portrait anchors, and
+keyboard/tap/focus-accessible focus-area controls.
+Desktop uses the existing sticky thinking heading; mobile reads vertically.
+Essential copy is available before hydration. Reveals use IntersectionObserver
+cleanup, reduced motion disables decorative animation, and vision lighting
+pauses when it leaves the viewport. SVG and CSS supply the dimensional scene
+without additional WebGL dependencies.
 
-## Verification
+## Integration verification
 
-Production build and git diff whitespace checks pass. Browser checks confirmed no horizontal overflow at 1440, 1024, 390, and 320 CSS pixels; both hero and profile images loaded; profile disclosure and focus-area selection worked; keyboard Tab changed the selected focus area; reduced motion disabled core animation with all headings visible; and the contact CTA reached /contact via keyboard. No console errors were observed. The work CTA targets the verified existing home-page #projects section. Core Web Vitals targets require production field measurements; build success is not a performance guarantee.
+Run `npm run build` and `git diff --check`. In the browser, verify:
+
+- Desktop and mobile navigation expose About without a separate Founders item.
+- The footer shortcut opens `/about#founders`, and direct `/founders` visits
+  redirect to that same section.
+- About contains the founder content once, with both portraits, focus-area
+  controls, and closing CTAs working.
+- Direct anchor navigation, refresh, Back/Forward, keyboard access, and reduced
+  motion work in the integrated page.
+- Desktop, tablet, 390px, and 320px layouts have no horizontal overflow.
+- The sitemap includes `/about` and `/intern`, and excludes `/founders`.
+
+Browser checks and performance measurements should use the integrated About
+route; results from the former standalone page do not establish its current
+layout or field performance.

@@ -1,0 +1,1209 @@
+.projectToolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+.projectToolbar > div:first-child {
+  flex: 1;
+}
+.projectToolbar > div:last-child {
+  padding-bottom: 6px;
+  flex: none;
+}
+.projectToolbar label {
+  width: 225px;
+}
+.projectGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 21px;
+}
+.projectCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #cbd9ff;
+  border-top-color: #ffffffdc;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #ffffffe0, #f3f6ffc4);
+  box-shadow:
+    0 4px 12px #446cca12,
+    inset 0 1px #fff;
+}
+.projectCover {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 210px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid #c0d2ff;
+  background:
+    radial-gradient(ellipse at 50% 100%, #315b9a55, transparent 80%),
+    linear-gradient(135deg, #10264b, #101b41 55%, #1b2358);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.projectCover::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: radial-gradient(ellipse at 15% 10%, #3a83c54d, transparent 50%);
+}
+.projectCover::after {
+  position: absolute;
+  inset: auto -10% -85% 20%;
+  content: "";
+  height: 220px;
+  border: 1px solid #5991ff33;
+  border-radius: 50%;
+  transform: rotate(-20deg);
+}
+.projectCover[data-art="cube"] {
+  background:
+    radial-gradient(ellipse at 50% 50%, #7a53c33b, transparent 70%),
+    linear-gradient(145deg, #28204f, #1a1944 55%, #283564);
+}
+.projectCover[data-art="sphere"] {
+  background:
+    radial-gradient(ellipse at 50% 40%, #3f6ab04a, transparent 70%),
+    linear-gradient(145deg, #132a4b, #1b2145 55%, #28315c);
+}
+.coverEyebrow {
+  position: absolute;
+  top: 17px;
+  left: 18px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c0d4fa;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+}
+.coverStatus {
+  position: absolute;
+  bottom: 16px;
+  left: 17px;
+  z-index: 1;
+}
+.coverStatus span {
+  padding: 5px 9px;
+  border: 1px solid #adc9ff4d;
+  background: #dce9ff21;
+  color: #d2e5ff;
+  font-size: 9px;
+  backdrop-filter: blur(6px);
+}
+.planetArt {
+  width: 220px;
+  height: 150px;
+  margin-top: 13px;
+  transition: transform 0.25s;
+  filter: drop-shadow(0 7px 10px #020b2a70);
+}
+.geometricArt {
+  width: 242px;
+  height: 166px;
+  margin-top: 13px;
+  transition: transform 0.25s;
+}
+.projectCover:hover .planetArt,
+.projectCover:hover .geometricArt {
+  transform: translateY(-3px) scale(1.035);
+}
+.projectBody {
+  padding: 20px 19px 13px;
+}
+.projectBody h2 {
+  display: block !important;
+  min-height: 45px;
+  margin: 0 !important;
+  font-size: 17px !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.45px !important;
+}
+.projectBody h2 button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #10244f;
+  text-align: left;
+  font-size: inherit;
+  font-weight: 700;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+.projectBody h2 button:hover {
+  color: #236bf1;
+}
+.projectDescription {
+  display: -webkit-box;
+  min-height: 49px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  margin-top: 9px !important;
+  color: #57709c;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.projectMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  margin-top: 18px;
+  color: #7588aa;
+  font-size: 10px;
+}
+.projectMeta > span:first-child {
+  font-size: 9px;
+  padding: 5px 7px;
+}
+.progressLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  color: #5d739a;
+  font-size: 10px;
+}
+.progressLabel strong {
+  color: #305acb;
+  font-size: 10px;
+  font-weight: 600;
+}
+.progressTrack {
+  height: 6px;
+  overflow: hidden;
+  margin-top: 8px;
+  border-radius: 8px;
+  background: #dce7fa;
+  box-shadow: inset 0 1px 2px #3e75c112;
+}
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4b9bff, #4c73f8);
+}
+.projectFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 21px;
+}
+.avatarStack {
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+}
+.avatarStack > * {
+  margin-left: -4px;
+}
+.moreAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #4c64a8;
+  background: #e0e9ff;
+  font-size: 9px;
+  font-weight: 650;
+}
+.projectLink {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 0 7px 5px;
+  border: 0;
+  background: transparent;
+  color: #2868f0;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.projectLink:hover {
+  color: #1947be;
+}
+.projectDue {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 14px;
+  padding-top: 11px;
+  border-top: 1px solid #dbe4fb;
+  color: #7c8fb1;
+  font-size: 9px;
+}
+.contributionsPanel {
+  margin-top: 23px;
+}
+.titleIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #3779fa;
+}
+.textAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #2862e3;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.contributionSearch {
+  margin-bottom: 10px;
+}
+.contributionSearch label {
+  width: 290px;
+}
+.contributionList {
+  display: grid;
+}
+.contributionRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 15px 2px;
+  border-bottom: 1px solid #dce5fa;
+}
+.contributionRow:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.contributionCopy {
+  flex: 1;
+  min-width: 0;
+}
+.contributionCopy > strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #203a70;
+  font-size: 12px;
+  font-weight: 600;
+}
+.contributionCopy > p {
+  color: #5c75a0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.contributionCopy > button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #4d76ca;
+  font-size: 10px;
+  text-align: left;
+}
+.contributionRow > time {
+  flex: none;
+  padding-top: 2px;
+  color: #7b8faf;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.projectModal {
+  width: 720px;
+}
+.teamPicker {
+  min-width: 0;
+  margin: 22px 0 0;
+  padding: 0;
+  border: 0;
+}
+.teamPicker legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  float: left;
+  width: 100%;
+  margin: 0 0 10px;
+  color: #304d81;
+  font-size: 12px;
+  font-weight: 600;
+}
+.teamPicker legend span {
+  margin-left: auto;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: #e1eaff;
+  color: #4a68a6;
+  font-size: 10px;
+  font-weight: 400;
+}
+.teamPicker > label {
+  width: 100%;
+  clear: both;
+}
+.pickerList {
+  max-height: 228px;
+  overflow-y: auto;
+  margin-top: 9px;
+  border: 1px solid #d5e0f9;
+  border-radius: 10px;
+  background: #f5f8ff8c;
+}
+.pickerPerson {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  border-bottom: 1px solid #e0e8f9;
+  cursor: pointer;
+}
+.pickerPerson:last-child {
+  border-bottom: 0;
+}
+.pickerPerson:hover {
+  background: #e7f0ffb3;
+}
+.pickerPerson > input,
+.selectAll input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #357cff;
+  cursor: pointer;
+}
+.pickerPerson > span:nth-last-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.pickerPerson strong {
+  display: block;
+  color: #34517f;
+  font-size: 11px;
+  font-weight: 550;
+}
+.pickerPerson small {
+  display: block;
+  margin-top: 3px;
+  color: #7a8dae;
+  font-size: 10px;
+}
+.pickerPerson > span:last-child {
+  margin-left: auto;
+}
+.pickerHint {
+  margin: 8px 0 0 !important;
+  color: #8495b1;
+  font-size: 10px;
+}
+.pickerEmpty {
+  padding: 18px;
+  color: #7d8fae;
+  font-size: 11px;
+  text-align: center;
+}
+.detailOverview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.detailOverview > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6e83a8;
+  font-size: 11px;
+}
+.selectedMembers {
+  margin-top: 23px;
+}
+.selectedMembers h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 11px;
+  color: #365285;
+  font-size: 12px;
+  font-weight: 600;
+}
+.selectedMembers h3 span {
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #e1eaff;
+  color: #4b6ba4;
+  font-size: 10px;
+}
+.selectedMembers > div {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-height: 136px;
+  overflow-y: auto;
+}
+.selectedMembers > div > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px 3px 3px;
+  border: 1px solid #d3def5;
+  border-radius: 20px;
+  background: #f8faff;
+  color: #4c6694;
+  font-size: 10px;
+}
+.selectedMembers > div > span > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #e8edfb;
+  color: #7285a5;
+}
+.selectedMembers > div > span > button:hover {
+  background: #fce2ea;
+  color: #bc4570;
+}
+.selectedMembers > p {
+  color: #8596b1;
+  font-size: 11px;
+}
+.certificatesPanel {
+  margin-top: 0;
+}
+.certificateId {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #5072b1;
+  font-size: 10px;
+  letter-spacing: 0.15px;
+}
+.certificateId:hover {
+  color: #2467df;
+}
+.certificateNote {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 17px;
+  padding: 0 3px;
+  color: #7190bd;
+}
+.certificateNote > svg {
+  flex: none;
+  color: #6b9be5;
+}
+.certificateNote p {
+  flex: 1;
+  color: #7890b5;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.certificateNote > button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: #4e76c1;
+  font-size: 10px;
+}
+.bulkModal {
+  width: 640px;
+}
+.eligibilityBanner {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 17px;
+  padding: 13px;
+  border: 1px solid #c5e6e0;
+  border-radius: 10px;
+  background: #e9f9f3;
+  color: #2caa8b;
+}
+.eligibilityBanner span {
+  display: grid;
+  gap: 3px;
+  color: #628f83;
+  font-size: 10px;
+}
+.eligibilityBanner strong {
+  color: #268a70;
+  font-size: 12px;
+}
+.bulkModal label:has(input[type="search"]) {
+  width: 100%;
+}
+.selectAll {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 16px 0 10px;
+  color: #42628f;
+  font-size: 11px;
+}
+.selectAll > span {
+  margin-left: auto;
+  color: #8395af;
+  font-size: 10px;
+}
+.eligibleList {
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid #d6e2f8;
+  border-radius: 10px;
+  background: #fff8;
+}
+.allCertified {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 19px 14px 9px;
+  text-align: center;
+}
+.allCertified > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  margin-bottom: 20px;
+  border: 1px solid #c4d9ff;
+  border-radius: 50%;
+  background: linear-gradient(140deg, #ddecff, #e2e4ff);
+  color: #4c82e4;
+  box-shadow:
+    0 4px 10px #4d6fca16,
+    inset 0 2px #fff8;
+}
+.allCertified h3 {
+  margin: 0;
+  color: #2b4678;
+  font-size: 17px;
+  letter-spacing: -0.3px;
+}
+.allCertified p {
+  max-width: 440px;
+  margin: 12px 0 23px !important;
+  color: #7388aa;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.certificateModal {
+  width: 920px;
+}
+.printControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.printControls > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6880a5;
+  font-size: 11px;
+}
+.certificateSheet {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: 520px;
+  padding: 15px;
+  border: 1px solid #bbd1f8;
+  background: #fff;
+  box-shadow: 0 5px 20px #34518a13;
+  color: #1b345c;
+  font-family: var(--font-inter), Arial, sans-serif;
+}
+.certificateSheet::before,
+.certificateSheet::after {
+  position: absolute;
+  content: "";
+  width: 290px;
+  height: 290px;
+  transform: rotate(35deg);
+  pointer-events: none;
+}
+.certificateSheet::before {
+  top: -175px;
+  left: -150px;
+  background: linear-gradient(135deg, #4aa0fb, #4266d6);
+  box-shadow: 12px 12px #dce9ff;
+}
+.certificateSheet::after {
+  right: -175px;
+  bottom: -175px;
+  background: linear-gradient(135deg, #6594e2, #a2c4fc);
+  box-shadow: -12px -12px #e8f0ff;
+}
+.certificateInner {
+  position: relative;
+  z-index: 1;
+  min-height: 488px;
+  padding: 23px 35px 18px;
+  border: 1px solid #d3dff3;
+  text-align: center;
+}
+.certificateBrand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #213b6e;
+}
+.certificateKicker {
+  margin-top: 15px;
+  color: #8ba0bd;
+  font-size: 7px;
+  letter-spacing: 3px;
+}
+.certificateSheet h2 {
+  display: block !important;
+  justify-content: center;
+  margin: 13px 0 0 !important;
+  color: #254677;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 35px !important;
+  font-weight: 400 !important;
+  line-height: 1.25;
+  letter-spacing: 0.4px !important;
+}
+.certificateDivider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 13px;
+  color: #bba266;
+}
+.certificateDivider > span {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c6af7c);
+}
+.certificateDivider > span:last-child {
+  transform: rotate(180deg);
+}
+.presentedTo {
+  margin-top: 18px !important;
+  color: #8e9cb2;
+  font-size: 7px;
+  letter-spacing: 1.8px;
+}
+.certificateSheet h3 {
+  margin: 12px 0 0;
+  color: #2c568f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0.3px;
+}
+.certificateBody {
+  max-width: 590px;
+  margin: 13px auto 0 !important;
+  color: #7a8a9f;
+  font-size: 10px;
+  line-height: 1.9;
+}
+.certificateBody strong {
+  color: #496a97;
+  font-weight: 600;
+}
+.certificateSignatures {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 27px auto 17px;
+}
+.certificateSignatures > div:not(.certificateSeal) {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  flex: 1;
+  max-width: 180px;
+}
+.signatureName {
+  color: #486383;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  font-style: italic;
+}
+.signatureDate {
+  color: #667f9d;
+  font-size: 13px;
+}
+.signatureRule {
+  width: 100%;
+  max-width: 150px;
+  height: 1px;
+  margin: 8px 0 8px;
+  background: #d4dded;
+}
+.certificateSignatures strong {
+  color: #617693;
+  font-size: 8px;
+  font-weight: 600;
+}
+.certificateSignatures small {
+  margin-top: 4px;
+  color: #97a5b9;
+  font-size: 7px;
+}
+.certificateSeal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex: none;
+  width: 83px;
+  height: 83px;
+  border: 2px solid #d4bb7e;
+  border-radius: 50%;
+  outline: 1px dashed #d9c995;
+  outline-offset: 4px;
+  color: #b69a5d;
+  background: radial-gradient(#fffdf6, #faf3df);
+  box-shadow:
+    inset 0 0 0 5px #fff,
+    0 2px 4px #7357180d;
+}
+.certificateSeal strong {
+  max-width: calc(100% - 14px);
+  margin-top: 4px;
+  color: #b19860;
+  font-size: 7px;
+  line-height: 1.15;
+  text-align: center;
+  letter-spacing: 0.4px;
+}
+.certificateSeal > span {
+  margin-top: 3px;
+  color: #b39d70;
+  font-size: 4px;
+  letter-spacing: 0.7px;
+}
+.certificateSheet footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding-top: 13px;
+  border-top: 1px solid #e7edf6;
+  color: #a1aec2;
+  font-size: 6px;
+  text-align: left;
+}
+.certificateSheet footer strong {
+  color: #8295b1;
+  font-weight: 400;
+}
+@media (min-width: 1650px) {
+  .projectCover {
+    height: 245px;
+  }
+  .planetArt {
+    width: 260px;
+    height: 173px;
+  }
+  .geometricArt {
+    width: 280px;
+    height: 185px;
+  }
+  .projectBody {
+    padding: 23px;
+  }
+  .projectBody h2 {
+    font-size: 19px !important;
+  }
+  .projectDescription {
+    font-size: 12px;
+    min-height: 56px;
+  }
+  .projectMeta {
+    font-size: 11px;
+  }
+  .projectLink {
+    font-size: 11px;
+  }
+}
+@media (max-width: 1250px) {
+  .projectToolbar {
+    flex-wrap: wrap;
+  }
+  .projectToolbar > div:first-child {
+    min-width: 360px;
+  }
+  .projectGrid {
+    gap: 15px;
+  }
+  .projectCover {
+    height: 190px;
+  }
+  .projectBody {
+    padding: 17px 14px 12px;
+  }
+  .projectBody h2 {
+    font-size: 15px !important;
+    min-height: 40px;
+  }
+  .projectDescription {
+    font-size: 10px;
+  }
+  .projectFooter {
+    flex-wrap: wrap;
+  }
+  .projectLink {
+    margin-left: auto;
+  }
+  .coverEyebrow {
+    left: 13px;
+    font-size: 8px;
+  }
+  .projectMeta {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .avatarStack > span {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 8px !important;
+  }
+}
+@media (max-width: 1000px) {
+  .projectGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .projectToolbar > div:last-child {
+    padding-bottom: 0;
+  }
+  .projectCover {
+    height: 210px;
+  }
+  .projectBody h2 {
+    font-size: 17px !important;
+  }
+  .projectDescription {
+    font-size: 11px;
+  }
+  .certificateNote {
+    flex-wrap: wrap;
+  }
+  .certificateNote > button {
+    margin-left: 23px;
+  }
+}
+@media (max-width: 680px) {
+  .projectToolbar {
+    gap: 13px;
+    margin-bottom: 17px;
+  }
+  .projectToolbar > div:first-child {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .projectToolbar > div:last-child {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .projectToolbar label {
+    width: 100%;
+  }
+  .projectGrid {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+  .projectCover {
+    height: 212px;
+  }
+  .planetArt {
+    width: 240px;
+    height: 160px;
+  }
+  .geometricArt {
+    width: 260px;
+    height: 174px;
+  }
+  .projectBody {
+    padding: 20px 18px 14px;
+  }
+  .projectBody h2 {
+    min-height: 0;
+  }
+  .projectDescription {
+    min-height: 0;
+  }
+  .projectMeta {
+    margin-top: 15px;
+  }
+  .projectFooter {
+    flex-wrap: nowrap;
+  }
+  .avatarStack > span {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 9px !important;
+  }
+  .projectDue {
+    font-size: 10px;
+  }
+  .contributionsPanel {
+    margin-top: 18px;
+  }
+  .contributionSearch label {
+    width: 100%;
+  }
+  .contributionRow {
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+  .contributionRow > time {
+    padding: 0 0 0 46px;
+    margin-top: -4px;
+    font-size: 9px;
+  }
+  .contributionCopy {
+    flex-basis: calc(100% - 50px);
+  }
+  .contributionCopy > p {
+    font-size: 10px;
+  }
+  .contributionCopy > strong {
+    font-size: 11px;
+  }
+  .pickerPerson {
+    gap: 7px;
+    padding: 10px 8px;
+  }
+  .pickerPerson > span:last-child {
+    font-size: 8px;
+  }
+  .pickerPerson strong {
+    font-size: 10px;
+  }
+  .pickerPerson small {
+    font-size: 9px;
+  }
+  .detailOverview {
+    margin-bottom: 20px;
+  }
+  .printControls {
+    flex-wrap: wrap;
+  }
+  .printControls > span {
+    font-size: 10px;
+  }
+  .certificateSheet {
+    padding: 8px;
+    min-height: 0;
+  }
+  .certificateInner {
+    min-height: 0;
+    padding: 21px 12px 12px;
+  }
+  .certificateKicker {
+    font-size: 5px;
+    letter-spacing: 2px;
+  }
+  .certificateSheet h2 {
+    font-size: 25px !important;
+  }
+  .certificateSheet h3 {
+    font-size: 26px;
+  }
+  .presentedTo {
+    font-size: 5px;
+    letter-spacing: 1.1px;
+  }
+  .certificateBody {
+    font-size: 8px;
+  }
+  .certificateSignatures {
+    gap: 9px;
+    margin-top: 28px;
+  }
+  .signatureName {
+    font-size: 12px;
+  }
+  .signatureDate {
+    font-size: 10px;
+  }
+  .certificateSignatures strong {
+    font-size: 6px;
+  }
+  .certificateSignatures small {
+    font-size: 5px;
+  }
+  .certificateSeal {
+    width: 59px;
+    height: 59px;
+    outline-offset: 2px;
+  }
+  .certificateSeal > svg {
+    width: 23px;
+    height: 23px;
+  }
+  .certificateSeal strong {
+    margin-top: 3px;
+    font-size: 5.5px;
+    letter-spacing: 0.15px;
+  }
+  .certificateSeal > span {
+    font-size: 3px;
+    letter-spacing: 0.3px;
+  }
+  .certificateSheet footer {
+    flex-wrap: wrap;
+    gap: 5px;
+    font-size: 5px;
+  }
+  .certificateNote p {
+    font-size: 9px;
+  }
+  .allCertified {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .allCertified h3 {
+    font-size: 15px;
+  }
+  .allCertified p {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .planetArt,
+  .geometricArt {
+    transition: none;
+  }
+}
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+  :global(body):has(.certificateSheet) > :global(*:not([role="dialog"])) {
+    display: none !important;
+  }
+  .certificateModal {
+    position: absolute !important;
+    inset: 0 !important;
+    transform: none !important;
+    display: block !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+  .certificateModal > :not(:last-child) {
+    display: none !important;
+  }
+  .certificateModal > :last-child {
+    margin: 0 !important;
+  }
+  .printControls {
+    display: none !important;
+  }
+  .certificateSheet {
+    width: 100%;
+    min-height: 180mm;
+    padding: 7mm;
+    border: 1px solid #b4c9eb;
+    box-shadow: none;
+    break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .certificateInner {
+    min-height: 165mm;
+    padding: 8mm 14mm 6mm;
+  }
+  .certificateKicker {
+    margin-top: 5mm;
+    font-size: 7pt;
+  }
+  .certificateSheet h2 {
+    margin-top: 5mm !important;
+    font-size: 35pt !important;
+  }
+  .certificateDivider {
+    margin-top: 5mm;
+  }
+  .presentedTo {
+    margin-top: 7mm !important;
+    font-size: 7pt;
+  }
+  .certificateSheet h3 {
+    margin-top: 5mm;
+    font-size: 31pt;
+  }
+  .certificateBody {
+    max-width: 190mm;
+    margin-top: 5mm !important;
+    font-size: 10pt;
+  }
+  .certificateSignatures {
+    margin: 11mm auto 7mm;
+  }
+  .certificateSeal {
+    width: 25mm;
+    height: 25mm;
+  }
+  .signatureName {
+    font-size: 18pt;
+  }
+  .signatureDate {
+    font-size: 13pt;
+  }
+  .certificateSignatures strong {
+    font-size: 8pt;
+  }
+  .certificateSeal strong {
+    font-size: 7pt;
+    letter-spacing: 0.3pt;
+  }
+  .certificateSignatures small {
+    font-size: 7pt;
+  }
+  .certificateSheet footer {
+    padding-top: 4mm;
+    font-size: 6pt;
+  }
+}

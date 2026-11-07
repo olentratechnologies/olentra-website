@@ -197,18 +197,23 @@ export default function FoundersExperience() {
     return () => observer.disconnect();
   }, []);
   return (
-    <main ref={root} className={styles.page} id="founders-main">
+    <section
+      ref={root}
+      className={styles.page}
+      id="founders"
+      aria-labelledby="founders-title"
+    >
       <a className={styles.skip} href="#shared-vision">
         Skip to shared vision
       </a>
       {/* 1. HERO - BLACK THEME */}
-      <section className={styles.hero} data-theme="dark" aria-labelledby="founders-title">
+      <section
+        className={styles.hero}
+        data-theme="dark"
+        aria-labelledby="founders-title"
+      >
         <div className={styles.heroTop}>
-          {content.hero.eyebrow ? (
-            <Label>{content.hero.eyebrow}</Label>
-          ) : (
-            <span />
-          )}
+          <Label>{content.hero.eyebrow || "Our Founders"}</Label>
           <span className={styles.edition}>The people. The purpose.</span>
         </div>
         <div className={styles.heroComposition}>
@@ -220,7 +225,7 @@ export default function FoundersExperience() {
                 </span>
               ))}
             </h1>
-            {content.hero.line && <p>{content.hero.line}</p>}
+            <p>{content.hero.line || content.hero.description}</p>
           </div>
           <div className={styles.heroPortraits}>
             {founders.map((founder, index) => (
@@ -357,11 +362,11 @@ export default function FoundersExperience() {
           </Link>
         </div>
         <nav className={styles.related} aria-label="Explore Olentra">
-          <Link href="/about">About Olentra</Link>
+          <Link href="/">Home</Link>
           <Link href="/services">Our services</Link>
           <Link href="/products">Our products</Link>
         </nav>
       </section>
-    </main>
+    </section>
   );
 }
