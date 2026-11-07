@@ -11,6 +11,7 @@ import { navLinks } from '../data/navigation';
 import { products } from '../data/products_data';
 import { contactInfo } from '../data/contact';
 import { servicePages } from '../data/service_pages';
+import InternMobileDock from './intern/InternMobileDock';
 
 function RingingPhoneIcon({ size = 15, active = true, className = "" }) {
   const uniqueId = useId();
@@ -352,6 +353,7 @@ function DynamicNavCta({
 export default function Navbar() {
   const pathname = usePathname();
   const isInternPage = pathname === "/intern" || pathname === "/intern/login";
+  const hasInternDock = pathname === "/intern";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
@@ -734,7 +736,7 @@ export default function Navbar() {
                 isLightSection={isLightSection}
                 className={isInternPage ? "hidden min-[1200px]:flex" : "hidden min-[1100px]:flex"}
               />}
-              {isInternPage && <a href="/intern#internship-application" className="hidden min-[360px]:inline-flex min-[1200px]:hidden items-center justify-center h-8 px-3 rounded-full bg-[#1877F2] text-white text-[10px] font-semibold whitespace-nowrap">Apply Now</a>}
+              {isInternPage && !hasInternDock && <a href="/intern#internship-application" className="hidden min-[360px]:inline-flex min-[1200px]:hidden items-center justify-center h-8 px-3 rounded-full bg-[#1877F2] text-white text-[10px] font-semibold whitespace-nowrap">Apply Now</a>}
 
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
@@ -932,7 +934,7 @@ export default function Navbar() {
           </AnimatePresence>
         </nav>
       </div>
-
+      {hasInternDock && <InternMobileDock onNavigate={() => setMobileOpen(false)} />}
     </div>
   );
 }
