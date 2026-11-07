@@ -1,0 +1,80 @@
+.dock {
+  display: none;
+}
+
+@media (max-width: 1199px) {
+  .page {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    background: #05070b;
+  }
+
+  .dock {
+    position: fixed;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+    z-index: 90;
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 8px;
+    max-width: 520px;
+    margin-inline: auto;
+    padding: 8px;
+    border: 1px solid #ffffffd9;
+    border-radius: 24px;
+    background: #eff6fff2;
+    box-shadow: 0 8px 32px #0a2b6030, inset 0 1px 0 #fff;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    pointer-events: auto;
+    color-scheme: light;
+  }
+
+  .action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-width: 0;
+    min-height: 48px;
+    padding: 12px 16px;
+    border: 1px solid transparent;
+    border-radius: 16px;
+    font-family: var(--font-inter), Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .action svg {
+    flex: none;
+  }
+
+  .action:focus-visible {
+    outline: 3px solid #0057e7;
+    outline-offset: 3px;
+  }
+
+  .login {
+    border-color: #bfd3ff;
+    color: #164bc4;
+    background: #fff;
+  }
+
+  .login:hover {
+    background: #e6efff;
+  }
+
+  .apply {
+    color: #fff;
+    background: linear-gradient(110deg, #168cff, #075cf4 65%, #5143ed);
+    box-shadow: 0 3px 10px #1769ff30, inset 0 1px 0 #ffffff40;
+  }
+
+  .apply:hover {
+    filter: brightness(1.05);
+  }
+}

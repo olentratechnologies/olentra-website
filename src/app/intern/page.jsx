@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import InternLanding from "@/components/intern/InternLanding";
 import { buildMetadata } from "@/lib/seo";
+import dockStyles from "@/components/intern/mobile-dock.module.css";
 
 const pageMetadata = buildMetadata({
   title: "Internship Program",
@@ -23,10 +24,10 @@ export const metadata = {
 
 export default function InternPage() {
   return (
-    <>
+    <div className={dockStyles.page}>
       <Navbar />
       <InternLanding />
       <Footer />
-    </>
+    </div>
   );
 }
