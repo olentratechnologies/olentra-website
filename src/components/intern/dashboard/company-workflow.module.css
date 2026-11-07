@@ -1,0 +1,534 @@
+.workflow {
+  min-width: 0;
+  color: #183763;
+  margin-top: 20px;
+}
+.workflow h2 {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+.workflow h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2a4772;
+  margin: 0;
+  line-height: 1.5;
+}
+.workflow p {
+  color: #7389ad;
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 0;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 20px;
+}
+.heading > div {
+  flex: 1;
+  min-width: 0;
+}
+.workflow .heading p {
+  margin-top: 4px;
+  font-size: 11px;
+}
+.headingIcon,
+.nextActionIcon {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: #407ef0;
+  border: 1px solid #d2e3ff;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e7f5ff, #d9e7ff);
+}
+.tabBody {
+  padding-top: 19px;
+}
+.rowBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.rowBetween > strong {
+  font-size: 12px;
+  color: #34537f;
+  font-weight: 600;
+}
+.form,
+.editTaskForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 21px;
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.fullWidth {
+  grid-column: 1/-1;
+}
+.workflow label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  color: #58739c;
+}
+.workflow input,
+.workflow select,
+.workflow textarea {
+  border: 1px solid #cbdcfb;
+  border-radius: 8px;
+  background: #ffffffb3;
+  padding: 10px 11px;
+  color: #35527d;
+  font: inherit;
+  font-size: 12px;
+  width: 100%;
+  min-width: 0;
+  color-scheme: light;
+}
+.workflow textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+.workflow input[readonly] {
+  background: #eaf1ff80;
+  color: #8297b8;
+}
+.workflow select option {
+  color: #30517d;
+  background: #f5f9ff;
+}
+.workflow input::placeholder,
+.workflow textarea::placeholder {
+  color: #97a9c5;
+}
+.workflow .checkbox {
+  flex-direction: row;
+  align-items: center;
+  align-self: center;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.checkbox input {
+  width: 15px;
+  height: 15px;
+  accent-color: #3c80f5;
+  flex-shrink: 0;
+}
+.formActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 4px;
+}
+.offerSummary {
+  border: 1px solid #d4e2fb;
+  background: #eaf2ff6b;
+  padding: 17px;
+  border-radius: 11px;
+}
+.offerSummary dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+  margin: 18px 0;
+}
+.offerSummary dt,
+.onboardingDetails dt {
+  color: #8397b8;
+  font-size: 10px;
+}
+.offerSummary dd {
+  color: #3d5d8b;
+  font-weight: 550;
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+.workflow .offerSummary p {
+  margin-top: 15px;
+  white-space: pre-wrap;
+}
+.offerSummary small {
+  display: block;
+  margin-top: 13px;
+  color: #96a9c4;
+  font-size: 10px;
+}
+.workflow .guidance {
+  border: 1px solid #d6e3fb;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: #edf4ff7d;
+  margin-top: 17px;
+}
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+  list-style: none;
+  margin: 23px 0;
+  padding: 0;
+}
+.checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.checklist svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #a4b6d5;
+}
+.checklist li[data-complete="true"] svg {
+  color: #12ad8a;
+}
+.checklist strong {
+  display: block;
+  color: #4c6890;
+  font-size: 12px;
+  font-weight: 550;
+}
+.checklist span {
+  display: block;
+  color: #93a5bf;
+  font-size: 11px;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.onboardingDetails {
+  padding: 16px;
+  border: 1px solid #d7e3fc;
+  border-radius: 10px;
+  background: #f6faff78;
+  margin-bottom: 19px;
+}
+.onboardingDetails dl {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  margin: 16px 0;
+}
+.onboardingDetails dl > div {
+  display: grid;
+  grid-template-columns: 75px 1fr;
+  gap: 10px;
+}
+.onboardingDetails dd {
+  color: #4a6992;
+  font-size: 11px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  max-height: 440px;
+  overflow-y: auto;
+  padding: 1px;
+}
+.message {
+  padding: 14px;
+  border: 1px solid #d7e3fb;
+  border-radius: 11px;
+  background: #ffffff9c;
+}
+.companyMessage {
+  margin-left: 23px;
+  background: #e9f1ff9e;
+  border-color: #c9dcff;
+}
+.message .rowBetween > strong {
+  font-size: 11px;
+}
+.message time {
+  font-size: 9px;
+  color: #91a5c3;
+  white-space: nowrap;
+}
+.workflow .message h3 {
+  margin: 11px 0 6px;
+  font-size: 12px;
+}
+.workflow .message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.smallEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 25px;
+  gap: 12px;
+  color: #8fa9d4;
+  text-align: center;
+}
+.nextAction {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+.nextAction > div {
+  flex: 1;
+}
+.nextAction h2 {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.nextAction p {
+  font-size: 11px;
+}
+.nextActionIcon {
+  background: linear-gradient(135deg, #e2fbf2, #d4eee9);
+  border-color: #c4efdf;
+  color: #14ac8a;
+}
+.inlineLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #3976dc;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.taskStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 13px 15px;
+  margin: 0 0 20px;
+  background: #e9f1ff78;
+  border: 1px solid #d4e2fb;
+  border-radius: 10px;
+  color: #8ba0bf;
+  font-size: 10px;
+}
+.taskStats strong {
+  color: #4076cb;
+  font-weight: 600;
+  font-size: 13px;
+  margin-right: 3px;
+}
+.createTaskForm {
+  padding: 17px;
+  margin: 19px 0;
+  border-radius: 11px;
+  border: 1px solid #ccddfb;
+  background: #edf4ff94;
+}
+.createTaskForm > h3 {
+  margin-bottom: 17px;
+}
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.taskCard,
+.reviewCard {
+  border: 1px solid #d4e1fb;
+  border-radius: 12px;
+  padding: 17px;
+  background: #faffff7a;
+}
+.workflow .taskCard > p {
+  margin: 10px 0 14px;
+  white-space: pre-wrap;
+}
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex-wrap: wrap;
+  color: #8c9fba;
+  font-size: 10px;
+}
+.taskMeta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.taskMeta .required {
+  color: #9470ca;
+  background: #eee5ff;
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-size: 9px;
+}
+.taskActions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 17px;
+}
+.editTaskForm {
+  border-top: 1px solid #d9e4fa;
+  padding-top: 18px;
+}
+.reviewHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 17px;
+}
+.reviewHeading > div {
+  flex: 1;
+}
+.workflow .reviewHeading h3 {
+  margin: 0 0 3px;
+}
+.workflow .reviewHeading p {
+  font-size: 10px;
+}
+.workflow .submissionNotes {
+  padding: 13px;
+  background: #eef4ff8f;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.submissionLinks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 13px;
+  margin-top: 13px;
+}
+.submissionLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #4c7fcb;
+  font-size: 11px;
+  text-decoration: none;
+}
+.reviewForm {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding-top: 17px;
+  border-top: 1px solid #dae5fb;
+}
+.feedback {
+  padding: 12px;
+  background: #e4f4ed7f;
+  border: 1px solid #ceeadf;
+  border-radius: 9px;
+  margin-top: 16px;
+}
+.feedback strong {
+  color: #559881;
+  font-weight: 600;
+  font-size: 10px;
+}
+.workflow .feedback p {
+  margin-top: 5px;
+  color: #739a8d;
+  white-space: pre-wrap;
+}
+.feedback small {
+  display: block;
+  font-size: 9px;
+  margin-top: 9px;
+  color: #93b0a6;
+}
+.versionHistory {
+  margin-top: 19px;
+  border-top: 1px solid #dce6fb;
+  padding-top: 14px;
+  color: #8ba1c1;
+  font-size: 10px;
+}
+.versionHistory summary {
+  color: #6585b4;
+  cursor: pointer;
+}
+.versionHistory > div {
+  padding: 12px 0;
+  border-bottom: 1px solid #e2eafa;
+}
+.versionHistory strong {
+  color: #5f7ea8;
+  margin-right: 8px;
+}
+.versionHistory time {
+  display: block;
+  margin-top: 7px;
+  font-size: 9px;
+}
+.workflow .versionHistory p {
+  font-size: 11px;
+  margin-top: 8px;
+}
+@media (max-width: 650px) {
+  .heading {
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+  .heading > button {
+    margin-left: auto;
+  }
+  .nextAction {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .nextAction > div {
+    flex-basis: calc(100% - 55px);
+  }
+  .nextAction > button,
+  .nextAction > a {
+    margin-left: 50px;
+  }
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+  .offerSummary dl {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .offerSummary dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .offerSummary dd {
+    margin: 0;
+  }
+  .reviewHeading {
+    flex-wrap: wrap;
+  }
+  .reviewHeading > :last-child {
+    margin-left: 43px;
+  }
+  .companyMessage {
+    margin-left: 12px;
+  }
+  .formActions > button {
+    flex: 1;
+  }
+  .taskStats {
+    gap: 11px;
+  }
+  .workflow .checkbox {
+    align-self: flex-start;
+  }
+}

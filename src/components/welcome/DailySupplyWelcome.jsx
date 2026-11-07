@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import { ArrowUpRight, X } from "lucide-react";
 import styles from "./welcome.module.css";
@@ -53,9 +54,16 @@ function GoldHandshake() {
 }
 
 export default function DailySupplyWelcome() {
+  const pathname = usePathname();
+  const excluded = pathname === "/intern" || pathname.startsWith("/intern/");
   const [open, setOpen] = useState(false);
   const previousFocus = useRef(null);
   useEffect(() => {
+    if (excluded) {
+      setOpen(false);
+      return;
+    }
+
     let timer;
     const schedule = () => {
       let seen = dismissedThisSession;
@@ -68,13 +76,15 @@ export default function DailySupplyWelcome() {
     if (document.readyState === "complete") schedule();
     else window.addEventListener("load", schedule, { once: true });
     return () => { clearTimeout(timer); window.removeEventListener("load", schedule); };
-  }, []);
+  }, [excluded]);
 
   function dismiss() {
     dismissedThisSession = true;
     try { localStorage.setItem(STORAGE_KEY, "dismissed"); } catch { /* Keep dismissal for this session. */ }
     setOpen(false);
   }
+
+  if (excluded) return null;
 
   return (
     <Dialog.Root open={open} onOpenChange={(value) => { if (!value) dismiss(); }}>

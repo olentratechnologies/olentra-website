@@ -7,7 +7,8 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
-const enabledByDefault = process.env.NEXT_PUBLIC_SMOOTH_SCROLL_ENABLED !== "false";
+const enabledByDefault =
+  process.env.NEXT_PUBLIC_SMOOTH_SCROLL_ENABLED !== "false";
 const excludedRoutes = ["/products/dailysupply/showcase"];
 
 function TickerBridge() {
@@ -32,15 +33,34 @@ function TickerBridge() {
 
 export default function SmoothScrollProvider({ children }) {
   const pathname = usePathname();
-  const sessionDisabled = typeof window !== "undefined" &&
+  const sessionDisabled =
+    typeof window !== "undefined" &&
     window.sessionStorage?.getItem("olentra-native-scroll") === "1";
-  if (!enabledByDefault || sessionDisabled || excludedRoutes.includes(pathname)) return children;
+  if (
+    !enabledByDefault ||
+    sessionDisabled ||
+    excludedRoutes.includes(pathname) ||
+    (pathname.startsWith("/intern/") && pathname !== "/intern/")
+  )
+    return children;
   return (
-    <ReactLenis root options={{
-      autoRaf: false, lerp: 0.09, smoothWheel: true, syncTouch: false,
-      touchMultiplier: 1, respectReducedMotion: true, stopInertiaOnNavigate: true,
-      anchors: { duration: 1.2, easing: (t) => 1 - Math.pow(1 - t, 3), offset: 0 },
-    }}>
+    <ReactLenis
+      root
+      options={{
+        autoRaf: false,
+        lerp: 0.09,
+        smoothWheel: true,
+        syncTouch: false,
+        touchMultiplier: 1,
+        respectReducedMotion: true,
+        stopInertiaOnNavigate: true,
+        anchors: {
+          duration: 1.2,
+          easing: (t) => 1 - Math.pow(1 - t, 3),
+          offset: 0,
+        },
+      }}
+    >
       <TickerBridge />
       {children}
     </ReactLenis>

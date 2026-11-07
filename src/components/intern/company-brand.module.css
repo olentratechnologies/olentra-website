@@ -1,0 +1,123 @@
+.identity[data-company-brand] {
+  --brand-mark: 52px;
+  --brand-font: clamp(20px, 1.8vw, 30px);
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+  font-family: var(--font-manrope), Arial, sans-serif;
+  font-size: var(--brand-font);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+[data-company-brand] .mark {
+  width: var(--brand-mark);
+  height: var(--brand-mark);
+  flex: none;
+  object-fit: contain;
+}
+
+[data-company-brand] .words {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.22em;
+  min-width: 0;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+[data-company-brand] .name,
+[data-company-brand] .technologies {
+  display: inline;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: nowrap;
+}
+
+[data-company-brand] .name {
+  color: #334155;
+}
+
+[data-company-brand] .technologies {
+  color: #2563eb;
+  background: linear-gradient(to right, #60a5fa, hsl(217 91% 50%), #2563eb);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sidebar[data-company-brand] {
+  --brand-mark: 32px;
+  --brand-font: 12px;
+  width: 100%;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  line-height: 1.12;
+}
+
+.sidebar[data-company-brand] .words {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.certificate[data-company-brand] {
+  --brand-mark: 48px;
+  --brand-font: 24px;
+  justify-content: center;
+}
+
+.login[data-company-brand] {
+  --brand-mark: 64px;
+  --brand-font: clamp(20px, 2.15vw, 36px);
+}
+
+.login[data-company-brand] .technologies {
+  background: var(--login-accent-gradient);
+  background-clip: text;
+}
+
+@media (max-width: 600px) {
+  .default[data-company-brand],
+  .login[data-company-brand] {
+    --brand-mark: 42px;
+    --brand-font: 20px;
+    gap: 9px;
+  }
+  .certificate[data-company-brand] {
+    --brand-mark: 36px;
+    --brand-font: 16px;
+    gap: 8px;
+  }
+  .certificate[data-company-brand] .words {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}
+
+@media (max-width: 380px) {
+  .default[data-company-brand],
+  .login[data-company-brand] {
+    --brand-mark: 36px;
+    --brand-font: 16px;
+    gap: 8px;
+  }
+}
+
+@media (pointer: fine) and (min-width: 480px) and (max-width: 1023px) and (max-height: 680px) {
+  .login[data-company-brand] {
+    --brand-mark: 32px;
+    --brand-font: 18px;
+  }
+}

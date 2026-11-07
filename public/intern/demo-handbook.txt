@@ -1,0 +1,53 @@
+OLENTRA INTERNSHIP PROGRAM
+Demo Handbook
+
+Learn. Build. Grow.
+
+WELCOME
+This handbook introduces the interactive Olentra internship demo. Applicant
+profiles, organizations, projects, credentials, and program records are sample
+data created for this experience.
+
+START YOUR JOURNEY
+1. Open the Internship Program page and choose Tech Explorer or Tech Innovator.
+2. Enter your name and email, then upload a PDF, DOC, or DOCX resume up to 5 MB.
+   You can use the included sample resume to explore the application flow.
+3. Submit the application and keep the application ID shown in the confirmation.
+4. Create an account with the email linked to that application.
+5. Sign in to follow your application and internship journey.
+
+INTERN WORKSPACE
+Follow your application status and review the details attached to your profile.
+After selection and onboarding, view assigned projects and submit project work.
+Work attachments can be up to 10 MB. Completed interns can view certificates
+issued by the company team.
+
+COMPANY WORKSPACE
+Review applications, update candidate stages, and manage intern records.
+Create projects, assign active interns, and review their contributions.
+Mark an intern Completed when their program is finished. Certificates can only
+be generated for completed interns who have not already received one.
+
+DEMO ACCOUNTS
+The sign-in page lists sample company and intern accounts. Select an account
+to fill its credentials, then press Sign In. Sign out before switching accounts.
+Demo password: OlentraDemo123!
+
+PASSWORD RESET
+The demo shows a verification code on the password-reset page. Enter that code
+and choose a new password. No verification email is sent.
+
+FILES AND SAVED CHANGES
+Uploaded files are stored in this browser's IndexedDB storage. File downloads
+are available in the browser where the files were saved. Fictional fixture
+applicants may have a downloadable text profile instead of an uploaded resume.
+Clearing site data or resetting the demo can remove saved files and edits.
+
+HELPFUL HABITS
+- Keep application details accurate and resume files concise.
+- Use project descriptions and progress updates to keep teammates informed.
+- Review work before marking a project or internship complete.
+- Use certificate IDs when referring to issued certificates.
+
+Olentra Technologies Pvt. Ltd.
+Interactive demo handbook - November 2026

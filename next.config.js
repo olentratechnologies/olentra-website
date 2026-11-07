@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return [
+      {
+        source: '/founders',
+        destination: '/about#founders',
+        permanent: true,
+      },
+    ];
+  },
   webpack(config, { dev }) {
     if (dev) {
       config.module.rules.push({

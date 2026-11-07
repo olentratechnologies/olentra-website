@@ -1,0 +1,162 @@
+{
+  "version": 2,
+  "demoAccounts": [
+    {
+      "id": "company-admin",
+      "role": "company",
+      "label": "Company Admin",
+      "applicationId": null,
+      "name": "Manideep Bethi",
+      "email": "manideep@olentra.com",
+      "password": "OlentraDemo123!",
+      "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
+      "sessionVersion": 1
+    },
+    {
+      "id": "intern-pending",
+      "role": "intern",
+      "label": "Pending applicant",
+      "applicationId": "OL-2026-0003",
+      "name": "Rahul Verma",
+      "email": "rahul-verma.0003@example.com",
+      "password": "OlentraDemo123!",
+      "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
+      "sessionVersion": 1
+    },
+    {
+      "id": "intern-selected",
+      "role": "intern",
+      "label": "Selected · offer ready",
+      "applicationId": "OL-2026-0001",
+      "name": "Arjun Sharma",
+      "email": "arjun-sharma.0001@example.com",
+      "password": "OlentraDemo123!",
+      "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
+      "sessionVersion": 1
+    },
+    {
+      "id": "intern-active",
+      "role": "intern",
+      "label": "Active intern",
+      "applicationId": "OL-2026-0006",
+      "name": "Ananya Singh",
+      "email": "ananya-singh.0006@example.com",
+      "password": "OlentraDemo123!",
+      "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
+      "sessionVersion": 1
+    },
+    {
+      "id": "intern-completed",
+      "role": "intern",
+      "label": "Completed · certificate ready",
+      "applicationId": "OL-2026-1741",
+      "name": "Mira Hegde",
+      "email": "mira-hegde.1741@example.com",
+      "password": "OlentraDemo123!",
+      "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
+      "sessionVersion": 1
+    }
+  ],
+  "offers": [
+    {
+      "id": "OFFER-DEMO-001",
+      "applicationId": "OL-2026-0001",
+      "status": "Sent",
+      "startOn": "2026-11-09",
+      "endOn": "2026-12-31",
+      "stipend": 20000,
+      "message": "We would love to welcome you to the Olentra Tech Innovator program.",
+      "sentOn": "2026-11-02T12:00:00.000Z"
+    }
+  ],
+  "onboarding": [],
+  "tasks": [
+    {
+      "id": "TASK-DEMO-001",
+      "projectId": "PRJ-001",
+      "applicationId": "OL-2026-0006",
+      "title": "Build an analytics summary component",
+      "description": "Create a responsive summary card with clear metrics, accessible labels, and loading states.",
+      "dueOn": "2026-11-20",
+      "required": true,
+      "status": "Todo",
+      "createdOn": "2026-11-02T12:00:00.000Z"
+    },
+    {
+      "id": "TASK-DEMO-002",
+      "projectId": "PRJ-001",
+      "applicationId": "OL-2026-0006",
+      "title": "Document the implementation",
+      "description": "Explain component structure, important design decisions, and how to verify the work.",
+      "dueOn": "2026-11-22",
+      "required": false,
+      "status": "In progress",
+      "createdOn": "2026-11-02T12:00:00.000Z"
+    },
+    {
+      "id": "TASK-DEMO-003",
+      "projectId": "PRJ-001",
+      "applicationId": "OL-2026-0006",
+      "title": "Review mobile dashboard spacing",
+      "description": "Check the dashboard at mobile widths and document layout improvements.",
+      "dueOn": "2026-11-18",
+      "required": true,
+      "status": "Under review",
+      "createdOn": "2026-11-02T12:00:00.000Z"
+    }
+  ],
+  "submissions": [
+    {
+      "id": "SUB-DEMO-001",
+      "taskId": "TASK-DEMO-003",
+      "applicationId": "OL-2026-0006",
+      "version": 1,
+      "notes": "Reviewed mobile spacing and prepared the first set of layout recommendations.",
+      "url": "https://example.com/demo/mobile-review",
+      "attachmentId": null,
+      "submittedOn": "2026-11-03T10:00:00.000Z",
+      "status": "Submitted",
+      "feedback": "",
+      "reviewedOn": null
+    }
+  ],
+  "messages": [
+    {
+      "id": "MSG-DEMO-001",
+      "applicationId": "OL-2026-0006",
+      "senderAccountId": "company-admin",
+      "senderRole": "company",
+      "subject": "Welcome to your project",
+      "body": "Your first tasks are ready. Open My Projects and share your work when you are ready for a review.",
+      "createdOn": "2026-11-02T12:00:00.000Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "NOTIFY-DEMO-001",
+      "recipientRole": "intern",
+      "applicationId": "OL-2026-0006",
+      "title": "Your project tasks are ready",
+      "body": "Three tasks are waiting in your project workspace.",
+      "href": "/intern/portal/projects/PRJ-001",
+      "createdOn": "2026-11-02T12:00:00.000Z"
+    },
+    {
+      "id": "NOTIFY-DEMO-002",
+      "recipientRole": "company",
+      "applicationId": "OL-2026-0006",
+      "title": "A submission is ready to review",
+      "body": "Ananya Singh submitted a mobile dashboard review.",
+      "href": "/intern/dashboard/projects",
+      "createdOn": "2026-11-03T10:00:00.000Z"
+    }
+  ],
+  "resources": [
+    {
+      "id": "RES-DEMO-001",
+      "title": "Internship handbook",
+      "description": "A short guide to collaboration, feedback, and learning with Olentra.",
+      "url": "/intern/demo-handbook.txt"
+    }
+  ]
+}
