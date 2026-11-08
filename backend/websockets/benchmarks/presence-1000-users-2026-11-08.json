@@ -1,0 +1,5693 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-11-08T10:40:01.672Z",
+  "finishedAt": "2026-11-08T10:42:03.159Z",
+  "success": true,
+  "error": null,
+  "configuration": {
+    "users": 1000,
+    "tabs": 2,
+    "dashboards": 10,
+    "duration": 120,
+    "batchSize": 100,
+    "pulses": 40,
+    "pulseUsers": 25,
+    "output": "presence-1000-users-2026-11-08.json",
+    "visitorSocketsAtTarget": 2000,
+    "broadcastIntervalMs": 100
+  },
+  "environment": {
+    "bun": "1.4.4",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "kernel": "27.2.0",
+    "cpuModel": "Apple M1",
+    "logicalCpus": 8,
+    "systemMemoryMiB": 8192,
+    "serverAndDriverSeparateProcesses": true,
+    "transport": "loopback TCP WebSockets; one native Bun server process",
+    "serverPort": 55822
+  },
+  "timing": {
+    "totalMs": 121491.772,
+    "holdMs": 120002.096,
+    "loadMs": 404.326,
+    "explicitResyncMs": 1.535
+  },
+  "latencyMs": {
+    "firstSnapshot": {
+      "samples": 10,
+      "min": 0.15,
+      "mean": 0.276,
+      "p50": 0.223,
+      "p95": 0.665,
+      "p99": 0.665,
+      "max": 0.665
+    },
+    "reconnectSnapshot": {
+      "samples": 1,
+      "min": 0.496,
+      "mean": 0.496,
+      "p50": 0.496,
+      "p95": 0.496,
+      "p99": 0.496,
+      "max": 0.496
+    },
+    "eachSubscriberCountFreshness": {
+      "samples": 800,
+      "min": 100.566,
+      "mean": 103.662,
+      "p50": 102.827,
+      "p95": 106.476,
+      "p99": 115.143,
+      "max": 115.214
+    },
+    "lastSubscriberCountFreshness": {
+      "samples": 80,
+      "min": 100.711,
+      "mean": 103.718,
+      "p50": 102.827,
+      "p95": 106.476,
+      "p99": 115.214,
+      "max": 115.214
+    }
+  },
+  "broadcasts": {
+    "observedOnFirstDashboardDuringLoadAndHold": 84,
+    "maxRolling100ms": 1,
+    "maxRolling1s": 4,
+    "finalCounters": {
+      "activeVisitors": 0,
+      "totalConnections": 0,
+      "dashboardSubscribers": 0,
+      "connectionEvents": 8222,
+      "broadcasts": 87,
+      "snapshots": 99,
+      "serializedBytes": 8901,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": false
+    }
+  },
+  "server": {
+    "holdSamples": 121,
+    "baselineStats": {
+      "activeVisitors": 0,
+      "totalConnections": 10,
+      "dashboardSubscribers": 10,
+      "connectionEvents": 10,
+      "broadcasts": 0,
+      "snapshots": 10,
+      "serializedBytes": 851,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": true,
+      "timestamp": 1794134401713
+    },
+    "loadedStats": {
+      "activeVisitors": 1000,
+      "totalConnections": 2010,
+      "dashboardSubscribers": 10,
+      "connectionEvents": 2010,
+      "broadcasts": 4,
+      "snapshots": 14,
+      "serializedBytes": 1211,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": false,
+      "timestamp": 1794134402118
+    },
+    "zeroVisitorStats": {
+      "activeVisitors": 0,
+      "totalConnections": 10,
+      "dashboardSubscribers": 10,
+      "connectionEvents": 8212,
+      "broadcasts": 87,
+      "snapshots": 99,
+      "serializedBytes": 8901,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": false,
+      "timestamp": 1794134522796
+    },
+    "finalStats": {
+      "activeVisitors": 0,
+      "totalConnections": 0,
+      "dashboardSubscribers": 0,
+      "connectionEvents": 8222,
+      "broadcasts": 87,
+      "snapshots": 99,
+      "serializedBytes": 8901,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": false,
+      "timestamp": 1794134523049
+    },
+    "rssMiB": {
+      "samples": 121,
+      "min": 11.626,
+      "mean": 12.132,
+      "p50": 12.126,
+      "p95": 12.36,
+      "p99": 12.532,
+      "max": 13.532
+    },
+    "heapUsedMiB": {
+      "samples": 121,
+      "min": 1.113,
+      "mean": 1.376,
+      "p50": 1.384,
+      "p95": 1.549,
+      "p99": 1.652,
+      "max": 1.652
+    },
+    "cpuOneCorePercent": {
+      "samples": 121,
+      "min": 0.295,
+      "mean": 0.875,
+      "p50": 0.579,
+      "p95": 1.527,
+      "p99": 2.716,
+      "max": 20.199
+    },
+    "eventLoopTimerLagMs": {
+      "samples": 10215,
+      "min": 0.001,
+      "mean": 1.747,
+      "p50": 2.024,
+      "p95": 2.059,
+      "p99": 2.307,
+      "max": 39.032
+    },
+    "samples": [
+      {
+        "elapsedMs": 31.268,
+        "intervalMs": 31.269,
+        "phase": "startup",
+        "rssBytes": 6898312,
+        "heapUsedBytes": 319349,
+        "cpuOneCorePercent": 14.033,
+        "counters": {
+          "activeVisitors": 0,
+          "totalConnections": 10,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 10,
+          "broadcasts": 0,
+          "snapshots": 10,
+          "serializedBytes": 851,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 2,
+          "min": 0.392,
+          "mean": 0.504,
+          "p50": 0.392,
+          "p95": 0.615,
+          "p99": 0.615,
+          "max": 0.615
+        }
+      },
+      {
+        "elapsedMs": 435.628,
+        "intervalMs": 404.359,
+        "phase": "load",
+        "rssBytes": 14074576,
+        "heapUsedBytes": 319349,
+        "cpuOneCorePercent": 12.746,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2010,
+          "broadcasts": 4,
+          "snapshots": 14,
+          "serializedBytes": 1211,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 38,
+          "min": 0,
+          "mean": 0.835,
+          "p50": 0.741,
+          "p95": 2.022,
+          "p99": 2.035,
+          "max": 2.035
+        }
+      },
+      {
+        "elapsedMs": 1000.157,
+        "intervalMs": 564.529,
+        "phase": "tab-deduplication",
+        "rssBytes": 14189264,
+        "heapUsedBytes": 1167335,
+        "cpuOneCorePercent": 1.517,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2210,
+          "broadcasts": 6,
+          "snapshots": 16,
+          "serializedBytes": 1393,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 48,
+          "min": 0.045,
+          "mean": 1.728,
+          "p50": 2.014,
+          "p95": 2.032,
+          "p99": 2.036,
+          "max": 2.036
+        }
+      },
+      {
+        "elapsedMs": 1000.598,
+        "intervalMs": 0.441,
+        "phase": "hold",
+        "rssBytes": 14189264,
+        "heapUsedBytes": 1167335,
+        "cpuOneCorePercent": 20.199,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2210,
+          "broadcasts": 6,
+          "snapshots": 16,
+          "serializedBytes": 1393,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 0,
+          "min": null,
+          "mean": null,
+          "p50": null,
+          "p95": null,
+          "p99": null,
+          "max": null
+        }
+      },
+      {
+        "elapsedMs": 2002.069,
+        "intervalMs": 1001.471,
+        "phase": "hold",
+        "rssBytes": 12190416,
+        "heapUsedBytes": 1170625,
+        "cpuOneCorePercent": 0.777,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2210,
+          "broadcasts": 6,
+          "snapshots": 16,
+          "serializedBytes": 1393,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.323,
+          "mean": 1.839,
+          "p50": 2.019,
+          "p95": 2.044,
+          "p99": 2.075,
+          "max": 2.075
+        }
+      },
+      {
+        "elapsedMs": 3002.63,
+        "intervalMs": 1000.561,
+        "phase": "hold",
+        "rssBytes": 12305104,
+        "heapUsedBytes": 1171841,
+        "cpuOneCorePercent": 0.46,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2210,
+          "broadcasts": 6,
+          "snapshots": 16,
+          "serializedBytes": 1393,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.076,
+          "mean": 1.963,
+          "p50": 2.025,
+          "p95": 2.125,
+          "p99": 7.721,
+          "max": 7.721
+        }
+      },
+      {
+        "elapsedMs": 4002.781,
+        "intervalMs": 1000.151,
+        "phase": "hold",
+        "rssBytes": 12305104,
+        "heapUsedBytes": 1174021,
+        "cpuOneCorePercent": 0.774,
+        "counters": {
+          "activeVisitors": 975,
+          "totalConnections": 1960,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2260,
+          "broadcasts": 6,
+          "snapshots": 16,
+          "serializedBytes": 1393,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.3,
+          "mean": 1.761,
+          "p50": 2.025,
+          "p95": 2.048,
+          "p99": 2.059,
+          "max": 2.059
+        }
+      },
+      {
+        "elapsedMs": 5003.987,
+        "intervalMs": 1001.206,
+        "phase": "hold",
+        "rssBytes": 12763856,
+        "heapUsedBytes": 1352115,
+        "cpuOneCorePercent": 0.9,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2310,
+          "broadcasts": 8,
+          "snapshots": 18,
+          "serializedBytes": 1574,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.128,
+          "mean": 1.694,
+          "p50": 2.026,
+          "p95": 2.063,
+          "p99": 2.563,
+          "max": 2.563
+        }
+      },
+      {
+        "elapsedMs": 6004.958,
+        "intervalMs": 1000.971,
+        "phase": "hold",
+        "rssBytes": 12731088,
+        "heapUsedBytes": 1353075,
+        "cpuOneCorePercent": 0.48,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2310,
+          "broadcasts": 8,
+          "snapshots": 18,
+          "serializedBytes": 1574,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.077,
+          "mean": 1.778,
+          "p50": 2.027,
+          "p95": 2.069,
+          "p99": 2.265,
+          "max": 2.265
+        }
+      },
+      {
+        "elapsedMs": 7006.046,
+        "intervalMs": 1001.089,
+        "phase": "hold",
+        "rssBytes": 12894952,
+        "heapUsedBytes": 1449967,
+        "cpuOneCorePercent": 1.267,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2410,
+          "broadcasts": 9,
+          "snapshots": 19,
+          "serializedBytes": 1664,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.04,
+          "mean": 1.788,
+          "p50": 2.022,
+          "p95": 2.045,
+          "p99": 2.054,
+          "max": 2.054
+        }
+      },
+      {
+        "elapsedMs": 8006.76,
+        "intervalMs": 1000.714,
+        "phase": "hold",
+        "rssBytes": 12845800,
+        "heapUsedBytes": 1451461,
+        "cpuOneCorePercent": 0.504,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2410,
+          "broadcasts": 10,
+          "snapshots": 20,
+          "serializedBytes": 1755,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.131,
+          "mean": 1.825,
+          "p50": 2.02,
+          "p95": 2.048,
+          "p99": 2.071,
+          "max": 2.071
+        }
+      },
+      {
+        "elapsedMs": 9007.994,
+        "intervalMs": 1001.234,
+        "phase": "hold",
+        "rssBytes": 12845800,
+        "heapUsedBytes": 1452421,
+        "cpuOneCorePercent": 0.473,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2410,
+          "broadcasts": 10,
+          "snapshots": 20,
+          "serializedBytes": 1755,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 87,
+          "min": 0.037,
+          "mean": 1.573,
+          "p50": 2.025,
+          "p95": 2.091,
+          "p99": 2.598,
+          "max": 2.598
+        }
+      },
+      {
+        "elapsedMs": 10010.821,
+        "intervalMs": 1002.827,
+        "phase": "hold",
+        "rssBytes": 12829416,
+        "heapUsedBytes": 1232517,
+        "cpuOneCorePercent": 1.206,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2510,
+          "broadcasts": 12,
+          "snapshots": 22,
+          "serializedBytes": 1936,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.086,
+          "mean": 1.652,
+          "p50": 2.025,
+          "p95": 2.097,
+          "p99": 2.326,
+          "max": 2.326
+        }
+      },
+      {
+        "elapsedMs": 11012.39,
+        "intervalMs": 1001.568,
+        "phase": "hold",
+        "rssBytes": 12436200,
+        "heapUsedBytes": 1234469,
+        "cpuOneCorePercent": 0.599,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2510,
+          "broadcasts": 12,
+          "snapshots": 22,
+          "serializedBytes": 1936,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.114,
+          "mean": 1.724,
+          "p50": 2.02,
+          "p95": 2.06,
+          "p99": 2.334,
+          "max": 2.334
+        }
+      },
+      {
+        "elapsedMs": 12013.757,
+        "intervalMs": 1001.367,
+        "phase": "hold",
+        "rssBytes": 12452584,
+        "heapUsedBytes": 1238672,
+        "cpuOneCorePercent": 0.738,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2510,
+          "broadcasts": 12,
+          "snapshots": 22,
+          "serializedBytes": 1936,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 83,
+          "min": 0.247,
+          "mean": 2.053,
+          "p50": 2.025,
+          "p95": 2.544,
+          "p99": 10.423,
+          "max": 10.423
+        }
+      },
+      {
+        "elapsedMs": 13013.868,
+        "intervalMs": 1000.111,
+        "phase": "hold",
+        "rssBytes": 12436200,
+        "heapUsedBytes": 1253029,
+        "cpuOneCorePercent": 1.11,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2610,
+          "broadcasts": 14,
+          "snapshots": 24,
+          "serializedBytes": 2117,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.013,
+          "mean": 1.747,
+          "p50": 2.024,
+          "p95": 2.05,
+          "p99": 2.709,
+          "max": 2.709
+        }
+      },
+      {
+        "elapsedMs": 14015.642,
+        "intervalMs": 1001.774,
+        "phase": "hold",
+        "rssBytes": 12354280,
+        "heapUsedBytes": 1253989,
+        "cpuOneCorePercent": 0.638,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2610,
+          "broadcasts": 14,
+          "snapshots": 24,
+          "serializedBytes": 2117,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.097,
+          "mean": 1.703,
+          "p50": 2.025,
+          "p95": 2.057,
+          "p99": 2.161,
+          "max": 2.161
+        }
+      },
+      {
+        "elapsedMs": 15016.544,
+        "intervalMs": 1000.902,
+        "phase": "hold",
+        "rssBytes": 12567272,
+        "heapUsedBytes": 1254949,
+        "cpuOneCorePercent": 0.463,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2610,
+          "broadcasts": 14,
+          "snapshots": 24,
+          "serializedBytes": 2117,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.334,
+          "mean": 1.731,
+          "p50": 2.023,
+          "p95": 2.051,
+          "p99": 2.17,
+          "max": 2.17
+        }
+      },
+      {
+        "elapsedMs": 16017.297,
+        "intervalMs": 1000.753,
+        "phase": "hold",
+        "rssBytes": 12567272,
+        "heapUsedBytes": 1269223,
+        "cpuOneCorePercent": 1.007,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2710,
+          "broadcasts": 16,
+          "snapshots": 26,
+          "serializedBytes": 2298,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.017,
+          "mean": 1.734,
+          "p50": 2.026,
+          "p95": 2.055,
+          "p99": 2.142,
+          "max": 2.142
+        }
+      },
+      {
+        "elapsedMs": 17019.472,
+        "intervalMs": 1002.175,
+        "phase": "hold",
+        "rssBytes": 12583656,
+        "heapUsedBytes": 1270183,
+        "cpuOneCorePercent": 0.491,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2710,
+          "broadcasts": 16,
+          "snapshots": 26,
+          "serializedBytes": 2298,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.124,
+          "mean": 1.735,
+          "p50": 2.026,
+          "p95": 2.054,
+          "p99": 2.137,
+          "max": 2.137
+        }
+      },
+      {
+        "elapsedMs": 18019.784,
+        "intervalMs": 1000.312,
+        "phase": "hold",
+        "rssBytes": 12583656,
+        "heapUsedBytes": 1271143,
+        "cpuOneCorePercent": 0.484,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2710,
+          "broadcasts": 16,
+          "snapshots": 26,
+          "serializedBytes": 2298,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.013,
+          "mean": 1.71,
+          "p50": 2.026,
+          "p95": 2.061,
+          "p99": 2.303,
+          "max": 2.303
+        }
+      },
+      {
+        "elapsedMs": 19022.058,
+        "intervalMs": 1002.273,
+        "phase": "hold",
+        "rssBytes": 12567272,
+        "heapUsedBytes": 1285417,
+        "cpuOneCorePercent": 1.092,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2810,
+          "broadcasts": 18,
+          "snapshots": 28,
+          "serializedBytes": 2479,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.01,
+          "mean": 1.796,
+          "p50": 2.024,
+          "p95": 2.053,
+          "p99": 2.437,
+          "max": 2.437
+        }
+      },
+      {
+        "elapsedMs": 20022.183,
+        "intervalMs": 1000.125,
+        "phase": "hold",
+        "rssBytes": 12485352,
+        "heapUsedBytes": 1286377,
+        "cpuOneCorePercent": 0.523,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2810,
+          "broadcasts": 18,
+          "snapshots": 28,
+          "serializedBytes": 2479,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.109,
+          "mean": 1.753,
+          "p50": 2.021,
+          "p95": 2.046,
+          "p99": 2.919,
+          "max": 2.919
+        }
+      },
+      {
+        "elapsedMs": 21024.432,
+        "intervalMs": 1002.249,
+        "phase": "hold",
+        "rssBytes": 12485352,
+        "heapUsedBytes": 1287337,
+        "cpuOneCorePercent": 0.625,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2810,
+          "broadcasts": 18,
+          "snapshots": 28,
+          "serializedBytes": 2479,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.17,
+          "mean": 1.82,
+          "p50": 2.029,
+          "p95": 2.113,
+          "p99": 2.184,
+          "max": 2.184
+        }
+      },
+      {
+        "elapsedMs": 22025.855,
+        "intervalMs": 1001.423,
+        "phase": "hold",
+        "rssBytes": 12501736,
+        "heapUsedBytes": 1301611,
+        "cpuOneCorePercent": 0.661,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2910,
+          "broadcasts": 20,
+          "snapshots": 30,
+          "serializedBytes": 2660,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.074,
+          "mean": 1.824,
+          "p50": 2.015,
+          "p95": 2.038,
+          "p99": 2.123,
+          "max": 2.123
+        }
+      },
+      {
+        "elapsedMs": 23026.686,
+        "intervalMs": 1000.831,
+        "phase": "hold",
+        "rssBytes": 12436200,
+        "heapUsedBytes": 1302571,
+        "cpuOneCorePercent": 0.461,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2910,
+          "broadcasts": 20,
+          "snapshots": 30,
+          "serializedBytes": 2660,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.051,
+          "mean": 1.777,
+          "p50": 2.022,
+          "p95": 2.058,
+          "p99": 2.404,
+          "max": 2.404
+        }
+      },
+      {
+        "elapsedMs": 24026.742,
+        "intervalMs": 1000.056,
+        "phase": "hold",
+        "rssBytes": 12436200,
+        "heapUsedBytes": 1303531,
+        "cpuOneCorePercent": 2.035,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 2910,
+          "broadcasts": 20,
+          "snapshots": 30,
+          "serializedBytes": 2660,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.034,
+          "mean": 1.774,
+          "p50": 2.027,
+          "p95": 2.134,
+          "p99": 14.438,
+          "max": 14.438
+        }
+      },
+      {
+        "elapsedMs": 25027.806,
+        "intervalMs": 1001.064,
+        "phase": "hold",
+        "rssBytes": 12600040,
+        "heapUsedBytes": 1317805,
+        "cpuOneCorePercent": 1.694,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3010,
+          "broadcasts": 22,
+          "snapshots": 32,
+          "serializedBytes": 2841,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.003,
+          "mean": 1.662,
+          "p50": 2.025,
+          "p95": 2.058,
+          "p99": 2.28,
+          "max": 2.28
+        }
+      },
+      {
+        "elapsedMs": 26028.676,
+        "intervalMs": 1000.87,
+        "phase": "hold",
+        "rssBytes": 12600040,
+        "heapUsedBytes": 1318765,
+        "cpuOneCorePercent": 0.578,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3010,
+          "broadcasts": 22,
+          "snapshots": 32,
+          "serializedBytes": 2841,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.105,
+          "mean": 1.65,
+          "p50": 2.026,
+          "p95": 2.056,
+          "p99": 2.343,
+          "max": 2.343
+        }
+      },
+      {
+        "elapsedMs": 27029.759,
+        "intervalMs": 1001.083,
+        "phase": "hold",
+        "rssBytes": 12600040,
+        "heapUsedBytes": 1319725,
+        "cpuOneCorePercent": 0.453,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3010,
+          "broadcasts": 22,
+          "snapshots": 32,
+          "serializedBytes": 2841,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.014,
+          "mean": 1.758,
+          "p50": 2.025,
+          "p95": 2.13,
+          "p99": 2.254,
+          "max": 2.254
+        }
+      },
+      {
+        "elapsedMs": 28030.75,
+        "intervalMs": 1000.991,
+        "phase": "hold",
+        "rssBytes": 12583656,
+        "heapUsedBytes": 1333999,
+        "cpuOneCorePercent": 1.527,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3110,
+          "broadcasts": 24,
+          "snapshots": 34,
+          "serializedBytes": 3022,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.065,
+          "mean": 1.735,
+          "p50": 2.025,
+          "p95": 2.143,
+          "p99": 3.586,
+          "max": 3.586
+        }
+      },
+      {
+        "elapsedMs": 29032.235,
+        "intervalMs": 1001.485,
+        "phase": "hold",
+        "rssBytes": 12583656,
+        "heapUsedBytes": 1334959,
+        "cpuOneCorePercent": 0.53,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3110,
+          "broadcasts": 24,
+          "snapshots": 34,
+          "serializedBytes": 3022,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.271,
+          "mean": 1.69,
+          "p50": 2.026,
+          "p95": 2.054,
+          "p99": 2.424,
+          "max": 2.424
+        }
+      },
+      {
+        "elapsedMs": 30033.854,
+        "intervalMs": 1001.619,
+        "phase": "hold",
+        "rssBytes": 12616424,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.409,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3110,
+          "broadcasts": 24,
+          "snapshots": 34,
+          "serializedBytes": 3022,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.028,
+          "mean": 1.757,
+          "p50": 2.021,
+          "p95": 2.063,
+          "p99": 2.665,
+          "max": 2.665
+        }
+      },
+      {
+        "elapsedMs": 31034.782,
+        "intervalMs": 1000.928,
+        "phase": "hold",
+        "rssBytes": 12583656,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.889,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3210,
+          "broadcasts": 26,
+          "snapshots": 36,
+          "serializedBytes": 3203,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.049,
+          "mean": 1.728,
+          "p50": 2.022,
+          "p95": 2.066,
+          "p99": 2.13,
+          "max": 2.13
+        }
+      },
+      {
+        "elapsedMs": 32036.028,
+        "intervalMs": 1001.246,
+        "phase": "hold",
+        "rssBytes": 12583656,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.511,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3210,
+          "broadcasts": 26,
+          "snapshots": 36,
+          "serializedBytes": 3203,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.212,
+          "mean": 1.71,
+          "p50": 2.019,
+          "p95": 2.056,
+          "p99": 2.178,
+          "max": 2.178
+        }
+      },
+      {
+        "elapsedMs": 33037.415,
+        "intervalMs": 1001.387,
+        "phase": "hold",
+        "rssBytes": 12600040,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.441,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3210,
+          "broadcasts": 26,
+          "snapshots": 36,
+          "serializedBytes": 3203,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.137,
+          "mean": 1.772,
+          "p50": 2.025,
+          "p95": 2.079,
+          "p99": 2.277,
+          "max": 2.277
+        }
+      },
+      {
+        "elapsedMs": 34038.131,
+        "intervalMs": 1000.716,
+        "phase": "hold",
+        "rssBytes": 12583656,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.851,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3310,
+          "broadcasts": 28,
+          "snapshots": 38,
+          "serializedBytes": 3384,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.024,
+          "mean": 1.612,
+          "p50": 2.014,
+          "p95": 2.043,
+          "p99": 2.865,
+          "max": 2.865
+        }
+      },
+      {
+        "elapsedMs": 35039.273,
+        "intervalMs": 1001.142,
+        "phase": "hold",
+        "rssBytes": 12714728,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.453,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3310,
+          "broadcasts": 28,
+          "snapshots": 38,
+          "serializedBytes": 3384,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.08,
+          "mean": 1.784,
+          "p50": 2.028,
+          "p95": 2.055,
+          "p99": 2.096,
+          "max": 2.096
+        }
+      },
+      {
+        "elapsedMs": 36040.23,
+        "intervalMs": 1000.957,
+        "phase": "hold",
+        "rssBytes": 12714728,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.539,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3310,
+          "broadcasts": 28,
+          "snapshots": 38,
+          "serializedBytes": 3384,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.11,
+          "mean": 1.66,
+          "p50": 2.025,
+          "p95": 2.05,
+          "p99": 2.573,
+          "max": 2.573
+        }
+      },
+      {
+        "elapsedMs": 37041.017,
+        "intervalMs": 1000.787,
+        "phase": "hold",
+        "rssBytes": 12698344,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.933,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3410,
+          "broadcasts": 30,
+          "snapshots": 40,
+          "serializedBytes": 3565,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.007,
+          "mean": 1.67,
+          "p50": 2.027,
+          "p95": 2.154,
+          "p99": 2.673,
+          "max": 2.673
+        }
+      },
+      {
+        "elapsedMs": 38042.102,
+        "intervalMs": 1001.085,
+        "phase": "hold",
+        "rssBytes": 12698344,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.339,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3410,
+          "broadcasts": 30,
+          "snapshots": 40,
+          "serializedBytes": 3565,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.13,
+          "mean": 1.623,
+          "p50": 2.021,
+          "p95": 2.046,
+          "p99": 2.149,
+          "max": 2.149
+        }
+      },
+      {
+        "elapsedMs": 39042.146,
+        "intervalMs": 1000.044,
+        "phase": "hold",
+        "rssBytes": 12698344,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.432,
+        "counters": {
+          "activeVisitors": 975,
+          "totalConnections": 1960,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3460,
+          "broadcasts": 30,
+          "snapshots": 40,
+          "serializedBytes": 3565,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.257,
+          "mean": 1.803,
+          "p50": 2.021,
+          "p95": 2.044,
+          "p99": 2.143,
+          "max": 2.143
+        }
+      },
+      {
+        "elapsedMs": 40043.081,
+        "intervalMs": 1000.934,
+        "phase": "hold",
+        "rssBytes": 12665576,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.957,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3510,
+          "broadcasts": 32,
+          "snapshots": 42,
+          "serializedBytes": 3746,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.018,
+          "mean": 1.689,
+          "p50": 2.024,
+          "p95": 2.058,
+          "p99": 3.093,
+          "max": 3.093
+        }
+      },
+      {
+        "elapsedMs": 41043.74,
+        "intervalMs": 1000.659,
+        "phase": "hold",
+        "rssBytes": 12550888,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.556,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3510,
+          "broadcasts": 32,
+          "snapshots": 42,
+          "serializedBytes": 3746,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.039,
+          "mean": 1.709,
+          "p50": 2.024,
+          "p95": 2.067,
+          "p99": 3.157,
+          "max": 3.157
+        }
+      },
+      {
+        "elapsedMs": 42045.4,
+        "intervalMs": 1001.66,
+        "phase": "hold",
+        "rssBytes": 12550888,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.523,
+        "counters": {
+          "activeVisitors": 975,
+          "totalConnections": 1960,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3560,
+          "broadcasts": 32,
+          "snapshots": 42,
+          "serializedBytes": 3746,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.258,
+          "mean": 1.725,
+          "p50": 2.026,
+          "p95": 2.075,
+          "p99": 2.372,
+          "max": 2.372
+        }
+      },
+      {
+        "elapsedMs": 43046.624,
+        "intervalMs": 1001.224,
+        "phase": "hold",
+        "rssBytes": 12534504,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.844,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3610,
+          "broadcasts": 34,
+          "snapshots": 44,
+          "serializedBytes": 3927,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.014,
+          "mean": 1.749,
+          "p50": 2.025,
+          "p95": 2.046,
+          "p99": 2.31,
+          "max": 2.31
+        }
+      },
+      {
+        "elapsedMs": 44047.712,
+        "intervalMs": 1001.089,
+        "phase": "hold",
+        "rssBytes": 12534504,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.399,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3610,
+          "broadcasts": 34,
+          "snapshots": 44,
+          "serializedBytes": 3927,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.053,
+          "mean": 1.767,
+          "p50": 2.023,
+          "p95": 2.041,
+          "p99": 2.089,
+          "max": 2.089
+        }
+      },
+      {
+        "elapsedMs": 45049.426,
+        "intervalMs": 1001.713,
+        "phase": "hold",
+        "rssBytes": 12731112,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.924,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3710,
+          "broadcasts": 35,
+          "snapshots": 45,
+          "serializedBytes": 4017,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.383,
+          "mean": 1.687,
+          "p50": 2.023,
+          "p95": 2.098,
+          "p99": 2.568,
+          "max": 2.568
+        }
+      },
+      {
+        "elapsedMs": 46050.351,
+        "intervalMs": 1000.925,
+        "phase": "hold",
+        "rssBytes": 12731112,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.415,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3710,
+          "broadcasts": 36,
+          "snapshots": 46,
+          "serializedBytes": 4108,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.209,
+          "mean": 1.808,
+          "p50": 2.029,
+          "p95": 2.057,
+          "p99": 2.142,
+          "max": 2.142
+        }
+      },
+      {
+        "elapsedMs": 47052.403,
+        "intervalMs": 1002.051,
+        "phase": "hold",
+        "rssBytes": 12731112,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.35,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3710,
+          "broadcasts": 36,
+          "snapshots": 46,
+          "serializedBytes": 4108,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.14,
+          "mean": 1.729,
+          "p50": 2.023,
+          "p95": 2.054,
+          "p99": 3.524,
+          "max": 3.524
+        }
+      },
+      {
+        "elapsedMs": 48054.184,
+        "intervalMs": 1001.781,
+        "phase": "hold",
+        "rssBytes": 12714728,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 2.633,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3810,
+          "broadcasts": 38,
+          "snapshots": 48,
+          "serializedBytes": 4289,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.032,
+          "mean": 1.807,
+          "p50": 2.025,
+          "p95": 2.06,
+          "p99": 11.81,
+          "max": 11.81
+        }
+      },
+      {
+        "elapsedMs": 49056.241,
+        "intervalMs": 1002.057,
+        "phase": "hold",
+        "rssBytes": 12714728,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.42,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3810,
+          "broadcasts": 38,
+          "snapshots": 48,
+          "serializedBytes": 4289,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.165,
+          "mean": 1.625,
+          "p50": 2.025,
+          "p95": 2.094,
+          "p99": 2.28,
+          "max": 2.28
+        }
+      },
+      {
+        "elapsedMs": 50056.975,
+        "intervalMs": 1000.734,
+        "phase": "hold",
+        "rssBytes": 12747496,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.415,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3810,
+          "broadcasts": 38,
+          "snapshots": 48,
+          "serializedBytes": 4289,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.214,
+          "mean": 2.004,
+          "p50": 2.027,
+          "p95": 2.95,
+          "p99": 11.335,
+          "max": 11.335
+        }
+      },
+      {
+        "elapsedMs": 51059.017,
+        "intervalMs": 1002.042,
+        "phase": "hold",
+        "rssBytes": 12747496,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.861,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3910,
+          "broadcasts": 40,
+          "snapshots": 50,
+          "serializedBytes": 4470,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.098,
+          "mean": 1.711,
+          "p50": 2.024,
+          "p95": 2.042,
+          "p99": 2.146,
+          "max": 2.146
+        }
+      },
+      {
+        "elapsedMs": 52061.097,
+        "intervalMs": 1002.079,
+        "phase": "hold",
+        "rssBytes": 12747496,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.62,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3910,
+          "broadcasts": 40,
+          "snapshots": 50,
+          "serializedBytes": 4470,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.096,
+          "mean": 1.772,
+          "p50": 2.027,
+          "p95": 2.05,
+          "p99": 2.628,
+          "max": 2.628
+        }
+      },
+      {
+        "elapsedMs": 53061.396,
+        "intervalMs": 1000.3,
+        "phase": "hold",
+        "rssBytes": 12747496,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.316,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 3910,
+          "broadcasts": 40,
+          "snapshots": 50,
+          "serializedBytes": 4470,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.121,
+          "mean": 1.887,
+          "p50": 2.022,
+          "p95": 2.042,
+          "p99": 2.052,
+          "max": 2.052
+        }
+      },
+      {
+        "elapsedMs": 54063.436,
+        "intervalMs": 1002.04,
+        "phase": "hold",
+        "rssBytes": 12747496,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.908,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4010,
+          "broadcasts": 42,
+          "snapshots": 52,
+          "serializedBytes": 4651,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.03,
+          "mean": 1.687,
+          "p50": 2.021,
+          "p95": 2.06,
+          "p99": 2.27,
+          "max": 2.27
+        }
+      },
+      {
+        "elapsedMs": 55065.48,
+        "intervalMs": 1002.044,
+        "phase": "hold",
+        "rssBytes": 12960488,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.298,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4010,
+          "broadcasts": 42,
+          "snapshots": 52,
+          "serializedBytes": 4651,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.075,
+          "mean": 1.786,
+          "p50": 2.016,
+          "p95": 2.039,
+          "p99": 2.06,
+          "max": 2.06
+        }
+      },
+      {
+        "elapsedMs": 56066.274,
+        "intervalMs": 1000.794,
+        "phase": "hold",
+        "rssBytes": 12960488,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.484,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4010,
+          "broadcasts": 42,
+          "snapshots": 52,
+          "serializedBytes": 4651,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.084,
+          "mean": 1.712,
+          "p50": 2.017,
+          "p95": 2.057,
+          "p99": 2.999,
+          "max": 2.999
+        }
+      },
+      {
+        "elapsedMs": 57066.536,
+        "intervalMs": 1000.262,
+        "phase": "hold",
+        "rssBytes": 12960488,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 1.002,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4110,
+          "broadcasts": 44,
+          "snapshots": 54,
+          "serializedBytes": 4832,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.121,
+          "mean": 1.662,
+          "p50": 2.027,
+          "p95": 2.077,
+          "p99": 3.363,
+          "max": 3.363
+        }
+      },
+      {
+        "elapsedMs": 58068.447,
+        "intervalMs": 1001.911,
+        "phase": "hold",
+        "rssBytes": 12960488,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.381,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4110,
+          "broadcasts": 44,
+          "snapshots": 54,
+          "serializedBytes": 4832,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.124,
+          "mean": 1.69,
+          "p50": 2.027,
+          "p95": 2.061,
+          "p99": 2.105,
+          "max": 2.105
+        }
+      },
+      {
+        "elapsedMs": 59069.426,
+        "intervalMs": 1000.979,
+        "phase": "hold",
+        "rssBytes": 12960488,
+        "heapUsedBytes": 1335919,
+        "cpuOneCorePercent": 0.35,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4110,
+          "broadcasts": 44,
+          "snapshots": 54,
+          "serializedBytes": 4832,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 87,
+          "min": 0.087,
+          "mean": 1.56,
+          "p50": 2.023,
+          "p95": 2.055,
+          "p99": 2.441,
+          "max": 2.441
+        }
+      },
+      {
+        "elapsedMs": 60071.5,
+        "intervalMs": 1002.073,
+        "phase": "hold",
+        "rssBytes": 13140712,
+        "heapUsedBytes": 1486845,
+        "cpuOneCorePercent": 1.357,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4210,
+          "broadcasts": 46,
+          "snapshots": 56,
+          "serializedBytes": 5013,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.199,
+          "mean": 1.708,
+          "p50": 2.024,
+          "p95": 2.047,
+          "p99": 2.245,
+          "max": 2.245
+        }
+      },
+      {
+        "elapsedMs": 61072.515,
+        "intervalMs": 1001.016,
+        "phase": "hold",
+        "rssBytes": 12714728,
+        "heapUsedBytes": 1486845,
+        "cpuOneCorePercent": 0.579,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4210,
+          "broadcasts": 46,
+          "snapshots": 56,
+          "serializedBytes": 5013,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.117,
+          "mean": 1.854,
+          "p50": 2.019,
+          "p95": 2.1,
+          "p99": 6.051,
+          "max": 6.051
+        }
+      },
+      {
+        "elapsedMs": 62072.717,
+        "intervalMs": 1000.202,
+        "phase": "hold",
+        "rssBytes": 12714728,
+        "heapUsedBytes": 1486845,
+        "cpuOneCorePercent": 0.315,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4210,
+          "broadcasts": 46,
+          "snapshots": 56,
+          "serializedBytes": 5013,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.247,
+          "mean": 1.815,
+          "p50": 2.026,
+          "p95": 2.05,
+          "p99": 2.385,
+          "max": 2.385
+        }
+      },
+      {
+        "elapsedMs": 63074.002,
+        "intervalMs": 1001.285,
+        "phase": "hold",
+        "rssBytes": 12698344,
+        "heapUsedBytes": 1486845,
+        "cpuOneCorePercent": 0.9,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4310,
+          "broadcasts": 48,
+          "snapshots": 58,
+          "serializedBytes": 5194,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.013,
+          "mean": 1.716,
+          "p50": 2.02,
+          "p95": 2.046,
+          "p99": 2.129,
+          "max": 2.129
+        }
+      },
+      {
+        "elapsedMs": 64074.845,
+        "intervalMs": 1000.843,
+        "phase": "hold",
+        "rssBytes": 12698344,
+        "heapUsedBytes": 1486845,
+        "cpuOneCorePercent": 0.52,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4310,
+          "broadcasts": 48,
+          "snapshots": 58,
+          "serializedBytes": 5194,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.169,
+          "mean": 1.631,
+          "p50": 2.024,
+          "p95": 2.062,
+          "p99": 2.208,
+          "max": 2.208
+        }
+      },
+      {
+        "elapsedMs": 65076.472,
+        "intervalMs": 1001.627,
+        "phase": "hold",
+        "rssBytes": 12845800,
+        "heapUsedBytes": 1486845,
+        "cpuOneCorePercent": 0.356,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4310,
+          "broadcasts": 48,
+          "snapshots": 58,
+          "serializedBytes": 5194,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.259,
+          "mean": 1.769,
+          "p50": 2.023,
+          "p95": 2.046,
+          "p99": 2.06,
+          "max": 2.06
+        }
+      },
+      {
+        "elapsedMs": 66077.539,
+        "intervalMs": 1001.067,
+        "phase": "hold",
+        "rssBytes": 12845800,
+        "heapUsedBytes": 1486845,
+        "cpuOneCorePercent": 0.827,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4410,
+          "broadcasts": 50,
+          "snapshots": 60,
+          "serializedBytes": 5375,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.052,
+          "mean": 1.674,
+          "p50": 2.017,
+          "p95": 2.043,
+          "p99": 2.234,
+          "max": 2.234
+        }
+      },
+      {
+        "elapsedMs": 67079.595,
+        "intervalMs": 1002.057,
+        "phase": "hold",
+        "rssBytes": 12796648,
+        "heapUsedBytes": 1486845,
+        "cpuOneCorePercent": 0.363,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4410,
+          "broadcasts": 50,
+          "snapshots": 60,
+          "serializedBytes": 5375,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.122,
+          "mean": 1.853,
+          "p50": 2.024,
+          "p95": 2.145,
+          "p99": 3.635,
+          "max": 3.635
+        }
+      },
+      {
+        "elapsedMs": 68079.852,
+        "intervalMs": 1000.257,
+        "phase": "hold",
+        "rssBytes": 12796648,
+        "heapUsedBytes": 1486845,
+        "cpuOneCorePercent": 0.831,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4410,
+          "broadcasts": 50,
+          "snapshots": 60,
+          "serializedBytes": 5375,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.348,
+          "mean": 1.891,
+          "p50": 2.031,
+          "p95": 2.207,
+          "p99": 4.997,
+          "max": 4.997
+        }
+      },
+      {
+        "elapsedMs": 69081.807,
+        "intervalMs": 1001.955,
+        "phase": "hold",
+        "rssBytes": 12731112,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 1.379,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4510,
+          "broadcasts": 52,
+          "snapshots": 62,
+          "serializedBytes": 5556,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.037,
+          "mean": 1.688,
+          "p50": 2.023,
+          "p95": 2.047,
+          "p99": 2.157,
+          "max": 2.157
+        }
+      },
+      {
+        "elapsedMs": 70083.682,
+        "intervalMs": 1001.875,
+        "phase": "hold",
+        "rssBytes": 12731112,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.359,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4510,
+          "broadcasts": 52,
+          "snapshots": 62,
+          "serializedBytes": 5556,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.076,
+          "mean": 1.791,
+          "p50": 2.026,
+          "p95": 2.062,
+          "p99": 3.149,
+          "max": 3.149
+        }
+      },
+      {
+        "elapsedMs": 71085.736,
+        "intervalMs": 1002.054,
+        "phase": "hold",
+        "rssBytes": 12731112,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.355,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4510,
+          "broadcasts": 52,
+          "snapshots": 62,
+          "serializedBytes": 5556,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.095,
+          "mean": 1.77,
+          "p50": 2.021,
+          "p95": 2.05,
+          "p99": 2.184,
+          "max": 2.184
+        }
+      },
+      {
+        "elapsedMs": 72086.065,
+        "intervalMs": 1000.33,
+        "phase": "hold",
+        "rssBytes": 12960488,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 2.716,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4610,
+          "broadcasts": 54,
+          "snapshots": 64,
+          "serializedBytes": 5737,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.017,
+          "mean": 1.739,
+          "p50": 2.021,
+          "p95": 2.062,
+          "p99": 3.867,
+          "max": 3.867
+        }
+      },
+      {
+        "elapsedMs": 73087.353,
+        "intervalMs": 1001.288,
+        "phase": "hold",
+        "rssBytes": 12796648,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.347,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4610,
+          "broadcasts": 54,
+          "snapshots": 64,
+          "serializedBytes": 5737,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.105,
+          "mean": 1.726,
+          "p50": 2.021,
+          "p95": 2.042,
+          "p99": 2.36,
+          "max": 2.36
+        }
+      },
+      {
+        "elapsedMs": 74088.071,
+        "intervalMs": 1000.718,
+        "phase": "hold",
+        "rssBytes": 12796648,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.358,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4610,
+          "broadcasts": 54,
+          "snapshots": 64,
+          "serializedBytes": 5737,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.066,
+          "mean": 1.805,
+          "p50": 2.027,
+          "p95": 2.057,
+          "p99": 2.107,
+          "max": 2.107
+        }
+      },
+      {
+        "elapsedMs": 75088.864,
+        "intervalMs": 1000.793,
+        "phase": "hold",
+        "rssBytes": 12911336,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 1.16,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4710,
+          "broadcasts": 56,
+          "snapshots": 66,
+          "serializedBytes": 5918,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.005,
+          "mean": 1.635,
+          "p50": 2.021,
+          "p95": 2.041,
+          "p99": 2.077,
+          "max": 2.077
+        }
+      },
+      {
+        "elapsedMs": 76089.046,
+        "intervalMs": 1000.182,
+        "phase": "hold",
+        "rssBytes": 12911336,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.65,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4710,
+          "broadcasts": 56,
+          "snapshots": 66,
+          "serializedBytes": 5918,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.098,
+          "mean": 1.671,
+          "p50": 2.027,
+          "p95": 2.059,
+          "p99": 2.165,
+          "max": 2.165
+        }
+      },
+      {
+        "elapsedMs": 77090.964,
+        "intervalMs": 1001.918,
+        "phase": "hold",
+        "rssBytes": 12911336,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.499,
+        "counters": {
+          "activeVisitors": 975,
+          "totalConnections": 1960,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4760,
+          "broadcasts": 56,
+          "snapshots": 66,
+          "serializedBytes": 5918,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.286,
+          "mean": 1.817,
+          "p50": 2.024,
+          "p95": 2.06,
+          "p99": 2.3,
+          "max": 2.3
+        }
+      },
+      {
+        "elapsedMs": 78092.442,
+        "intervalMs": 1001.478,
+        "phase": "hold",
+        "rssBytes": 12911336,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.736,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4810,
+          "broadcasts": 58,
+          "snapshots": 68,
+          "serializedBytes": 6099,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.071,
+          "mean": 1.808,
+          "p50": 2.026,
+          "p95": 2.073,
+          "p99": 2.806,
+          "max": 2.806
+        }
+      },
+      {
+        "elapsedMs": 79093.295,
+        "intervalMs": 1000.853,
+        "phase": "hold",
+        "rssBytes": 12747496,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.415,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4810,
+          "broadcasts": 58,
+          "snapshots": 68,
+          "serializedBytes": 6099,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.167,
+          "mean": 1.72,
+          "p50": 2.025,
+          "p95": 2.049,
+          "p99": 2.077,
+          "max": 2.077
+        }
+      },
+      {
+        "elapsedMs": 80094.989,
+        "intervalMs": 1001.694,
+        "phase": "hold",
+        "rssBytes": 12731112,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.754,
+        "counters": {
+          "activeVisitors": 975,
+          "totalConnections": 1960,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4860,
+          "broadcasts": 58,
+          "snapshots": 68,
+          "serializedBytes": 6099,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.059,
+          "mean": 1.648,
+          "p50": 2.027,
+          "p95": 2.063,
+          "p99": 2.298,
+          "max": 2.298
+        }
+      },
+      {
+        "elapsedMs": 81097.08,
+        "intervalMs": 1002.092,
+        "phase": "hold",
+        "rssBytes": 12731112,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.656,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4910,
+          "broadcasts": 60,
+          "snapshots": 70,
+          "serializedBytes": 6280,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.092,
+          "mean": 1.64,
+          "p50": 2.026,
+          "p95": 2.044,
+          "p99": 2.056,
+          "max": 2.056
+        }
+      },
+      {
+        "elapsedMs": 82097.809,
+        "intervalMs": 1000.729,
+        "phase": "hold",
+        "rssBytes": 12681960,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.443,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 4910,
+          "broadcasts": 60,
+          "snapshots": 70,
+          "serializedBytes": 6280,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.478,
+          "mean": 1.882,
+          "p50": 2.031,
+          "p95": 2.052,
+          "p99": 2.856,
+          "max": 2.856
+        }
+      },
+      {
+        "elapsedMs": 83099.264,
+        "intervalMs": 1001.455,
+        "phase": "hold",
+        "rssBytes": 12681960,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.811,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5010,
+          "broadcasts": 61,
+          "snapshots": 71,
+          "serializedBytes": 6370,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.013,
+          "mean": 1.739,
+          "p50": 2.025,
+          "p95": 2.063,
+          "p99": 2.71,
+          "max": 2.71
+        }
+      },
+      {
+        "elapsedMs": 84101.339,
+        "intervalMs": 1002.075,
+        "phase": "hold",
+        "rssBytes": 12681960,
+        "heapUsedBytes": 1522443,
+        "cpuOneCorePercent": 0.801,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5010,
+          "broadcasts": 62,
+          "snapshots": 72,
+          "serializedBytes": 6461,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.032,
+          "mean": 1.75,
+          "p50": 2.024,
+          "p95": 2.068,
+          "p99": 2.55,
+          "max": 2.55
+        }
+      },
+      {
+        "elapsedMs": 85103.941,
+        "intervalMs": 1002.601,
+        "phase": "hold",
+        "rssBytes": 12911336,
+        "heapUsedBytes": 1596395,
+        "cpuOneCorePercent": 0.618,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5010,
+          "broadcasts": 62,
+          "snapshots": 72,
+          "serializedBytes": 6461,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.042,
+          "mean": 1.638,
+          "p50": 2.021,
+          "p95": 2.056,
+          "p99": 2.161,
+          "max": 2.161
+        }
+      },
+      {
+        "elapsedMs": 86104.788,
+        "intervalMs": 1000.847,
+        "phase": "hold",
+        "rssBytes": 12698344,
+        "heapUsedBytes": 1596395,
+        "cpuOneCorePercent": 0.77,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5110,
+          "broadcasts": 64,
+          "snapshots": 74,
+          "serializedBytes": 6642,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 81,
+          "min": 0.027,
+          "mean": 2.422,
+          "p50": 2.021,
+          "p95": 2.321,
+          "p99": 33.326,
+          "max": 33.326
+        }
+      },
+      {
+        "elapsedMs": 87105.701,
+        "intervalMs": 1000.914,
+        "phase": "hold",
+        "rssBytes": 12698344,
+        "heapUsedBytes": 1596395,
+        "cpuOneCorePercent": 0.35,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5110,
+          "broadcasts": 64,
+          "snapshots": 74,
+          "serializedBytes": 6642,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.068,
+          "mean": 1.667,
+          "p50": 2.022,
+          "p95": 2.077,
+          "p99": 2.094,
+          "max": 2.094
+        }
+      },
+      {
+        "elapsedMs": 88106.066,
+        "intervalMs": 1000.365,
+        "phase": "hold",
+        "rssBytes": 12714728,
+        "heapUsedBytes": 1596395,
+        "cpuOneCorePercent": 0.598,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5110,
+          "broadcasts": 64,
+          "snapshots": 74,
+          "serializedBytes": 6642,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.05,
+          "mean": 1.664,
+          "p50": 2.024,
+          "p95": 2.072,
+          "p99": 2.229,
+          "max": 2.229
+        }
+      },
+      {
+        "elapsedMs": 89106.895,
+        "intervalMs": 1000.828,
+        "phase": "hold",
+        "rssBytes": 12747496,
+        "heapUsedBytes": 1596395,
+        "cpuOneCorePercent": 0.915,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5210,
+          "broadcasts": 66,
+          "snapshots": 76,
+          "serializedBytes": 6823,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.103,
+          "mean": 1.611,
+          "p50": 2.022,
+          "p95": 2.079,
+          "p99": 2.244,
+          "max": 2.244
+        }
+      },
+      {
+        "elapsedMs": 90108.77,
+        "intervalMs": 1001.875,
+        "phase": "hold",
+        "rssBytes": 12747496,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.517,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5210,
+          "broadcasts": 66,
+          "snapshots": 76,
+          "serializedBytes": 6823,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.115,
+          "mean": 1.865,
+          "p50": 2.027,
+          "p95": 2.052,
+          "p99": 2.337,
+          "max": 2.337
+        }
+      },
+      {
+        "elapsedMs": 91109.5,
+        "intervalMs": 1000.73,
+        "phase": "hold",
+        "rssBytes": 12681960,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.443,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5210,
+          "broadcasts": 66,
+          "snapshots": 76,
+          "serializedBytes": 6823,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.179,
+          "mean": 1.742,
+          "p50": 2.028,
+          "p95": 2.048,
+          "p99": 2.102,
+          "max": 2.102
+        }
+      },
+      {
+        "elapsedMs": 92109.608,
+        "intervalMs": 1000.108,
+        "phase": "hold",
+        "rssBytes": 12649192,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 1.199,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5310,
+          "broadcasts": 68,
+          "snapshots": 78,
+          "serializedBytes": 7004,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.012,
+          "mean": 1.761,
+          "p50": 2.016,
+          "p95": 2.048,
+          "p99": 2.064,
+          "max": 2.064
+        }
+      },
+      {
+        "elapsedMs": 93109.877,
+        "intervalMs": 1000.269,
+        "phase": "hold",
+        "rssBytes": 12649192,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.295,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5310,
+          "broadcasts": 68,
+          "snapshots": 78,
+          "serializedBytes": 7004,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.038,
+          "mean": 1.76,
+          "p50": 2.02,
+          "p95": 2.064,
+          "p99": 2.181,
+          "max": 2.181
+        }
+      },
+      {
+        "elapsedMs": 94111.828,
+        "intervalMs": 1001.951,
+        "phase": "hold",
+        "rssBytes": 12649192,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.31,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5310,
+          "broadcasts": 68,
+          "snapshots": 78,
+          "serializedBytes": 7004,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 84,
+          "min": 0.117,
+          "mean": 1.828,
+          "p50": 2.025,
+          "p95": 2.051,
+          "p99": 2.284,
+          "max": 2.284
+        }
+      },
+      {
+        "elapsedMs": 95112.536,
+        "intervalMs": 1000.708,
+        "phase": "hold",
+        "rssBytes": 12665576,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.899,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5410,
+          "broadcasts": 70,
+          "snapshots": 80,
+          "serializedBytes": 7185,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.027,
+          "mean": 1.709,
+          "p50": 2.023,
+          "p95": 2.062,
+          "p99": 2.144,
+          "max": 2.144
+        }
+      },
+      {
+        "elapsedMs": 96113.585,
+        "intervalMs": 1001.049,
+        "phase": "hold",
+        "rssBytes": 12665576,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 1.317,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5410,
+          "broadcasts": 70,
+          "snapshots": 80,
+          "serializedBytes": 7185,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.061,
+          "mean": 1.816,
+          "p50": 2.028,
+          "p95": 2.055,
+          "p99": 2.483,
+          "max": 2.483
+        }
+      },
+      {
+        "elapsedMs": 97114.897,
+        "intervalMs": 1001.312,
+        "phase": "hold",
+        "rssBytes": 12665576,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.401,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5410,
+          "broadcasts": 70,
+          "snapshots": 80,
+          "serializedBytes": 7185,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.09,
+          "mean": 1.67,
+          "p50": 2.025,
+          "p95": 2.057,
+          "p99": 2.182,
+          "max": 2.182
+        }
+      },
+      {
+        "elapsedMs": 98116.766,
+        "intervalMs": 1001.869,
+        "phase": "hold",
+        "rssBytes": 12763880,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.696,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5510,
+          "broadcasts": 72,
+          "snapshots": 82,
+          "serializedBytes": 7366,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.008,
+          "mean": 1.758,
+          "p50": 2.021,
+          "p95": 2.046,
+          "p99": 2.074,
+          "max": 2.074
+        }
+      },
+      {
+        "elapsedMs": 99118.71,
+        "intervalMs": 1001.943,
+        "phase": "hold",
+        "rssBytes": 12763880,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.311,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5510,
+          "broadcasts": 72,
+          "snapshots": 82,
+          "serializedBytes": 7366,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.04,
+          "mean": 1.676,
+          "p50": 2.017,
+          "p95": 2.044,
+          "p99": 2.062,
+          "max": 2.062
+        }
+      },
+      {
+        "elapsedMs": 100120.073,
+        "intervalMs": 1001.364,
+        "phase": "hold",
+        "rssBytes": 12681960,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.748,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5510,
+          "broadcasts": 72,
+          "snapshots": 82,
+          "serializedBytes": 7366,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.063,
+          "mean": 1.814,
+          "p50": 2.029,
+          "p95": 2.07,
+          "p99": 3.711,
+          "max": 3.711
+        }
+      },
+      {
+        "elapsedMs": 101121.631,
+        "intervalMs": 1001.557,
+        "phase": "hold",
+        "rssBytes": 12632808,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.954,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5610,
+          "broadcasts": 74,
+          "snapshots": 84,
+          "serializedBytes": 7547,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.066,
+          "mean": 1.773,
+          "p50": 2.026,
+          "p95": 2.047,
+          "p99": 2.107,
+          "max": 2.107
+        }
+      },
+      {
+        "elapsedMs": 102122.858,
+        "intervalMs": 1001.227,
+        "phase": "hold",
+        "rssBytes": 12632808,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.576,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5610,
+          "broadcasts": 74,
+          "snapshots": 84,
+          "serializedBytes": 7547,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.045,
+          "mean": 1.622,
+          "p50": 2.025,
+          "p95": 2.064,
+          "p99": 2.329,
+          "max": 2.329
+        }
+      },
+      {
+        "elapsedMs": 103124.783,
+        "intervalMs": 1001.926,
+        "phase": "hold",
+        "rssBytes": 12632808,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.301,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5610,
+          "broadcasts": 74,
+          "snapshots": 84,
+          "serializedBytes": 7547,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.125,
+          "mean": 1.786,
+          "p50": 2.023,
+          "p95": 2.049,
+          "p99": 2.144,
+          "max": 2.144
+        }
+      },
+      {
+        "elapsedMs": 104125.153,
+        "intervalMs": 1000.37,
+        "phase": "hold",
+        "rssBytes": 12731112,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 1.261,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5710,
+          "broadcasts": 76,
+          "snapshots": 86,
+          "serializedBytes": 7728,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.07,
+          "mean": 1.636,
+          "p50": 2.023,
+          "p95": 2.071,
+          "p99": 2.695,
+          "max": 2.695
+        }
+      },
+      {
+        "elapsedMs": 105127.232,
+        "intervalMs": 1002.078,
+        "phase": "hold",
+        "rssBytes": 12944104,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.357,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5710,
+          "broadcasts": 76,
+          "snapshots": 86,
+          "serializedBytes": 7728,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.171,
+          "mean": 1.765,
+          "p50": 2.025,
+          "p95": 2.076,
+          "p99": 6.162,
+          "max": 6.162
+        }
+      },
+      {
+        "elapsedMs": 106128.013,
+        "intervalMs": 1000.781,
+        "phase": "hold",
+        "rssBytes": 12944104,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.406,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5710,
+          "broadcasts": 76,
+          "snapshots": 86,
+          "serializedBytes": 7728,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 87,
+          "min": 0.054,
+          "mean": 1.589,
+          "p50": 2.021,
+          "p95": 2.057,
+          "p99": 2.083,
+          "max": 2.083
+        }
+      },
+      {
+        "elapsedMs": 107129.174,
+        "intervalMs": 1001.162,
+        "phase": "hold",
+        "rssBytes": 12894952,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.857,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5810,
+          "broadcasts": 78,
+          "snapshots": 88,
+          "serializedBytes": 7909,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.28,
+          "mean": 1.755,
+          "p50": 2.025,
+          "p95": 2.05,
+          "p99": 2.095,
+          "max": 2.095
+        }
+      },
+      {
+        "elapsedMs": 108129.675,
+        "intervalMs": 1000.501,
+        "phase": "hold",
+        "rssBytes": 12894952,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.656,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5810,
+          "broadcasts": 78,
+          "snapshots": 88,
+          "serializedBytes": 7909,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.11,
+          "mean": 1.699,
+          "p50": 2.022,
+          "p95": 2.068,
+          "p99": 2.226,
+          "max": 2.226
+        }
+      },
+      {
+        "elapsedMs": 109130.101,
+        "intervalMs": 1000.426,
+        "phase": "hold",
+        "rssBytes": 12911336,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.46,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5810,
+          "broadcasts": 78,
+          "snapshots": 88,
+          "serializedBytes": 7909,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.084,
+          "mean": 1.747,
+          "p50": 2.021,
+          "p95": 2.05,
+          "p99": 2.085,
+          "max": 2.085
+        }
+      },
+      {
+        "elapsedMs": 110130.825,
+        "intervalMs": 1000.724,
+        "phase": "hold",
+        "rssBytes": 12911336,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.934,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5910,
+          "broadcasts": 80,
+          "snapshots": 90,
+          "serializedBytes": 8090,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.1,
+          "mean": 1.619,
+          "p50": 2.021,
+          "p95": 2.058,
+          "p99": 2.333,
+          "max": 2.333
+        }
+      },
+      {
+        "elapsedMs": 111131.527,
+        "intervalMs": 1000.702,
+        "phase": "hold",
+        "rssBytes": 12911336,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.36,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5910,
+          "broadcasts": 80,
+          "snapshots": 90,
+          "serializedBytes": 8090,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 86,
+          "min": 0.108,
+          "mean": 1.638,
+          "p50": 2.022,
+          "p95": 2.043,
+          "p99": 2.801,
+          "max": 2.801
+        }
+      },
+      {
+        "elapsedMs": 112132.787,
+        "intervalMs": 1001.26,
+        "phase": "hold",
+        "rssBytes": 12911336,
+        "heapUsedBytes": 1623929,
+        "cpuOneCorePercent": 0.673,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 5910,
+          "broadcasts": 80,
+          "snapshots": 90,
+          "serializedBytes": 8090,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.069,
+          "mean": 1.747,
+          "p50": 2.026,
+          "p95": 2.051,
+          "p99": 3.609,
+          "max": 3.609
+        }
+      },
+      {
+        "elapsedMs": 113134.151,
+        "intervalMs": 1001.364,
+        "phase": "hold",
+        "rssBytes": 12829416,
+        "heapUsedBytes": 1731803,
+        "cpuOneCorePercent": 1.072,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6010,
+          "broadcasts": 82,
+          "snapshots": 92,
+          "serializedBytes": 8271,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.057,
+          "mean": 1.774,
+          "p50": 2.022,
+          "p95": 2.051,
+          "p99": 2.647,
+          "max": 2.647
+        }
+      },
+      {
+        "elapsedMs": 114134.254,
+        "intervalMs": 1000.103,
+        "phase": "hold",
+        "rssBytes": 12829416,
+        "heapUsedBytes": 1731803,
+        "cpuOneCorePercent": 0.392,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6010,
+          "broadcasts": 82,
+          "snapshots": 92,
+          "serializedBytes": 8271,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 87,
+          "min": 0.051,
+          "mean": 1.57,
+          "p50": 2.022,
+          "p95": 2.046,
+          "p99": 2.11,
+          "max": 2.11
+        }
+      },
+      {
+        "elapsedMs": 115134.407,
+        "intervalMs": 1000.153,
+        "phase": "hold",
+        "rssBytes": 12878568,
+        "heapUsedBytes": 1731803,
+        "cpuOneCorePercent": 0.537,
+        "counters": {
+          "activeVisitors": 975,
+          "totalConnections": 1960,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6060,
+          "broadcasts": 82,
+          "snapshots": 92,
+          "serializedBytes": 8271,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.032,
+          "mean": 1.761,
+          "p50": 2.025,
+          "p95": 2.062,
+          "p99": 2.216,
+          "max": 2.216
+        }
+      },
+      {
+        "elapsedMs": 116135.784,
+        "intervalMs": 1001.377,
+        "phase": "hold",
+        "rssBytes": 12878568,
+        "heapUsedBytes": 1731803,
+        "cpuOneCorePercent": 1.119,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6110,
+          "broadcasts": 84,
+          "snapshots": 94,
+          "serializedBytes": 8452,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.031,
+          "mean": 1.71,
+          "p50": 2.024,
+          "p95": 2.05,
+          "p99": 2.067,
+          "max": 2.067
+        }
+      },
+      {
+        "elapsedMs": 117137.197,
+        "intervalMs": 1001.413,
+        "phase": "hold",
+        "rssBytes": 12878568,
+        "heapUsedBytes": 1731803,
+        "cpuOneCorePercent": 0.417,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6110,
+          "broadcasts": 84,
+          "snapshots": 94,
+          "serializedBytes": 8452,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 87,
+          "min": 0.076,
+          "mean": 1.508,
+          "p50": 2.022,
+          "p95": 2.052,
+          "p99": 2.786,
+          "max": 2.786
+        }
+      },
+      {
+        "elapsedMs": 118137.493,
+        "intervalMs": 1000.296,
+        "phase": "hold",
+        "rssBytes": 12878568,
+        "heapUsedBytes": 1731803,
+        "cpuOneCorePercent": 0.521,
+        "counters": {
+          "activeVisitors": 975,
+          "totalConnections": 1960,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6160,
+          "broadcasts": 84,
+          "snapshots": 94,
+          "serializedBytes": 8452,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.156,
+          "mean": 1.834,
+          "p50": 2.028,
+          "p95": 2.063,
+          "p99": 2.527,
+          "max": 2.527
+        }
+      },
+      {
+        "elapsedMs": 119137.94,
+        "intervalMs": 1000.447,
+        "phase": "hold",
+        "rssBytes": 12534504,
+        "heapUsedBytes": 1216115,
+        "cpuOneCorePercent": 1.885,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6210,
+          "broadcasts": 86,
+          "snapshots": 96,
+          "serializedBytes": 8633,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 85,
+          "min": 0.001,
+          "mean": 1.761,
+          "p50": 2.025,
+          "p95": 2.11,
+          "p99": 2.82,
+          "max": 2.82
+        }
+      },
+      {
+        "elapsedMs": 120138.541,
+        "intervalMs": 1000.601,
+        "phase": "hold",
+        "rssBytes": 12567272,
+        "heapUsedBytes": 1216728,
+        "cpuOneCorePercent": 0.723,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6210,
+          "broadcasts": 86,
+          "snapshots": 96,
+          "serializedBytes": 8633,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 80,
+          "min": 0.038,
+          "mean": 2.493,
+          "p50": 2.025,
+          "p95": 4.164,
+          "p99": 39.032,
+          "max": 39.032
+        }
+      },
+      {
+        "elapsedMs": 121003.555,
+        "intervalMs": 865.014,
+        "phase": "hold",
+        "rssBytes": 12534504,
+        "heapUsedBytes": 1216728,
+        "cpuOneCorePercent": 0.379,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6210,
+          "broadcasts": 86,
+          "snapshots": 96,
+          "serializedBytes": 8633,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 73,
+          "min": 0.038,
+          "mean": 1.764,
+          "p50": 2.02,
+          "p95": 2.067,
+          "p99": 2.302,
+          "max": 2.302
+        }
+      },
+      {
+        "elapsedMs": 121060.209,
+        "intervalMs": 56.654,
+        "phase": "resync",
+        "rssBytes": 12534504,
+        "heapUsedBytes": 1216728,
+        "cpuOneCorePercent": 2.376,
+        "counters": {
+          "activeVisitors": 1000,
+          "totalConnections": 2010,
+          "dashboardSubscribers": 10,
+          "connectionEvents": 6212,
+          "broadcasts": 86,
+          "snapshots": 98,
+          "serializedBytes": 8815,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 6,
+          "min": 0.078,
+          "mean": 0.995,
+          "p50": 0.24,
+          "p95": 2.033,
+          "p99": 2.033,
+          "max": 2.033
+        }
+      },
+      {
+        "elapsedMs": 121140.027,
+        "intervalMs": 79.818,
+        "phase": "drain",
+        "rssBytes": 12747496,
+        "heapUsedBytes": 1216728,
+        "cpuOneCorePercent": 49.259,
+        "counters": {
+          "activeVisitors": 0,
+          "totalConnections": 0,
+          "dashboardSubscribers": 0,
+          "connectionEvents": 8222,
+          "broadcasts": 87,
+          "snapshots": 99,
+          "serializedBytes": 8901,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 7,
+          "min": 0.006,
+          "mean": 0.095,
+          "p50": 0.016,
+          "p95": 0.392,
+          "p99": 0.392,
+          "max": 0.392
+        }
+      },
+      {
+        "elapsedMs": 121472.664,
+        "intervalMs": 332.637,
+        "phase": "drain",
+        "rssBytes": 11797224,
+        "heapUsedBytes": 1216728,
+        "cpuOneCorePercent": 0.46,
+        "counters": {
+          "activeVisitors": 0,
+          "totalConnections": 0,
+          "dashboardSubscribers": 0,
+          "connectionEvents": 8222,
+          "broadcasts": 87,
+          "snapshots": 99,
+          "serializedBytes": 8901,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 28,
+          "min": 0.16,
+          "mean": 1.891,
+          "p50": 2.018,
+          "p95": 2.069,
+          "p99": 2.147,
+          "max": 2.147
+        }
+      }
+    ]
+  },
+  "driver": {
+    "rssMiB": {
+      "samples": 119,
+      "min": 22.063,
+      "mean": 23.313,
+      "p50": 23.157,
+      "p95": 24.844,
+      "p99": 24.938,
+      "max": 25.001
+    },
+    "cpuOneCorePercent": {
+      "samples": 119,
+      "min": 0.014,
+      "mean": 0.488,
+      "p50": 0.287,
+      "p95": 1.569,
+      "p99": 2.077,
+      "max": 2.386
+    }
+  },
+  "checks": [
+    {
+      "name": "Ephemeral port is not the existing live server",
+      "ok": true,
+      "details": {
+        "port": 55822
+      }
+    },
+    {
+      "name": "Dashboard subscribers do not count as visitors",
+      "ok": true,
+      "details": {
+        "activeVisitors": 0,
+        "totalConnections": 10,
+        "dashboardSubscribers": 10,
+        "connectionEvents": 10,
+        "broadcasts": 0,
+        "snapshots": 10,
+        "serializedBytes": 851,
+        "backpressureEvents": 0,
+        "droppedBroadcasts": 0,
+        "pendingBroadcast": true,
+        "timestamp": 1794134401713
+      }
+    },
+    {
+      "name": "Distinct browsers count once across all tabs",
+      "ok": true,
+      "details": {
+        "activeVisitors": 1000,
+        "totalConnections": 2010,
+        "dashboardSubscribers": 10,
+        "connectionEvents": 2010,
+        "broadcasts": 4,
+        "snapshots": 14,
+        "serializedBytes": 1211,
+        "backpressureEvents": 0,
+        "droppedBroadcasts": 0,
+        "pendingBroadcast": false,
+        "timestamp": 1794134402118
+      }
+    },
+    {
+      "name": "Closing one tab preserves each browser",
+      "ok": true
+    },
+    {
+      "name": "Churn down 1",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 1",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 2",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 2",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 3",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 3",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 4",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 4",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 5",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 5",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 6",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 6",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 7",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 7",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 8",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 8",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 9",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 9",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 10",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 10",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 11",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 11",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 12",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 12",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 13",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 13",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 14",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 14",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 15",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 15",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 16",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 16",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 17",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 17",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 18",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 18",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 19",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 19",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 20",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 20",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 21",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 21",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 22",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 22",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 23",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 23",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 24",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 24",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 25",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 25",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 26",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 26",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 27",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 27",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 28",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 28",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 29",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 29",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 30",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 30",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 31",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 31",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 32",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 32",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 33",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 33",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 34",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 34",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 35",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 35",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 36",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 36",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 37",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 37",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 38",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 38",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 39",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 39",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Churn down 40",
+      "ok": true,
+      "details": {
+        "expected": 975,
+        "server": 975,
+        "totalConnections": 1960,
+        "subscriberCounts": [
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975,
+          975
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 40",
+      "ok": true,
+      "details": {
+        "expected": 1000,
+        "server": 1000,
+        "totalConnections": 2010,
+        "subscriberCounts": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      }
+    },
+    {
+      "name": "Reconnected subscriber gets the current count",
+      "ok": true,
+      "details": {
+        "count": 1000
+      }
+    },
+    {
+      "name": "Explicit resync returns the current count",
+      "ok": true
+    },
+    {
+      "name": "All visitor tabs disconnected produces zero",
+      "ok": true,
+      "details": {
+        "expected": 0,
+        "server": 0,
+        "totalConnections": 10,
+        "subscriberCounts": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "All connections are released",
+      "ok": true,
+      "details": {
+        "activeVisitors": 0,
+        "totalConnections": 0,
+        "dashboardSubscribers": 0,
+        "connectionEvents": 8222,
+        "broadcasts": 87,
+        "snapshots": 99,
+        "serializedBytes": 8901,
+        "backpressureEvents": 0,
+        "droppedBroadcasts": 0,
+        "pendingBroadcast": false,
+        "timestamp": 1794134523049
+      }
+    },
+    {
+      "name": "No malformed frames or socket errors",
+      "ok": true,
+      "details": {
+        "frameErrors": 0,
+        "socketErrors": 0,
+        "unexpectedCloses": 0
+      }
+    },
+    {
+      "name": "Isolated server shuts down cleanly",
+      "ok": true,
+      "details": {
+        "childStopped": true,
+        "serverExitCode": 0
+      }
+    }
+  ],
+  "childOutput": {
+    "stdout": "",
+    "stderr": ""
+  },
+  "methodology": [
+    "A browser ID is reused by all tabs. Every dashboard is excluded from the visitor count.",
+    "Freshness begins before initiating each controlled disconnect/reconnect; it includes handshake or close processing, 100ms coalescing, loopback delivery and driver observation. Every subscriber must observe the target count within 5s.",
+    "The hold phase includes bounded down/up pulses and otherwise preserves the target load. Sampled RSS/CPU belong only to the server child; the separate driver shares this machine and can still compete for resources.",
+    "CPU percent is process user+system CPU time divided by elapsed wall time; 100% means one CPU core. Event-loop lag is nonnegative overshoot of a 10ms setInterval, not a native profiler histogram.",
+    "Broadcast windows count presence frames observed by the first dashboard during load/hold, excluding its initial snapshot and explicit resync. Window boundaries and timer jitter can permit two frames within a rolling100ms interval.",
+    "This is a single local machine/Node-instance-equivalent Bun process test, not an internet, distributed, TLS, proxy, mobile, browser-rendering, or production capacity guarantee. No existing server or external visitor traffic is used."
+  ]
+}

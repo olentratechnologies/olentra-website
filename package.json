@@ -4,6 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
+    "ws:dev": "bun --watch backend/websockets/src/index.ts",
+    "ws:start": "bun backend/websockets/src/index.ts",
+    "test:presence": "node --test scripts/presence-client.test.mjs && bun run --cwd backend/websockets test",
+    "bench:presence": "bun run --cwd backend/websockets bench",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",

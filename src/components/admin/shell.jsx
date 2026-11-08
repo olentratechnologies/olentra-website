@@ -7,6 +7,7 @@ import { AdminProvider, useAdmin } from "./store";
 import { Button, Modal, SearchInput, Select } from "./ui";
 import { designRoutes } from "./routes";
 import { CompanyLogo } from "./company-logo";
+import { LiveUserPill } from "./live-user-count";
 
 const navigation = [
   ["Overview", "/dashboard", Home], ["Website Controls", "/dashboard/website-controls", Monitor],
@@ -53,6 +54,7 @@ function Workspace({ children }) {
         <button className="ad-icon-button ad-mobile-menu-button" onClick={() => setMenuOpen(true)} aria-label="Open navigation"><Menu size={27} /></button>
         <Link className="ad-mobile-brand" style={{ display: "none" }} href="/dashboard"><CompanyLogo /></Link>
         <div className="ad-breadcrumb">Workspace / <b>{pathname === "/dashboard/account" ? "My account" : current?.[0] || "Notifications"}</b></div>
+        <LiveUserPill />
         <span className="ad-concept">LOCAL DEMO · JSON DATA</span>
         <button className="ad-search ad-topbar-search" onClick={() => setSearchOpen(true)} aria-label="Search dashboard pages"><Search size={16} /><span style={{ fontSize: 11, color: "#a9b8ce" }}>Search website, content, settings…</span><kbd style={{ marginLeft: "auto", fontSize: 9 }}>⌘K</kbd></button>
         <div className="ad-topbar-actions"><Link className="ad-icon-button ad-bell" href="/dashboard/notifications" aria-label={`Notification center, ${unreadNotifications} unread`}><Bell size={21} />{unreadNotifications > 0 && <span className="ad-unread-count">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</Link>

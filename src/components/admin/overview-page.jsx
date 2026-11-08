@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Activity, Users, MessageSquare, ClipboardCheck, ChevronRight, FilePenLine, SlidersHorizontal, FileText, Check, Clock3, TriangleAlert } from "lucide-react";
 import { Button, LineChart, MiniMap, PageHeader, Panel, Progress, Select, Stat } from "./ui";
 import { useAdmin } from "./store";
+import { LiveUsersStat } from "./live-user-count";
 import { selectOverview, selectAnalytics, selectMonitoring } from "@/lib/admin/selectors.mjs";
 import coreFixtures from "@/data/admin/core.json";
 import styles from "./core.module.css";
@@ -30,7 +31,8 @@ export function MetricCards({ visitorFirst = false }) {
   const overview = selectOverview(scopedData(db, scope));
   const traffic = <Stat spark={false} key="traffic" label="Visitors · 24 hours" value={formatNumber(overview.traffic.visitors)} icon={Users} />;
   const uptime = <Stat spark={false} key="uptime" label="Uptime · 30 days" value={overview.monitoring.probes.length ? formatPercent(overview.monitoring.uptime) : "No data"} icon={Activity} color="#22c55e" />;
-  return <div className="ad-metrics">
+  return <div className="ad-metrics ad-metrics-5">
+    <LiveUsersStat />
     {visitorFirst ? [traffic, uptime] : [uptime, traffic]}
     <Stat spark={false} label="Open enquiries" value={formatNumber(overview.openEnquiries)} icon={MessageSquare} color="#a78bfa" />
     <Stat spark={false} label="Pending approvals" value={formatNumber(overview.pendingApprovals)} icon={ClipboardCheck} color="#a78bfa" />

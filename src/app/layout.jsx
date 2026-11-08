@@ -4,6 +4,7 @@ import Script from "next/script";
 import Providers from "./providers";
 import Loader from "../components/Loader";
 import DailySupplyWelcome from "../components/welcome/DailySupplyWelcome";
+import VisitorTracker from "@/components/realtime/VisitorTracker";
 import { companyInfo } from "@/data/company";
 import { siteConfig } from "@/lib/site";
 import "lenis/dist/lenis.css";
@@ -107,6 +108,7 @@ export default async function RootLayout({ children }) {
         <SiteFeaturesProvider initialState={featureState}><Providers><SiteFeatureGate><SmoothScrollProvider><ScrollTriggerRouteManager />{children}</SmoothScrollProvider>
         <Loader isInitialLoad={true} />
         <DailySupplyWelcome />
+        <VisitorTracker />
         </SiteFeatureGate></Providers></SiteFeaturesProvider>
       </body>
     </html>

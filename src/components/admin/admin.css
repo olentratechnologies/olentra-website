@@ -16,3 +16,12 @@ html[data-admin-reduced-motion="true"] .ad-root *{transition:none!important;anim
 
 /* Shared company logo across workspace and authentication pages. */
 .ad-brand{display:flex;align-items:center;width:fit-content;padding:0 10px 12px}.ad-auth-brand{display:inline-flex;align-items:center}.ad-auth-brand .ad-company-logo{width:112px;height:112px}.ad-mobile-brand .ad-company-logo{width:56px;height:56px}.ad-preview-company-logo{width:48px;height:48px}.ad-certificate-company-logo{width:64px;height:64px;margin:0 auto 8px}.ad-media-company-logo{width:96px;height:96px}
+
+/* Real-time WebSocket live indicator styles */
+.ad-live-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.32);color:#34d399;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:600;letter-spacing:0.02em;white-space:nowrap}
+.ad-live-pill.is-offline{background:rgba(148,163,184,0.1);border-color:rgba(148,163,184,0.25);color:#94a3b8}
+.ad-live-dot{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;animation:ad-pulse 2s cubic-bezier(0.4,0,0.6,1) infinite}
+.ad-live-pill.is-offline .ad-live-dot{background:#94a3b8;box-shadow:none;animation:none}
+@keyframes ad-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.35;transform:scale(1.2)}}
+.ad-metrics-5{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+@media(max-width:760px){.ad-topbar .ad-concept{display:none}.ad-topbar .ad-mobile-brand{flex-shrink:0}}

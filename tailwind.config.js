@@ -1,7 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
-  content: ["./src/**/*.{js,jsx,ts,tsx,mdx}"],
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx,mdx}",
+    // SVG geometry contains no utility classes; scanning its long path stalls extraction.
+    "!./src/components/admin/world-land.js",
+  ],
   theme: {
     extend: {
       fontFamily: {
