@@ -1,12 +1,13 @@
+import AdminShell from "@/components/admin/shell";
+import "@/components/admin/admin.css";
+
 export const metadata = {
-  title: "Enterprise Analytics & Telemetry Dashboard | Olentra",
-  description: "Executive operations, traffic intelligence, B2B pipeline, and security audit hub.",
+  title: "Company workspace",
+  description: "Olentra company administration workspace.",
+  robots: { index: false, follow: false },
+  alternates: { canonical: "/dashboard" },
 };
 
 export default function DashboardLayout({ children }) {
-  return (
-    <div className="min-h-screen bg-[#050811] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
-      {children}
-    </div>
-  );
+  return <AdminShell>{children}</AdminShell>;
 }

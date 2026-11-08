@@ -33,6 +33,8 @@ function TickerBridge() {
 
 export default function SmoothScrollProvider({ children }) {
   const pathname = usePathname();
+  // /careers/intern stays in the public site's smooth-scroll experience.
+  const privateInternRoute = /^\/intern\/(login|register|reset-password|portal|dashboard)(\/|$)/.test(pathname);
   const sessionDisabled =
     typeof window !== "undefined" &&
     window.sessionStorage?.getItem("olentra-native-scroll") === "1";
@@ -40,7 +42,8 @@ export default function SmoothScrollProvider({ children }) {
     !enabledByDefault ||
     sessionDisabled ||
     excludedRoutes.includes(pathname) ||
-    (pathname.startsWith("/intern/") && pathname !== "/intern/")
+    pathname.startsWith("/dashboard") ||
+    privateInternRoute
   )
     return children;
   return (

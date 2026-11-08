@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useSiteFeatures } from "@/components/site-features";
 
 export default function PrimaryCtaBand({ eyebrow, title, description, primaryCta, secondaryCta }) {
+  const { isVisibleHref } = useSiteFeatures();
   return (
     <section className="relative pt-16 md:pt-20 pb-0 bg-[#070b12]">
       <div className="max-w-6xl mx-auto px-6 md:px-12">
@@ -13,7 +17,7 @@ export default function PrimaryCtaBand({ eyebrow, title, description, primaryCta
             </h2>
             <p className="text-white/90 leading-relaxed max-w-2xl">{description}</p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link
+              {primaryCta && isVisibleHref(primaryCta.href) && <Link
                 href={primaryCta.href}
                 className="inline-flex items-center justify-center gap-3 px-10 py-4 text-[13px] font-black uppercase tracking-[0.3em] bg-white text-primary hover:scale-105 active:scale-95 transition-all"
                 style={{
@@ -22,8 +26,8 @@ export default function PrimaryCtaBand({ eyebrow, title, description, primaryCta
                 }}
               >
                 {primaryCta.label}
-              </Link>
-              {secondaryCta ? (
+              </Link>}
+              {secondaryCta && isVisibleHref(secondaryCta.href) ? (
                 <Link
                   href={secondaryCta.href}
                   className="inline-flex items-center justify-center gap-3 px-10 py-4 text-[13px] font-black uppercase tracking-[0.3em] border border-white/30 bg-white/10 text-white hover:bg-white/15 transition-all"

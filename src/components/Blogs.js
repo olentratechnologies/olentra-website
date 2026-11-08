@@ -1,11 +1,14 @@
 "use client";
 
+import { Feature } from "@/components/site-features";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { blogs } from "../data/blogs";
 
-export default function Blogs() {
+export default function Blogs() { return <Feature name="blog"><BlogsContent /></Feature>; }
+
+function BlogsContent() {
   return (
     <section
       id="blog-section"

@@ -47,7 +47,7 @@ Run `npm run build` and `git diff --check`. In the browser, verify:
 - Direct anchor navigation, refresh, Back/Forward, keyboard access, and reduced
   motion work in the integrated page.
 - Desktop, tablet, 390px, and 320px layouts have no horizontal overflow.
-- The sitemap includes `/about` and `/intern`, and excludes `/founders`.
+- The sitemap includes `/about` and `/careers/intern`, and excludes `/founders`.
 
 Browser checks and performance measurements should use the integrated About
 route; results from the former standalone page do not establish its current

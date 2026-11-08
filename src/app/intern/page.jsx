@@ -1,33 +1,12 @@
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import InternLanding from "@/components/intern/InternLanding";
-import { buildMetadata } from "@/lib/seo";
-import dockStyles from "@/components/intern/mobile-dock.module.css";
+import { permanentRedirect } from "next/navigation";
 
-const pageMetadata = buildMetadata({
-  title: "Internship Program",
-  description:
-    "Learn, build, and grow with Olentra Technologies. Explore our Tech Explorer and Tech Innovator internship tracks, mentorship, and real-world projects.",
-  path: "/intern",
-  keywords: [
-    "Olentra internships",
-    "Tech Explorer",
-    "Tech Innovator",
-    "technology internship",
-  ],
-});
-
-export const metadata = {
-  ...pageMetadata,
-  title: { absolute: pageMetadata.title },
-};
-
-export default function InternPage() {
-  return (
-    <div className={dockStyles.page}>
-      <Navbar />
-      <InternLanding />
-      <Footer />
-    </div>
-  );
+export default async function LegacyInternPage({ searchParams }) {
+  const params = await searchParams;
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params || {})) {
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (typeof item === "string") query.append(key, item);
+    }
+  }
+  permanentRedirect("/careers/intern" + (query.size ? "?" + query.toString() : ""));
 }

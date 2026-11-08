@@ -1,0 +1,35 @@
+{
+  "name": "Olentra company administration",
+  "version": 1,
+  "deliverable": "Static high-fidelity UI concepts",
+  "implementation_scope": "Frontend interface only; backend and live integrations are deferred",
+  "colors": {
+    "background": "#070b12",
+    "surface": "#101824",
+    "border": "#263349",
+    "primary": "#2563eb",
+    "text": "#edf4ff",
+    "secondary_text": "#9dacc1",
+    "success": "#22c55e",
+    "warning": "#f59e0b",
+    "danger": "#ef4444"
+  },
+  "typography": "Use the site's Manrope/Inter sans-serif family with clear heading, body, label and helper-text hierarchy.",
+  "spacing": [4, 8, 12, 16, 24, 32, 48],
+  "corners": {"inputs": 8, "cards": 12},
+  "desktop_shell": "Persistent module sidebar, breadcrumbs, global search, environment/scope controls, notifications and account access.",
+  "mobile_shell": "Compact header, stacked cards, large controls, sticky primary actions and four-item bottom navigation.",
+  "authentication_shell": "Signed-out brand panel and authentication card; no signed-in sidebar, company data or owner profile.",
+  "modules": ["Overview", "Website Controls", "Content & Media", "Careers & Internships", "Forms & Enquiries", "Analytics & SEO", "Monitoring & Alerts", "Regions & Languages", "Team & Access", "Approvals & Audit Log", "Integrations", "Settings & Backups"],
+  "feature_controls": {
+    "public_visibility": "Show or hide public pages, sections and navigation according to configured scope.",
+    "new_applications": "Open or close intake independently of public page visibility.",
+    "existing_portal": "Keep current interns' workspace access independent of public visibility and intake.",
+    "preservation": "Visibility changes preserve existing records.",
+    "review_flow": ["Edit draft", "Preview visitor impact", "Review changes", "Publish or schedule", "Record history"]
+  },
+  "interaction_states_for_implementation": ["Loading", "Empty", "Validation error", "Saved", "Unsaved changes", "Pending review", "Permission denied", "Service unavailable"],
+  "accessibility": ["Visible keyboard focus", "Labels for fields and switches", "State described by text as well as color", "Readable contrast", "Touch-sized controls", "Reduced-motion support"],
+  "sample_data": "Every metric, record, identity and integration state in these images is illustrative.",
+  "method": "Built-in imagegen, one image per screen; exact generation and refinement prompts are retained in manifests and screen-index.json."
+}

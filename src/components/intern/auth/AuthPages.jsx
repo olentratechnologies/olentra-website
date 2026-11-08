@@ -27,6 +27,7 @@ import { useInternship } from "@/components/intern/InternshipProvider";
 import { PlanetArtwork } from "@/components/intern/dashboard/DashboardVisuals";
 import styles from "./auth.module.css";
 import FuturisticLogin from "./FuturisticLogin";
+import { useSiteFeatures } from "@/components/site-features";
 
 const destinationFor = (account) =>
   account?.role === "company" ? "/intern/dashboard" : "/intern/portal";
@@ -44,9 +45,10 @@ const errorText = (value) =>
     : value?.message || "Something went wrong. Please try again.";
 
 function Brand() {
+  const { features, ready } = useSiteFeatures();
   return (
     <Link
-      href="/intern"
+      href={ready && features.internships ? "/careers/intern" : "/"}
       className={styles.brand}
       aria-label="Olentra Technologies"
     >
@@ -57,6 +59,7 @@ function Brand() {
 }
 
 function AuthShell({ children, eyebrow = "YOUR NEXT CHAPTER STARTS HERE" }) {
+  const { features, ready } = useSiteFeatures();
   return (
     <main className={styles.authPage}>
       <div className={styles.backgroundOrbit} />
@@ -93,8 +96,8 @@ function AuthShell({ children, eyebrow = "YOUR NEXT CHAPTER STARTS HERE" }) {
               </span>
             </div>
           </div>
-          <Link href="/intern" className={styles.backLink}>
-            <ArrowLeft size={14} /> Back to Internship Program
+          <Link href={ready && features.internships ? "/careers/intern" : "/"} className={styles.backLink}>
+            <ArrowLeft size={14} /> {ready && features.internships ? "Back to Internship Program" : "Back to Olentra"}
           </Link>
         </aside>
         <section className={styles.authPanel}>
@@ -311,6 +314,8 @@ export function LoginPage() {
 export function RegisterPage() {
   const { ready, sessionReady, pendingApplication, account, register } =
     useInternship();
+  const { features, ready: featuresReady } = useSiteFeatures();
+  const registrationOpen = Boolean(featuresReady && features.internships && features.applications);
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -319,6 +324,7 @@ export function RegisterPage() {
   const submitting = useRef(false);
   const submit = async (event) => {
     event.preventDefault();
+    if (!registrationOpen) { setError("Internship account registration is currently closed."); return; }
     if (submitting.current || !pendingApplication) return;
     if (password.length < 8)
       return setError("Choose a password with at least 8 characters.");
@@ -342,6 +348,8 @@ export function RegisterPage() {
       setBusy(false);
     }
   };
+  if (!featuresReady) return <AuthShell><div className={styles.inlineLoading}><LoaderCircle size={22} className={styles.spin} /> Checking registration availability...</div></AuthShell>;
+  if (!registrationOpen) return <AuthShell eyebrow="INTERNSHIP ACCOUNT ACCESS"><div className={styles.panelHeading}><span className={styles.headingIcon}><LockKeyhole size={23} /></span><h2>Registration is currently closed.</h2><p>New internship applications and account registration are unavailable at the moment.</p></div>{(features.portal || account?.role === "company") && <Link href={account ? destinationFor(account) : "/intern/login?role=intern"} className={styles.primaryButton}>{account ? "Go to my workspace" : "Existing account? Sign in"}<ArrowRight size={16} /></Link>}<Link href="/" className={styles.textLink}>Return to Olentra</Link></AuthShell>;
   return (
     <AuthShell eyebrow="YOUR APPLICATION IS JUST THE BEGINNING">
       <div className={styles.panelHeading}>
@@ -369,7 +377,7 @@ export function RegisterPage() {
             directly to your application so you can follow its progress.
           </p>
           <Link
-            href="/intern#internship-application"
+            href="/careers/intern#internship-application"
             className={styles.primaryButton}
           >
             Apply Now <ArrowRight size={15} />

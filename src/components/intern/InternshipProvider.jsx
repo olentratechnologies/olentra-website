@@ -26,6 +26,7 @@ import {
   SESSION_DURATION,
 } from "@/lib/intern/workflow.mjs";
 import styles from "./session.module.css";
+import { useSiteFeatures } from "@/components/site-features";
 const Context = createContext(null);
 const parse = (value) => {
   try {
@@ -59,6 +60,9 @@ async function passwordHash(password) {
     .join("");
 }
 export function InternshipProvider({ children }) {
+  const { features: siteFeatures, ready: siteReady } = useSiteFeatures();
+  const intakeRef = useRef(false);
+  intakeRef.current = Boolean(siteReady && siteFeatures.internships && siteFeatures.applications);
   const [store, setStore] = useState(emptyStore),
     [session, setSession] = useState(null),
     [pending, setPending] = useState(null),
@@ -183,6 +187,9 @@ export function InternshipProvider({ children }) {
       const operation = async () => {
         if (initialization.current) await initialization.current;
         return lock(async () => {
+          if (["SUBMIT_APPLICATION", "REGISTER"].includes(type) && !intakeRef.current) {
+            return { ok: false, error: "New internship applications and account registration are currently closed." };
+          }
           try {
             const saved = parse(localStorage.getItem(STORE_KEY));
             const latest =
@@ -278,6 +285,7 @@ export function InternshipProvider({ children }) {
   );
   const register = useCallback(
     async ({ applicationId, password }) => {
+      if (!intakeRef.current) return { ok: false, error: "Internship account registration is currently closed." };
       if (String(password || "").length < 8)
         return {
           ok: false,
@@ -335,6 +343,7 @@ export function InternshipProvider({ children }) {
   const commands = useMemo(
     () => ({
       submitApplication: async (payload) => {
+        if (!intakeRef.current) return { ok: false, error: "New internship applications are currently closed." };
         try {
           sessionStorage.setItem(PENDING_KEY + "-probe", "0".repeat(3000));
           sessionStorage.removeItem(PENDING_KEY + "-probe");

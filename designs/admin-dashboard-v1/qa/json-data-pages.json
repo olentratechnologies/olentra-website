@@ -1,0 +1,242 @@
+{
+  "checkedAt": "2026-11-08T06:46:18.232Z",
+  "pages": [
+    {
+      "route": "/dashboard",
+      "error": false,
+      "heading": "Company overview",
+      "text": 1336
+    },
+    {
+      "route": "/dashboard/website-controls",
+      "error": false,
+      "heading": "Website control center",
+      "text": 1197
+    },
+    {
+      "route": "/dashboard/website-controls/features/internships",
+      "error": false,
+      "heading": "Internships controls",
+      "text": 1466
+    },
+    {
+      "route": "/dashboard/website-controls/navigation",
+      "error": false,
+      "heading": "Navigation & sections",
+      "text": 1339
+    },
+    {
+      "route": "/dashboard/content",
+      "error": false,
+      "heading": "Content library",
+      "text": 828
+    },
+    {
+      "route": "/dashboard/content/pages/homepage/edit",
+      "error": false,
+      "heading": "Edit homepage",
+      "text": 767
+    },
+    {
+      "route": "/dashboard/content/media",
+      "error": false,
+      "heading": "Media library",
+      "text": 551
+    },
+    {
+      "route": "/dashboard/careers",
+      "error": false,
+      "heading": "Careers & internships",
+      "text": 921
+    },
+    {
+      "route": "/dashboard/careers/applications",
+      "error": false,
+      "heading": "Applications",
+      "text": 1541
+    },
+    {
+      "route": "/dashboard/careers/applications/024",
+      "error": false,
+      "heading": "Applicant 024",
+      "text": 1029
+    },
+    {
+      "route": "/dashboard/careers/interns",
+      "error": false,
+      "heading": "Interns & projects",
+      "text": 1423
+    },
+    {
+      "route": "/dashboard/enquiries",
+      "error": false,
+      "heading": "Forms & enquiries",
+      "text": 754
+    },
+    {
+      "route": "/dashboard/enquiries/018",
+      "error": false,
+      "heading": "Client portal modernization",
+      "text": 712
+    },
+    {
+      "route": "/dashboard/analytics",
+      "error": false,
+      "heading": "Analytics & SEO",
+      "text": 785
+    },
+    {
+      "route": "/dashboard/analytics/seo",
+      "error": false,
+      "heading": "SEO manager",
+      "text": 1027
+    },
+    {
+      "route": "/dashboard/monitoring",
+      "error": false,
+      "heading": "Monitoring & alerts",
+      "text": 941
+    },
+    {
+      "route": "/dashboard/monitoring/incidents/contact-delivery",
+      "error": false,
+      "heading": "Contact form delivery delay",
+      "text": 935
+    },
+    {
+      "route": "/dashboard/monitoring/alert-rules",
+      "error": false,
+      "heading": "Alert rules",
+      "text": 744
+    },
+    {
+      "route": "/dashboard/localization",
+      "error": false,
+      "heading": "Regions & languages",
+      "text": 924
+    },
+    {
+      "route": "/dashboard/localization/fr/homepage",
+      "error": false,
+      "heading": "Translate page",
+      "text": 778
+    },
+    {
+      "route": "/dashboard/team",
+      "error": false,
+      "heading": "Team & access",
+      "text": 956
+    },
+    {
+      "route": "/dashboard/team/roles/recruiter",
+      "error": false,
+      "heading": "Role permissions",
+      "text": 893
+    },
+    {
+      "route": "/dashboard/approvals",
+      "error": false,
+      "heading": "Approvals",
+      "text": 1091
+    },
+    {
+      "route": "/dashboard/approvals/CHG-024",
+      "error": false,
+      "heading": "Review internship visibility",
+      "text": 1261
+    },
+    {
+      "route": "/dashboard/audit",
+      "error": false,
+      "heading": "Audit history",
+      "text": 1511
+    },
+    {
+      "route": "/dashboard/integrations",
+      "error": false,
+      "heading": "Integrations",
+      "text": 1281
+    },
+    {
+      "route": "/dashboard/integrations/email",
+      "error": false,
+      "heading": "Email delivery",
+      "text": 929
+    },
+    {
+      "route": "/dashboard/settings/company",
+      "error": false,
+      "heading": "Company settings",
+      "text": 1477
+    },
+    {
+      "route": "/dashboard/settings/security",
+      "error": false,
+      "heading": "Security settings",
+      "text": 1327
+    },
+    {
+      "route": "/dashboard/settings/backups",
+      "error": false,
+      "heading": "Backups & recovery",
+      "text": 1168
+    },
+    {
+      "route": "/dashboard/notifications",
+      "error": false,
+      "heading": "Notification center",
+      "text": 2078
+    },
+    {
+      "route": "/dashboard/account",
+      "error": false,
+      "heading": "Account preferences",
+      "text": 993
+    },
+    {
+      "route": "/dashboard/careers/projects/website-refresh/tasks/contact",
+      "error": false,
+      "heading": "Website refresh",
+      "text": 1370
+    },
+    {
+      "route": "/dashboard/careers/certificates",
+      "error": false,
+      "heading": "Certificates",
+      "text": 743
+    },
+    {
+      "route": "/dashboard/careers/interns/024",
+      "error": false,
+      "heading": "Intern 024",
+      "text": 1486
+    },
+    {
+      "route": "/dashboard/careers/programs/frontend/edit",
+      "error": false,
+      "heading": "Edit internship program",
+      "text": 1027
+    }
+  ],
+  "authentication": [
+    "wrong password rejected",
+    "MFA required",
+    "recruiter navigation filtered",
+    "restricted module blocked",
+    "owner restored"
+  ],
+  "workflows": [
+    "CHG-024 approval publishes internship visibility and intake",
+    "published visitor preview matches settings",
+    "reload preserves data",
+    "applicant110 advanced in sequence and created onboarding intern110",
+    "application note persists and renders",
+    "full JSON export validates with187datasets",
+    "full JSON import succeeds"
+  ],
+  "mobile": {
+    "cssWidth": 430,
+    "cssHeight": 930,
+    "documentWidth": 424
+  }
+}

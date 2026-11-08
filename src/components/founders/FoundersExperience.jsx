@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { founders, foundersContent as content } from "@/data/founders";
 import styles from "./founders.module.css";
+import { Feature } from "@/components/site-features";
 
 function Label({ children, number }) {
   return (
@@ -363,8 +364,8 @@ export default function FoundersExperience() {
         </div>
         <nav className={styles.related} aria-label="Explore Olentra">
           <Link href="/">Home</Link>
-          <Link href="/services">Our services</Link>
-          <Link href="/products">Our products</Link>
+          <Feature name="services"><Link href="/services">Our services</Link></Feature>
+          <Feature name="products"><Link href="/products">Our products</Link></Feature>
         </nav>
       </section>
     </section>

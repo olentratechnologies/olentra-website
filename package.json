@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:admin": "node --test scripts/admin-*.test.mjs scripts/site-features.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",

@@ -1,5 +1,6 @@
 "use client";
 
+import { Feature } from "@/components/site-features";
 import { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -713,7 +714,9 @@ function TimelineCard({ service, isRightColumn, isLight = false }) {
   );
 }
 
-export default function ServicesTimeline({
+export default function ServicesTimeline(props) { return <Feature name="services"><ServicesTimelineContent {...props} /></Feature>; }
+
+function ServicesTimelineContent({
   sectionId = "services",
   maxGroups,
   maxServicesPerGroup,

@@ -30,8 +30,10 @@ import {
   useAction,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import { useSiteFeatures } from "@/components/site-features";
 
 export default function PortalApplication() {
+  const { features, ready: featuresReady } = useSiteFeatures();
   const { ready, my, commands, notify } = useInternship();
   const [declining, setDeclining] = useState(false);
   const action = useAction();
@@ -51,9 +53,9 @@ export default function PortalApplication() {
             title="No application linked"
             description="Your account doesn’t have an internship application yet."
           >
-            <Link href="/intern" className={styles.button}>
+            {featuresReady && features.internships && <Link href="/careers/intern" className={styles.button}>
               Explore the internship program <ArrowRight size={15} />
-            </Link>
+            </Link>}
           </EmptyState>
         </Panel>
       </>

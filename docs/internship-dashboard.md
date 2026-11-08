@@ -1,6 +1,6 @@
 # Internship module demo
 
-Run `npm run dev`, then open `http://localhost:3000/intern` or
+Run `npm run dev`, then open `http://localhost:3000/careers/intern` or
 `http://localhost:3000/intern/login`. This is a UI-only demo: applications,
 accounts, reviews, messages, and certificates share browser-local state. No
 backend, email delivery, or external account connection is used.
@@ -29,7 +29,7 @@ restores the seeded passwords.
 
 | Route                                 | Purpose                                                                       |
 | ------------------------------------- | ----------------------------------------------------------------------------- |
-| `/intern`                             | Program information and public application form                               |
+| `/careers/intern`                     | Program information and public application form                               |
 | `/intern/register`                    | Create an intern account linked to the application just submitted in this tab |
 | `/intern/login`                       | Intern/company login and demo account selection                               |
 | `/intern/reset-password`              | Local demo password reset                                                     |
@@ -60,7 +60,7 @@ than rejecting IDs missing from the original JSON.
 Use separate tabs for company and intern accounts to see updates pass between
 them. Both tabs must use the same origin, including hostname and port.
 
-1. While signed out, apply from `/intern` with a new email address, a track, and a
+1. While signed out, apply from `/careers/intern` with a new email address, a track, and a
    resume. The success flow saves the application and links to account creation.
    Finish account creation in the same tab; the new account initially has
    application-tracking access.
@@ -115,7 +115,7 @@ with every required task approved and no existing certificate are eligible for i
 | `src/data/intern-dashboard.json`                        | Fictional base records: 2,540 applications, 740 interns, three projects, certificates, settings, contributions, and analytics |
 | `src/data/intern-workflows.json`                        | Demo accounts, sample offer/tasks/submission, messages, notifications, and shared resources                                   |
 | `src/lib/intern/workflow.mjs`                           | Pure state materialization, migration, role/ownership checks, workflow commands, session validation, and intern projections   |
-| `src/components/intern/InternshipProvider.jsx`          | One provider for all `/intern` routes; browser storage, sessions, serialized commands, and cross-tab synchronization          |
+| `src/components/intern/InternshipProvider.jsx`          | Shared provider for `/careers/intern` and `/intern/**` routes; browser storage, sessions, serialized commands, and cross-tab synchronization          |
 | `src/components/intern/dashboard/DashboardProvider.jsx` | Compatibility exports for existing company pages; mutators return promises                                                    |
 | `src/components/intern/dashboard/CompanyWorkflow.jsx`   | Company offer/onboarding/messages and project task/review panels                                                              |
 | `src/lib/intern-attachments.mjs`                        | IndexedDB file storage, validation, downloads, and seeded-profile fallback downloads                                          |
