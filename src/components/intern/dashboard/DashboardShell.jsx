@@ -1,4 +1,5 @@
 "use client";
+import { useInternHistory } from "@/components/intern/useInternHistory";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -43,6 +44,8 @@ import {
 } from "./DashboardVisuals";
 import styles from "./dashboard.module.css";
 import { useSiteFeatures } from "@/components/site-features";
+import { canOpenInternSection, hasStaffPermission } from "./staffAccess";
+import ProjectSummary from "./ProjectSummary";
 
 const icons = {
   home: House,
@@ -133,7 +136,10 @@ export default function DashboardShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const section = pathname.split("/")[3] || "dashboard";
-  const activities = my.notifications.map((notification) => ({
+  const allowed = canOpenInternSection(account, section);
+  const can = permission => hasStaffPermission(account, permission);
+  const noticeHistory = useInternHistory("notifications", { enabled: can("notifications.read"), revision: my.notifications });
+  const activities = noticeHistory.items.map((notification) => ({
     ...notification,
     detail: notification.body,
     time: new Date(notification.createdOn).toLocaleDateString("en-US", {
@@ -189,7 +195,7 @@ export default function DashboardShell({ children }) {
   }
   const activityList = (all = false) => (
     <ol className={styles.activityList}>
-      {activities.slice(0, all ? 10 : 4).map((activity) => {
+      {activities.slice(0, all ? activities.length : 4).map((activity) => {
         const Icon = icons[activity.icon] || ClipboardCheck;
         return (
           <li key={activity.id}>
@@ -254,7 +260,7 @@ export default function DashboardShell({ children }) {
           <X size={20} />
         </button>
         <nav className={styles.navigation} aria-label="Dashboard navigation">
-          {data.navigation.map((item) => {
+          {data.navigation.filter(item => canOpenInternSection(account, item.id)).map((item) => {
             const Icon = icons[item.icon] || House;
             return (
               <Link
@@ -304,14 +310,14 @@ export default function DashboardShell({ children }) {
           >
             <Menu size={23} />
           </button>
-          <div className={styles.searchField}>
+          {(can("applications.read") || can("interns.read") || can("projects.read")) && <div className={styles.searchField}>
             <Search size={21} />
             <input
               ref={searchRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search applications, interns, or projects..."
-              aria-label="Search applications, interns, or projects"
+              placeholder="Search your workspace..."
+              aria-label="Search your workspace"
             />
             <kbd>⌘ K</kbd>
             {query && (
@@ -323,9 +329,9 @@ export default function DashboardShell({ children }) {
                 <X size={15} />
               </button>
             )}
-          </div>
+          </div>}
           <div className={styles.topbarActions}>
-            <Popover.Root>
+            {can("notifications.read") && <Popover.Root>
               <Popover.Trigger asChild>
                 <button
                   className={styles.bellButton}
@@ -344,15 +350,17 @@ export default function DashboardShell({ children }) {
                 >
                   <div className={styles.popoverHeading}>
                     <h2>Notifications</h2>
-                    <button onClick={() => markNotificationsRead()}>
-                      Mark all as read
+                    <button onClick={() => commands.markNotificationsRead(noticeHistory.items.filter(item => item.unread).slice(0, 100).map(item => item.id))}>
+                      Mark loaded as read
                     </button>
                   </div>
                   {activityList(true)}
+                  {noticeHistory.error && <p role="alert">{noticeHistory.error}</p>}
+                  {noticeHistory.hasMore && <button onClick={noticeHistory.loadMore} disabled={noticeHistory.loading}>Load older notifications</button>}
                   <Popover.Arrow className={styles.popoverArrow} />
                 </Popover.Content>
               </Popover.Portal>
-            </Popover.Root>
+            </Popover.Root>}
             <span className={styles.topbarDivider} />
             <Popover.Root>
               <Popover.Trigger asChild>
@@ -362,7 +370,7 @@ export default function DashboardShell({ children }) {
                   </span>
                   <span className={styles.profileText}>
                     <strong>{data.user.name}</strong>
-                    <span>{data.user.role}</span>
+                    <span>{account?.staffRole || data.user.role}</span>
                   </span>
                   <ChevronDown size={16} />
                 </button>
@@ -378,11 +386,11 @@ export default function DashboardShell({ children }) {
                     <br />
                     <strong>{data.user.email}</strong>
                   </p>
-                  <Popover.Close asChild>
+                  {account?.staffRole === "admin" && <Popover.Close asChild>
                     <button onClick={() => navigate("settings")}>
                       <Settings size={16} /> Account settings
                     </button>
-                  </Popover.Close>
+                  </Popover.Close>}
                   {featuresReady && features.internships && <Link href="/careers/intern">
                     <ArrowRight size={16} /> Internship website
                   </Link>}
@@ -392,7 +400,7 @@ export default function DashboardShell({ children }) {
                       router.replace("/intern/login?role=company&switch=1");
                     }}
                   >
-                    <Users size={16} /> Switch demo account
+                    <Users size={16} /> Switch account
                   </button>
                   <button
                     onClick={() => {
@@ -410,10 +418,12 @@ export default function DashboardShell({ children }) {
           </div>
         </header>
 
-        {children}
+        <div key={`${account?.id || "none"}:${account?.staffRole || ""}:${(account?.permissions || []).join(",")}`}>
+          {!allowed ? <section role="alert" className={styles.popover}><h2>Access unavailable</h2><p>Your internship role does not have permission to open this page. Contact an internship admin if access is needed.</p></section> : section === "projects" && !can("projects.read") ? <ProjectSummary /> : children}
+        </div>
       </main>
       <Dialog.Root
-        open={notificationDialog}
+        open={account?.staffRole === "admin" && notificationDialog}
         onOpenChange={setNotificationDialog}
       >
         <Dialog.Portal>
@@ -429,7 +439,7 @@ export default function DashboardShell({ children }) {
               Send Notifications
             </Dialog.Title>
             <Dialog.Description className={styles.dialogDescription}>
-              Create a sample notification for your internship program.
+              Send a notification to your internship program.
             </Dialog.Description>
             <form
               onSubmit={saveNotification}
@@ -466,7 +476,7 @@ export default function DashboardShell({ children }) {
                 />
               </label>
               <p className={styles.previewNote}>
-                Preview only. No messages will be sent.
+                This announcement appears in intern notifications.
               </p>
               <button className={styles.primaryButton} type="submit">
                 <Send size={17} /> Create notification

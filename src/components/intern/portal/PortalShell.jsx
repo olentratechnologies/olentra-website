@@ -1,4 +1,5 @@
 "use client";
+import { useInternHistory } from "@/components/intern/useInternHistory";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -75,8 +76,10 @@ export default function PortalShell({ children }) {
   const sidebarRef = useRef(null);
   const closeNavRef = useRef(null);
   const action = useAction();
-  const notifications = my.notifications || [];
-  const messages = [...(my.messages || [])].sort((a, b) =>
+  const noticesHistory = useInternHistory("notifications", { enabled: dialog === "notifications", revision: my.notifications });
+  const messagesHistory = useInternHistory("messages", { enabled: dialog === "messages", applicationId: my.application?.id, revision: my.messages });
+  const notifications = dialog === "notifications" ? noticesHistory.items : my.notifications || [];
+  const messages = [...(dialog === "messages" ? messagesHistory.items : my.messages || [])].sort((a, b) =>
     String(a.createdOn || "").localeCompare(String(b.createdOn || "")),
   );
   const unread = notifications.filter(
@@ -164,7 +167,7 @@ export default function PortalShell({ children }) {
   }
   async function readNotifications() {
     await action.run(
-      () => commands.markNotificationsRead(unread.map((item) => item.id)),
+      () => commands.markNotificationsRead(unread.slice(0, 100).map((item) => item.id)),
       () => notify("Notifications marked as read."),
     );
   }
@@ -237,12 +240,12 @@ export default function PortalShell({ children }) {
           <LogOut size={18} /> Sign out
         </button>
         <button className={styles.switchAccount} onClick={logout}>
-          Switch demo account <ArrowRight size={12} />
+          Switch account <ArrowRight size={12} />
         </button>
         <small className={styles.sidebarFooter}>
           {data.organization?.legalName || "Olentra Technologies Pvt. Ltd."}
           <br />
-          Intern workspace · Demo
+          Intern workspace
         </small>
       </aside>
       <main className={styles.main}>
@@ -330,7 +333,7 @@ export default function PortalShell({ children }) {
                 disabled={!unread.length || action.busy}
                 onClick={readNotifications}
               >
-                Mark all as read
+                Mark loaded as read
               </Button>
             </div>
             <ol className={styles.notificationList}>
@@ -358,6 +361,8 @@ export default function PortalShell({ children }) {
             description="Your next internship updates will appear here."
           />
         )}
+        {noticesHistory.error && <p role="alert">{noticesHistory.error}</p>}
+        {noticesHistory.hasMore && <Button variant="secondary" onClick={noticesHistory.loadMore} disabled={noticesHistory.loading}>Load older notifications</Button>}
       </Modal>
       <Modal
         open={dialog === "messages"}
@@ -406,6 +411,8 @@ export default function PortalShell({ children }) {
             </Button>
           </form>
         )}
+        {messagesHistory.error && <p role="alert">{messagesHistory.error}</p>}
+        {messagesHistory.hasMore && <Button variant="secondary" onClick={messagesHistory.loadMore} disabled={messagesHistory.loading}>Load older messages</Button>}
         {messages.length ? (
           <ol className={styles.messages}>
             {messages.map((message) => (

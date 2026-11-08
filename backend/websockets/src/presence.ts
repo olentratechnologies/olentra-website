@@ -23,8 +23,7 @@ export function createPresenceTracker(options: PresenceOptions) {
   const counts = () => ({ activeVisitors: browsers.size, totalConnections: visitors.size + dashboards.size, dashboardSubscribers: dashboards.size });
   const signature = () => `${browsers.size}:${visitors.size + dashboards.size}`;
   function serialize() {
-    const value = counts();
-    const payload = JSON.stringify({ type: "presence", activeVisitors: value.activeVisitors, totalConnections: value.totalConnections, timestamp: now() });
+    const payload = `{"type":"presence","activeVisitors":${browsers.size},"totalConnections":${visitors.size + dashboards.size},"timestamp":${now()}}`;
     counters.snapshots++;
     counters.serializedBytes += payload.length; // ASCII keys and numbers only.
     return payload;

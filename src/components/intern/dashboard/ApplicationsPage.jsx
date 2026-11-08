@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
+import { hasStaffPermission } from "./staffAccess";
 import {
   Avatar,
   Button,
@@ -51,7 +52,9 @@ function applicationMetric(data, id, label, value, tone, icon) {
 }
 
 export default function ApplicationsPage() {
-  const { data, query, setQuery, notify, updateApplication } = useDashboard();
+  const { data, query, setQuery, notify, updateApplication, commands, account } = useDashboard();
+  const canReview = hasStaffPermission(account, "applications.review");
+  const isAdmin = account?.staffRole === "admin";
   const [search, setSearch] = useState("");
   const [track, setTrack] = useState("all");
   const [status, setStatus] = useState("all");
@@ -63,7 +66,9 @@ export default function ApplicationsPage() {
   const [editingApplication, setEditingApplication] = useState(null);
   const [nextStatus, setNextStatus] = useState("");
   const [saving, setSaving] = useState(false);
-  const applications = data.applications || [];
+  const [result, setResult] = useState({items:[],total:0,counts:{statuses:{},programs:{}}});
+  const [listError, setListError] = useState("");
+  const applications = result.items;
   const activeFilters =
     Number(status !== "all") +
     Number(Boolean(dateFrom)) +
@@ -74,102 +79,23 @@ export default function ApplicationsPage() {
     setPage(1);
   }, [query, search, track, status, dateFrom, dateTo, pageSize]);
 
-  const filtered = useMemo(() => {
-    const globalText = (query || "").trim().toLowerCase();
-    const localText = search.trim().toLowerCase();
-    return applications
-      .filter((application) => {
-        const haystack =
-          `${application.name} ${application.email} ${application.college || ""} ${application.program} ${application.id} ${application.status}`.toLowerCase();
-        return (
-          haystack.includes(globalText) &&
-          haystack.includes(localText) &&
-          (track === "all" || application.programId === track) &&
-          (status === "all" || application.status === status) &&
-          (!dateFrom || application.appliedOn.slice(0, 10) >= dateFrom) &&
-          (!dateTo || application.appliedOn.slice(0, 10) <= dateTo) &&
-          !invalidDateRange
-        );
-      })
-      .sort((a, b) => {
-        const first = String(a[sort.key] || "");
-        const second = String(b[sort.key] || "");
-        const comparison = first.localeCompare(second, undefined, {
-          numeric: true,
-        });
-        return (
-          (sort.direction === "asc" ? comparison : -comparison) ||
-          a.id.localeCompare(b.id)
-        );
-      });
-  }, [
-    applications,
-    query,
-    search,
-    track,
-    status,
-    dateFrom,
-    dateTo,
-    invalidDateRange,
-    sort,
-  ]);
-
-  const currentPage = Math.min(
-    page,
-    Math.max(1, Math.ceil(filtered.length / pageSize)),
-  );
-  const displayed = filtered.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
-  const trackTabs = [
-    { id: "all", label: "All", count: applications.length },
-    ...(data.programs || []).map((program) => ({
-      id: program.id,
-      label: program.name,
-      count: applications.filter(
-        (application) => application.programId === program.id,
-      ).length,
-    })),
-  ];
-  const metricItems = [
-    applicationMetric(
-      data,
-      "applications",
-      "Total Applications",
-      applications.length,
-      "blue",
-      "users",
-    ),
-    applicationMetric(
-      data,
-      "under-review",
-      "Under Review",
-      applications.filter(
-        (application) => application.status === "Under Review",
-      ).length,
-      "orange",
-      "users",
-    ),
-    applicationMetric(
-      data,
-      "shortlisted",
-      "Shortlisted",
-      applications.filter((application) => application.status === "Shortlisted")
-        .length,
-      "green",
-      "check",
-    ),
-    applicationMetric(
-      data,
-      "rejected",
-      "Rejected",
-      applications.filter((application) => application.status === "Rejected")
-        .length,
-      "purple",
-      "users",
-    ),
-  ];
+  useEffect(() => {
+    if (invalidDateRange) return;
+    let active = true;
+    const timer = setTimeout(async () => {
+      const response = await commands.listApplications({page,pageSize,search,query,status,programId:track,dateFrom,dateTo,sortField:sort.key,sortDirection:sort.direction});
+      if (!active) return;
+      if (!response.ok) { setListError(response.error); return; }
+      setListError(""); setResult(response.data);
+      if (page > 1 && page > Math.max(1, Math.ceil(response.data.total / pageSize))) setPage(Math.max(1, Math.ceil(response.data.total / pageSize)));
+    }, 180);
+    return () => { active = false; clearTimeout(timer); };
+  }, [page,pageSize,search,query,status,track,dateFrom,dateTo,sort.key,sort.direction,invalidDateRange,commands,data.applications]);
+  const filtered = applications;
+  const currentPage = page;
+  const displayed = applications;
+  const trackTabs = [{ id:"all",label:"All",count:result.total }, ...(data.programs || []).map(program=>({id:program.id,label:program.name,count:result.counts.programs[program.id] || 0}))];
+  const metricItems = [applicationMetric(data,"applications","Total Applications",result.total,"blue","users"),applicationMetric(data,"under-review","Under Review",result.counts.statuses["Under Review"] || 0,"orange","users"),applicationMetric(data,"shortlisted","Shortlisted",result.counts.statuses.Shortlisted || 0,"green","check"),applicationMetric(data,"rejected","Rejected",result.counts.statuses.Rejected || 0,"purple","users")];
 
   function changeSort(key) {
     setSort((previous) => ({
@@ -212,7 +138,7 @@ export default function ApplicationsPage() {
         application.status,
       ]),
     );
-    notify(`${filtered.length.toLocaleString()} applications exported.`);
+    notify(`${filtered.length.toLocaleString()} applications from this page exported.`);
   }
 
   async function saveStatus(event) {
@@ -224,7 +150,7 @@ export default function ApplicationsPage() {
         if (
           (await updateApplication(editingApplication.id, {
             status: nextStatus,
-          })) === false
+          }, editingApplication.version)) === false
         )
           return;
         notify(
@@ -260,7 +186,7 @@ export default function ApplicationsPage() {
       >
         <Button variant="secondary" onClick={exportApplications}>
           <ArrowDownToLine size={16} />
-          Export
+          Export current page
         </Button>
         <FilterMenu>
           <div className={styles.filterFields}>
@@ -350,6 +276,7 @@ export default function ApplicationsPage() {
             </label>
           </div>
         </div>
+        {listError && <p role="alert">{listError}</p>}
         {filtered.length ? (
           <div className={common.tableWrap}>
             <table className={`${common.table} ${styles.applicationTable}`}>
@@ -442,13 +369,13 @@ export default function ApplicationsPage() {
                             label: "View application",
                             href: `/intern/dashboard/applications/${application.id}`,
                           },
-                          {
+                          ...(canReview && (isAdmin || ["Applied", "Under Review", "Shortlisted"].includes(application.status)) ? [{
                             label: "Update status",
                             onClick: () => {
                               setEditingApplication(application);
                               setNextStatus(application.status);
                             },
-                          },
+                          }] : []),
                         ]}
                       />
                     </td>
@@ -476,7 +403,7 @@ export default function ApplicationsPage() {
           <Pagination
             page={currentPage}
             pageSize={pageSize}
-            total={filtered.length}
+            total={result.total}
             onChange={setPage}
           />
         </div>
@@ -503,7 +430,7 @@ export default function ApplicationsPage() {
                 <option
                   key={value}
                   disabled={
-                    (value === "Joined" &&
+                    (!isAdmin && !["Applied", "Under Review", "Shortlisted"].includes(value) && value !== editingApplication?.status) || (value === "Joined" &&
                       editingApplication?.status !== "Joined") ||
                     (editingApplication?.status === "Joined" &&
                       value !== "Joined")

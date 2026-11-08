@@ -13,6 +13,8 @@ export interface PresenceServerOptions {
   broadcastIntervalMs?: number;
   log?: boolean;
 }
+const textDecoder = new TextDecoder();
+
 export function createPresenceServer(options: PresenceServerOptions = {}) {
   const allowedOrigins = new Set((options.allowedOrigins ?? []).map(origin => origin.toLowerCase()));
   const allowed = (origin: string | null) => !origin || allowedOrigins.size === 0 || allowedOrigins.has("*") || allowedOrigins.has(origin.toLowerCase());
@@ -20,13 +22,18 @@ export function createPresenceServer(options: PresenceServerOptions = {}) {
   let stopped = false;
   const presence = createPresenceTracker({ broadcastIntervalMs: options.broadcastIntervalMs, broadcast: payload => server.publish("metrics:presence", payload, false) });
   const direct = (socket: ServerWebSocket<ClientData>) => socket.send(presence.serialize());
+  const defaultCors = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" } as const;
+  const getCors = (origin: string | null) => {
+    if (!origin) return defaultCors;
+    return { "Access-Control-Allow-Origin": allowed(origin) ? origin : "*", "Cache-Control": "no-store" };
+  };
   server = Bun.serve<ClientData>({
     port: options.port ?? 3002,
     hostname: options.hostname ?? "127.0.0.1",
     fetch(request, instance) {
       const url = new URL(request.url);
       const origin = request.headers.get("origin");
-      const cors = { "Access-Control-Allow-Origin": origin && allowed(origin) ? origin : "*", "Cache-Control": "no-store" };
+      const cors = getCors(origin);
       if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...cors, "Access-Control-Allow-Methods": "GET, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization" } });
       if (url.pathname === "/health") return Response.json({ status: "healthy", uptimeSeconds: Math.round(process.uptime()), ...presence.getStats(), memoryUsageMb: Math.round(process.memoryUsage().rss / 1024 / 1024) }, { headers: cors });
       if (url.pathname === "/stats") return Response.json({ ...presence.getStats(), timestamp: Date.now() }, { headers: cors });
@@ -55,11 +62,11 @@ export function createPresenceServer(options: PresenceServerOptions = {}) {
         }
       },
       message(socket, frame) {
-        const text = typeof frame === "string" ? frame : new TextDecoder().decode(frame);
+        const text = typeof frame === "string" ? frame : textDecoder.decode(frame);
         if (text === "ping") { socket.send("pong"); return; }
         try {
           const data = JSON.parse(text);
-          if (data?.type === "ping") socket.send(JSON.stringify({ type: "pong", timestamp: Date.now() }));
+          if (data?.type === "ping") socket.send(`{"type":"pong","timestamp":${Date.now()}}`);
           else if (data?.type === "get_presence") direct(socket);
         } catch { /* Malformed legacy messages do not change presence. */ }
       },

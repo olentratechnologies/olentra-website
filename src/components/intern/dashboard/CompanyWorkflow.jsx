@@ -1,4 +1,5 @@
 "use client";
+import { useInternHistory } from "@/components/intern/useInternHistory";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -23,12 +24,14 @@ import {
   Avatar,
   Button,
   EmptyState,
+  Pagination,
   Panel,
   StatusBadge,
   Tabs,
   formatDate,
 } from "./DashboardUI";
 import styles from "./company-workflow.module.css";
+import { hasStaffPermission } from "./staffAccess";
 
 function localDate(days = 0) {
   const date = new Date();
@@ -134,12 +137,14 @@ export function ApplicantNextAction({ applicationId, onOpenWorkflow }) {
 
 export function ApplicantWorkflow({ applicationId }) {
   const { data, account, commands, notify } = useInternship();
+  const isAdmin = account?.staffRole === "admin";
   const application = data.applications.find(
     (item) => item.id === applicationId,
   );
+  const canMessage = hasStaffPermission(account, application?.status === "Joined" ? "messages.interns" : "messages.applicants");
   const offer = latest(data.offers, applicationId);
   const onboarding = latest(data.onboarding, applicationId);
-  const [tab, setTab] = useState("offer");
+  const [tab, setTab] = useState(isAdmin ? "offer" : "messages");
   const [busy, setBusy] = useState(false);
   const [offerForm, setOfferForm] = useState({
     startOn: localDate(7),
@@ -151,35 +156,24 @@ export function ApplicantWorkflow({ applicationId }) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   useEffect(() => {
-    setTab("offer");
+    setTab(isAdmin ? "offer" : "messages");
     setSubject("");
     setBody("");
-  }, [applicationId]);
+  }, [applicationId, isAdmin]);
   useEffect(() => {
     setOfferForm((previous) => ({
       ...previous,
-      stipend:
-        application?.programId === "innovator"
-          ? data.settings?.maxStipend || 20000
-          : 0,
+      stipend: data.programs.find((program) => program.id === application?.programId)?.stipend ?? 0,
     }));
-  }, [applicationId, application?.programId, data.settings?.maxStipend]);
-  const messages = useMemo(
-    () =>
-      (data.messages || [])
-        .filter((message) => message.applicationId === applicationId)
-        .sort(
-          (first, second) =>
-            new Date(first.createdOn) - new Date(second.createdOn),
-        ),
-    [data.messages, applicationId],
-  );
+  }, [applicationId, application?.programId, data.programs]);
+  const history = useInternHistory("messages", { applicationId, enabled: canMessage && tab === "messages", revision: data.messages });
+  const messages = [...history.items].sort((first, second) => new Date(first.createdOn) - new Date(second.createdOn));
   if (!application || account?.role !== "company") return null;
   const canOffer =
-    application.status === "Selected" &&
+    isAdmin && application.status === "Selected" &&
     !["Sent", "Accepted"].includes(offer?.status);
   const canApprove =
-    offer?.status === "Accepted" &&
+    isAdmin && offer?.status === "Accepted" &&
     onboarding?.status === "Submitted" &&
     application.status === "Selected";
 
@@ -263,15 +257,14 @@ export function ApplicantWorkflow({ applicationId }) {
       </div>
       <Tabs
         items={[
-          { id: "offer", label: "Offer" },
-          { id: "onboarding", label: "Onboarding" },
-          { id: "messages", label: "Messages", count: messages.length },
+          ...(isAdmin ? [{ id: "offer", label: "Offer" }, { id: "onboarding", label: "Onboarding" }] : []),
+          ...(canMessage ? [{ id: "messages", label: "Messages", count: messages.length }] : []),
         ]}
         value={tab}
         onChange={setTab}
         label="Applicant workflow"
       />
-      {tab === "offer" && (
+      {isAdmin && tab === "offer" && (
         <div className={styles.tabBody}>
           {offer && (
             <div className={styles.offerSummary}>
@@ -337,12 +330,7 @@ export function ApplicantWorkflow({ applicationId }) {
                     required
                     type="number"
                     min="0"
-                    max={
-                      application.programId === "explorer"
-                        ? 0
-                        : data.settings?.maxStipend || 20000
-                    }
-                    readOnly={application.programId === "explorer"}
+                    max={data.programs.find((program) => program.id === application?.programId)?.stipend ?? 0}
                     value={offerForm.stipend}
                     onChange={(event) =>
                       setOfferForm({
@@ -388,7 +376,7 @@ export function ApplicantWorkflow({ applicationId }) {
           )}
         </div>
       )}
-      {tab === "onboarding" && (
+      {isAdmin && tab === "onboarding" && (
         <div className={styles.tabBody}>
           <div className={styles.rowBetween}>
             <h3>Enrollment checklist</h3>
@@ -515,8 +503,10 @@ export function ApplicantWorkflow({ applicationId }) {
           </div>
         </div>
       )}
-      {tab === "messages" && (
+      {canMessage && tab === "messages" && (
         <div className={styles.tabBody}>
+          {history.error && <p role="alert">{history.error}</p>}
+          {history.hasMore && <Button variant="secondary" onClick={history.loadMore} disabled={history.loading}>Load older messages</Button>}
           <div className={styles.messageList}>
             {messages.length ? (
               messages.map((message) => {
@@ -665,7 +655,12 @@ function SubmissionReview({
   busy,
   onReview,
   notify,
+  history,
+  loadMore,
 }) {
+  const { account } = useInternship();
+  const isAdmin = account?.staffRole === "admin";
+  const canFeedback = hasStaffPermission(account, "submissions.feedback");
   const [feedback, setFeedback] = useState("");
   const ordered = [...submissions].sort(
     (first, second) =>
@@ -676,7 +671,7 @@ function SubmissionReview({
   if (!submission) return null;
   async function review(event) {
     event.preventDefault();
-    const decision = event.nativeEvent.submitter?.value || "Approved";
+    const decision = event.nativeEvent.submitter?.value || (isAdmin ? "Approved" : "Changes requested");
     if (decision === "Changes requested" && !feedback.trim()) {
       notify("Add feedback so the intern knows what to improve.");
       return;
@@ -728,7 +723,7 @@ function SubmissionReview({
           <small>{timestamp(submission.reviewedOn)}</small>
         </div>
       )}
-      {submission.status === "Submitted" && (
+      {submission.status === "Submitted" && (isAdmin || canFeedback) && (
         <form className={styles.reviewForm} onSubmit={review}>
           <label>
             Feedback
@@ -741,7 +736,7 @@ function SubmissionReview({
             />
           </label>
           <div className={styles.formActions}>
-            <Button
+            {canFeedback && <Button
               variant="secondary"
               name="decision"
               value="Changes requested"
@@ -749,8 +744,8 @@ function SubmissionReview({
               disabled={busy}
             >
               Request changes
-            </Button>
-            <Button
+            </Button>}
+            {isAdmin && <Button
               name="decision"
               value="Approved"
               type="submit"
@@ -758,7 +753,7 @@ function SubmissionReview({
             >
               <Check size={15} />
               Approve submission
-            </Button>
+            </Button>}
           </div>
         </form>
       )}
@@ -772,17 +767,22 @@ function SubmissionReview({
               <time>{timestamp(version.submittedOn)}</time>
               <p>{version.notes}</p>
               {version.feedback && <p>Feedback: {version.feedback}</p>}
+              {safeUrl(version.url) && <a href={safeUrl(version.url)} target="_blank" rel="noreferrer">Open submission</a>}
+              {version.attachmentId && <Button variant="ghost" onClick={async () => { try { await downloadAttachment(version.attachmentId); } catch { notify("This attachment could not be downloaded."); } }}>Download attachment</Button>}
             </div>
           ))}
         </details>
       )}
+      {history?.total > submissions.length && <Button variant="secondary" disabled={history.loading} onClick={loadMore}>Load older versions</Button>}
     </article>
   );
 }
 
-export function ProjectWorkflow({ projectId }) {
+export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, activeMemberIds }) {
   const { data, account, commands, notify } = useInternship();
-  const project = data.projects.find((item) => item.id === projectId);
+  const canManageTasks = hasStaffPermission(account, "tasks.manage");
+  const canReadSubmissions = hasStaffPermission(account, "submissions.read");
+  const project = projectRecord || data.projects.find((item) => item.id === projectId);
   const [tab, setTab] = useState("tasks");
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -794,31 +794,22 @@ export function ProjectWorkflow({ projectId }) {
     dueOn: localDate(7),
     required: true,
   });
-  const tasks = (data.tasks || []).filter(
-    (task) => task.projectId === projectId,
-  );
-  const people = new Map(
-    data.applications.map((application) => [application.id, application]),
-  );
-  const activeIds = new Set(
-    (data.interns || [])
-      .filter((intern) => intern.status === "Active")
-      .map((intern) => intern.applicationId),
-  );
-  const assignees = (project?.team || [])
-    .filter((id) => activeIds.has(id))
-    .map((id) => people.get(id))
-    .filter(Boolean);
-  const submissions = data.submissions || [];
-  const submittedTasks = tasks.filter((task) =>
-    submissions.some((submission) => submission.taskId === task.id),
-  );
-  const reviewCount = tasks.filter(
-    (task) =>
-      [...submissions]
-        .filter((submission) => submission.taskId === task.id)
-        .sort((a, b) => b.version - a.version)[0]?.status === "Submitted",
-  ).length;
+  const [page,setPage] = useState(1), pageSize=10;
+  const [listing,setListing] = useState({items:[],total:0,counts:{statuses:{}}});
+  const [submissions,setSubmissions] = useState([]);
+  const [histories,setHistories] = useState({});
+  const [listError,setListError] = useState("");
+  useEffect(()=>{setPage(1)},[projectId]);
+  useEffect(()=>{let live=true;(async()=>{const result=await commands.listTasks({projectId,page,pageSize});if(!live)return;if(!result.ok){setListError(result.error);return}const histories=canReadSubmissions ? await Promise.all(result.data.items.map(task=>commands.listSubmissions({taskId:task.id,page:1,pageSize:100,sortField:"version",sortDirection:"desc"}))) : [];if(!live)return;const failure=histories.find(history=>!history.ok);if(failure){setListError(failure.error);return}setListError("");setListing(result.data);setSubmissions(histories.flatMap(history=>history.data.items));setHistories(Object.fromEntries(result.data.items.map((task,index)=>[task.id,{page:1,total:histories[index]?.data.total || 0,loading:false}])));if(page>1&&page>Math.max(1,Math.ceil(result.data.total/pageSize)))setPage(Math.max(1,Math.ceil(result.data.total/pageSize)))})();return()=>{live=false}},[projectId,page,pageSize,commands,data.tasks,data.submissions,canReadSubmissions]);
+  const tasks = listing.items;
+  const people = new Map(data.applications.map(application=>[application.id,application]));
+  if(directoryPeople) for(const [id,person] of directoryPeople) people.set(id,person);
+  for(const task of tasks) if(task.application) people.set(task.application.id,task.application);
+  const activeIds = activeMemberIds || new Set((data.interns || []).filter(intern=>intern.status==="Active").map(intern=>intern.applicationId));
+  const assignees = (project?.team || []).filter(id=>activeIds.has(id)).map(id=>people.get(id)).filter(Boolean);
+  async function loadOlderVersions(taskId) { const current=histories[taskId]; if(!current || current.loading)return; setHistories(old=>({...old,[taskId]:{...old[taskId],loading:true}}));const result=await commands.listSubmissions({taskId,page:current.page+1,pageSize:100,sortField:"version",sortDirection:"desc"});if(!result.ok){setListError(result.error);setHistories(old=>({...old,[taskId]:{...old[taskId],loading:false}}));return}setSubmissions(old=>{const ids=new Set(old.map(row=>row.id));return [...old,...result.data.items.filter(row=>!ids.has(row.id))]});setHistories(old=>({...old,[taskId]:{page:current.page+1,total:result.data.total,loading:false}}));}
+  const submittedTasks = tasks.filter(task=>submissions.some(submission=>submission.taskId===task.id));
+  const reviewCount = listing.counts?.statuses?.["Under review"] || 0;
   if (!project || account?.role !== "company") return null;
   async function createTask(event) {
     event.preventDefault();
@@ -903,22 +894,22 @@ export function ProjectWorkflow({ projectId }) {
           <h2>Tasks & Reviews</h2>
           <p>Assign focused work and keep feedback moving.</p>
         </div>
-        <Button
+        {canManageTasks && <Button
           variant="secondary"
           onClick={() => setCreating((value) => !value)}
           disabled={!assignees.length}
         >
           <Plus size={15} />
           Assign task
-        </Button>
+        </Button>}
       </div>
       <div className={styles.taskStats}>
         <span>
-          <strong>{tasks.length}</strong> assigned
+          <strong>{listing.total}</strong> assigned
         </span>
         <span>
           <strong>
-            {tasks.filter((task) => task.status === "Approved").length}
+            {listing.counts?.statuses?.Approved || 0}
           </strong>{" "}
           approved
         </span>
@@ -1015,13 +1006,14 @@ export function ProjectWorkflow({ projectId }) {
       )}
       <Tabs
         items={[
-          { id: "tasks", label: "Assigned tasks", count: tasks.length },
-          { id: "reviews", label: "Submissions", count: submittedTasks.length },
+          { id: "tasks", label: "Assigned tasks", count: listing.total },
+          ...(canReadSubmissions ? [{ id: "reviews", label: "Submissions on this page", count: submittedTasks.length }] : []),
         ]}
         value={tab}
         onChange={setTab}
         label="Project workflow"
       />
+      {listError && <p role="alert">{listError}</p>}
       <div className={styles.tabBody}>
         {tab === "tasks" ? (
           tasks.length ? (
@@ -1047,14 +1039,14 @@ export function ProjectWorkflow({ projectId }) {
                     )}
                   </div>
                   <div className={styles.taskActions}>
-                    <Button
+                    {canManageTasks && <Button
                       variant="ghost"
                       onClick={() =>
                         setEditingTask(editingTask === task.id ? null : task.id)
                       }
                     >
                       Edit task
-                    </Button>
+                    </Button>}
                     {submissions.some(
                       (submission) => submission.taskId === task.id,
                     ) && (
@@ -1097,6 +1089,8 @@ export function ProjectWorkflow({ projectId }) {
                 busy={busy}
                 onReview={reviewSubmission}
                 notify={notify}
+                history={histories[task.id]}
+                loadMore={() => loadOlderVersions(task.id)}
               />
             ))}
           </div>
@@ -1107,6 +1101,7 @@ export function ProjectWorkflow({ projectId }) {
           />
         )}
       </div>
+      <Pagination page={page} pageSize={pageSize} total={listing.total} onChange={setPage}/>
     </section>
   );
 }

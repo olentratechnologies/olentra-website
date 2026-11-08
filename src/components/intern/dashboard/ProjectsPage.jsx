@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
+import { hasStaffPermission } from "./staffAccess";
 import { ProjectWorkflow } from "./CompanyWorkflow";
 import {
   Avatar,
@@ -19,6 +20,7 @@ import {
   FilterMenu,
   Modal,
   PageHeader,
+  Pagination,
   Panel,
   SearchBox,
   StatusBadge,
@@ -223,68 +225,32 @@ function GeometricArtwork({ kind }) {
   );
 }
 
-function TeamPicker({
-  people,
-  selected,
-  onChange,
-  label = "Assign team members",
-}) {
+function TeamPicker({ selected, onChange, onPeople, revision, label = "Assign team members" }) {
+  const { commands } = useDashboard();
   const [search, setSearch] = useState("");
-  const matching = people.filter((person) =>
-    `${person.name} ${person.program} ${person.email}`
-      .toLowerCase()
-      .includes(search.trim().toLowerCase()),
-  );
-  const displayed = matching.slice(0, 40);
-  return (
-    <fieldset className={styles.teamPicker}>
-      <legend>
-        {label} <span>{selected.length} selected</span>
-      </legend>
-      <SearchBox
-        value={search}
-        onChange={setSearch}
-        placeholder="Search active interns..."
-      />
-      <div className={styles.pickerList}>
-        {displayed.map((person) => (
-          <label className={styles.pickerPerson} key={person.id}>
-            <input
-              type="checkbox"
-              checked={selected.includes(person.id)}
-              onChange={(event) =>
-                onChange(
-                  event.target.checked
-                    ? [...new Set([...selected, person.id])]
-                    : selected.filter((id) => id !== person.id),
-                )
-              }
-            />
-            <Avatar person={person} size={30} />
-            <span>
-              <strong>{person.name}</strong>
-              <small>{person.program}</small>
-            </span>
-            <TrackBadge programId={person.programId} />
-          </label>
-        ))}
-        {!displayed.length && (
-          <p className={styles.pickerEmpty}>
-            No active interns match this search.
-          </p>
-        )}
-      </div>
-      <p className={styles.pickerHint}>
-        {matching.length > 40
-          ? `Showing 40 of ${matching.length} active interns. Search by name to find more.`
-          : `${matching.length} active ${matching.length === 1 ? "intern available" : "interns available"}.`}
-      </p>
-    </fieldset>
-  );
+  const [page, setPage] = useState(1);
+  const [listing, setListing] = useState({items:[],total:0});
+  const [error,setError] = useState("");
+  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => {
+    let live = true;
+    const timer = setTimeout(async () => {
+      const result = await commands.listInterns({status:"Active",search,page,pageSize:20});
+      if (!live) return;
+      if (!result.ok) { setError(result.error); return; }
+      setError(""); setListing(result.data);
+      onPeople(result.data.items.map(item => ({...item.application, internshipStatus:item.status})).filter(item=>item.id));
+    },180);
+    return () => { live = false; clearTimeout(timer); };
+  },[search,page,commands,onPeople,revision]);
+  const displayed = listing.items.map(item=>({...item.application,internshipStatus:item.status})).filter(item=>item.id);
+  return <fieldset className={styles.teamPicker}><legend>{label} <span>{selected.length} selected</span></legend><SearchBox value={search} onChange={setSearch} placeholder="Search active interns..."/><div className={styles.pickerList}>{displayed.map(person=><label className={styles.pickerPerson} key={person.id}><input type="checkbox" checked={selected.includes(person.id)} onChange={event=>onChange(event.target.checked ? [...new Set([...selected,person.id])] : selected.filter(id=>id!==person.id))}/><Avatar person={person} size={30}/><span><strong>{person.name}</strong><small>{person.program}</small></span><TrackBadge programId={person.programId}/></label>)}{!displayed.length && !error && <p className={styles.pickerEmpty}>No active interns match this search.</p>}</div>{error && <p role="alert">{error}</p>}<Pagination page={page} pageSize={20} total={listing.total} onChange={setPage}/></fieldset>;
 }
 
 export function ProjectsPage() {
-  const { data, query, notify, createProject, updateProject } = useDashboard();
+  const { data, query, notify, createProject, updateProject, commands, account } = useDashboard();
+  const canManage = hasStaffPermission(account, "projects.manage");
+  const canReadTasks = hasStaffPermission(account, "tasks.read");
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
   const [track, setTrack] = useState("all");
@@ -293,7 +259,7 @@ export function ProjectsPage() {
     name: "",
     description: "",
     program: "Tech Innovator",
-    dueOn: "2026-12-15",
+    dueOn: "",
     art: "planet",
     team: [],
   });
@@ -303,36 +269,19 @@ export function ProjectsPage() {
   const [contributionSearch, setContributionSearch] = useState("");
   const [allContributions, setAllContributions] = useState(false);
   const [saving, setSaving] = useState(false);
-  const people = useMemo(
-    () => new Map(data.applications.map((person) => [person.id, person])),
-    [data.applications],
-  );
-  const activePeople = useMemo(
-    () =>
-      data.interns
-        .filter((intern) => intern.status === "Active")
-        .map((intern) => people.get(intern.applicationId))
-        .filter(Boolean),
-    [data.interns, people],
-  );
-  const activeIds = useMemo(
-    () => new Set(activePeople.map((person) => person.id)),
-    [activePeople],
-  );
-  const projects = data.projects || [];
-  const filtered = projects.filter((project) => {
-    const haystack =
-      `${project.name} ${project.description} ${project.program} ${project.team.map((id) => people.get(id)?.name || "").join(" ")}`.toLowerCase();
-    return (
-      (!query || haystack.includes(query.toLowerCase())) &&
-      (!search || haystack.includes(search.toLowerCase())) &&
-      (track === "all" || project.program === track) &&
-      (tab === "all" || project.status === tab)
-    );
-  });
-  const selectedProject = detail
-    ? projects.find((project) => project.id === detail.id)
-    : null;
+  const [page,setPage] = useState(1), pageSize = 9;
+  const [listing,setListing] = useState({items:[],total:0,counts:{statuses:{}}});
+  const [summary,setSummary] = useState({total:0,counts:{statuses:{}}});
+  const [listError,setListError] = useState("");
+  const [peopleCache,setPeopleCache] = useState({});
+  const rememberPeople = useCallback((records)=>setPeopleCache(previous=>{const next={...previous};for(const record of records)if(record?.id)next[record.id]=record;return next}),[]);
+  useEffect(()=>{setPage(1)},[tab,search,query,track]);
+  useEffect(()=>{let live=true;const timer=setTimeout(async()=>{const programId=data.programs.find(program=>program.name===track)?.id || "all";const params={search,query,programId};const [result,totals]=await Promise.all([commands.listProjects({...params,status:tab,page,pageSize}),commands.listProjects({...params,status:"all",page:1,pageSize:1})]);if(!live)return;if(!result.ok||!totals.ok){setListError(result.error||totals.error);return}setListError("");setListing(result.data);setSummary(totals.data);if(page>1&&page>Math.max(1,Math.ceil(result.data.total/pageSize)))setPage(Math.max(1,Math.ceil(result.data.total/pageSize)))},180);return()=>{live=false;clearTimeout(timer)}},[page,pageSize,tab,search,query,track,commands,data.projects,data.programs]);
+  const projects = listing.items;
+  const people = useMemo(()=>{const map=new Map(data.applications.map(person=>[person.id,person]));Object.values(peopleCache).forEach(person=>map.set(person.id,person));for(const project of projects) for(const member of project.members || []) map.set(member.id,member);return map},[data.applications,peopleCache,projects]);
+  const activeIds = useMemo(()=>{const ids=new Set(data.interns.filter(intern=>intern.status==="Active").map(intern=>intern.applicationId));Object.values(peopleCache).forEach(person=>{if(person.internshipStatus==="Active")ids.add(person.id)});for(const project of projects)for(const intern of project.teamInterns || [])if(intern.status==="Active")ids.add(intern.applicationId);return ids},[data.interns,peopleCache,projects]);
+  const filtered = projects;
+  const selectedProject = detail ? projects.find(project=>project.id===detail.id) : null;
   const contributions = (data.contributions || []).filter((contribution) => {
     const project = projects.find((item) => item.id === contribution.projectId);
     const person = people.get(contribution.applicationId);
@@ -383,7 +332,7 @@ export function ProjectsPage() {
         name: "",
         description: "",
         program: "Tech Innovator",
-        dueOn: "2026-12-15",
+        dueOn: "",
         art: "planet",
         team: [],
       });
@@ -429,32 +378,28 @@ export function ProjectsPage() {
         title="Projects"
         description="Build together. Learn by doing. Make an impact."
       >
-        <Button
+        {canManage && <Button
           onClick={() => {
             setCreateOpen(true);
             setFormError("");
           }}
         >
           <Plus size={16} /> Create Project
-        </Button>
+        </Button>}
       </PageHeader>
       <div className={styles.projectToolbar}>
         <Tabs
           items={[
-            { id: "all", label: "All Projects", count: projects.length },
+            { id: "all", label: "All Projects", count: summary.total },
             {
               id: "In progress",
               label: "In Progress",
-              count: projects.filter(
-                (project) => project.status === "In progress",
-              ).length,
+              count: summary.counts?.statuses?.["In progress"] || 0,
             },
             {
               id: "Completed",
               label: "Completed",
-              count: projects.filter(
-                (project) => project.status === "Completed",
-              ).length,
+              count: summary.counts?.statuses?.Completed || 0,
             },
           ]}
           value={tab}
@@ -494,6 +439,7 @@ export function ProjectsPage() {
           </FilterMenu>
         </div>
       </div>
+      {listError && <p role="alert">{listError}</p>}
       {filtered.length ? (
         <div className={styles.projectGrid}>
           {filtered.map((project) => (
@@ -589,6 +535,7 @@ export function ProjectsPage() {
           />
         </Panel>
       )}
+      <Pagination page={page} pageSize={pageSize} total={listing.total} onChange={setPage}/>
       <Panel className={styles.contributionsPanel}>
         <div className={common.panelTitle}>
           <h2>
@@ -723,7 +670,8 @@ export function ProjectsPage() {
             </label>
           </div>
           <TeamPicker
-            people={activePeople}
+            onPeople={rememberPeople}
+            revision={data.interns}
             selected={form.team}
             onChange={(team) => setForm({ ...form, team })}
           />
@@ -770,6 +718,7 @@ export function ProjectsPage() {
                 <label className={common.field}>
                   Project status
                   <select
+                    disabled={!canManage}
                     value={detail.status}
                     onChange={(event) =>
                       setDetail({ ...detail, status: event.target.value })
@@ -785,6 +734,7 @@ export function ProjectsPage() {
                 <label className={common.field}>
                   Progress (%)
                   <input
+                    disabled={!canManage}
                     type="number"
                     min="0"
                     max="100"
@@ -809,7 +759,7 @@ export function ProjectsPage() {
                           <span key={id}>
                             <Avatar person={person} size={22} />
                             {person.name}
-                            <button
+                            {canManage && <button
                               type="button"
                               aria-label={`Remove ${person.name} from project`}
                               onClick={() =>
@@ -822,7 +772,7 @@ export function ProjectsPage() {
                               }
                             >
                               <X size={12} />
-                            </button>
+                            </button>}
                           </span>
                         )
                       );
@@ -832,12 +782,13 @@ export function ProjectsPage() {
                   <p>No team members assigned yet.</p>
                 )}
               </div>
-              <TeamPicker
-                people={activePeople}
+              {canManage && <TeamPicker
+                onPeople={rememberPeople}
+                revision={data.interns}
                 selected={detail.team}
                 onChange={(team) => setDetail({ ...detail, team })}
                 label="Add active interns"
-              />
+              />}
               {detailError && (
                 <p className={common.error} role="alert">
                   {detailError}
@@ -847,12 +798,12 @@ export function ProjectsPage() {
                 <Button variant="ghost" onClick={() => setDetail(null)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving}>
+                {canManage && <Button type="submit" disabled={saving}>
                   <Check size={15} /> Save Changes
-                </Button>
+                </Button>}
               </div>
             </form>
-            <ProjectWorkflow projectId={selectedProject.id} />
+            {canReadTasks && <ProjectWorkflow projectId={selectedProject.id} projectRecord={selectedProject} directoryPeople={people} activeMemberIds={activeIds} />}
           </>
         )}
       </Modal>

@@ -8,8 +8,12 @@ const contact = createContactHandler({
   token: process.env.CONTACT_BACKEND_TOKEN,
 });
 
+const HEALTH_RESPONSE = new Response('{"ok":true}', {
+  headers: { 'content-type': 'application/json', 'cache-control': 'no-cache' },
+});
+
 const app = new Elysia()
-  .get('/health', () => ({ ok: true }))
+  .get('/health', () => HEALTH_RESPONSE.clone())
   .post('/api/contact', ({ request }) => contact(request), { parse: 'none' });
 
 // Vercel detects the default Elysia export and serves its routes as Functions.

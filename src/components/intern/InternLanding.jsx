@@ -7,11 +7,11 @@ import {
   AlertCircle,
   ArrowRight,
   Check,
+  CheckCircle2,
   FileText,
   Upload,
   X,
 } from "lucide-react";
-import ApplicationsChart from "./ApplicationsChart";
 import ApplicationLaunch from "./ApplicationLaunch";
 import LaunchAnimation from "./LaunchAnimation";
 import { useInternship } from "./InternshipProvider";
@@ -45,7 +45,7 @@ const tracks = [
     id: "explorer",
     type: "Type A",
     name: "Tech Explorer",
-    subtitle: "Free Internship",
+    subtitle: "Internship program",
     description:
       "Explore the world of technology with structured learning, mentorship and hands-on projects.",
     benefits: [
@@ -60,11 +60,11 @@ const tracks = [
     id: "innovator",
     type: "Type B",
     name: "Tech Innovator",
-    subtitle: "Paid Internship – Up to ₹20,000",
+    subtitle: "Internship program",
     description:
-      "Go beyond learning. Contribute, build and innovate while earning a stipend of up to ₹20,000.",
+      "Go beyond learning. Contribute, build and innovate alongside the team.",
     benefits: [
-      "Stipend up to ₹20,000",
+      "Hands-on project experience",
       "Access to premium AI tools",
       "Contribute to live projects",
       "Exclusive perks & more",
@@ -166,9 +166,9 @@ function BackgroundWaves() {
 }
 
 export default function InternLanding() {
-  const { commands, ready, sessionReady } = useInternship();
+  const { commands, ready, sessionReady, connected, data, requestMagicLink } = useInternship();
   const { features, ready: featuresReady } = useSiteFeatures();
-  const canApply = Boolean(featuresReady && features.internships && features.applications);
+  const canApply = Boolean(featuresReady && features.internships && features.applications && connected && data.settings.programEnabled && data.programs.some((program) => program.enabled));
   const canApplyRef = useRef(canApply);
   canApplyRef.current = canApply;
   const [selectedTrack, setSelectedTrack] = useState("");
@@ -183,8 +183,11 @@ export default function InternLanding() {
   const [submitting, setSubmitting] = useState(false);
   const [sampleBusy, setSampleBusy] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [alreadyAppliedEmail, setAlreadyAppliedEmail] = useState("");
+  const [resendStatus, setResendStatus] = useState("idle");
   const [savedApplication, setSavedApplication] = useState(null);
   const submissionLock = useRef(false);
+  const uploadedResume = useRef(null);
   const nameInput = useRef(null);
   const resumeInput = useRef(null);
   const linkedInInput = useRef(null);
@@ -300,30 +303,35 @@ export default function InternLanding() {
     submissionLock.current = true;
     setSubmitting(true);
     setSubmitError("");
+    setAlreadyAppliedEmail("");
+    setResendStatus("idle");
     setPreviewComplete(false);
     setShowValidation(false);
     try {
-      const attachment = await saveAttachment(file, "resume");
+      const attachment = uploadedResume.current || await saveAttachment(file, "resume");
+      uploadedResume.current = attachment;
       const result = await commands.submitApplication({
         ...input,
         resumeAttachmentId: attachment.id,
+        resumeAccessToken: attachment.accessToken,
       });
       if (!result.ok) {
-        setSubmitError(
-          typeof result.error === "string"
-            ? result.error
-            : result.error?.message ||
-                "Unable to save your application. Please try again.",
-        );
+        const msg = typeof result.error === "string" ? result.error : result.error?.message || "Unable to save your application. Please try again.";
+        setSubmitError(msg);
+        if (msg.toLowerCase().includes("already exists") || result.error?.code === "ALREADY_APPLIED") {
+          setAlreadyAppliedEmail(input.email);
+        }
         return;
       }
       setSavedApplication(result.data);
       if (!canApplyRef.current) return;
       setLaunchPhase("launching");
     } catch (error) {
-      setSubmitError(
-        error?.message || "Unable to save your application. Please try again.",
-      );
+      const msg = error?.message || "Unable to save your application. Please try again.";
+      setSubmitError(msg);
+      if (msg.toLowerCase().includes("already exists")) {
+        setAlreadyAppliedEmail(input.email);
+      }
     } finally {
       submissionLock.current = false;
       setSubmitting(false);
@@ -356,6 +364,7 @@ export default function InternLanding() {
   }
 
   function updateResume(input, rejectedMessage = "") {
+    uploadedResume.current = null;
     const file = input.files?.[0];
     let message = rejectedMessage;
     if (!message && !file) {
@@ -393,6 +402,7 @@ export default function InternLanding() {
   }
 
   function removeResume() {
+    uploadedResume.current = null;
     if (resumeInput.current) {
       resumeInput.current.value = "";
       resumeInput.current.setCustomValidity("");
@@ -497,7 +507,7 @@ export default function InternLanding() {
                   <div className={styles.trackHeading}>
                     <span className={styles.trackBadge}>{track.type}</span>
                     <h2>{track.name}</h2>
-                    <p className={styles.trackSubtitle}>{track.subtitle}</p>
+                    <p className={styles.trackSubtitle}>{(() => { const program = data.programs.find((p) => p.id === track.id); return program?.fee == null || program?.stipend == null ? "Details to be announced" : `Fee: ₹${program.fee} · Stipend: ₹${program.stipend}`; })()}</p>
                   </div>
                   <p className={styles.trackDescription}>{track.description}</p>
                   <ul className={styles.trackBenefits}>
@@ -511,7 +521,7 @@ export default function InternLanding() {
                     ))}
                   </ul>
                 </div>
-                {canApply && <a
+                {canApply && data.programs.find((p) => p.id === track.id)?.enabled && <a
                   href="#internship-application"
                   className={`${styles.primaryButton} ${styles.trackButton}`}
                   onClick={(event) => applyForTrack(event, track.id)}
@@ -537,23 +547,9 @@ export default function InternLanding() {
             </div>
           </div>
           <div className={styles.insightsGrid}>
-            <div
-              className={styles.metrics}
-              aria-label="Illustrative internship statistics"
-            >
-              {[
-                { art: "users", value: "500+", label: "Intern Applications" },
-                { art: "rocket", value: "200+", label: "Selected Interns" },
-                { art: "star", value: "95%", label: "Satisfaction Rate" },
-              ].map((metric) => (
-                <div className={styles.metric} key={metric.label}>
-                  <ReferenceArt name={metric.art} />
-                  <strong>{metric.value}</strong>
-                  <span>{metric.label}</span>
-                </div>
-              ))}
+            <div className={styles.metrics} aria-label="Internship experience">
+              {[{art:"users",value:"Learn",label:"Join the community"},{art:"rocket",value:"Build",label:"Work on projects"},{art:"star",value:"Grow",label:"Develop your skills"}].map((metric)=><div className={styles.metric} key={metric.label}><ReferenceArt name={metric.art}/><strong>{metric.value}</strong><span>{metric.label}</span></div>)}
             </div>
-            <ApplicationsChart />
             <aside className={styles.journey}>
               <ReferenceArt name="bulb" />
               <div>
@@ -668,7 +664,7 @@ export default function InternLanding() {
                         <option value="" disabled>
                           Choose a track
                         </option>
-                        {tracks.map((track) => (
+                        {tracks.filter((track) => data.programs.find((program) => program.id === track.id)?.enabled).map((track) => (
                           <option key={track.id} value={track.id}>
                             {track.name}
                           </option>
@@ -785,16 +781,6 @@ export default function InternLanding() {
                         </button>
                       )}
                     </div>
-                    <div className={styles.resumeTools}>
-                      <button
-                        type="button"
-                        onClick={useSampleResume}
-                        disabled={sampleBusy || submitting}
-                      >
-                        {sampleBusy ? "Preparing sample…" : "Use Sample Resume"}
-                      </button>
-                      <span>Try the demo with a sample PDF.</span>
-                    </div>
                     {resumeError && (
                       <p
                         className={styles.fieldError}
@@ -847,14 +833,85 @@ export default function InternLanding() {
                   </p>
                 )}
                 {submitError && (
-                  <div className={styles.applicationError} role="alert">
-                    <AlertCircle size={16} />
+                  <div
+                    className={styles.applicationError}
+                    role="alert"
+                    style={
+                      alreadyAppliedEmail
+                        ? {
+                            background: "rgba(30, 41, 59, 0.9)",
+                            borderColor: "rgba(96, 165, 250, 0.3)",
+                            color: "#e2e8f0",
+                          }
+                        : undefined
+                    }
+                  >
+                    {alreadyAppliedEmail ? (
+                      <CheckCircle2 size={18} style={{ color: "#60a5fa", flexShrink: 0 }} />
+                    ) : (
+                      <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                    )}
                     <div>
-                      {submitError}
-                      <Link href="/intern/login?role=intern">
-                        Already applied? Sign in to your account{" "}
-                        <ArrowRight size={12} />
-                      </Link>
+                      {alreadyAppliedEmail ? (
+                        <>
+                          <strong style={{ color: "#ffffff" }}>Application already on file!</strong>
+                          <p style={{ margin: "4px 0 10px", fontSize: "13px", color: "#cbd5e1" }}>
+                            {submitError}
+                          </p>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: "10px",
+                              alignItems: "center",
+                            }}
+                          >
+                            <button
+                              type="button"
+                              disabled={resendStatus === "sending"}
+                              onClick={async () => {
+                                setResendStatus("sending");
+                                try {
+                                  await requestMagicLink(alreadyAppliedEmail);
+                                  setResendStatus("sent");
+                                } catch {
+                                  setResendStatus("sent");
+                                }
+                              }}
+                              style={{
+                                background: "#2563eb",
+                                color: "#ffffff",
+                                border: "none",
+                                borderRadius: "6px",
+                                padding: "6px 12px",
+                                fontSize: "12px",
+                                fontWeight: 500,
+                                cursor: "pointer",
+                              }}
+                            >
+                              {resendStatus === "sending"
+                                ? "Sending link…"
+                                : resendStatus === "sent"
+                                  ? "Sign-in link sent! Check inbox"
+                                  : "Resend sign-in link to my email"}
+                            </button>
+                            <Link
+                              href="/intern/login?role=intern"
+                              style={{ fontSize: "12px", color: "#60a5fa" }}
+                            >
+                              Sign in with password <ArrowRight size={11} />
+                            </Link>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {submitError}
+                          <Link href="/intern/login?role=intern">
+                            Already applied? Sign in to your account{" "}
+                            <ArrowRight size={12} />
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -867,15 +924,18 @@ export default function InternLanding() {
                     <span className={styles.previewReady}>
                       <Check size={17} aria-hidden="true" />
                       <span>
-                        Your demo application is saved.
+                        Your application is saved.
                         <strong className={styles.savedApplicationId}>
                           Application ID: {savedApplication.id}
                         </strong>
+                        <span style={{ display: "block", fontSize: "12px", color: "#94a3b8", margin: "4px 0 8px" }}>
+                          A copy of your 1-click candidate portal link has been sent to your email.
+                        </span>
                         <Link
                           className={styles.createAccountLink}
                           href="/intern/register"
                         >
-                          Create your account <ArrowRight size={12} />
+                          Create your password now <ArrowRight size={12} />
                         </Link>
                       </span>
                     </span>
@@ -891,7 +951,7 @@ export default function InternLanding() {
             </aside>
           </div> : featuresReady && <div className={styles.applicationClosed} id="internship-application" role="status">
             <h2>Applications are currently closed</h2>
-            <p>New internship applications and account registration are unavailable at the moment.</p>
+            <p>{!connected ? "The internship service is unavailable. Please try again shortly." : "New internship applications and account registration are unavailable at the moment."}</p>
             {features.portal && <Link href="/intern/login?role=intern" className={styles.secondaryButton}>Existing intern? Sign in <ArrowRight size={15} /></Link>}
           </div>}
         </section>

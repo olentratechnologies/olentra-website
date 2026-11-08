@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowDown,
@@ -12,10 +12,13 @@ import {
   X,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
+import { hasStaffPermission } from "./staffAccess";
+import { useInternHistory } from "@/components/intern/useInternHistory";
 import {
   Avatar,
   Button,
   EmptyState,
+  Modal,
   PageHeader,
   Pagination,
   Panel,
@@ -31,7 +34,12 @@ import ui from "./pages.module.css";
 import styles from "./analytics.module.css";
 
 export default function InternsPage() {
-  const { data, query = "", notify, updateIntern } = useDashboard();
+  const { data, query = "", notify, updateIntern, commands, account } = useDashboard();
+  const isAdmin = account?.staffRole === "admin";
+  const canApplications = hasStaffPermission(account, "applications.read");
+  const canMessage = hasStaffPermission(account, "messages.interns");
+  const [recipient,setRecipient] = useState(null), [subject,setSubject] = useState(""), [body,setBody] = useState(""), [sending,setSending] = useState(false), [messageError,setMessageError] = useState("");
+  const messages = useInternHistory("messages", { applicationId: recipient?.applicationId, enabled: Boolean(recipient && canMessage), revision: data.messages });
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
   const [track, setTrack] = useState("all");
@@ -41,45 +49,28 @@ export default function InternsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
-  const interns = useMemo(() => {
-    const applicants = new Map(
-      (data.applications || []).map((application) => [
-        application.id,
-        application,
-      ]),
-    );
-    const projects = new Map(
-      (data.projects || []).map((project) => [project.id, project]),
-    );
-    return (data.interns || []).map((intern) => {
-      const person = applicants.get(intern.applicationId) || {};
-      return {
-        ...person,
-        ...intern,
-        applicationId: intern.applicationId,
-        name: person.name || intern.name || "Intern",
-        email: person.email || intern.email || "",
-        programId: person.programId || intern.programId,
-        program: person.program || intern.program,
-        projects: (intern.projectIds || [])
-          .map((id) => projects.get(id))
-          .filter(Boolean),
-      };
-    });
-  }, [data]);
-  const count = (status) =>
-    interns.filter(
-      (intern) => intern.status?.toLowerCase() === status.toLowerCase(),
-    ).length;
-  const counts = {
-    all: interns.length,
-    active: count("Active"),
-    completed: count("Completed"),
-    dropped: count("Dropped"),
-  };
-  const batches = [
-    ...new Set(interns.map((intern) => intern.batch).filter(Boolean)),
-  ];
+  const [listing, setListing] = useState({items:[],total:0,counts:{statuses:{},programs:{}},batches:[]});
+  const [summary, setSummary] = useState({total:0,counts:{statuses:{},programs:{}},batches:[]});
+  const [listError, setListError] = useState("");
+  useEffect(() => { setPage(1); }, [query, search, track, batch, tab]);
+  useEffect(() => {
+    let live = true;
+    const timer = setTimeout(async () => {
+      const common = {search,query,programId:track,batch,sortField:sort.key,sortDirection:sort.direction};
+      const [pageResult, summaryResult] = await Promise.all([
+        commands.listInterns({...common,status:tab,page,pageSize}),
+        commands.listInterns({...common,status:"all",page:1,pageSize:1}),
+      ]);
+      if (!live) return;
+      if (!pageResult.ok || !summaryResult.ok) { setListError(pageResult.error || summaryResult.error); return; }
+      setListError(""); setListing(pageResult.data); setSummary(summaryResult.data);
+      if (page > 1 && page > Math.max(1, Math.ceil(pageResult.data.total / pageSize))) setPage(Math.max(1, Math.ceil(pageResult.data.total / pageSize)));
+    }, 180);
+    return () => { live = false; clearTimeout(timer); };
+  }, [page,pageSize,search,query,track,batch,tab,sort.key,sort.direction,commands,data.interns]);
+  const interns = listing.items.map(intern => ({...intern.application,...intern,name:intern.application?.name || intern.name || "Intern",email:intern.application?.email || intern.email || "",programId:intern.application?.programId || intern.programId,program:intern.application?.program || intern.program,projects:intern.projects || []}));
+  const counts = {all:summary.total,active:summary.counts?.statuses?.Active || 0,completed:summary.counts?.statuses?.Completed || 0,dropped:summary.counts?.statuses?.Dropped || 0};
+  const batches = summary.batches || [];
   const baseline = data.metrics?.find((metric) => metric.id === "joined");
   const metrics = [
     {
@@ -89,7 +80,7 @@ export default function InternsPage() {
       value: counts.all,
       tone: "orange",
       icon: "trophy",
-      change: 15,
+      change: null,
     },
     {
       ...baseline,
@@ -98,7 +89,7 @@ export default function InternsPage() {
       value: counts.active,
       tone: "blue",
       icon: "users",
-      change: 12,
+      change: null,
     },
     {
       ...baseline,
@@ -107,7 +98,7 @@ export default function InternsPage() {
       value: counts.completed,
       tone: "green",
       icon: "check",
-      change: 8,
+      change: null,
     },
     {
       ...baseline,
@@ -116,44 +107,12 @@ export default function InternsPage() {
       value: counts.dropped,
       tone: "purple",
       icon: "users",
-      change: -5,
+      change: null,
     },
   ];
-  const filtered = interns
-    .filter((intern) => {
-      const text =
-        `${intern.name} ${intern.email} ${intern.batch} ${intern.program} ${intern.projects.map((project) => project.name).join(" ")}`.toLowerCase();
-      return (
-        text.includes(query.toLowerCase()) &&
-        text.includes(search.toLowerCase()) &&
-        (tab === "all" || intern.status?.toLowerCase() === tab) &&
-        (track === "all" || intern.programId === track) &&
-        (batch === "all" || intern.batch === batch)
-      );
-    })
-    .sort((first, second) => {
-      const firstValue =
-        sort.key === "project"
-          ? first.projects[0]?.name || ""
-          : first[sort.key] || "";
-      const secondValue =
-        sort.key === "project"
-          ? second.projects[0]?.name || ""
-          : second[sort.key] || "";
-      return (
-        String(firstValue).localeCompare(String(secondValue), undefined, {
-          numeric: true,
-        }) * (sort.direction === "asc" ? 1 : -1)
-      );
-    });
-  const safePage = Math.min(
-    page,
-    Math.max(1, Math.ceil(filtered.length / pageSize)),
-  );
-  const visible = filtered.slice(
-    (safePage - 1) * pageSize,
-    safePage * pageSize,
-  );
+  const filtered = interns;
+  const safePage = page;
+  const visible = interns;
   const activeFilters = Number(track !== "all") + Number(batch !== "all");
 
   function updateFilter(setter, value) {
@@ -198,7 +157,7 @@ export default function InternsPage() {
         intern.status,
       ]),
     );
-    notify?.(`${filtered.length.toLocaleString()} intern records exported.`);
+    notify?.(`${filtered.length.toLocaleString()} intern records from this page exported.`);
   }
 
   async function changeStatus(intern, status) {
@@ -215,7 +174,7 @@ export default function InternsPage() {
         <div className={styles.headerActions}>
           <Button variant="secondary" onClick={exportInterns}>
             <Download size={16} />
-            Export
+            Export current page
           </Button>
           <Button
             onClick={() => setShowFilters((open) => !open)}
@@ -322,7 +281,7 @@ export default function InternsPage() {
               {visible.map((intern) => (
                 <tr key={intern.id}>
                   <td>
-                    <Link
+                    {canApplications ? <Link
                       className={styles.internPerson}
                       href={`/intern/dashboard/applications/${intern.applicationId}`}
                     >
@@ -331,7 +290,7 @@ export default function InternsPage() {
                         <strong>{intern.name}</strong>
                         <small>{intern.email}</small>
                       </span>
-                    </Link>
+                    </Link> : <div className={styles.internPerson}><Avatar person={intern} size={34}/><span><strong>{intern.name}</strong><small>{intern.email}</small></span></div>}
                   </td>
                   <td>
                     <TrackBadge programId={intern.programId} />
@@ -360,13 +319,14 @@ export default function InternsPage() {
                     <StatusBadge status={intern.status} />
                   </td>
                   <td className={styles.rowActions}>
-                    <RowMenu
+                    {(isAdmin || canApplications || canMessage) && <RowMenu
                       items={[
-                        {
+                        ...(canApplications ? [{
                           label: "View profile",
                           href: `/intern/dashboard/applications/${intern.applicationId}`,
-                        },
-                        ...(intern.status === "Completed"
+                        }] : []),
+                        ...(canMessage ? [{label:"Message intern",onClick:()=>{setRecipient(intern);setSubject("");setBody("");setMessageError("")}}] : []),
+                        ...(!isAdmin || intern.status === "Completed"
                           ? []
                           : [
                               {
@@ -375,7 +335,7 @@ export default function InternsPage() {
                                   changeStatus(intern, "Completed"),
                               },
                             ]),
-                        ...(intern.status === "Completed"
+                        ...(!isAdmin || intern.status === "Completed"
                           ? []
                           : intern.status === "Dropped"
                             ? [
@@ -393,14 +353,15 @@ export default function InternsPage() {
                                 },
                               ]),
                       ]}
-                    />
+                    />}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {!filtered.length && (
+        {listError && <p role="alert">{listError}</p>}
+        {!filtered.length && !listError && (
           <EmptyState
             title="No interns found"
             description="Try a different search, track, batch, or status."
@@ -409,10 +370,20 @@ export default function InternsPage() {
         <Pagination
           page={safePage}
           pageSize={pageSize}
-          total={filtered.length}
+          total={listing.total}
           onChange={setPage}
         />
       </Panel>
+      <Modal open={Boolean(recipient)} onOpenChange={open=>{if(!open)setRecipient(null)}} title={`Message ${recipient?.name || "intern"}`} description="Communicate with an intern in their workspace.">
+        {messages.error && <p role="alert">{messages.error}</p>}
+        {messages.items.map(item=><article key={item.id}><strong>{item.subject}</strong><p>{item.body}</p></article>)}
+        {messages.hasMore && <Button variant="ghost" onClick={messages.loadMore} disabled={messages.loading}>Load older messages</Button>}
+        <form onSubmit={async event=>{event.preventDefault();setSending(true);setMessageError("");const result=await commands.sendMessage(recipient.applicationId,{subject:subject.trim(),body:body.trim()});setSending(false);if(!result.ok){setMessageError(result.error);return}setSubject("");setBody("");notify("Message sent.")}}>
+          <label className={ui.field}>Subject<input required maxLength={140} value={subject} onChange={event=>setSubject(event.target.value)}/></label>
+          <label className={ui.field}>Message<textarea required maxLength={3000} rows={4} value={body} onChange={event=>setBody(event.target.value)}/></label>
+          {messageError && <p role="alert">{messageError}</p>}<div className={ui.formActions}><Button type="submit" disabled={sending}>{sending ? "Sending…" : "Send message"}</Button></div>
+        </form>
+      </Modal>
     </div>
   );
 }

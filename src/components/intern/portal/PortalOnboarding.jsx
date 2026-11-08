@@ -236,13 +236,7 @@ function OnboardingForm({ application, onboarding }) {
                         onChange={(event) => attach(event.target.files?.[0])}
                       />
                     </label>
-                    <Button
-                      variant="secondary"
-                      disabled={uploading || action.busy}
-                      onClick={sampleResume}
-                    >
-                      Use sample resume
-                    </Button>
+
                   </>
                 )}
                 {values.resumeAttachmentId && (

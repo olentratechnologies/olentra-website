@@ -95,7 +95,7 @@ export function StatCards({ items }) {
           )}
           <div className={styles.statSpark}>
             <Sparkline
-              values={item.trend || [3, 3, 5, 4, 6, 8, 7, 9, 12, 11, 14]}
+              values={item.trend || []}
               color={
                 {
                   blue: "#2583ff",

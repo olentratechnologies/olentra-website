@@ -107,7 +107,7 @@ function AuthShell({ children, eyebrow = "YOUR NEXT CHAPTER STARTS HERE" }) {
           {children}
           <footer className={styles.authFooter}>
             <ShieldCheck size={13} />
-            <span>Olentra Internship Program · Interactive demo</span>
+            <span>Olentra Internship Program</span>
           </footer>
         </section>
       </div>
@@ -212,13 +212,15 @@ export function AuthLoading() {
 
 export function LoginPage() {
   const {
-    ready,
+    authReady: ready,
     sessionReady,
+    authUnavailable,
     account,
     sessionNotice,
     demoAccounts = [],
     signIn,
     signOut,
+    requestMagicLink,
   } = useInternship();
   const params = useSearchParams();
   const router = useRouter();
@@ -232,8 +234,8 @@ export function LoginPage() {
   const switchAccount = params.get("switch") === "1";
   const returnTo = params.get("returnTo");
   const redirectNotices = {
-    session: "Your demo session ended. Sign in again to continue.",
-    reset: "The demo was reset. Sign in again to start fresh.",
+    session: "Your session ended. Sign in again to continue.",
+    reset: "Sign in to continue.",
     "signed-out":
       "You’re signed out. Sign in whenever you’re ready to continue.",
     "password-reset":
@@ -246,7 +248,7 @@ export function LoginPage() {
         localNotice ||
         redirectNotices[params.get("notice")] ||
         (switchAccount
-          ? "Choose a demo account below, then sign in to its workspace."
+          ? "Sign in to your account."
           : "");
   useEffect(() => {
     if (sessionReady && account && !switchAccount)
@@ -294,12 +296,13 @@ export function LoginPage() {
       resetRole={initialRole}
       email={email}
       password={password}
-      error={error}
+      error={error || (authUnavailable ? "The internship service is temporarily unavailable. Reconnecting automatically…" : "")}
       busy={busy}
       onEmailChange={setEmail}
       onPasswordChange={setPassword}
       onSubmit={submit}
       onChooseDemo={chooseDemo}
+      onRequestMagicLink={requestMagicLink}
       onSignOut={async () => {
         await signOut();
         setError("");
@@ -480,215 +483,5 @@ function FileIcon() {
 }
 
 export function ResetPasswordPage() {
-  const { ready, sessionReady, requestPasswordReset, resetPassword } =
-    useInternship();
-  const params = useSearchParams();
-  const [role, setRole] = useState(
-    params.get("role") === "company" ? "company" : "intern",
-  );
-  const [email, setEmail] = useState("");
-  const [reset, setReset] = useState(null);
-  const [code, setCode] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [complete, setComplete] = useState(false);
-  const submitting = useRef(false);
-  const request = async (event) => {
-    event.preventDefault();
-    if (submitting.current) return;
-    submitting.current = true;
-    setBusy(true);
-    setError("");
-    try {
-      const result = await requestPasswordReset({ email: email.trim(), role });
-      if (!result.ok) return setError(errorText(result.error));
-      setReset(result.data);
-    } catch {
-      setError("Unable to start password reset. Please try again.");
-    } finally {
-      submitting.current = false;
-      setBusy(false);
-    }
-  };
-  const updatePassword = async (event) => {
-    event.preventDefault();
-    if (submitting.current || !reset) return;
-    if (password.length < 8)
-      return setError("Choose a password with at least 8 characters.");
-    if (password !== confirmPassword)
-      return setError("Your passwords do not match.");
-    submitting.current = true;
-    setBusy(true);
-    setError("");
-    try {
-      const result = await resetPassword({
-        resetId: reset.resetId,
-        code: code.trim(),
-        password,
-      });
-      if (!result.ok) return setError(errorText(result.error));
-      setComplete(true);
-    } catch {
-      setError("Unable to reset your password. Please try again.");
-    } finally {
-      submitting.current = false;
-      setBusy(false);
-    }
-  };
-  return (
-    <AuthShell>
-      <div className={styles.panelHeading}>
-        <span className={styles.headingIcon}>
-          {complete ? <CheckCircle2 size={24} /> : <LockKeyhole size={23} />}
-        </span>
-        <h2>{complete ? "You’re all set." : "Reset your password."}</h2>
-        <p>
-          {complete
-            ? "Your new password is ready. Sign in to continue your journey."
-            : "A fresh start for your Olentra account."}
-        </p>
-      </div>
-      {complete ? (
-        <div className={styles.resetComplete}>
-          <span>
-            <Check size={30} />
-          </span>
-          <h3>Password updated</h3>
-          <p>Use your new password the next time you sign in.</p>
-          <Link
-            href={`/intern/login?role=${role}&switch=1&notice=password-reset`}
-            className={styles.primaryButton}
-          >
-            Back to Sign In <ArrowRight size={15} />
-          </Link>
-        </div>
-      ) : !reset ? (
-        <>
-          <RoleTabs
-            role={role}
-            onChange={(value) => {
-              setRole(value);
-              setError("");
-            }}
-            disabled={busy}
-          />
-          <form className={styles.authForm} onSubmit={request}>
-            <fieldset disabled={!ready || !sessionReady || busy}>
-              <label className={styles.field} htmlFor="reset-email">
-                <span>Account email address</span>
-                <div className={styles.inputControl}>
-                  <Mail size={16} />
-                  <input
-                    id="reset-email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="Enter your account email"
-                    autoComplete="username"
-                    required
-                  />
-                </div>
-              </label>
-              <p className={styles.resetExplanation}>
-                This interactive demo displays a verification code here. No
-                email is sent.
-              </p>
-              <ErrorMessage>{error}</ErrorMessage>
-              <button className={styles.primaryButton} type="submit">
-                {busy ? (
-                  <>
-                    <LoaderCircle size={16} className={styles.spin} /> Preparing
-                    code...
-                  </>
-                ) : (
-                  <>
-                    Get Verification Code <ArrowRight size={15} />
-                  </>
-                )}
-              </button>
-            </fieldset>
-          </form>
-        </>
-      ) : (
-        <>
-          <div className={styles.verificationNotice}>
-            <ShieldCheck size={20} />
-            <div>
-              <strong>Demo verification code</strong>
-              <span>For {reset.email || email}</span>
-              <code>{reset.code}</code>
-              <button type="button" onClick={() => setCode(String(reset.code))}>
-                Use this code <ArrowRight size={12} />
-              </button>
-              <p>This code is shown locally for the demo. No email was sent.</p>
-            </div>
-          </div>
-          <form className={styles.authForm} onSubmit={updatePassword}>
-            <fieldset disabled={busy}>
-              <label className={styles.field} htmlFor="verification-code">
-                <span>Verification code</span>
-                <div className={styles.inputControl}>
-                  <ShieldCheck size={16} />
-                  <input
-                    id="verification-code"
-                    value={code}
-                    onChange={(event) => setCode(event.target.value)}
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
-                    placeholder="Enter the code above"
-                    required
-                    maxLength={12}
-                  />
-                </div>
-              </label>
-              <PasswordField
-                id="reset-new-password"
-                label="New password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="new-password"
-                placeholder="Create a new password"
-                minLength={8}
-                required
-                hint="Use at least 8 characters."
-              />
-              <PasswordField
-                id="reset-confirm-password"
-                label="Confirm new password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                autoComplete="new-password"
-                placeholder="Enter your new password again"
-                minLength={8}
-                required
-              />
-              <ErrorMessage>{error}</ErrorMessage>
-              <button className={styles.primaryButton} type="submit">
-                {busy ? (
-                  <>
-                    <LoaderCircle size={16} className={styles.spin} /> Updating
-                    password...
-                  </>
-                ) : (
-                  <>
-                    Reset Password <ArrowRight size={15} />
-                  </>
-                )}
-              </button>
-            </fieldset>
-          </form>
-        </>
-      )}
-      {!complete && (
-        <Link
-          href={`/intern/login?role=${role}&switch=1`}
-          className={`${styles.textLink} ${styles.returnToLogin}`}
-        >
-          <ArrowLeft size={13} /> Back to sign in
-        </Link>
-      )}
-    </AuthShell>
-  );
+  return <AuthShell eyebrow="INTERNSHIP ACCOUNT ACCESS"><div className={styles.panelHeading}><span className={styles.headingIcon}><LockKeyhole size={23}/></span><h2>Reset your password.</h2><p>Contact the internship team for help resetting your password. They will verify your identity and provide a new password.</p></div><Link href="/intern/login" className={styles.textLink}><ArrowLeft size={13}/> Back to sign in</Link></AuthShell>;
 }

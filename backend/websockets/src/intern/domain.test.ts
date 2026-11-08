@@ -1,0 +1,82 @@
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import { createHash, randomUUID } from "node:crypto";
+import { connectInternDatabase, createInternshipDomain, DomainError, type Principal } from "./domain";
+
+const uri = process.env.INTERN_TEST_MONGODB_URI || process.env.MONGODB_URI || process.env.MONGODB;
+if (!uri) throw new Error("Set INTERN_TEST_MONGODB_URI or MONGODB for the isolated Atlas integration test.");
+const prefix = `test_intern_${randomUUID().replaceAll("-", "")}_`;
+let connection: Awaited<ReturnType<typeof connectInternDatabase>>;
+let domain: ReturnType<typeof createInternshipDomain>;
+const staff: Principal = { id: "staff-test", role: "company", staffRole: "admin", name: "Test Staff", email: "staff@example.test", applicationId: null, sessionVersion: 1 };
+const digest = (s: string) => createHash("sha256").update(s).digest("hex");
+
+beforeAll(async () => {
+  connection = await connectInternDatabase(uri!);
+  domain = createInternshipDomain({ ...connection, prefix });
+  await domain.initialize();
+  await domain.collection("accounts").insertOne({ _id: staff.id, role: staff.role, staffRole: "admin", name: staff.name, email: staff.email, sessionVersion: 1 });
+}, 20000);
+afterAll(async () => {
+  if (!connection) return;
+  const names = await connection.db.listCollections({}, { nameOnly: true }).toArray();
+  for (const { name } of names) if (name.startsWith(prefix)) await connection.db.collection(name).drop();
+  await connection.client.close();
+}, 20000);
+
+test("clean database initializes only closed named programs", async () => {
+  const data = await domain.publicData();
+  expect(data.programs.map(p => p.id)).toEqual(["explorer", "innovator"]);
+  expect(data.settings.programEnabled).toBe(false);
+  expect(await domain.collection("applications").countDocuments()).toBe(0);
+});
+
+test("application claim, registration, status and idempotency persist in Atlas", async () => {
+  await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
+  await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true } });
+  const fileId = "file-test", fileToken = "temporary-file-token";
+  await domain.collection("files").insertOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
+  const payload = { name: "Test Applicant", email: "applicant@example.test", programId: "explorer", resumeAttachmentId: fileId, resumeAccessToken: fileToken };
+  const application = await domain.execute("application.submit", payload, null, "application-test-0001");
+  const retry = await domain.execute("application.submit", payload, null, "application-test-0001");
+  expect(retry.id).toBe(application.id);
+  expect(retry.claimToken).toBe(application.claimToken);
+  expect(await domain.collection("applications").countDocuments()).toBe(1);
+  const registered = await domain.execute("account.register", { applicationId: application.id, claimToken: application.claimToken, password: "ExamplePassword2026!" }, null, "registration-test-0001");
+  expect(registered.role).toBe("intern");
+  expect(await domain.login("applicant@example.test", "ExamplePassword2026!")).toMatchObject({ id: registered.id, role: "intern" });
+  expect(await domain.login("applicant@example.test", "incorrect")).toBeNull();
+  expect((await domain.collection("test_credentials").findOne({ userId: registered.id }))?.passwordHash).not.toContain("ExamplePassword2026!");
+  const updated = await domain.execute("application.update", { id: application.id, status: "Under Review", expectedVersion: 1 }, staff, "status-update-test-0001");
+  expect(updated.version).toBe(2);
+  expect((await domain.execute("application.get", { id: application.id }, registered)).status).toBe("Under Review");
+  expect((await domain.execute("application.list", {}, staff)).total).toBe(1);
+  await expect(domain.execute("application.update", { id: application.id, status: "Selected", expectedVersion: 1 }, staff, "status-update-test-0002")).rejects.toBeInstanceOf(DomainError);
+  await expect(domain.execute("application.get", { id: application.id }, { ...registered, applicationId: "different" })).rejects.toBeInstanceOf(DomainError);
+  const competing = await Promise.allSettled([
+    domain.execute("application.update", { id: application.id, status: "Selected", expectedVersion: 2 }, staff, "status-update-race-0001"),
+    domain.execute("application.update", { id: application.id, status: "Shortlisted", expectedVersion: 2 }, staff, "status-update-race-0002"),
+  ]);
+  expect(competing.filter(result => result.status === "fulfilled")).toHaveLength(1);
+  expect(competing.filter(result => result.status === "rejected")).toHaveLength(1);
+  expect((await domain.execute("application.get", { id: application.id }, staff)).version).toBe(3);
+}, 30000);
+
+test("staff can securely create an account for an unclaimed application", async () => {
+  await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
+  await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true } });
+  const fileToken = "staff-assist-file-token";
+  await domain.collection("files").insertOne({ _id: "staff-assist-file", kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
+  const app = await domain.execute("application.submit", { name: "Assisted Applicant", email: "assisted@example.test", programId: "explorer", resumeAttachmentId: "staff-assist-file", resumeAccessToken: fileToken }, null, "application-assisted-0001");
+  const payload = { applicationId: app.id, password: "TemporaryPassword2026!" };
+  const retryKey = "create-staff-assisted-0001";
+  await expect(domain.execute("account.createForApplication", payload, null, "create-staff-assisted-0002")).rejects.toBeInstanceOf(DomainError);
+  const created = await domain.execute("account.createForApplication", payload, staff, retryKey);
+  expect(created.role).toBe("intern");
+  expect(created.applicationId).toBe(app.id);
+  expect((await domain.execute("account.createForApplication", payload, staff, retryKey)).id).toBe(created.id);
+  expect((await domain.login("assisted@example.test", payload.password))?.id).toBe(created.id);
+  expect((await domain.collection("test_credentials").findOne({ userId: created.id }))?.passwordHash).not.toContain(payload.password);
+  expect((await domain.collection("applications").findOne({ _id: app.id }))?.claimHash).toBeUndefined();
+  await expect(domain.execute("account.register", { applicationId: app.id, claimToken: app.claimToken, password: "ExamplePassword2026!" }, null, "registration-assisted-0001")).rejects.toBeInstanceOf(DomainError);
+  await expect(domain.execute("account.createForApplication", payload, staff, "create-staff-assisted-0003")).rejects.toBeInstanceOf(DomainError);
+}, 30000);

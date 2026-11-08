@@ -129,13 +129,7 @@ export function SubmitWorkModal({ task, onClose }) {
                 onChange={(event) => attach(event.target.files?.[0])}
               />
             </label>
-            <Button
-              variant="secondary"
-              disabled={uploading || action.busy}
-              onClick={sample}
-            >
-              Use sample file
-            </Button>
+
             {attachment && (
               <Button variant="ghost" onClick={() => setAttachment(null)}>
                 Remove

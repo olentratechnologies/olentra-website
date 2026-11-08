@@ -1,0 +1,1778 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-11-08T16:11:10.291Z",
+  "finishedAt": "2026-11-08T16:11:21.438Z",
+  "success": true,
+  "error": null,
+  "configuration": {
+    "users": 100,
+    "tabs": 2,
+    "dashboards": 5,
+    "duration": 10,
+    "batchSize": 100,
+    "pulses": 40,
+    "pulseUsers": 25,
+    "output": "presence-2026-11-08T16-11-10-289Z.json",
+    "visitorSocketsAtTarget": 200,
+    "broadcastIntervalMs": 100
+  },
+  "environment": {
+    "bun": "1.4.4",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "kernel": "27.2.0",
+    "cpuModel": "Apple M1",
+    "logicalCpus": 8,
+    "systemMemoryMiB": 8192,
+    "serverAndDriverSeparateProcesses": true,
+    "transport": "loopback TCP WebSockets; one native Bun server process",
+    "serverPort": 64627
+  },
+  "timing": {
+    "totalMs": 11148.291,
+    "holdMs": 10000.681,
+    "loadMs": 90.702,
+    "explicitResyncMs": 1.788
+  },
+  "latencyMs": {
+    "firstSnapshot": {
+      "samples": 5,
+      "min": 0.276,
+      "mean": 0.597,
+      "p50": 0.345,
+      "p95": 1.685,
+      "p99": 1.685,
+      "max": 1.685
+    },
+    "reconnectSnapshot": {
+      "samples": 1,
+      "min": 0.698,
+      "mean": 0.698,
+      "p50": 0.698,
+      "p95": 0.698,
+      "p99": 0.698,
+      "max": 0.698
+    },
+    "eachSubscriberCountFreshness": {
+      "samples": 300,
+      "min": 100.623,
+      "mean": 102.818,
+      "p50": 101.888,
+      "p95": 105.544,
+      "p99": 107.994,
+      "max": 108.03
+    },
+    "lastSubscriberCountFreshness": {
+      "samples": 60,
+      "min": 100.682,
+      "mean": 102.841,
+      "p50": 101.888,
+      "p95": 105.544,
+      "p99": 108.03,
+      "max": 108.03
+    }
+  },
+  "broadcasts": {
+    "observedOnFirstDashboardDuringLoadAndHold": 61,
+    "maxRolling100ms": 1,
+    "maxRolling1s": 7,
+    "finalCounters": {
+      "activeVisitors": 0,
+      "totalConnections": 0,
+      "dashboardSubscribers": 0,
+      "connectionEvents": 3612,
+      "broadcasts": 64,
+      "snapshots": 71,
+      "serializedBytes": 6265,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": false
+    }
+  },
+  "server": {
+    "holdSamples": 11,
+    "baselineStats": {
+      "activeVisitors": 0,
+      "totalConnections": 5,
+      "dashboardSubscribers": 5,
+      "connectionEvents": 5,
+      "broadcasts": 0,
+      "snapshots": 5,
+      "serializedBytes": 425,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": true,
+      "timestamp": 1794154270323
+    },
+    "loadedStats": {
+      "activeVisitors": 100,
+      "totalConnections": 205,
+      "dashboardSubscribers": 5,
+      "connectionEvents": 205,
+      "broadcasts": 1,
+      "snapshots": 6,
+      "serializedBytes": 514,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": false,
+      "timestamp": 1794154270414
+    },
+    "zeroVisitorStats": {
+      "activeVisitors": 0,
+      "totalConnections": 5,
+      "dashboardSubscribers": 5,
+      "connectionEvents": 3607,
+      "broadcasts": 64,
+      "snapshots": 71,
+      "serializedBytes": 6265,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": false,
+      "timestamp": 1794154281079
+    },
+    "finalStats": {
+      "activeVisitors": 0,
+      "totalConnections": 0,
+      "dashboardSubscribers": 0,
+      "connectionEvents": 3612,
+      "broadcasts": 64,
+      "snapshots": 71,
+      "serializedBytes": 6265,
+      "backpressureEvents": 0,
+      "droppedBroadcasts": 0,
+      "pendingBroadcast": false,
+      "timestamp": 1794154281331
+    },
+    "rssMiB": {
+      "samples": 11,
+      "min": 8.344,
+      "mean": 8.728,
+      "p50": 8.797,
+      "p95": 9.157,
+      "p99": 9.157,
+      "max": 9.157
+    },
+    "heapUsedMiB": {
+      "samples": 11,
+      "min": 0.488,
+      "mean": 0.685,
+      "p50": 0.653,
+      "p95": 0.941,
+      "p99": 0.941,
+      "max": 0.941
+    },
+    "cpuOneCorePercent": {
+      "samples": 11,
+      "min": 0.965,
+      "mean": 1.84,
+      "p50": 1.698,
+      "p95": 2.889,
+      "p99": 2.889,
+      "max": 2.889
+    },
+    "eventLoopTimerLagMs": {
+      "samples": 917,
+      "min": 0.006,
+      "mean": 0.91,
+      "p50": 1.021,
+      "p95": 1.049,
+      "p99": 1.306,
+      "max": 7.111
+    },
+    "samples": [
+      {
+        "elapsedMs": 18.22,
+        "intervalMs": 18.221,
+        "phase": "startup",
+        "rssBytes": 6849088,
+        "heapUsedBytes": 320139,
+        "cpuOneCorePercent": 27.255,
+        "counters": {
+          "activeVisitors": 0,
+          "totalConnections": 5,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 5,
+          "broadcasts": 0,
+          "snapshots": 5,
+          "serializedBytes": 425,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 1,
+          "min": 0.613,
+          "mean": 0.613,
+          "p50": 0.613,
+          "p95": 0.613,
+          "p99": 0.613,
+          "max": 0.613
+        }
+      },
+      {
+        "elapsedMs": 108.7,
+        "intervalMs": 90.48,
+        "phase": "load",
+        "rssBytes": 9011848,
+        "heapUsedBytes": 320139,
+        "cpuOneCorePercent": 7.759,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 205,
+          "broadcasts": 1,
+          "snapshots": 6,
+          "serializedBytes": 514,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 9,
+          "min": 0,
+          "mean": 0.734,
+          "p50": 1.01,
+          "p95": 1.025,
+          "p99": 1.025,
+          "max": 1.025
+        }
+      },
+      {
+        "elapsedMs": 669.32,
+        "intervalMs": 560.62,
+        "phase": "tab-deduplication",
+        "rssBytes": 8651400,
+        "heapUsedBytes": 320139,
+        "cpuOneCorePercent": 1.725,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 405,
+          "broadcasts": 3,
+          "snapshots": 8,
+          "serializedBytes": 692,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 51,
+          "min": 0.089,
+          "mean": 0.915,
+          "p50": 1.019,
+          "p95": 1.048,
+          "p99": 1.148,
+          "max": 1.148
+        }
+      },
+      {
+        "elapsedMs": 1002.058,
+        "intervalMs": 332.738,
+        "phase": "hold",
+        "rssBytes": 8798856,
+        "heapUsedBytes": 511667,
+        "cpuOneCorePercent": 1.721,
+        "counters": {
+          "activeVisitors": 75,
+          "totalConnections": 155,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 455,
+          "broadcasts": 3,
+          "snapshots": 8,
+          "serializedBytes": 692,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 30,
+          "min": 0.193,
+          "mean": 0.919,
+          "p50": 1.029,
+          "p95": 1.049,
+          "p99": 1.056,
+          "max": 1.056
+        }
+      },
+      {
+        "elapsedMs": 2003.485,
+        "intervalMs": 1001.426,
+        "phase": "hold",
+        "rssBytes": 8782472,
+        "heapUsedBytes": 570737,
+        "cpuOneCorePercent": 2.889,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 805,
+          "broadcasts": 10,
+          "snapshots": 15,
+          "serializedBytes": 1311,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 92,
+          "min": 0.047,
+          "mean": 0.898,
+          "p50": 1.023,
+          "p95": 1.046,
+          "p99": 1.091,
+          "max": 1.091
+        }
+      },
+      {
+        "elapsedMs": 3005.204,
+        "intervalMs": 1001.719,
+        "phase": "hold",
+        "rssBytes": 8815240,
+        "heapUsedBytes": 642818,
+        "cpuOneCorePercent": 2.25,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 1105,
+          "broadcasts": 17,
+          "snapshots": 22,
+          "serializedBytes": 1931,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 92,
+          "min": 0.036,
+          "mean": 0.904,
+          "p50": 1.023,
+          "p95": 1.04,
+          "p99": 1.728,
+          "max": 1.728
+        }
+      },
+      {
+        "elapsedMs": 4005.715,
+        "intervalMs": 1000.511,
+        "phase": "hold",
+        "rssBytes": 8749704,
+        "heapUsedBytes": 684479,
+        "cpuOneCorePercent": 2.446,
+        "counters": {
+          "activeVisitors": 75,
+          "totalConnections": 155,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 1455,
+          "broadcasts": 23,
+          "snapshots": 28,
+          "serializedBytes": 2462,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 92,
+          "min": 0.009,
+          "mean": 0.917,
+          "p50": 1.024,
+          "p95": 1.046,
+          "p99": 1.066,
+          "max": 1.066
+        }
+      },
+      {
+        "elapsedMs": 5007.104,
+        "intervalMs": 1001.389,
+        "phase": "hold",
+        "rssBytes": 9093768,
+        "heapUsedBytes": 768594,
+        "cpuOneCorePercent": 1.693,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 1805,
+          "broadcasts": 30,
+          "snapshots": 35,
+          "serializedBytes": 3081,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 91,
+          "min": 0.029,
+          "mean": 0.965,
+          "p50": 1.017,
+          "p95": 1.046,
+          "p99": 7.111,
+          "max": 7.111
+        }
+      },
+      {
+        "elapsedMs": 6008.5,
+        "intervalMs": 1001.396,
+        "phase": "hold",
+        "rssBytes": 9405064,
+        "heapUsedBytes": 819511,
+        "cpuOneCorePercent": 1.449,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 2105,
+          "broadcasts": 37,
+          "snapshots": 42,
+          "serializedBytes": 3701,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 92,
+          "min": 0.007,
+          "mean": 0.873,
+          "p50": 1.015,
+          "p95": 1.032,
+          "p99": 1.039,
+          "max": 1.039
+        }
+      },
+      {
+        "elapsedMs": 7009.861,
+        "intervalMs": 1001.361,
+        "phase": "hold",
+        "rssBytes": 9339528,
+        "heapUsedBytes": 860140,
+        "cpuOneCorePercent": 1.698,
+        "counters": {
+          "activeVisitors": 75,
+          "totalConnections": 155,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 2455,
+          "broadcasts": 43,
+          "snapshots": 48,
+          "serializedBytes": 4232,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 92,
+          "min": 0.051,
+          "mean": 0.87,
+          "p50": 1.017,
+          "p95": 1.056,
+          "p99": 1.138,
+          "max": 1.138
+        }
+      },
+      {
+        "elapsedMs": 8010.235,
+        "intervalMs": 1000.374,
+        "phase": "hold",
+        "rssBytes": 9405064,
+        "heapUsedBytes": 944255,
+        "cpuOneCorePercent": 1.501,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 2805,
+          "broadcasts": 50,
+          "snapshots": 55,
+          "serializedBytes": 4851,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 92,
+          "min": 0.054,
+          "mean": 0.9,
+          "p50": 1.018,
+          "p95": 1.037,
+          "p99": 1.812,
+          "max": 1.812
+        }
+      },
+      {
+        "elapsedMs": 9010.614,
+        "intervalMs": 1000.379,
+        "phase": "hold",
+        "rssBytes": 9454216,
+        "heapUsedBytes": 986812,
+        "cpuOneCorePercent": 1.637,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 3105,
+          "broadcasts": 57,
+          "snapshots": 62,
+          "serializedBytes": 5471,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 92,
+          "min": 0.006,
+          "mean": 0.924,
+          "p50": 1.017,
+          "p95": 1.245,
+          "p99": 4.032,
+          "max": 4.032
+        }
+      },
+      {
+        "elapsedMs": 10011.6,
+        "intervalMs": 1000.986,
+        "phase": "hold",
+        "rssBytes": 9601672,
+        "heapUsedBytes": 555289,
+        "cpuOneCorePercent": 1.986,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 3405,
+          "broadcasts": 63,
+          "snapshots": 68,
+          "serializedBytes": 6002,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 91,
+          "min": 0.016,
+          "mean": 0.929,
+          "p50": 1.021,
+          "p95": 1.037,
+          "p99": 1.795,
+          "max": 1.795
+        }
+      },
+      {
+        "elapsedMs": 10671.147,
+        "intervalMs": 659.547,
+        "phase": "hold",
+        "rssBytes": 9224840,
+        "heapUsedBytes": 555289,
+        "cpuOneCorePercent": 0.965,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 3405,
+          "broadcasts": 63,
+          "snapshots": 68,
+          "serializedBytes": 6002,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 61,
+          "min": 0.034,
+          "mean": 0.919,
+          "p50": 1.03,
+          "p95": 1.108,
+          "p99": 1.306,
+          "max": 1.306
+        }
+      },
+      {
+        "elapsedMs": 10727.382,
+        "intervalMs": 56.235,
+        "phase": "resync",
+        "rssBytes": 9405064,
+        "heapUsedBytes": 555289,
+        "cpuOneCorePercent": 8.055,
+        "counters": {
+          "activeVisitors": 100,
+          "totalConnections": 205,
+          "dashboardSubscribers": 5,
+          "connectionEvents": 3407,
+          "broadcasts": 63,
+          "snapshots": 70,
+          "serializedBytes": 6180,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": true
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 5,
+          "min": 0.467,
+          "mean": 0.713,
+          "p50": 0.657,
+          "p95": 1.082,
+          "p99": 1.082,
+          "max": 1.082
+        }
+      },
+      {
+        "elapsedMs": 11012.339,
+        "intervalMs": 284.957,
+        "phase": "drain",
+        "rssBytes": 9470600,
+        "heapUsedBytes": 604048,
+        "cpuOneCorePercent": 3.471,
+        "counters": {
+          "activeVisitors": 0,
+          "totalConnections": 0,
+          "dashboardSubscribers": 0,
+          "connectionEvents": 3612,
+          "broadcasts": 64,
+          "snapshots": 71,
+          "serializedBytes": 6265,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 26,
+          "min": 0.176,
+          "mean": 0.939,
+          "p50": 1.031,
+          "p95": 1.061,
+          "p99": 1.318,
+          "max": 1.318
+        }
+      },
+      {
+        "elapsedMs": 11126.758,
+        "intervalMs": 114.418,
+        "phase": "drain",
+        "rssBytes": 9454216,
+        "heapUsedBytes": 604048,
+        "cpuOneCorePercent": 1.206,
+        "counters": {
+          "activeVisitors": 0,
+          "totalConnections": 0,
+          "dashboardSubscribers": 0,
+          "connectionEvents": 3612,
+          "broadcasts": 64,
+          "snapshots": 71,
+          "serializedBytes": 6265,
+          "backpressureEvents": 0,
+          "droppedBroadcasts": 0,
+          "pendingBroadcast": false
+        },
+        "eventLoopTimerLagMs": {
+          "samples": 11,
+          "min": 0.059,
+          "mean": 0.726,
+          "p50": 1,
+          "p95": 1.275,
+          "p99": 1.275,
+          "max": 1.275
+        }
+      }
+    ]
+  },
+  "driver": {
+    "rssMiB": {
+      "samples": 10,
+      "min": 9.001,
+      "mean": 11.438,
+      "p50": 11.047,
+      "p95": 13.36,
+      "p99": 13.36,
+      "max": 13.36
+    },
+    "cpuOneCorePercent": {
+      "samples": 10,
+      "min": 1.644,
+      "mean": 2.619,
+      "p50": 2.276,
+      "p95": 4.216,
+      "p99": 4.216,
+      "max": 4.216
+    }
+  },
+  "checks": [
+    {
+      "name": "Ephemeral port is not the existing live server",
+      "ok": true,
+      "details": {
+        "port": 64627
+      }
+    },
+    {
+      "name": "Dashboard subscribers do not count as visitors",
+      "ok": true,
+      "details": {
+        "activeVisitors": 0,
+        "totalConnections": 5,
+        "dashboardSubscribers": 5,
+        "connectionEvents": 5,
+        "broadcasts": 0,
+        "snapshots": 5,
+        "serializedBytes": 425,
+        "backpressureEvents": 0,
+        "droppedBroadcasts": 0,
+        "pendingBroadcast": true,
+        "timestamp": 1794154270323
+      }
+    },
+    {
+      "name": "Distinct browsers count once across all tabs",
+      "ok": true,
+      "details": {
+        "activeVisitors": 100,
+        "totalConnections": 205,
+        "dashboardSubscribers": 5,
+        "connectionEvents": 205,
+        "broadcasts": 1,
+        "snapshots": 6,
+        "serializedBytes": 514,
+        "backpressureEvents": 0,
+        "droppedBroadcasts": 0,
+        "pendingBroadcast": false,
+        "timestamp": 1794154270414
+      }
+    },
+    {
+      "name": "Closing one tab preserves each browser",
+      "ok": true
+    },
+    {
+      "name": "Churn down 1",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 1",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 2",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 2",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 3",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 3",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 4",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 4",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 5",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 5",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 6",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 6",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 7",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 7",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 8",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 8",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 9",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 9",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 10",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 10",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 11",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 11",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 12",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 12",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 13",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 13",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 14",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 14",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 15",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 15",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 16",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 16",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 17",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 17",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 18",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 18",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 19",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 19",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 20",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 20",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 21",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 21",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 22",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 22",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 23",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 23",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 24",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 24",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 25",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 25",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 26",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 26",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 27",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 27",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 28",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 28",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 29",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 29",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Churn down 30",
+      "ok": true,
+      "details": {
+        "expected": 75,
+        "server": 75,
+        "totalConnections": 155,
+        "subscriberCounts": [
+          75,
+          75,
+          75,
+          75,
+          75
+        ]
+      }
+    },
+    {
+      "name": "Churn recovery 30",
+      "ok": true,
+      "details": {
+        "expected": 100,
+        "server": 100,
+        "totalConnections": 205,
+        "subscriberCounts": [
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Reconnected subscriber gets the current count",
+      "ok": true,
+      "details": {
+        "count": 100
+      }
+    },
+    {
+      "name": "Explicit resync returns the current count",
+      "ok": true
+    },
+    {
+      "name": "All visitor tabs disconnected produces zero",
+      "ok": true,
+      "details": {
+        "expected": 0,
+        "server": 0,
+        "totalConnections": 5,
+        "subscriberCounts": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "All connections are released",
+      "ok": true,
+      "details": {
+        "activeVisitors": 0,
+        "totalConnections": 0,
+        "dashboardSubscribers": 0,
+        "connectionEvents": 3612,
+        "broadcasts": 64,
+        "snapshots": 71,
+        "serializedBytes": 6265,
+        "backpressureEvents": 0,
+        "droppedBroadcasts": 0,
+        "pendingBroadcast": false,
+        "timestamp": 1794154281331
+      }
+    },
+    {
+      "name": "No malformed frames or socket errors",
+      "ok": true,
+      "details": {
+        "frameErrors": 0,
+        "socketErrors": 0,
+        "unexpectedCloses": 0
+      }
+    },
+    {
+      "name": "Isolated server shuts down cleanly",
+      "ok": true,
+      "details": {
+        "childStopped": true,
+        "serverExitCode": 0
+      }
+    }
+  ],
+  "childOutput": {
+    "stdout": "",
+    "stderr": ""
+  },
+  "methodology": [
+    "A browser ID is reused by all tabs. Every dashboard is excluded from the visitor count.",
+    "Freshness begins before initiating each controlled disconnect/reconnect; it includes handshake or close processing, 100ms coalescing, loopback delivery and driver observation. Every subscriber must observe the target count within 5s.",
+    "The hold phase includes bounded down/up pulses and otherwise preserves the target load. Sampled RSS/CPU belong only to the server child; the separate driver shares this machine and can still compete for resources.",
+    "CPU percent is process user+system CPU time divided by elapsed wall time; 100% means one CPU core. Summaries include partial phase-boundary samples, which can show brief spikes; inspect each raw intervalMs before interpreting a maximum as sustained CPU. Event-loop lag is nonnegative overshoot of a 10ms setInterval, not a native profiler histogram.",
+    "Broadcast windows count presence frames observed by the first dashboard during load/hold, excluding its initial snapshot and explicit resync. Window boundaries and timer jitter can permit two frames within a rolling100ms interval.",
+    "This is a single local machine/single Bun server process test, not an internet, distributed, TLS, proxy, mobile, browser-rendering, or production capacity guarantee. No existing server or external visitor traffic is used."
+  ]
+}

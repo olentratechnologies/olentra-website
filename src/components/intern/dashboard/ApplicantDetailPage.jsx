@@ -24,16 +24,19 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { useInternship } from "@/components/intern/InternshipProvider";
+import { hasStaffPermission } from "./staffAccess";
 import {
   downloadAttachment,
   downloadSampleResume,
 } from "@/lib/intern-attachments.mjs";
 import { ApplicantNextAction, ApplicantWorkflow } from "./CompanyWorkflow";
+import StaffAccountControls from "./StaffAccountControls";
 import {
   Avatar,
   Button,
   EmptyState,
   Modal,
+  Pagination,
   Panel,
   StatusBadge,
   Tabs,
@@ -84,7 +87,17 @@ function safeProfileUrl(value) {
 export default function ApplicantDetailPage({ id }) {
   const { data, notify, updateApplication, addActivity } = useDashboard();
   const { commands, account, ready } = useInternship();
+  const isAdmin = account?.staffRole === "admin";
+  const canReview = hasStaffPermission(account, "applications.review");
+  const canResume = hasStaffPermission(account, "resumes.read");
+  const canProjects = hasStaffPermission(account, "projects.read");
+  const [recoveryPassword, setRecoveryPassword] = useState("");
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
   const application = (data.applications || []).find((item) => item.id === id);
+  const canMessage = hasStaffPermission(account, application?.status === "Joined" ? "messages.interns" : "messages.applicants");
+  const [loadingRecord, setLoadingRecord] = useState(true);
+  const [recordError, setRecordError] = useState("");
+  useEffect(() => { let active = true; setLoadingRecord(true); setRecordError(""); commands.getApplication(id).then(result => { if(active) { setRecordError(result.ok ? "" : result.error); setLoadingRecord(false); } }); return () => { active = false; }; }, [commands, id]);
   const [tab, setTab] = useState("overview");
   const [status, setStatus] = useState(application?.status || "Applied");
   const [note, setNote] = useState("");
@@ -104,16 +117,21 @@ export default function ApplicantDetailPage({ id }) {
     setMessage("");
   }, [id]);
 
-  const linkedProjects = useMemo(
-    () =>
-      (data.projects || []).filter(
-        (project) =>
-          application?.projectIds?.includes(project.id) ||
-          project.team?.includes(id) ||
-          project.team?.includes(application?.name),
-      ),
-    [data.projects, application?.projectIds, application?.name, id],
-  );
+  const [linkedProjectPage, setLinkedProjectPage] = useState(1);
+  const [projectListing, setProjectListing] = useState({items:[],total:0});
+  const [projectError, setProjectError] = useState("");
+  useEffect(() => { setLinkedProjectPage(1); }, [id]);
+  useEffect(() => {
+    if (tab !== "projects") return;
+    let active = true;
+    commands.listProjects({applicationId:id,page:linkedProjectPage,pageSize:10}).then(result => {
+      if (!active) return;
+      if (!result.ok) { setProjectError(result.error); return; }
+      setProjectError(""); setProjectListing(result.data);
+    });
+    return () => { active = false; };
+  }, [id,tab,linkedProjectPage,commands,data.projects]);
+  const linkedProjects = projectListing.items;
   const history = useMemo(
     () =>
       [...(application?.history || [])].sort(
@@ -128,7 +146,7 @@ export default function ApplicantDetailPage({ id }) {
   );
   const notes = application?.notes || [];
 
-  if (!ready)
+  if (!ready || loadingRecord)
     return (
       <div className={common.page} aria-busy="true">
         <Panel>
@@ -136,6 +154,9 @@ export default function ApplicantDetailPage({ id }) {
         </Panel>
       </div>
     );
+
+  if (recordError)
+    return <div className={common.page}><Panel><p role="alert">{recordError}</p><Link className={styles.backLink} href="/intern/dashboard/applications">Back to Applications</Link></Panel></div>;
 
   if (!application)
     return (
@@ -299,9 +320,7 @@ export default function ApplicantDetailPage({ id }) {
           <dt>Track</dt>
           <dd>
             {application.program}{" "}
-            <span className={styles.mutedText}>
-              ({application.programId === "explorer" ? "Free" : "Paid"})
-            </span>
+
           </dd>
         </div>
         <div>
@@ -368,14 +387,14 @@ export default function ApplicantDetailPage({ id }) {
           Back to Applications
         </Link>
         <div className={styles.profileActions}>
-          <Button variant="secondary" onClick={downloadResume}>
+          {canResume && <Button variant="secondary" onClick={downloadResume}>
             <ArrowDownToLine size={15} />
             Download Resume
-          </Button>
-          <Button onClick={() => setContactOpen(true)}>
+          </Button>}
+          {canMessage && <Button onClick={() => setContactOpen(true)}>
             <Mail size={15} />
             Contact
-          </Button>
+          </Button>}
         </div>
       </div>
       <header className={styles.profileHeader}>
@@ -383,12 +402,7 @@ export default function ApplicantDetailPage({ id }) {
         <div className={styles.profileIdentity}>
           <h1>
             {application.name}
-            <BadgeCheck
-              className={styles.verifiedBadge}
-              size={23}
-              fill="currentColor"
-              aria-label="Profile verified"
-            />
+
           </h1>
           <p>
             {application.program}
@@ -403,7 +417,7 @@ export default function ApplicantDetailPage({ id }) {
       </header>
       <div className={styles.profileTabs}>
         <Tabs
-          items={PROFILE_TABS}
+          items={PROFILE_TABS.filter(item => item.id !== "projects" || canProjects)}
           value={tab}
           onChange={setTab}
           label="Applicant information"
@@ -417,17 +431,20 @@ export default function ApplicantDetailPage({ id }) {
             {applicationDetails}
             {applicationFlow}
           </div>
-          <ApplicantNextAction
+          {isAdmin && <ApplicantNextAction
             applicationId={id}
             onOpenWorkflow={() => setTab("application")}
-          />
+          />}
         </>
       )}
+
+      {tab === "overview" && isAdmin && <StaffAccountControls application={application} commands={commands} notify={notify}/>}
+      {tab === "overview" && isAdmin && application.accountId && <Panel><h2 className={styles.panelHeading}>Staff-assisted password recovery</h2><p>Verify the applicant’s identity before setting a new password. Existing sessions will be signed out.</p><form onSubmit={async (event) => { event.preventDefault(); setRecoveryBusy(true); const result = await commands.resetPassword(application.accountId, recoveryPassword); setRecoveryBusy(false); if (!result.ok) { notify(result.error); return; } setRecoveryPassword(""); notify("Password reset. Share the new password securely with the applicant."); }}><label>New password <input type="password" minLength={12} maxLength={256} required value={recoveryPassword} onChange={event => setRecoveryPassword(event.target.value)} autoComplete="new-password" /></label><Button type="submit" disabled={recoveryBusy}>{recoveryBusy ? "Saving…" : "Reset password"}</Button></form></Panel>}
 
       {tab === "application" && (
         <div className={styles.applicationGrid}>
           <div className={styles.detailColumn}>
-            <ApplicantWorkflow applicationId={id} />
+            {(isAdmin || canMessage) && <ApplicantWorkflow applicationId={id} />}
             <Panel>
               <h2 className={styles.panelHeading}>
                 About {application.name.split(" ")[0]}
@@ -435,7 +452,7 @@ export default function ApplicantDetailPage({ id }) {
               <p className={styles.bio}>
                 {application.bio ||
                   application.resumeSummary ||
-                  "This applicant is ready to learn, build, and contribute to real-world technology projects with Olentra."}
+                  "No profile summary has been provided."}
               </p>
               <div className={styles.applicationSummary}>
                 <FileText size={19} />
@@ -443,10 +460,10 @@ export default function ApplicantDetailPage({ id }) {
                   <strong>{application.id}</strong>
                   <span>Submitted {formatDate(application.appliedOn)}</span>
                 </div>
-                <Button variant="ghost" onClick={downloadResume}>
+                {canResume && <Button variant="ghost" onClick={downloadResume}>
                   <ArrowDownToLine size={15} />
                   Resume
-                </Button>
+                </Button>}
               </div>
             </Panel>
             {applicationDetails}
@@ -479,7 +496,7 @@ export default function ApplicantDetailPage({ id }) {
                   </p>
                 )}
               </div>
-              <form className={styles.noteForm} onSubmit={saveNote}>
+              {canReview && <form className={styles.noteForm} onSubmit={saveNote}>
                 <label htmlFor="applicant-review-note">
                   Add a reviewer note
                 </label>
@@ -502,11 +519,11 @@ export default function ApplicantDetailPage({ id }) {
                     Save note
                   </Button>
                 </div>
-              </form>
+              </form>}
             </Panel>
           </div>
           <div className={styles.detailColumn}>
-            <Panel>
+            {canReview && (isAdmin || ["Applied", "Under Review", "Shortlisted"].includes(application.status)) && <Panel>
               <h2 className={styles.panelHeading}>Review Application</h2>
               <p className={styles.reviewDescription}>
                 Keep the application status in sync with your review.
@@ -523,7 +540,7 @@ export default function ApplicantDetailPage({ id }) {
                       <option
                         key={value}
                         disabled={
-                          (value === "Joined" &&
+                          (!isAdmin && !["Applied", "Under Review", "Shortlisted"].includes(value) && value !== application.status) || (value === "Joined" &&
                             application.status !== "Joined") ||
                           (application.status === "Joined" &&
                             value !== "Joined")
@@ -555,7 +572,7 @@ export default function ApplicantDetailPage({ id }) {
                   Save status
                 </Button>
               </form>
-            </Panel>
+            </Panel>}
             {personalDetails}
             {applicationFlow}
           </div>
@@ -566,7 +583,7 @@ export default function ApplicantDetailPage({ id }) {
         <Panel>
           <div className={styles.sectionTitleRow}>
             <h2 className={styles.panelHeading}>Projects & Contributions</h2>
-            <span>{linkedProjects.length} assigned</span>
+            <span>{projectListing.total} assigned</span>
           </div>
           {linkedProjects.length ? (
             <div className={styles.linkedProjects}>
@@ -610,6 +627,8 @@ export default function ApplicantDetailPage({ id }) {
               description="Projects will appear here when this applicant joins a project team."
             />
           )}
+          {projectError && <p role="alert">{projectError}</p>}
+          <Pagination page={linkedProjectPage} pageSize={10} total={projectListing.total} onChange={setLinkedProjectPage}/>
         </Panel>
       )}
 

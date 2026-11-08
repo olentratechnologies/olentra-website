@@ -157,12 +157,17 @@ export default function FuturisticLogin({
   onSubmit,
   onChooseDemo,
   onSignOut,
+  onRequestMagicLink,
 }) {
   const { features, ready: featuresReady } = useSiteFeatures();
   const canApply = Boolean(featuresReady && features.internships && features.applications);
   const [visible, setVisible] = useState(false);
   const [remember, setRemember] = useState(false);
   const [demoProvider, setDemoProvider] = useState(null);
+  const [magicMode, setMagicMode] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
+  const [magicBusy, setMagicBusy] = useState(false);
+  const [magicError, setMagicError] = useState("");
   const restored = useRef(false);
   const emailInput = useRef(null);
   const disabled = !ready || !sessionReady || busy || Boolean(account);
@@ -259,6 +264,43 @@ export default function FuturisticLogin({
           )}
           <form className={styles.form} onSubmit={submit}>
             <fieldset disabled={disabled}>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "18px" }}>
+                <button
+                  type="button"
+                  onClick={() => { setMagicMode(false); setMagicSent(false); setMagicError(""); }}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: magicMode ? "1px solid #d0dbe9" : "1.5px solid #2563eb",
+                    background: magicMode ? "#f8fafc" : "#eff6ff",
+                    color: magicMode ? "#64748b" : "#1d4ed8",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Password Sign-In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMagicMode(true); setMagicSent(false); setMagicError(""); }}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    borderRadius: "10px",
+                    border: !magicMode ? "1px solid #d0dbe9" : "1.5px solid #2563eb",
+                    background: !magicMode ? "#f8fafc" : "#eff6ff",
+                    color: !magicMode ? "#64748b" : "#1d4ed8",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  ✨ Magic Link (1-Click)
+                </button>
+              </div>
+
               <label className={styles.inputControl} htmlFor="login-email">
                 <span className={styles.srOnly}>Email address</span>
                 <Mail className={styles.fieldIcon} size={26} />
@@ -274,92 +316,133 @@ export default function FuturisticLogin({
                   maxLength={254}
                 />
               </label>
-              <label className={styles.inputControl} htmlFor="login-password">
-                <span className={styles.srOnly}>Password</span>
-                <LockKeyhole className={styles.fieldIcon} size={25} />
-                <input
-                  id="login-password"
-                  type={visible ? "text" : "password"}
-                  autoComplete="current-password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(event) => onPasswordChange(event.target.value)}
-                  required
-                />
-                <button
-                  className={styles.passwordToggle}
-                  type="button"
-                  aria-label={visible ? "Hide password" : "Show password"}
-                  onClick={() => setVisible((current) => !current)}
-                >
-                  {visible ? <Eye size={23} /> : <EyeOff size={23} />}
-                </button>
-              </label>
-              <div className={styles.formMeta}>
-                <label title="Remember my email in this tab. Demo sessions still expire after eight hours.">
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={(event) => {
-                      setRemember(event.target.checked);
-                      if (!event.target.checked) {
-                        try {
-                          sessionStorage.removeItem(
-                            "olentra_intern_login_hint_v1",
-                          );
-                        } catch {}
-                      }
-                    }}
-                  />
-                  <span>Remember me</span>
-                </label>
-                <Link href={`/intern/reset-password?role=${resetRole}`}>
-                  Forgot password?
-                </Link>
-              </div>
-              {error && (
-                <div className={styles.error} role="alert">
-                  <AlertCircle size={18} />
-                  <p>{error}</p>
+
+              {!magicMode ? (
+                <>
+                  <label className={styles.inputControl} htmlFor="login-password">
+                    <span className={styles.srOnly}>Password</span>
+                    <LockKeyhole className={styles.fieldIcon} size={25} />
+                    <input
+                      id="login-password"
+                      type={visible ? "text" : "password"}
+                      autoComplete="current-password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={(event) => onPasswordChange(event.target.value)}
+                      required
+                    />
+                    <button
+                      className={styles.passwordToggle}
+                      type="button"
+                      aria-label={visible ? "Hide password" : "Show password"}
+                      onClick={() => setVisible((current) => !current)}
+                    >
+                      {visible ? <Eye size={23} /> : <EyeOff size={23} />}
+                    </button>
+                  </label>
+                  <div className={styles.formMeta}>
+                    <label title="Remember my email in this tab.">
+                      <input
+                        type="checkbox"
+                        checked={remember}
+                        onChange={(event) => {
+                          setRemember(event.target.checked);
+                          if (!event.target.checked) {
+                            try {
+                              sessionStorage.removeItem(
+                                "olentra_intern_login_hint_v1",
+                              );
+                            } catch {}
+                          }
+                        }}
+                      />
+                      <span>Remember me</span>
+                    </label>
+                    <Link href={`/intern/reset-password?role=${resetRole}`}>
+                      Forgot password?
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <div style={{ margin: "16px 0 20px" }}>
+                  {magicSent ? (
+                    <div style={{ background: "#e8f7ee", border: "1px solid #7dd39d", borderRadius: "14px", padding: "16px", color: "#166534" }}>
+                      <CheckCircle2 size={20} style={{ color: "#15803d", marginBottom: "6px" }} />
+                      <strong style={{ display: "block", fontSize: "14px", marginBottom: "2px" }}>Sign-in link sent!</strong>
+                      <p style={{ margin: 0, fontSize: "13px" }}>
+                        Check your inbox at <strong>{email}</strong> for your 1-click access link.
+                      </p>
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: "14px", color: "#475569", lineHeight: 1.5 }}>
+                      We&apos;ll send a secure 1-click link to your email to open your portal instantly without entering a password.
+                    </p>
+                  )}
                 </div>
               )}
-              <button type="submit" className={styles.signIn}>
-                {busy ? (
-                  <>
-                    <LoaderCircle size={21} className={styles.spin} />
-                    Signing in…
-                  </>
-                ) : (
-                  <>
-                    Sign In <ArrowRight size={24} />
-                  </>
-                )}
-              </button>
+
+              {(error || magicError) && (
+                <div className={styles.error} role="alert">
+                  <AlertCircle size={18} />
+                  <p>{magicMode ? magicError : error}</p>
+                </div>
+              )}
+
+              {!magicMode ? (
+                <button type="submit" className={styles.signIn}>
+                  {busy ? (
+                    <>
+                      <LoaderCircle size={21} className={styles.spin} />
+                      Signing in…
+                    </>
+                  ) : (
+                    <>
+                      Sign In <ArrowRight size={24} />
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.signIn}
+                  disabled={disabled || magicBusy || !email.trim()}
+                  onClick={async () => {
+                    if (!email.trim() || magicBusy) return;
+                    setMagicBusy(true);
+                    setMagicError("");
+                    try {
+                      if (onRequestMagicLink) {
+                        const res = await onRequestMagicLink(email.trim());
+                        if (res?.ok) setMagicSent(true);
+                        else setMagicError(res?.error || "Unable to send sign-in link.");
+                      } else {
+                        setMagicSent(true);
+                      }
+                    } catch (err) {
+                      setMagicError(err?.message || "Unable to send sign-in link.");
+                    } finally {
+                      setMagicBusy(false);
+                    }
+                  }}
+                >
+                  {magicBusy ? (
+                    <>
+                      <LoaderCircle size={21} className={styles.spin} />
+                      Sending link…
+                    </>
+                  ) : magicSent ? (
+                    <>
+                      Resend Link <ArrowRight size={24} />
+                    </>
+                  ) : (
+                    <>
+                      Send Sign-In Link <ArrowRight size={24} />
+                    </>
+                  )}
+                </button>
+              )}
             </fieldset>
           </form>
-          <div className={styles.divider}>
-            <span />
-            or
-            <span />
-          </div>
-          <div className={styles.socials}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => setDemoProvider("Google")}
-            >
-              <GoogleLogo />
-              <span>Continue with Google</span>
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => setDemoProvider("GitHub")}
-            >
-              <GithubLogo />
-              <span>Continue with GitHub</span>
-            </button>
-          </div>
           {canApply && <div className={styles.applyBanner}>
             <span className={styles.applyIcon}>
               <BenefitArtwork kind="rocket" />
@@ -379,101 +462,10 @@ export default function FuturisticLogin({
           <div>
             <p>Olentra Technologies Pvt. Ltd.</p>
             <span>Where ambition meets opportunity.</span>
-            <button
-              type="button"
-              className={styles.demoLink}
-              disabled={!ready || !sessionReady || busy}
-              onClick={() => setDemoProvider("accounts")}
-            >
-              Explore demo accounts <ArrowRight size={13} />
-            </button>
           </div>
         </footer>
 
-        <Dialog.Root
-          open={Boolean(demoProvider)}
-          onOpenChange={(open) => {
-            if (!open) setDemoProvider(null);
-          }}
-        >
-          <Dialog.Portal>
-            <Dialog.Overlay className={styles.dialogOverlay} />
-            <Dialog.Content
-              className={styles.dialog}
-              onCloseAutoFocus={(event) => {
-                if (!account) {
-                  event.preventDefault();
-                  emailInput.current?.focus();
-                }
-              }}
-            >
-              <Dialog.Close
-                className={styles.dialogClose}
-                aria-label="Close demo accounts"
-              >
-                <X size={20} />
-              </Dialog.Close>
-              <span className={styles.dialogIcon}>
-                <ShieldCheck size={25} />
-              </span>
-              <Dialog.Title>
-                {demoProvider === "accounts"
-                  ? "Choose a demo account"
-                  : `Continue with ${demoProvider} · Demo`}
-              </Dialog.Title>
-              <Dialog.Description>
-                {demoProvider === "accounts"
-                  ? "Explore the company workspace or follow an intern’s journey. Choose an account to fill the form, then select Sign In."
-                  : "This is a local sign-in simulation. No external account is connected. Choose a sample account to try the experience."}
-              </Dialog.Description>
-              {account && (
-                <div className={styles.notice}>
-                  <p>
-                    You’re signed in as {account.name}. Sign out before choosing
-                    another account.
-                  </p>
-                  <button type="button" onClick={onSignOut}>
-                    <LogOut size={15} />
-                    Sign out
-                  </button>
-                </div>
-              )}
-              <div className={styles.demoAccounts}>
-                {demoAccounts.map((demo) => (
-                  <button
-                    type="button"
-                    key={demo.id}
-                    disabled={disabled}
-                    aria-label={`Use ${demo.label || demo.name} demo account, ${demo.email}`}
-                    onClick={() => {
-                      onChooseDemo(demo);
-                      setDemoProvider(null);
-                    }}
-                  >
-                    <span className={styles.demoAvatar}>
-                      {demo.role === "company" ? (
-                        <BriefcaseBusiness size={20} />
-                      ) : (
-                        <Users size={20} />
-                      )}
-                    </span>
-                    <span>
-                      <strong>{demo.label || demo.name}</strong>
-                      <small>{demo.email}</small>
-                    </span>
-                    <ArrowRight size={16} />
-                  </button>
-                ))}
-              </div>
-              <p className={styles.demoPassword}>
-                Demo password <code>OlentraDemo123!</code>
-              </p>
-              <p className={styles.demoPrivacy}>
-                Sessions stay in this tab and expire after eight hours.
-              </p>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+
       </main>
     </>
   );

@@ -203,7 +203,7 @@ export default function ApplicationLaunch({
         </h2>
         <p id={descriptionId}>
           {complete
-            ? "Your demo application is saved. Create your account to follow your internship journey."
+            ? "Your application is saved. Create your account to follow your internship journey."
             : "Launching your next chapter with Olentra…"}
         </p>
         {complete && applicationId && (

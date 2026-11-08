@@ -12,6 +12,12 @@ export async function POST(request) {
   if (origin && origin !== allowedOrigin) return NextResponse.json({ error: 'Invalid origin.' }, { status: 403 });
   const contentType = request.headers.get('content-type') || '';
   if (!contentType.startsWith('multipart/form-data')) return NextResponse.json({ error: 'Expected a contact form.' }, { status: 415 });
+
+  const contentLength = Number(request.headers.get('content-length'));
+  if (contentLength && contentLength > MAX_BODY) {
+    return NextResponse.json({ error: 'Attachment must be 5 MB or smaller.' }, { status: 413 });
+  }
+
   try {
     const reader = request.body?.getReader();
     if (!reader) return NextResponse.json({ error: 'Missing form.' }, { status: 400 });

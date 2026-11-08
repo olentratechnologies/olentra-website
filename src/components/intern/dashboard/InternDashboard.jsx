@@ -28,6 +28,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
+import { hasStaffPermission } from "./staffAccess";
 import { usePathname, useRouter } from "next/navigation";
 import { exportCsv } from "./DashboardUI";
 import {
@@ -103,14 +104,17 @@ export default function InternDashboard() {
     setDateRange,
     notify,
     setNotificationDialog,
+    account,
   } = useDashboard();
-  const [periodId, setPeriodId] = useState("30D");
+  const canApplications = hasStaffPermission(account, "applications.read");
+  const canNotifications = hasStaffPermission(account, "notifications.read");
+  const [periodId, setPeriodId] = useState("1Y");
   const router = useRouter();
   const section = "dashboard";
   useEffect(() => {
     setPeriodId(
       data.dateRanges.find((range) => range.id === dateRange)?.chartPeriod ||
-        "30D",
+        "1Y",
     );
   }, [dateRange, data.dateRanges]);
   const applications = data.applications;
@@ -255,9 +259,7 @@ export default function InternDashboard() {
                 <strong>{metric.value.toLocaleString("en-US")}</strong>
                 <span>{metric.label}</span>
               </div>
-              <span className={styles.metricChange}>
-                <ArrowUp size={15} strokeWidth={2.5} /> +{metric.change}%
-              </span>
+              {metric.change != null && <span className={styles.metricChange}><ArrowUp size={15} strokeWidth={2.5} /> +{metric.change}%</span>}
               <div className={styles.sparkline}>
                 <Sparkline
                   values={metric.trend}
@@ -305,8 +307,7 @@ export default function InternDashboard() {
                   {data.programs.map((program) => (
                     <span key={program.id}>
                       <i style={{ background: program.color }} />
-                      {program.name} (
-                      {program.id === "explorer" ? "Free" : "Paid"})
+                      {program.name}
                     </span>
                   ))}
                 </div>
@@ -315,16 +316,7 @@ export default function InternDashboard() {
                     period={period}
                     className={styles.areaChart}
                   />
-                  <div className={styles.growthCard}>
-                    <span>Total Growth</span>
-                    <strong>
-                      +{period.growth}
-                      <em>%</em>
-                    </strong>
-                    <ArrowUp size={17} />
-                    <GrowthArtwork className={styles.growthArtwork} />
-                    <small>{period.comparison}</small>
-                  </div>
+
                 </div>
               </section>
               <section
@@ -390,7 +382,7 @@ export default function InternDashboard() {
                   ))}
                 </div>
               </section>
-              <section
+              {canApplications && <section
                 className={`${styles.panel} ${styles.recentApplications}`}
                 aria-labelledby="recent-applications-title"
               >
@@ -441,7 +433,7 @@ export default function InternDashboard() {
                     </p>
                   )}
                 </div>
-              </section>
+              </section>}
             </div>
           </div>
 
@@ -473,7 +465,7 @@ export default function InternDashboard() {
                 })}
               </div>
             </section>
-            <section
+            {canNotifications && <section
               className={`${styles.panel} ${styles.activity}`}
               aria-labelledby="recent-activity-title"
             >
@@ -501,7 +493,7 @@ export default function InternDashboard() {
                 </Popover.Root>
               </div>
               {activityList()}
-            </section>
+            </section>}
           </div>
         </div>
       </>

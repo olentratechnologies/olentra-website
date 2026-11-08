@@ -34,7 +34,8 @@ import common from "./pages.module.css";
 import styles from "./portfolio.module.css";
 
 export function CertificatesPage() {
-  const { data, query, notify, generateCertificates } = useDashboard();
+  const { data, query, notify, generateCertificates, commands, account } = useDashboard();
+  const isAdmin = account?.staffRole === "admin";
   const [search, setSearch] = useState("");
   const [track, setTrack] = useState("all");
   const [status, setStatus] = useState("all");
@@ -46,68 +47,24 @@ export function CertificatesPage() {
   const [generationError, setGenerationError] = useState("");
   const [generating, setGenerating] = useState(false);
   const pageSize = 8;
-  const people = useMemo(
-    () => new Map(data.applications.map((person) => [person.id, person])),
-    [data.applications],
-  );
-  const certificates = data.certificates || [];
-  const issuedInternIds = useMemo(
-    () => new Set(certificates.map((certificate) => certificate.internId)),
-    [certificates],
-  );
-  const eligible = useMemo(
-    () =>
-      data.interns
-        .filter(
-          (intern) =>
-            intern.status === "Completed" &&
-            !issuedInternIds.has(intern.id) &&
-            !(data.tasks || []).some(
-              (task) =>
-                task.applicationId === intern.applicationId &&
-                task.required &&
-                task.status !== "Approved",
-            ),
-        )
-        .map((intern) => ({
-          ...intern,
-          person: people.get(intern.applicationId),
-        }))
-        .filter((intern) => intern.person),
-    [data.interns, data.tasks, issuedInternIds, people],
-  );
-  const selectedEligible = eligible.filter((intern) =>
-    selected.includes(intern.id),
-  );
-  const matchingEligible = eligible.filter((intern) =>
-    `${intern.person.name} ${intern.person.program} ${intern.batch}`
-      .toLowerCase()
-      .includes(bulkSearch.trim().toLowerCase()),
-  );
-  const filtered = certificates.filter((certificate) => {
-    const haystack =
-      `${certificate.recipient} ${certificate.certificateNumber} ${certificate.program} ${certificate.id}`.toLowerCase();
-    return (
-      (!query || haystack.includes(query.toLowerCase())) &&
-      (!search || haystack.includes(search.toLowerCase())) &&
-      (track === "all" || certificate.programId === track) &&
-      (status === "all" || certificate.status === status)
-    );
-  });
-  const currentPage = Math.min(
-    page,
-    Math.max(1, Math.ceil(filtered.length / pageSize)),
-  );
-  const rows = filtered.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
-  const preview = certificates.find(
-    (certificate) => certificate.id === previewId,
-  );
-  useEffect(() => {
-    setPage(1);
-  }, [search, query, track, status]);
+  const [listing,setListing] = useState({items:[],total:0,counts:{statuses:{},programs:{}}});
+  const [summary,setSummary] = useState({total:0,counts:{statuses:{},programs:{}}});
+  const [eligibleListing,setEligibleListing] = useState({items:[],total:0});
+  const [eligiblePage,setEligiblePage] = useState(1);
+  const [eligibleTotal,setEligibleTotal] = useState(0);
+  const [listError,setListError] = useState("");
+  const [createdPreview,setCreatedPreview] = useState(null);
+  useEffect(()=>{setPage(1)},[search,query,track,status]);
+  useEffect(()=>{setEligiblePage(1)},[bulkSearch]);
+  useEffect(()=>{let live=true;const timer=setTimeout(async()=>{const [result,totals,eligibleCount]=await Promise.all([commands.listCertificates({search,query,programId:track,status,page,pageSize}),commands.listCertificates({page:1,pageSize:1}),isAdmin ? commands.listInterns({eligible:true,page:1,pageSize:1}) : Promise.resolve({ok:true,data:{total:0}})]);if(!live)return;if(!result.ok||!totals.ok||!eligibleCount.ok){setListError(result.error||totals.error||eligibleCount.error);return}setListError("");setListing(result.data);setSummary(totals.data);setEligibleTotal(eligibleCount.data.total);if(page>1&&page>Math.max(1,Math.ceil(result.data.total/pageSize)))setPage(Math.max(1,Math.ceil(result.data.total/pageSize)))},180);return()=>{live=false;clearTimeout(timer)}},[page,pageSize,search,query,track,status,commands,data.certificates,data.interns,data.tasks,isAdmin]);
+  useEffect(()=>{if(!bulkOpen)return;let live=true;const timer=setTimeout(async()=>{const result=await commands.listInterns({eligible:true,search:bulkSearch,page:eligiblePage,pageSize:20});if(!live)return;if(!result.ok){setGenerationError(result.error);return}setGenerationError("");setEligibleListing(result.data)},180);return()=>{live=false;clearTimeout(timer)}},[bulkOpen,bulkSearch,eligiblePage,commands,data.interns,data.certificates,data.tasks]);
+  const certificates=listing.items, eligible=eligibleListing.items.map(intern=>({...intern,person:intern.application})).filter(intern=>intern.person);
+  const selectedEligible=selected;
+  const matchingEligible=eligible;
+  const filtered=certificates;
+  const currentPage=page;
+  const rows=certificates;
+  const preview=certificates.find(certificate=>certificate.id===previewId) || (createdPreview?.id===previewId ? createdPreview : null);
   const exportCertificates = (items = filtered) => {
     exportCsv(
       "olentra-internship-certificates.csv",
@@ -121,7 +78,7 @@ export function CertificatesPage() {
       ]),
     );
     notify(
-      `${items.length} certificate ${items.length === 1 ? "record" : "records"} exported.`,
+      `${items.length} certificate ${items.length === 1 ? "record" : "records"} from this page exported.`,
     );
   };
   const openBulk = () => {
@@ -138,8 +95,9 @@ export function CertificatesPage() {
       );
     setGenerating(true);
     try {
+      if (selectedEligible.length > 100) { setGenerationError("Select at most 100 interns at a time."); return; }
       const created = await generateCertificates(
-        selectedEligible.map((intern) => intern.id),
+        selectedEligible,
       );
       if (!Array.isArray(created) || !created.length) {
         setGenerationError(
@@ -149,6 +107,7 @@ export function CertificatesPage() {
       }
       setBulkOpen(false);
       setSelected([]);
+      setCreatedPreview(created[0]);
       setPreviewId(created[0].id);
       notify(
         `${created.length} ${created.length === 1 ? "certificate" : "certificates"} generated successfully.`,
@@ -171,43 +130,40 @@ export function CertificatesPage() {
           onClick={() => exportCertificates()}
           disabled={!filtered.length}
         >
-          <Download size={15} /> Export Records
+          <Download size={15} /> Export current page
         </Button>
-        <Button onClick={openBulk}>
+        {isAdmin && <Button onClick={openBulk}>
           <Plus size={16} /> Generate Certificates
-        </Button>
+        </Button>}
       </PageHeader>
+      {listError && <p role="alert">{listError}</p>}
       <StatCards
         items={[
           {
             id: "issued",
             label: "Certificates Issued",
-            value: certificates.length,
+            value: summary.total,
             icon: "trophy",
             tone: "blue",
           },
-          {
+          ...(isAdmin ? [{
             id: "eligible",
             label: "Ready to Generate",
-            value: eligible.length,
+            value: eligibleTotal,
             icon: "check",
             tone: "green",
-          },
+          }] : []),
           {
             id: "explorer",
             label: "Tech Explorer",
-            value: certificates.filter(
-              (certificate) => certificate.programId === "explorer",
-            ).length,
+            value: summary.counts?.programs?.explorer || 0,
             icon: "users",
             tone: "purple",
           },
           {
             id: "innovator",
             label: "Tech Innovator",
-            value: certificates.filter(
-              (certificate) => certificate.programId === "innovator",
-            ).length,
+            value: summary.counts?.programs?.innovator || 0,
             icon: "trophy",
             tone: "orange",
           },
@@ -221,7 +177,7 @@ export function CertificatesPage() {
             </span>{" "}
             Issued Certificates
           </h2>
-          <span className={common.badge}>{certificates.length} total</span>
+          <span className={common.badge}>{listing.total} total</span>
         </div>
         <div className={common.toolbar}>
           <SearchBox
@@ -351,7 +307,7 @@ export function CertificatesPage() {
         <Pagination
           page={currentPage}
           pageSize={pageSize}
-          total={filtered.length}
+          total={listing.total}
           onChange={setPage}
         />
       </Panel>
@@ -361,9 +317,9 @@ export function CertificatesPage() {
           Certificates are issued to interns who have completed the program.
           Each certificate has a unique certificate ID.
         </p>
-        <button onClick={openBulk}>
+        {isAdmin && <button onClick={openBulk}>
           Manage certificates <ArrowRight size={13} />
-        </button>
+        </button>}
       </div>
       <Modal
         open={bulkOpen}
@@ -372,14 +328,14 @@ export function CertificatesPage() {
         description="Select completed interns who have not received a certificate yet."
         className={styles.bulkModal}
       >
-        {eligible.length ? (
+        {eligibleTotal ? (
           <>
             <div className={styles.eligibilityBanner}>
               <ShieldCheck size={20} />
               <span>
                 <strong>
-                  {eligible.length} eligible{" "}
-                  {eligible.length === 1 ? "intern" : "interns"}
+                  {eligibleTotal} eligible{" "}
+                  {eligibleTotal === 1 ? "intern" : "interns"}
                 </strong>
                 Completed the program and awaiting a certificate.
               </span>
@@ -411,7 +367,7 @@ export function CertificatesPage() {
                   )
                 }
               />{" "}
-              Select all matching interns{" "}
+              Select all interns on this page{" "}
               <span>{selectedEligible.length} selected</span>
             </label>
             <div className={styles.eligibleList}>
@@ -445,6 +401,7 @@ export function CertificatesPage() {
                 />
               )}
             </div>
+            <Pagination page={eligiblePage} pageSize={20} total={eligibleListing.total} onChange={setEligiblePage}/>
             {generationError && (
               <p role="alert" className={common.error}>
                 {generationError}
@@ -543,9 +500,9 @@ export function CertificatesPage() {
                 </p>
                 <div className={styles.certificateSignatures}>
                   <div>
-                    <span className={styles.signatureName}>Manideep Bethi</span>
+                    <span className={styles.signatureName}>Internship Program Team</span>
                     <span className={styles.signatureRule} />
-                    <strong>Program Director</strong>
+                    <strong>Issued by</strong>
                     <small>Olentra Technologies</small>
                   </div>
                   <div className={styles.certificateSeal}>

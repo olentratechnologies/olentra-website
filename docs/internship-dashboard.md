@@ -1,219 +1,166 @@
-# Internship module demo
+# Internship module
 
-Run `npm run dev`, then open `http://localhost:3000/careers/intern` or
-`http://localhost:3000/intern/login`. This is a UI-only demo: applications,
-accounts, reviews, messages, and certificates share browser-local state. No
-backend, email delivery, or external account connection is used.
+The dedicated internship service uses MongoDB and WebSockets for applications,
+accounts, offers, onboarding, work, certificates, messages and notifications.
+Its routes are `/careers/intern`, `/intern/portal` and `/intern/dashboard`.
+The company workspace at `/dashboard` and visitor-count server are separate.
+Previously saved browser demo data is left in place and is not imported.
 
-## Demo accounts
+## Local setup
 
-All seeded accounts start with the password `OlentraDemo123!`. On the login page,
-open **Demo accounts**, choose an account to fill the correct account type and
-credentials, then select **Sign In**. The Google and GitHub controls also open a
-labelled local demo chooser; they do not connect to external identity services.
-
-| Scenario                                  | Account type | Email                           |
-| ----------------------------------------- | ------------ | ------------------------------- |
-| Company administrator                     | Company      | `manideep@olentra.com`          |
-| Pending applicant — Rahul Verma           | Intern       | `rahul-verma.0003@example.com`  |
-| Selected, offer ready — Arjun Sharma      | Intern       | `arjun-sharma.0001@example.com` |
-| Active intern — Ananya Singh              | Intern       | `ananya-singh.0006@example.com` |
-| Completed, certificate ready — Mira Hegde | Intern       | `mira-hegde.1741@example.com`   |
-
-Password reset displays a local verification code in the UI. The code expires
-after 15 minutes and can be used once. Resetting a password increments the account
-session version and invalidates its existing sessions. Resetting the entire demo
-restores the seeded passwords.
-
-## Routes
-
-| Route                                 | Purpose                                                                       |
-| ------------------------------------- | ----------------------------------------------------------------------------- |
-| `/careers/intern`                     | Program information and public application form                               |
-| `/intern/register`                    | Create an intern account linked to the application just submitted in this tab |
-| `/intern/login`                       | Intern/company login and demo account selection                               |
-| `/intern/reset-password`              | Local demo password reset                                                     |
-| `/intern/dashboard`                   | Company overview                                                              |
-| `/intern/dashboard/applications`      | Company application directory and review                                      |
-| `/intern/dashboard/applications/[id]` | Applicant profile, internal notes, offer, onboarding approval, and messages   |
-| `/intern/dashboard/analytics`         | Program, track, funnel, and skills analytics                                  |
-| `/intern/dashboard/interns`           | Active, completed, and dropped intern lifecycle                               |
-| `/intern/dashboard/projects`          | Project teams, task assignment, and submission review                         |
-| `/intern/dashboard/certificates`      | Certificate generation and previews                                           |
-| `/intern/dashboard/settings`          | Program settings, profile, and demo reset                                     |
-| `/intern/portal`                      | Intern's own application and work summary                                     |
-| `/intern/portal/application`          | Own application timeline and offer decision                                   |
-| `/intern/portal/onboarding`           | Profile checklist, resume, acknowledgement, and submission                    |
-| `/intern/portal/projects`             | Assigned projects                                                             |
-| `/intern/portal/projects/[id]`        | Own tasks and work submission                                                 |
-| `/intern/portal/submissions`          | Submission versions and published review feedback                             |
-| `/intern/portal/certificates`         | Own issued certificates                                                       |
-| `/intern/portal/profile`              | Own profile and resume                                                        |
-
-Protected layouts wait for store/session hydration before mounting their pages.
-An absent session goes to login; the wrong account type goes to its own workspace.
-The applicant detail route resolves browser-created IDs after hydration, rather
-than rejecting IDs missing from the original JSON.
-
-## End-to-end walkthrough
-
-Use separate tabs for company and intern accounts to see updates pass between
-them. Both tabs must use the same origin, including hostname and port.
-
-1. While signed out, apply from `/careers/intern` with a new email address, a track, and a
-   resume. The success flow saves the application and links to account creation.
-   Finish account creation in the same tab; the new account initially has
-   application-tracking access.
-2. In the company tab, find the applicant in **Applications**. Review their profile
-   and set their status to **Selected**. Internal reviewer notes remain private to
-   the company.
-3. Open the applicant's **Application** tab → **Applicant Workflow** → **Offer**.
-   Choose start/end dates, a permitted stipend, and a welcome message; send the
-   offer.
-4. In the intern tab, open **My Application** and accept the offer. Declining
-   instead marks the application **Declined** and keeps onboarding closed.
-5. Complete **Onboarding**: phone, college, location, resume, and the program
-   acknowledgement. Saving a draft does not submit it. Submitting keeps the
-   application **Selected** until the company approves it.
-6. In the company applicant workflow, review the submitted checklist and choose
-   **Approve onboarding**. This creates an active intern and changes the
-   application to **Joined**.
-7. In company **Projects**, create a project or add the intern to an existing team.
-   Save team changes before assigning a task. The project detail's **Tasks &
-   Reviews** section assigns tasks only to active members of that project.
-8. The intern can start an assigned task and submit notes, a work link,
-   or an attachment. Company **Submissions** within that project's workflow shows
-   the latest version for review.
-9. **Request changes** requires feedback. The intern can read it and submit a new
-   version. **Approve submission** approves the latest submitted version while
-   retaining earlier versions and their feedback.
-10. In company **Interns**, mark the intern **Completed** after every required
-    task is approved. Generate their certificate from **Certificates**. It then
-    appears in the intern's **My Certificates** page.
-
-The seeded selected, active, and completed accounts let you enter these workflows
-without creating a new application. The active intern has sample tasks and a
-submission awaiting review; the completed account already has an issued
-certificate.
-
-Company **Contact** and **Applicant Workflow → Messages** share the same
-conversation with the intern portal's header **Messages** button. Company
-announcements and workflow updates create targeted notifications. Read state is
-per account. Company notes and unscoped internal activity are excluded from the
-intern's projected records.
-
-**Joined** is a terminal application stage. It is reached through onboarding
-approval, not the manual application status dropdown. Manage enrollment lifecycle
-through **Active**, **Completed**, and **Dropped** on the company Interns page.
-Completed internships and their task records are read-only. Only completed interns
-with every required task approved and no existing certificate are eligible for issuance.
-
-## Source and data model
-
-| File                                                    | Responsibility                                                                                                                |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `src/data/intern-dashboard.json`                        | Fictional base records: 2,540 applications, 740 interns, three projects, certificates, settings, contributions, and analytics |
-| `src/data/intern-workflows.json`                        | Demo accounts, sample offer/tasks/submission, messages, notifications, and shared resources                                   |
-| `src/lib/intern/workflow.mjs`                           | Pure state materialization, migration, role/ownership checks, workflow commands, session validation, and intern projections   |
-| `src/components/intern/InternshipProvider.jsx`          | Shared provider for `/careers/intern` and `/intern/**` routes; browser storage, sessions, serialized commands, and cross-tab synchronization          |
-| `src/components/intern/dashboard/DashboardProvider.jsx` | Compatibility exports for existing company pages; mutators return promises                                                    |
-| `src/components/intern/dashboard/CompanyWorkflow.jsx`   | Company offer/onboarding/messages and project task/review panels                                                              |
-| `src/lib/intern-attachments.mjs`                        | IndexedDB file storage, validation, downloads, and seeded-profile fallback downloads                                          |
-
-Applications are the shared person reference. Accounts, intern records, project
-teams, offers, onboarding, tasks, submissions, messages, and certificates link via
-application IDs. Intern and project IDs remain stable. Submission records include
-their task ID and version; the latest submitted version determines a task's review
-state. Certificate records link both intern and application IDs.
-
-Initial records come from JSON; browser actions write overrides and new records
-separately. The browser never modifies source JSON. Company metrics derive their
-current totals from the materialized application records; historical chart series
-remain fixtures.
-
-To regenerate the deterministic base records:
+Install the repository dependencies and the Bun dependencies in
+`backend/websockets`. Configure `MONGODB_URI` (or the existing `MONGODB`) in
+`backend/websockets/.env` with a MongoDB Atlas replica-set connection string and
+database name. The database user needs permission to create indexes, use
+transactions, open change streams and store GridFS files. Do not commit this file.
+The sample settings are in `backend/websockets/.env.example`.
 
 ```sh
-node scripts/generate-intern-fixtures.cjs
-node scripts/verify-intern-dashboard.cjs
+npm install
+cd backend/websockets && bun install && cd ../..
+npm run dev
+# In another terminal:
+npm run intern:start
 ```
 
-## Sessions, storage, and migration
+The service defaults to `127.0.0.1:3003`. Set
+`NEXT_PUBLIC_INTERN_BACKEND_URL` in the website's local environment if it runs
+elsewhere. `INTERN_ALLOWED_ORIGINS` must list the website's exact browser origins;
+`INTERN_SITE_ORIGIN` is the website origin used to check whether applications
+are enabled. Restart the relevant process after changing environment settings.
+For production configure a shared, random `INTERN_JWT_SECRET` of at least 32 bytes
+and use HTTPS. On a local development machine, an absent secret is generated in
+the ignored `backend/websockets/.data/intern-jwt-secret` file.
 
-| Storage        | Key/database                                   | Contents                                                               |
-| -------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| localStorage   | `olentra_intern_workflow_v2`                   | Versioned overrides and newly created workflow records                 |
-| sessionStorage | `olentra_intern_session_v2`                    | This tab's account, account version, demo epoch, and eight-hour expiry |
-| sessionStorage | `olentra_intern_pending_v2`                    | This tab's new-application claim used by account creation              |
-| IndexedDB      | `olentra-intern-files-v2`, store `attachments` | Resume and work attachment blobs plus metadata                         |
-| localStorage   | `olentra_intern_admin_v1`                      | Retained migration backup from the earlier company-only demo           |
+The service initializes only the two named programs and keeps them closed with
+no fees or stipends configured. Staff must set the real amounts and enable the
+tracks in `/intern/dashboard/settings` before applicants can submit. Website
+feature switches must also allow internships and applications. No demo accounts
+or applications are automatically added.
 
-Sessions survive navigation/reloads in their tab and have a fixed eight-hour
-lifetime. Signing out removes the tab session without deleting saved workflow
-records. Each tab can sign in as a different account. Store revisions synchronize
-through storage events; Web Locks serialize origin-wide writes in supporting
-browsers, with a per-provider command queue preserving local action order.
+To explicitly create the first test internship admin, run the following from the project
+root, entering a test email and password when prompted. Choose a password with
+at least 12 characters; the command stores an Argon2id hash and does not print
+the password. Use a test address that does not belong to a real person.
 
-When a v2 store does not exist, the provider imports compatible v1 application,
-intern, project, certificate, settings, and activity edits. Existing IDs and
-relationships are retained. The old company profile becomes the company account
-override. The original v1 key remains untouched. Future reloads use the v2 store.
+```sh
+read "INTERN_TEST_STAFF_EMAIL?Test staff email: "
+read -s "INTERN_TEST_STAFF_PASSWORD?Test staff password: "
+export INTERN_TEST_STAFF_EMAIL INTERN_TEST_STAFF_PASSWORD
+npm run intern:bootstrap
+unset INTERN_TEST_STAFF_EMAIL INTERN_TEST_STAFF_PASSWORD
+```
 
-**Settings → Reset demo data** writes a fresh v2 store with a new epoch, clears
-local attachments, and signs out active demo sessions. Other tabs observe the
-epoch change and must sign in again. The retained v1 backup is not reimported
-because the fresh v2 store remains present.
+The bootstrap command is for an empty staff setup. When upgrading an existing
+staff account instead, set `INTERN_INITIAL_ADMIN_EMAIL` to that account's exact
+email and run `npm run intern:promote-admin`. Only that account is promoted;
+other legacy staff accounts remain unassigned. The command does not change its
+password. Once an admin exists, they manage staff from **Staff & Roles** in the
+internship dashboard.
 
-Resume uploads accept PDF, DOC, and DOCX files up to 5 MB. Work attachments can be
-up to 10 MB. Blobs stay in IndexedDB; localStorage stores attachment IDs, never
-base64 files or persisted object URLs. Newly uploaded files download in their
-original format from the browser where they were saved. Seeded applicants without
-an uploaded file download a fictional text profile. Certificates support preview,
-HTML download in the intern portal, and printing / Save as PDF through the
-browser. Exports contain the current filtered records.
+Admin has all internship permissions. The starter non-admin roles are manager,
+recruiter, mentor, and viewer. Viewers see aggregate statistics and project
+summaries without applicant profiles or private messages. An admin can adjust
+limited permissions or create custom roles; final decisions and staff
+management remain admin-only. Some permissions require related read access;
+the role editor selects these dependencies automatically. Each person has one
+staff role. Changing a role, disabling an account, resetting its password, or
+editing its role's permissions signs affected staff out. Staff changes are
+recorded in the internship audit log, and the last active admin cannot be
+disabled or demoted.
+
+These `read` commands use the default macOS zsh shell. Create a test intern by
+submitting a new test application and registering in the same browser tab. The
+claim is short-lived and can be used only once. If the claim is lost or expires,
+an admin can explicitly create an account for that applicant from the applicant's
+page after verifying their identity. There is no OTP or external email delivery.
+For a forgotten intern password, an admin can set a new password from the
+applicant's page; this invalidates that account's existing sessions. Staff-set
+passwords do not expire automatically and there is no self-service password
+change yet, so staff must reset them when a replacement is needed.
+
+## Workflow
+
+1. The applicant submits the application and resume, creates an account, and
+   follows their status in the intern portal.
+2. An admin selects the applicant and sends an offer. The applicant accepts it and
+   submits their onboarding details. An admin approves onboarding, making them an
+   active intern.
+3. Staff assign the intern to a project and create tasks. The intern submits
+   work; authorized staff can request changes, and an admin approves the latest version.
+4. An admin completes the internship after required tasks are approved and issues
+   the certificate. The certificate is created once and appears in the portal.
+5. Each side can use in-app messages and notifications. External delivery and
+   third-party integrations are not configured.
+
+Attachments are streamed through the internship service's small HTTP file
+endpoints to GridFS. Internship commands use WebSockets. Session-cookie
+endpoints support sign-in and refresh; the separate HTTP business-request
+fallback is not implemented yet.
+
+Sign-in, refresh, and logout use HTTP endpoints on the internship service. A
+successful sign-in returns a short-lived access token and sets an HttpOnly
+refresh cookie; the browser authenticates its WebSocket using the access token.
+Internship actions and updates then use that WebSocket.
+
+Temporary database failures are reported as service unavailability rather than
+invalid credentials. If a refresh response is lost, the same browser request
+can safely recover the rotated credential for 60 seconds; a lost response that
+cannot be retried within that window may require another sign-in. The browser
+limits each HTTP authentication request to 15 seconds; the service permits 30
+seconds of HTTP idle time. These limits prevent indefinite waits or premature
+connection resets; they cannot make an unavailable network or database fast.
+If logout cannot reach the service, the browser prevents silent session
+restoration and retries revocation before the next explicit login in that tab.
+Until that retry succeeds, the server-side session may remain valid until it
+expires.
+Some browsers copy session storage when a tab is duplicated. Two tabs that
+inherit the same session context can conflict if they refresh concurrently;
+until per-tab coordination is added, use independently opened tabs for separate
+test accounts. A refresh-token replay conflict requires signing in again.
+On supported MongoDB 8 deployments, the service verifies transactional bulk
+write support before batching settings changes; otherwise it uses the existing
+sequential transaction path.
 
 ## Verification
 
 ```sh
-node scripts/verify-intern-dashboard.cjs
-node --test scripts/intern-workflow.test.mjs
+npm run test:intern
+npm run test:presence
+npm run bench:intern
+npm run bench:intern:latency
 npm run build
 ```
 
-The fixture verifier checks exact totals, identity uniqueness, dates, bidirectional
-project memberships, contributions, certificate eligibility, analytics, and company
-route entry points. The workflow tests cover the complete application-to-certificate
-journey, roles and ownership, private-note projection, duplicate protection,
-required-work completion gates, seed submission overrides, migration, persistence,
-password/session revocation, reset epochs, and malformed collection normalization.
+Internship tests and the benchmark use `INTERN_TEST_MONGODB_URI` if provided,
+otherwise the configured `MONGODB_URI` or `MONGODB`. They create unique,
+prefixed test collections and remove only those collections. Use a dedicated
+test database when possible. The benchmark creates 1,000 synthetic applications
+and performs 50 paginated reads with 10 concurrent workers; it reports latency
+and process RSS. It is a small baseline, not an enterprise capacity guarantee.
+The latency benchmark uses a separate isolated database prefix and a local
+ephemeral service to measure sign-in, WebSocket authentication, snapshot load,
+and track and program settings saves. It runs eight sequential samples by
+default; set `INTERN_BENCH_SAMPLES` (2–50) to choose another sample count. Each
+run removes only its own collections. Run it without competing Atlas tests for
+more meaningful measurements.
 
-For browser QA, exercise both account types in separate tabs, reload while signed
-in, verify an unauthorized direct route, exchange a message, review/resubmit work,
-and confirm the intern cannot see company notes. Test password reset and demo
-reset across tabs. Use the same localhost origin throughout persistence checks.
+On the development machine on 2026-11-08, a cold Atlas run took 4,024 ms for
+the 50 reads, with p50 113 ms and p95 2,020 ms; the benchmark process RSS went
+from 34 MiB to 42 MiB. This includes database network and connection-pool warmup
+and is not a WebSocket end-to-end latency or multi-region load test. Measure
+again in the intended deployment region before deciding on capacity.
 
-## Login reference artwork
+Application, message and notification histories use paginated queries. Staff
+directory queries also page interns, projects, tasks, submissions and
+certificates; the intern portal still uses bounded per-account snapshots (500
+projects and certificates, 1,000 tasks and submissions). Analytics share a
+two-second cache and are invalidated by relevant database changes. At larger
+scale, measure the joins and aggregation queries and consider denormalized
+search indexes and incrementally maintained analytics. Announcements currently
+enumerate recipients within one transaction; a durable fan-out queue or scoped
+audience topics are needed before sending to very large audiences.
 
-The login screen restores `Olentra Futuristic Internship Login Portal.png`:
-the campus scene, “Build. Learn. Grow. Together.” headline, four-benefit strip,
-and glass login card. The text, role switch, fields, and buttons are HTML.
-The background is `public/images/intern/login-campus-unbranded.webp`
-(1672 × 941), edited with built-in ImageGen and encoded as WebP. The building
-lettering and physical logo have been removed; the page branding remains HTML.
-Desktop spacing adapts to viewport height so the login fits shorter displays.
-
-Brand wordmarks reuse the homepage multicolor logo, the full uppercase
-**OLENTRA TECHNOLOGIES** name, slate `#334155`, and the homepage blue gradient.
-`src/components/intern/CompanyBrand.jsx` shares this identity across authentication,
-company/intern navigation, and certificate previews.
-
-The demo chooser remains available through **Explore demo accounts** and the
-local Google/GitHub simulation controls. All session and role behavior is unchanged.
-
-Original image-edit prompt:
-
-> Edit target: the attached 1672×941 Olentra login mockup. Make a clean full-bleed website BACKGROUND PLATE from it. Preserve the exact camera, composition, blue colors, photorealistic futuristic glass Olentra office building at the bottom-left, trees, reflective dark blue ground, large glowing blue planetary arc at upper-left, clouds, and luminous orbit trails. Retain the physical Olentra sign on the building facade. Remove ALL overlaid user-interface elements: the upper-left brand and logo, headline, paragraph, benefits panel and its icons/text, footer text, both role tabs, the ENTIRE right frosted glass login card, every input/button/social login element and all text. Seamlessly reconstruct only sky/clouds/blue planet lighting behind the removed elements; preserve placement of the building precisely, spanning the lower left with its roof apex around x815 y512 in the source, and open pale blue sky on the right for our real HTML login panel. No new objects or compositional changes. Return a landscape 16:9 clean photographic scene with no UI and no text except the existing physical building signage.
-
-Building-sign removal prompt (built-in ImageGen):
-
-> Edit image 1, the full 1672x941 blue futuristic office-campus background. Image 2 is ONLY a location reference showing the building sign to remove. Remove the entire illuminated 'Olentra' wordmark and the circular blue-purple logo mounted on the upper glass facade of the building in image1, around x655-785,y570-639. Inpaint that small area with continuous clean blue glass panels, correct panel mullions/grid lines, matching reflections and lighting so it looks like the building never had any sign there. There must be no lettering, no logo, no replacement sign or traces on that facade. Preserve EVERYTHING else exactly: the building geometry and placement, windows, interior lighting, trees, sky, clouds, planet arc, glowing orbital trails, dark reflective ground, camera and colors. This is a precise local sign-removal edit, not a redesign. Keep the original landscape dimensions/composition.
+The browser keeps a command's retry key in memory after an ambiguous network
+failure, including a manual retry of the same action. Reloading the tab clears
+that retry cache; persisted retries across browser restarts are not implemented.

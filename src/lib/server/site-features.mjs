@@ -10,6 +10,9 @@ const hub = globalThis[hubKey] ||= new EventEmitter().setMaxListeners(0);
 const clone = value => structuredClone(value);
 const storePath = () => process.env.OLENTRA_FEATURE_STORE_PATH || path.join(process.cwd(), ".data", "site-features.json");
 
+let cachedFeatures = null;
+hub.on("change", () => { cachedFeatures = null; });
+
 export function validateSiteFeatureState(value) {
   if (!value || value.schemaVersion !== 1 || !Number.isInteger(value.revision) || value.revision < 0) throw new Error("Invalid website feature data.");
   for (const env of ENVIRONMENTS) {
@@ -20,7 +23,12 @@ export function validateSiteFeatureState(value) {
 }
 
 export async function readSiteFeatures() {
-  try { return validateSiteFeatureState(JSON.parse(await readFile(storePath(), "utf8"))); }
+  if (cachedFeatures) return clone(cachedFeatures);
+  try {
+    const data = validateSiteFeatureState(JSON.parse(await readFile(storePath(), "utf8")));
+    cachedFeatures = data;
+    return clone(data);
+  }
   catch (error) { if (error.code === "ENOENT") return clone(seed); throw error; }
 }
 
