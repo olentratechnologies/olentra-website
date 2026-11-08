@@ -17,6 +17,7 @@ import LaunchAnimation from "./LaunchAnimation";
 import { useInternship } from "./InternshipProvider";
 import { makeSampleResume, saveAttachment } from "@/lib/intern-attachments.mjs";
 import styles from "./intern.module.css";
+import { useSiteFeatures } from "@/components/site-features";
 
 const ART_SOURCE = "/images/intern/reference-art.png";
 const MAX_RESUME_BYTES = 5 * 1024 * 1024;
@@ -166,6 +167,10 @@ function BackgroundWaves() {
 
 export default function InternLanding() {
   const { commands, ready, sessionReady } = useInternship();
+  const { features, ready: featuresReady } = useSiteFeatures();
+  const canApply = Boolean(featuresReady && features.internships && features.applications);
+  const canApplyRef = useRef(canApply);
+  canApplyRef.current = canApply;
   const [selectedTrack, setSelectedTrack] = useState("");
   const [previewComplete, setPreviewComplete] = useState(false);
   const [launchPhase, setLaunchPhase] = useState("idle");
@@ -186,6 +191,13 @@ export default function InternLanding() {
   const submitButtonRef = useRef(null);
   const previousLaunchPhase = useRef("idle");
   const lenis = useLenis();
+
+  useEffect(() => {
+    if (!canApply) {
+      setLaunchPhase("idle");
+      setPreviewComplete(false);
+    }
+  }, [canApply]);
 
   useEffect(() => {
     if (launchPhase !== "launching") return;
@@ -230,6 +242,7 @@ export default function InternLanding() {
   }
 
   function applyForTrack(event, track) {
+    if (!canApplyRef.current) { event.preventDefault(); return; }
     setSelectedTrack(track);
     setPreviewComplete(false);
     scrollToSection(event, "internship-application");
@@ -239,6 +252,10 @@ export default function InternLanding() {
 
   async function submitPreview(event) {
     event.preventDefault();
+    if (!canApplyRef.current) {
+      setSubmitError("New internship applications are currently closed.");
+      return;
+    }
     if (
       launchPhase !== "idle" ||
       submissionLock.current ||
@@ -301,6 +318,7 @@ export default function InternLanding() {
         return;
       }
       setSavedApplication(result.data);
+      if (!canApplyRef.current) return;
       setLaunchPhase("launching");
     } catch (error) {
       setSubmitError(
@@ -493,13 +511,13 @@ export default function InternLanding() {
                     ))}
                   </ul>
                 </div>
-                <a
+                {canApply && <a
                   href="#internship-application"
                   className={`${styles.primaryButton} ${styles.trackButton}`}
                   onClick={(event) => applyForTrack(event, track.id)}
                 >
                   {track.cta} <ArrowRight size={14} aria-hidden="true" />
-                </a>
+                </a>}
               </article>
             ))}
           </div>
@@ -578,7 +596,7 @@ export default function InternLanding() {
             </div>
           </div>
 
-          <div className={styles.application} id="internship-application">
+          {canApply ? <div className={styles.application} id="internship-application">
             <div className={styles.applicationContent}>
               <div className={styles.applicationHeading}>
                 <ReferenceArt name="plane" />
@@ -871,10 +889,14 @@ export default function InternLanding() {
             >
               <LaunchAnimation />
             </aside>
-          </div>
+          </div> : featuresReady && <div className={styles.applicationClosed} id="internship-application" role="status">
+            <h2>Applications are currently closed</h2>
+            <p>New internship applications and account registration are unavailable at the moment.</p>
+            {features.portal && <Link href="/intern/login?role=intern" className={styles.secondaryButton}>Existing intern? Sign in <ArrowRight size={15} /></Link>}
+          </div>}
         </section>
       </main>
-      {launchPhase !== "idle" && (
+      {canApply && launchPhase !== "idle" && (
         <ApplicationLaunch
           phase={launchPhase}
           applicationId={savedApplication?.id}

@@ -5,6 +5,7 @@ import Hero from "@/components/Hero";
 import Mission from "@/components/Mission";
 import CreativeProcess from "@/components/CreativeProcess";
 import JsonLd from "@/components/JsonLd";
+import { Feature } from "@/components/site-features";
 import { buildMetadata, organizationSchema, websiteSchema } from "@/lib/seo";
 
 const ImpactStats = dynamic(() => import("@/components/ImpactStats"), { ssr: true });
@@ -48,7 +49,7 @@ export default function HomePage() {
       <Mission />
       <CreativeProcess />
       <StripeAnimation />
-      <ServicesTimeline
+      <Feature name="services"><ServicesTimeline
         sectionId="services"
         highlightedServices={[
           "AI Solutions",
@@ -58,11 +59,11 @@ export default function HomePage() {
         ]}
         ctaHref="/services"
         ctaLabel="View All Services"
-      />
+      /></Feature>
       <ImpactStats />
-      <Products />
+      <Feature name="products"><Products /></Feature>
       <LatestProjects />
-      <Blogs />
+      <Feature name="blog"><Blogs /></Feature>
       <Testimonials />
       
       {/* Global Presence Section - White Theme */}

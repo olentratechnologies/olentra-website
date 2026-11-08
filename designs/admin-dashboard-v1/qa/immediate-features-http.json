@@ -1,0 +1,431 @@
+{
+  "counts": {
+    "checks": 70,
+    "passed": 70,
+    "failed": 0,
+    "originalFlags": 16,
+    "restoredFlags": 16
+  },
+  "statuses": [
+    {
+      "name": "shared-snapshot",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "unauthenticated-write",
+      "status": 401,
+      "expected": 401,
+      "ok": true
+    },
+    {
+      "name": "cross-origin-write",
+      "status": 403,
+      "expected": 403,
+      "ok": true
+    },
+    {
+      "name": "local-session-1",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled:/services",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled:/products",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled:/services/platform-engineering",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled:/products/olenbot",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled:/blogs",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled:/blogs/designing-for-velocity-launching-in-30-days",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled:/careers/intern",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled:/intern/register",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled:/intern/portal",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "legacy-redirect",
+      "status": 308,
+      "expected": 308,
+      "ok": true
+    },
+    {
+      "name": "legacy-destination",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "legacy-query-redirect",
+      "status": 308,
+      "expected": 308,
+      "ok": true
+    },
+    {
+      "name": "legacy-query-destination-preserved",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled-sitemap",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled-sitemap:canonical-internship",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled-sitemap:legacy-excluded",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "enabled-sitemap:unrelated-pages-preserved",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "sse-connect",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "authorized-put:Production:services",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "sse-revision-update",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "services-off:/services/platform-engineering",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "services-off:/services",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "authorized-put:Production:products",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "products-off:/products/olenbot",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "products-off:/products",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "authorized-put:Production:blog",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "blog-off:/blogs",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "blog-off:/blogs/designing-for-velocity-launching-in-30-days",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "authorized-put:Production:internships",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "internships-off:/careers/intern",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "internships-off:/intern",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "internships-off:/intern/register",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "disabled-sitemap",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "disabled-sitemap:canonical-internship",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "disabled-sitemap:legacy-excluded",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "disabled-sitemap:unrelated-pages-preserved",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "authorized-put:Production:portal",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "portal-off:/intern/portal",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "name": "admin-access-preserved:/intern/login",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "admin-access-preserved:/intern/dashboard",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "admin-access-preserved:/dashboard",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "authorized-put:Production:services",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "authorized-put:Staging:services",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "authorized-put:Staging:maintenance",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "staging-isolation:/services",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "staging-isolation:/services/platform-engineering",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "staging-isolation:/",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "authorized-put:Production:maintenance",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "maintenance-public:/services/platform-engineering",
+      "status": 503,
+      "expected": 503,
+      "ok": true
+    },
+    {
+      "name": "maintenance-public:/",
+      "status": 503,
+      "expected": 503,
+      "ok": true
+    },
+    {
+      "name": "maintenance-public:/about",
+      "status": 503,
+      "expected": 503,
+      "ok": true
+    },
+    {
+      "name": "maintenance-public:/careers/intern",
+      "status": 503,
+      "expected": 503,
+      "ok": true
+    },
+    {
+      "name": "maintenance-admin:/dashboard/website-controls",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "maintenance-admin:/dashboard",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "maintenance-admin:/intern/login",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "maintenance-admin:/intern/dashboard",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "maintenance-api:/api/site-features/session",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "maintenance-api:/api/site-features",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "restore:Production:products",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "restore:Production:internships",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "restore:Production:blog",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "restore:Production:maintenance",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "restore:Production:portal",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "restore:Staging:services",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "restore:Staging:maintenance",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "name": "original-flags-restored",
+      "status": 16,
+      "expected": 16,
+      "ok": true
+    }
+  ]
+}

@@ -3,6 +3,8 @@ node_modules
 out
 dist
 coverage
+.data/
+designs/*.zip
 .DS_Store
 .env*.local
 npm-debug.log*

@@ -1,5 +1,6 @@
 "use client";
 
+import { Feature } from "@/components/site-features";
 import Image from 'next/image';
 import { useRef } from 'react';
 import { gsap } from 'gsap';
@@ -10,7 +11,9 @@ import Link from 'next/link';
 import { products } from '../data/products_data';
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-export default function Products({ light = false }) {
+export default function Products(props) { return <Feature name="products"><ProductsContent {...props} /></Feature>; }
+
+function ProductsContent({ light = false }) {
     const section = useRef(null);
     useGSAP(() => {
         const cards = gsap.utils.toArray('[data-product-card]', section.current);

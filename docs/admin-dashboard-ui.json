@@ -1,0 +1,376 @@
+{
+  "scope": "38-page dashboard with immediate server-shared public website visibility controls and coherent browser-local JSON business workflows",
+  "desktop_routes": 38,
+  "mobile_reference_variants": [
+    35,
+    36
+  ],
+  "entry": "/dashboard",
+  "authentication_preview": [
+    "/dashboard/login",
+    "/dashboard/verify"
+  ],
+  "run": [
+    "npm run dev",
+    "Open http://localhost:3000/dashboard"
+  ],
+  "source": {
+    "shell": "src/components/admin/shell.jsx",
+    "shared_controls": "src/components/admin/ui.jsx",
+    "preview_state": "src/components/admin/store.jsx",
+    "core": "src/components/admin/core-pages.jsx",
+    "content_careers_enquiries": "src/components/admin/content-pages.jsx",
+    "operations": "src/components/admin/operations-pages.jsx",
+    "governance": "src/components/admin/governance-pages.jsx",
+    "authentication": "src/components/admin/auth-pages.jsx",
+    "database": "src/lib/admin/data-store.js",
+    "transactions": "src/lib/admin/model.mjs",
+    "selectors": "src/lib/admin/selectors.mjs",
+    "features": "src/components/admin/feature-pages.jsx",
+    "overview": "src/components/admin/overview-page.jsx",
+    "website_feature_seed": "src/data/site-features.json",
+    "website_feature_server": "src/lib/server/site-features.mjs",
+    "website_feature_authorization": "src/lib/server/site-feature-auth.mjs",
+    "website_feature_client": "src/lib/site-features-client.js",
+    "website_feature_provider": "src/components/site-features.jsx",
+    "website_feature_rules": "src/lib/site-feature-rules.mjs",
+    "website_feature_proxy": "src/proxy.js"
+  },
+  "data": {
+    "seed_files": [
+      "src/data/admin/core.json",
+      "src/data/admin/content.json",
+      "src/data/admin/operations.json",
+      "src/data/admin/governance.json"
+    ],
+    "storage_key": "olentra.admin.database.v2",
+    "schema_version": 2,
+    "persistence": "Other admin modules use a shared reactive browser store with cross-tab synchronization, validated JSON import/export and fixture reset. Website switches use the separate durable server JSON store.",
+    "boundary": "Public website feature visibility is live and server-shared. Content/recruitment/monitoring/integration/admin business records remain browser-local; no external delivery or content deployment is performed."
+  },
+  "features": [
+    "Immediate Production website on/off controls with server persistence",
+    "Independent public internship visibility, new intake and existing portal access",
+    "Staging preview controls independent of Production",
+    "Live API/SSE updates with proxy, client gates and feature-aware sitemap",
+    "Browser-local content editing, review and publication workflows",
+    "Filtering, sorting, exports and detail navigation",
+    "Application and submission review",
+    "Permissions, approvals, notifications and settings"
+  ],
+  "coverage": [
+    {
+      "design": 1,
+      "route": "/dashboard",
+      "source": "src/app/dashboard/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 2,
+      "route": "/dashboard/website-controls",
+      "source": "src/app/dashboard/website-controls/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 3,
+      "route": "/dashboard/website-controls/features/[featureId]",
+      "source": "src/app/dashboard/website-controls/features/[featureId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 4,
+      "route": "/dashboard/website-controls/navigation",
+      "source": "src/app/dashboard/website-controls/navigation/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 5,
+      "route": "/dashboard/content",
+      "source": "src/app/dashboard/content/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 6,
+      "route": "/dashboard/content/pages/[pageId]/edit",
+      "source": "src/app/dashboard/content/pages/[pageId]/edit/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 7,
+      "route": "/dashboard/content/media",
+      "source": "src/app/dashboard/content/media/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 8,
+      "route": "/dashboard/careers",
+      "source": "src/app/dashboard/careers/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 9,
+      "route": "/dashboard/careers/applications",
+      "source": "src/app/dashboard/careers/applications/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 10,
+      "route": "/dashboard/careers/applications/[applicationId]",
+      "source": "src/app/dashboard/careers/applications/[applicationId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 11,
+      "route": "/dashboard/careers/interns",
+      "source": "src/app/dashboard/careers/interns/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 12,
+      "route": "/dashboard/enquiries",
+      "source": "src/app/dashboard/enquiries/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 13,
+      "route": "/dashboard/enquiries/[enquiryId]",
+      "source": "src/app/dashboard/enquiries/[enquiryId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 14,
+      "route": "/dashboard/analytics",
+      "source": "src/app/dashboard/analytics/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 15,
+      "route": "/dashboard/analytics/seo",
+      "source": "src/app/dashboard/analytics/seo/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 16,
+      "route": "/dashboard/monitoring",
+      "source": "src/app/dashboard/monitoring/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 17,
+      "route": "/dashboard/monitoring/incidents/[incidentId]",
+      "source": "src/app/dashboard/monitoring/incidents/[incidentId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 18,
+      "route": "/dashboard/monitoring/alert-rules",
+      "source": "src/app/dashboard/monitoring/alert-rules/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 19,
+      "route": "/dashboard/localization",
+      "source": "src/app/dashboard/localization/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 20,
+      "route": "/dashboard/localization/[locale]/[contentId]",
+      "source": "src/app/dashboard/localization/[locale]/[contentId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 21,
+      "route": "/dashboard/team",
+      "source": "src/app/dashboard/team/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 22,
+      "route": "/dashboard/team/roles/[roleId]",
+      "source": "src/app/dashboard/team/roles/[roleId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 23,
+      "route": "/dashboard/approvals",
+      "source": "src/app/dashboard/approvals/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 24,
+      "route": "/dashboard/approvals/[changeId]",
+      "source": "src/app/dashboard/approvals/[changeId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 25,
+      "route": "/dashboard/audit",
+      "source": "src/app/dashboard/audit/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 26,
+      "route": "/dashboard/integrations",
+      "source": "src/app/dashboard/integrations/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 27,
+      "route": "/dashboard/integrations/[integrationId]",
+      "source": "src/app/dashboard/integrations/[integrationId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 28,
+      "route": "/dashboard/settings/company",
+      "source": "src/app/dashboard/settings/company/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 29,
+      "route": "/dashboard/settings/security",
+      "source": "src/app/dashboard/settings/security/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 30,
+      "route": "/dashboard/settings/backups",
+      "source": "src/app/dashboard/settings/backups/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 31,
+      "route": "/dashboard/notifications",
+      "source": "src/app/dashboard/notifications/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 32,
+      "route": "/dashboard/login",
+      "source": "src/app/dashboard/login/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 33,
+      "route": "/dashboard/verify",
+      "source": "src/app/dashboard/verify/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 34,
+      "route": "/dashboard/account",
+      "source": "src/app/dashboard/account/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 37,
+      "route": "/dashboard/careers/projects/[projectId]/tasks/[taskId]",
+      "source": "src/app/dashboard/careers/projects/[projectId]/tasks/[taskId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 38,
+      "route": "/dashboard/careers/certificates",
+      "source": "src/app/dashboard/careers/certificates/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 39,
+      "route": "/dashboard/careers/interns/[internId]",
+      "source": "src/app/dashboard/careers/interns/[internId]/page.jsx",
+      "exists": true
+    },
+    {
+      "design": 40,
+      "route": "/dashboard/careers/programs/[programId]/edit",
+      "source": "src/app/dashboard/careers/programs/[programId]/edit/page.jsx",
+      "exists": true
+    }
+  ],
+  "validation": {
+    "workflows": "npm run test:admin",
+    "production": "npm run build",
+    "integration_tests_passed": 84,
+    "browser_pages_checked": 38,
+    "responsive_css_width": 430,
+    "report": "designs/admin-dashboard-v1/qa/json-data-pages.json",
+    "production_routes_checked": 38,
+    "live_http_checks_passed": 70,
+    "live_browser_report": "designs/admin-dashboard-v1/qa/immediate-features-browser.json",
+    "intern_workflow_tests_passed": 27,
+    "careers_menu_browser_report": "designs/admin-dashboard-v1/qa/careers-navigation-browser.json"
+  },
+  "website_controls": {
+    "seed_file": "src/data/site-features.json",
+    "runtime_file": ".data/site-features.json",
+    "runtime_file_gitignored": true,
+    "schema_version": 1,
+    "store_path_environment_variable": "OLENTRA_FEATURE_STORE_PATH",
+    "flags": [
+      "services",
+      "products",
+      "internships",
+      "blog",
+      "assistant",
+      "maintenance",
+      "applications",
+      "portal"
+    ],
+    "write_semantics": {
+      "immediate_after_success": true,
+      "review_required": false,
+      "publish_required": false,
+      "scheduled_override": false
+    },
+    "production": "Controls public website routes, sections, links and internship intake.",
+    "staging": "Separate preview-only state; it does not affect the public Production website.",
+    "portal": "Independent of public internship visibility. Existing portal access follows its own flag.",
+    "intake": "The public program at /careers/intern and registration at /intern/register require the internships and applications flags for new intake.",
+    "private_routes": [
+      "/dashboard/**",
+      "/intern/dashboard/**",
+      "/intern/login",
+      "/intern/reset-password"
+    ],
+    "api": {
+      "read": "GET /api/site-features",
+      "write": "PUT /api/site-features",
+      "session": "/api/site-features/session",
+      "events": "GET /api/site-features/stream"
+    },
+    "delivery": "SSE updates open clients; polling fallback and focus refresh recover disconnected clients.",
+    "enforcement": [
+      "server proxy returns disabled-route 404 and maintenance 503",
+      "client route gate updates already open pages",
+      "Feature and link helpers remove disabled UI",
+      "internship intake command guards",
+      "dynamic sitemap omits disabled routes"
+    ],
+    "authentication": {
+      "browser_demo_account_is_not_server_authorization": true,
+      "loopback_automatic_demo": "Development allows loopback demo authorization when no server password is configured, unless explicitly disabled. Production disables it by default; a loopback-bound local production preview requires OLENTRA_FEATURE_ALLOW_LOCAL_DEMO=true.",
+      "deployed_writes": "Fail closed until OLENTRA_FEATURE_ADMIN_PASSWORD is configured with at least 12 characters.",
+      "cookie": "Signed HTTP-only olentra_site_controls cookie, same-site strict; secure on HTTPS.",
+      "same_origin_required": true,
+      "environment_variables": [
+        "OLENTRA_FEATURE_ADMIN_PASSWORD",
+        "OLENTRA_FEATURE_ADMIN_EMAIL",
+        "OLENTRA_FEATURE_ADMIN_MFA_CODE",
+        "OLENTRA_FEATURE_SESSION_SECRET",
+        "OLENTRA_FEATURE_ALLOW_LOCAL_DEMO",
+        "OLENTRA_FEATURE_SITE_ORIGIN"
+      ]
+    },
+    "deployment": "Persistent Node filesystem deployment with a mounted durable volume. Separate replica files are not a distributed shared database.",
+    "browser_reset_does_not_reset_live_switches": true,
+    "public_internship_route": "/careers/intern",
+    "legacy_public_internship_route": {
+      "path": "/intern",
+      "destination": "/careers/intern",
+      "enabled_status": 308,
+      "disabled_status": 404,
+      "preserves_query_parameters": true
+    }
+  }
+}

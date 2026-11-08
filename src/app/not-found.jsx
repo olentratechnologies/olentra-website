@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Feature } from "@/components/site-features";
 
 export default function NotFound() {
   return (
@@ -19,11 +20,11 @@ export default function NotFound() {
           <div className="mt-10 flex flex-wrap gap-4">
             {[
               { href: "/", label: "Homepage" },
-              { href: "/services", label: "Services" },
-              { href: "/products", label: "Products" },
+              { href: "/services", label: "Services", feature: "services" },
+              { href: "/products", label: "Products", feature: "products" },
               { href: "/#contact", label: "Contact" },
-            ].map((item) => (
-              <Link
+            ].map((item) => {
+              const link = <Link
                 key={item.href}
                 href={item.href}
                 className="inline-flex items-center px-6 py-3 text-[11px] font-black uppercase tracking-[0.25em] border border-white/10 bg-white/[0.04] hover:border-primary/60 hover:text-primary transition-all"
@@ -33,8 +34,9 @@ export default function NotFound() {
                 }}
               >
                 {item.label}
-              </Link>
-            ))}
+              </Link>;
+              return item.feature ? <Feature key={item.href} name={item.feature}>{link}</Feature> : link;
+            })}
           </div>
         </div>
       </div>

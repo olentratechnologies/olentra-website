@@ -42,6 +42,7 @@ import {
   Sparkline,
 } from "./DashboardVisuals";
 import styles from "./dashboard.module.css";
+import { useSiteFeatures } from "@/components/site-features";
 
 const icons = {
   home: House,
@@ -109,6 +110,7 @@ function BackgroundWaves() {
 }
 
 export default function DashboardShell({ children }) {
+  const { features, ready: featuresReady } = useSiteFeatures();
   const {
     data,
     account,
@@ -238,7 +240,7 @@ export default function DashboardShell({ children }) {
         aria-label="Internship workspace"
       >
         <Link
-          href="/intern"
+          href={featuresReady && features.internships ? "/careers/intern" : "/intern/dashboard"}
           className={styles.brand}
           aria-label="Olentra Technologies"
         >
@@ -381,9 +383,9 @@ export default function DashboardShell({ children }) {
                       <Settings size={16} /> Account settings
                     </button>
                   </Popover.Close>
-                  <Link href="/intern">
+                  {featuresReady && features.internships && <Link href="/careers/intern">
                     <ArrowRight size={16} /> Internship website
-                  </Link>
+                  </Link>}
                   <button
                     onClick={() => {
                       signOut();

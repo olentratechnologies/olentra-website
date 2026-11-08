@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useSiteFeatures } from "@/components/site-features";
 import * as Dialog from "@radix-ui/react-dialog";
 import { ArrowUpRight, X } from "lucide-react";
 import styles from "./welcome.module.css";
@@ -55,7 +56,8 @@ function GoldHandshake() {
 
 export default function DailySupplyWelcome() {
   const pathname = usePathname();
-  const excluded = pathname === "/intern" || pathname.startsWith("/intern/");
+  const { features, ready } = useSiteFeatures();
+  const excluded = !ready || !features.products || features.maintenance || pathname === "/careers/intern" || pathname.startsWith("/careers/intern/") || pathname === "/intern" || pathname.startsWith("/intern/") || pathname.startsWith("/dashboard");
   const [open, setOpen] = useState(false);
   const previousFocus = useRef(null);
   useEffect(() => {

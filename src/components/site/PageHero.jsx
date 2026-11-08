@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Breadcrumbs from "./Breadcrumbs";
+import { useSiteFeatures } from "@/components/site-features";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -30,6 +31,9 @@ export default function PageHero({
   panelLabel = "ENTERPRISE_ROUTE",
   panelTag = "Operational View",
 }) {
+  const { isVisibleHref } = useSiteFeatures();
+  const visiblePrimary = primaryCta && isVisibleHref(primaryCta.href);
+  const visibleSecondary = secondaryCta && isVisibleHref(secondaryCta.href);
   return (
     <section className="relative w-full min-h-[92vh] md:min-h-screen overflow-hidden bg-[#070b12] flex items-center justify-center pt-24 pb-20 md:pt-28 md:pb-24">
       <div className="absolute inset-0 z-0">
@@ -60,14 +64,14 @@ export default function PageHero({
             </motion.p>
           </motion.div>
 
-          {(primaryCta || secondaryCta) && (
+          {(visiblePrimary || visibleSecondary) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
               className="flex flex-col sm:flex-row gap-4 pt-2"
             >
-              {primaryCta && (
+              {visiblePrimary && (
                 <Link
                   href={primaryCta.href}
                   className="inline-flex items-center justify-center px-8 py-3.5 text-[12px] font-black uppercase tracking-[0.24em] bg-primary text-white shadow-[0_0_30px_rgba(37,99,235,0.3)] hover:bg-blue-700 transition-all"
@@ -79,7 +83,7 @@ export default function PageHero({
                   {primaryCta.label}
                 </Link>
               )}
-              {secondaryCta && (
+              {visibleSecondary && (
                 <Link
                   href={secondaryCta.href}
                   className="inline-flex items-center justify-center px-8 py-3.5 text-[12px] font-black uppercase tracking-[0.24em] border border-white/20 bg-white/5 text-slate-100 backdrop-blur-md hover:border-primary/60 hover:bg-white/10 transition-all"

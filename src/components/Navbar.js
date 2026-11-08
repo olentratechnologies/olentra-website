@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useId, useRef } from 'react';
+import { useState, useEffect, useCallback, useId, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ChevronDown, Calendar } from 'lucide-react';
 import Image from 'next/image';
@@ -12,6 +12,7 @@ import { products } from '../data/products_data';
 import { contactInfo } from '../data/contact';
 import { servicePages } from '../data/service_pages';
 import InternMobileDock from './intern/InternMobileDock';
+import { useSiteFeatures } from '@/components/site-features';
 
 function RingingPhoneIcon({ size = 15, active = true, className = "" }) {
   const uniqueId = useId();
@@ -352,13 +353,25 @@ function DynamicNavCta({
 
 export default function Navbar() {
   const pathname = usePathname();
-  const isInternPage = pathname === "/intern" || pathname === "/intern/login";
-  const hasInternDock = pathname === "/intern";
+  const { features, ready, isVisibleHref } = useSiteFeatures();
+  const primaryLinks = useMemo(() => navLinks.filter((link) => link.id === "nav-careers" ? ready && features.internships : isVisibleHref(link.href)), [ready, features.services, features.products, features.internships, features.blog, features.portal, features.applications, features.maintenance, isVisibleHref]);
+  const showInternLogin = ready && features.portal;
+  const showInternApply = ready && features.internships && features.applications;
+  const isInternPage = pathname === "/careers/intern" || pathname === "/intern/login";
+  const hasInternDock = pathname === "/careers/intern";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
   const [isServicesOpen, setIsServicesOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
+  const [isCareersOpen, setIsCareersOpen] = useState(false);
+  const [mobileCareersOpen, setMobileCareersOpen] = useState(false);
+  const careersContainerRef = useRef(null);
+  const careersTriggerRef = useRef(null);
+  const restoringCareersFocusRef = useRef(false);
+  const mobileCareersRef = useRef(null);
+  const mobileCareersTriggerRef = useRef(null);
+  const careersMenuId = useId();
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [isLightSection, setIsLightSection] = useState(isInternPage);
@@ -384,12 +397,52 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    const index = navLinks.findIndex((link) => {
+    const index = primaryLinks.findIndex((link) => {
+      if (link.children) return link.children.some((child) => pathname === child.href || pathname?.startsWith(child.href + "/"));
       if (link.href === "/") return pathname === "/";
       return pathname?.startsWith(link.href);
     });
     setActiveIndex(index === -1 ? 0 : index);
+  }, [pathname, primaryLinks]);
+
+  useEffect(() => {
+    setIsCareersOpen(false);
+    setMobileCareersOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!ready || !features.internships) {
+      setIsCareersOpen(false);
+      setMobileCareersOpen(false);
+    }
+  }, [ready, features.internships]);
+
+  useEffect(() => {
+    if (!isCareersOpen && !mobileCareersOpen) return undefined;
+    const outside = (event) => {
+      if (!careersContainerRef.current?.contains(event.target) && !mobileCareersRef.current?.contains(event.target)) {
+        setIsCareersOpen(false);
+        setMobileCareersOpen(false);
+      }
+    };
+    const escape = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      if (isCareersOpen) {
+        setIsCareersOpen(false);
+        restoringCareersFocusRef.current = true;
+        careersTriggerRef.current?.focus();
+        restoringCareersFocusRef.current = false;
+      }
+      if (mobileCareersOpen) { setMobileCareersOpen(false); mobileCareersTriggerRef.current?.focus(); }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [isCareersOpen, mobileCareersOpen]);
 
   // Memoized scroll logic
   const handleScroll = useCallback(() => {
@@ -444,9 +497,8 @@ export default function Navbar() {
       barResizeObserver.disconnect();
       observer?.disconnect();
     };
-  }, [handleScroll, pathname]);
+  }, [handleScroll, pathname, ready, features.services, features.products, features.blog, features.internships]);
 
-  const primaryLinks = navLinks;
   const accentGradient = 'linear-gradient(135deg, #2563eb, #4f46e5)';
   const resolveHref = useCallback((href) => {
     return href || "/";
@@ -490,22 +542,48 @@ export default function Navbar() {
                 const isActive = hoveredIndex === null ? activeIndex === idx : hoveredIndex === idx;
                 const isServices = link.label === 'Services';
                 const isProducts = link.label === 'Products';
+                const isCareers = link.id === 'nav-careers';
 
                 return (
                   <div
                     key={link.id}
+                    ref={isCareers ? careersContainerRef : undefined}
                     className="relative h-full flex items-center"
+                    onFocus={(event) => { if (isCareers && !restoringCareersFocusRef.current && !event.currentTarget.contains(event.relatedTarget)) setIsCareersOpen(true); }}
+                    onBlur={(event) => { if (isCareers && !event.currentTarget.contains(event.relatedTarget)) setIsCareersOpen(false); }}
                     onMouseEnter={() => {
                       setHoveredIndex(idx);
                       if (isServices) setIsServicesOpen(true);
                       if (isProducts) setIsProductsOpen(true);
+                      if (isCareers) setIsCareersOpen(true);
                     }}
-                    onMouseLeave={() => {
+                    onMouseLeave={(event) => {
                       setHoveredIndex(null);
                       if (isServices) setIsServicesOpen(false);
                       if (isProducts) setIsProductsOpen(false);
+                      if (isCareers && !event.currentTarget.contains(document.activeElement)) setIsCareersOpen(false);
                     }}
                   >
+                    {isCareers ? <button
+                      type="button"
+                      ref={careersTriggerRef}
+                      id={`${careersMenuId}-trigger`}
+                      aria-haspopup="menu"
+                      aria-expanded={isCareersOpen}
+                      aria-controls={isCareersOpen ? `${careersMenuId}-desktop` : undefined}
+                      onClick={() => setIsCareersOpen(true)}
+                      onKeyDown={(event) => {
+                        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                          event.preventDefault(); setIsCareersOpen(true);
+                          requestAnimationFrame(() => careersContainerRef.current?.querySelector('[role="menuitem"]')?.focus());
+                        }
+                      }}
+                      className={`relative px-2.5 lg:px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-[transform,opacity,box-shadow] duration-300 flex items-center gap-1 ${isLightSection ? 'text-slate-600 hover:text-primary' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      <span className="relative z-10">{link.label}</span>
+                      <ChevronDown size={12} className={`transition-transform duration-300 ${isCareersOpen ? 'rotate-180' : ''}`} />
+                      <span className={`absolute bottom-0 left-2.5 lg:left-3.5 right-2.5 lg:right-3.5 h-[1.5px] rounded-full transition-transform duration-300 origin-left ${isActive ? 'scale-x-100' : 'scale-x-0'}`} style={{ background: accentGradient }} />
+                    </button> : (
                     <Link
                       href={resolveHref(link.href)}
                       className={`relative px-2.5 lg:px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-[transform,opacity,box-shadow] duration-300 flex items-center gap-1 ${isLightSection ? 'text-slate-600 hover:text-primary' : 'text-slate-400 hover:text-white'
@@ -521,6 +599,27 @@ export default function Navbar() {
                       <span className={`absolute bottom-0 left-2.5 lg:left-3.5 right-2.5 lg:right-3.5 h-[1.5px] rounded-full transition-transform duration-300 origin-left ${isActive ? 'scale-x-100' : 'scale-x-0'
                         }`} style={{ background: accentGradient }} />
                     </Link>
+                    )}
+
+                    {isCareers && <AnimatePresence>{isCareersOpen && <motion.div
+                      id={`${careersMenuId}-desktop`}
+                      role="menu"
+                      aria-labelledby={`${careersMenuId}-trigger`}
+                      initial={{ opacity: 0, y: 8, scale: 0.97, x: "-50%" }}
+                      animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                      exit={{ opacity: 0, y: 8, scale: 0.97, x: "-50%" }}
+                      transition={{ duration: 0.16, ease: "easeOut" }}
+                      onKeyDown={(event) => {
+                        if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+                        event.preventDefault();
+                        const items = Array.from(event.currentTarget.querySelectorAll('[role="menuitem"]'));
+                        const current = items.indexOf(document.activeElement);
+                        const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowUp" ? -1 : 1) + items.length) % items.length;
+                        items[next]?.focus();
+                      }}
+                      className={`absolute top-full left-1/2 w-[210px] p-2 rounded-2xl border z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] ${isLightSection ? 'bg-white border-slate-200 text-slate-900 shadow-xl shadow-slate-300/40' : 'bg-black border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'}`}
+                    >{link.children.map((child) => <Link key={child.id} role="menuitem" href={child.href} onClick={() => setIsCareersOpen(false)} className={`block rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-wider ${isLightSection ? 'hover:bg-slate-100 focus-visible:bg-slate-100 text-slate-800' : 'hover:bg-white/5 focus-visible:bg-white/5 text-slate-200'} focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}>{child.label}</Link>)}</motion.div>}</AnimatePresence>}
+
 
                     {/* Desktop Mega Menu Dropdown - Centered Precisely to Link */}
                     {isServices && (
@@ -730,13 +829,13 @@ export default function Navbar() {
 
             {/* CTA & Mobile Toggle */}
             <div className="flex items-center gap-3 justify-self-end">
-              {isInternPage ? <div className="hidden min-[1200px]:flex items-center gap-3"><Link href="/intern/login" className="inline-flex items-center justify-center h-9 px-4 rounded-full border border-blue-200 text-blue-700 hover:bg-blue-50 text-[11px] font-semibold whitespace-nowrap">Login</Link><a href="/intern#internship-application" className="inline-flex items-center justify-center h-9 px-4 rounded-full bg-[#1877F2] hover:bg-[#1565d8] text-white text-[11px] font-semibold whitespace-nowrap">Apply Now</a></div> : <DynamicNavCta
+              {isInternPage ? <div className="hidden min-[1200px]:flex items-center gap-3">{showInternLogin && <Link href="/intern/login" className="inline-flex items-center justify-center h-9 px-4 rounded-full border border-blue-200 text-blue-700 hover:bg-blue-50 text-[11px] font-semibold whitespace-nowrap">Login</Link>}{showInternApply && <a href="/careers/intern#internship-application" className="inline-flex items-center justify-center h-9 px-4 rounded-full bg-[#1877F2] hover:bg-[#1565d8] text-white text-[11px] font-semibold whitespace-nowrap">Apply Now</a>}</div> : <DynamicNavCta
                 mode={ctaMode}
                 onToggle={toggleCtaMode}
                 isLightSection={isLightSection}
                 className={isInternPage ? "hidden min-[1200px]:flex" : "hidden min-[1100px]:flex"}
               />}
-              {isInternPage && !hasInternDock && <a href="/intern#internship-application" className="hidden min-[360px]:inline-flex min-[1200px]:hidden items-center justify-center h-8 px-3 rounded-full bg-[#1877F2] text-white text-[10px] font-semibold whitespace-nowrap">Apply Now</a>}
+              {isInternPage && !hasInternDock && showInternApply && <a href="/careers/intern#internship-application" className="hidden min-[360px]:inline-flex min-[1200px]:hidden items-center justify-center h-8 px-3 rounded-full bg-[#1877F2] text-white text-[10px] font-semibold whitespace-nowrap">Apply Now</a>}
 
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
@@ -765,17 +864,18 @@ export default function Navbar() {
                 }`}
               >
                 <div className="px-6 pt-4 pb-6 flex flex-col gap-0.5 max-h-[80vh] overflow-y-auto">
-                  {navLinks.map((link, idx) => {
+                  {primaryLinks.map((link, idx) => {
                     const isServices = link.label === 'Services';
                     const isProducts = link.label === 'Products';
+                    const isCareers = link.id === 'nav-careers';
                     const activeDot = (
                       <div className={`w-1 h-1 rounded-full bg-primary transition-transform ${activeIndex === idx ? 'scale-150' : 'scale-100 opacity-30'
                         }`} />
                     );
 
                     return (
-                      <div key={link.id} className="flex flex-col">
-                        {isServices || isProducts ? (
+                      <div key={link.id} ref={isCareers ? mobileCareersRef : undefined} className="flex flex-col">
+                        {isCareers ? <button type="button" ref={mobileCareersTriggerRef} aria-expanded={mobileCareersOpen} aria-controls={mobileCareersOpen ? `${careersMenuId}-mobile` : undefined} onClick={() => setMobileCareersOpen((open) => !open)} className={`flex items-center justify-between py-2 text-[11px] font-bold uppercase tracking-wider ${isLightSection ? 'text-slate-600' : 'text-slate-400'} hover:text-primary`}><span className="flex items-center gap-2">{activeDot}{link.label}</span><ChevronDown size={14} className={`transition-transform duration-300 ${mobileCareersOpen ? 'rotate-180' : ''}`} /></button> : isServices || isProducts ? (
                           <div
                             className="flex items-center justify-between py-2"
                             onClick={() => {
@@ -816,6 +916,8 @@ export default function Navbar() {
                             </span>
                           </Link>
                         )}
+
+                        {isCareers && <AnimatePresence>{mobileCareersOpen && <motion.div id={`${careersMenuId}-mobile`} role="region" aria-label="Careers" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1 pl-4 pt-1">{link.children.map((child) => <Link key={child.id} href={child.href} onClick={() => { setMobileCareersOpen(false); setMobileOpen(false); }} className={`relative pl-4 pr-5 py-3 rounded-lg border-l-2 border-transparent hover:border-primary/50 text-[10px] font-bold uppercase tracking-wider ${isLightSection ? 'text-slate-900 hover:bg-slate-50' : 'text-white hover:bg-white/5'}`}>{child.label}</Link>)}</motion.div>}</AnimatePresence>}
 
                         {/* Mobile Services Sub-menu */}
                         <AnimatePresence>
@@ -918,7 +1020,7 @@ export default function Navbar() {
                     );
                   })}
                   <div className="pt-4 flex justify-center">
-                    {isInternPage ? <div className="grid grid-cols-2 gap-2 w-full"><Link href="/intern/login" onClick={() => setMobileOpen(false)} className="inline-flex items-center justify-center min-h-10 px-3 rounded-full border border-blue-100 bg-blue-50 text-blue-700 text-xs font-semibold">Login</Link><a href="/intern#internship-application" onClick={() => setMobileOpen(false)} className="inline-flex items-center justify-center min-h-10 px-4 rounded-full bg-[#1877F2] text-white text-xs font-semibold">Apply Now</a></div> : <DynamicNavCta
+                    {isInternPage ? <div className="flex flex-wrap gap-2 w-full">{showInternLogin && <Link href="/intern/login" onClick={() => setMobileOpen(false)} className="inline-flex flex-1 items-center justify-center min-h-10 px-3 rounded-full border border-blue-100 bg-blue-50 text-blue-700 text-xs font-semibold">Login</Link>}{showInternApply && <a href="/careers/intern#internship-application" onClick={() => setMobileOpen(false)} className="inline-flex flex-1 items-center justify-center min-h-10 px-4 rounded-full bg-[#1877F2] text-white text-xs font-semibold">Apply Now</a>}</div> : <DynamicNavCta
                       mode={ctaMode}
                       onToggle={toggleCtaMode}
                       onActionClick={() => setMobileOpen(false)}

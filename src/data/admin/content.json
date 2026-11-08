@@ -1,0 +1,2841 @@
+{
+  "datasets": {
+    "olentra-admin-content-v1": [
+      {
+        "id": "homepage",
+        "title": "Homepage",
+        "type": "Page",
+        "status": "Published",
+        "locale": "EN",
+        "updated": "2 hours ago",
+        "programId": null
+      },
+      {
+        "id": "about",
+        "title": "About Olentra",
+        "type": "Page",
+        "status": "Draft",
+        "locale": "EN",
+        "updated": "Today",
+        "programId": null
+      },
+      {
+        "id": "ai-engineering",
+        "title": "AI engineering",
+        "type": "Service",
+        "status": "In review",
+        "locale": "EN",
+        "updated": "Today",
+        "programId": null
+      },
+      {
+        "id": "internship",
+        "title": "Internship program",
+        "type": "Page",
+        "status": "Hidden",
+        "locale": "EN",
+        "updated": "Yesterday",
+        "programId": "frontend"
+      },
+      {
+        "id": "company-insights",
+        "title": "Company insights",
+        "type": "Article",
+        "status": "Published",
+        "locale": "EN",
+        "updated": "Yesterday",
+        "programId": null
+      }
+    ],
+    "olentra-admin-applications-v1": [
+      {
+        "id": "024",
+        "track": "Frontend engineering",
+        "stage": "Joined",
+        "date": "28 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "frontend",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I am interested in the software engineering program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Completed"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Completed"
+          }
+        ],
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "1 Nov 2026",
+            "action": "Offer accepted",
+            "role": "Applicant"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "031",
+        "track": "Design",
+        "stage": "Joined",
+        "date": "28 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "frontend",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "Research",
+          "Data analysis",
+          "Communication"
+        ],
+        "statement": "I am interested in the product management program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Completed"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Completed"
+          }
+        ],
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "1 Nov 2026",
+            "action": "Offer accepted",
+            "role": "Applicant"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "045",
+        "track": "Data & analytics",
+        "stage": "Screening",
+        "date": "6 Nov 2026",
+        "owner": "Recruiter",
+        "programId": "ai-research",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "Research",
+          "Data analysis",
+          "Communication"
+        ],
+        "statement": "I am interested in the data & analytics program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Pending"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Pending"
+          }
+        ],
+        "activity": [
+          {
+            "date": "6 Nov 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          }
+        ]
+      },
+      {
+        "id": "052",
+        "track": "Design (UX/UI)",
+        "stage": "Screening",
+        "date": "5 Nov 2026",
+        "owner": "Recruiter",
+        "programId": "frontend",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I am interested in the design (ux/ui) program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Pending"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Pending"
+          }
+        ],
+        "activity": [
+          {
+            "date": "5 Nov 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          }
+        ]
+      },
+      {
+        "id": "067",
+        "track": "Software engineering",
+        "stage": "Interview",
+        "date": "3 Nov 2026",
+        "owner": "Recruiter",
+        "programId": "frontend",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I am interested in the software engineering program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Pending"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Pending"
+          }
+        ],
+        "activity": [
+          {
+            "date": "3 Nov 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          }
+        ]
+      },
+      {
+        "id": "073",
+        "track": "Cloud & infrastructure",
+        "stage": "Interview",
+        "date": "2 Nov 2026",
+        "owner": "Recruiter",
+        "programId": "cloud-engineer",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "Research",
+          "Data analysis",
+          "Communication"
+        ],
+        "statement": "I am interested in the cloud & infrastructure program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Pending"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Pending"
+          }
+        ],
+        "activity": [
+          {
+            "date": "2 Nov 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          }
+        ]
+      },
+      {
+        "id": "081",
+        "track": "Product management",
+        "stage": "Offer",
+        "date": "28 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "cloud-engineer",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "Research",
+          "Data analysis",
+          "Communication"
+        ],
+        "statement": "I am interested in the product management program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Pending"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Pending"
+          }
+        ],
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          }
+        ]
+      },
+      {
+        "id": "088",
+        "track": "Data & analytics",
+        "stage": "Offer",
+        "date": "27 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "ai-research",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "Research",
+          "Data analysis",
+          "Communication"
+        ],
+        "statement": "I am interested in the data & analytics program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Pending"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Pending"
+          }
+        ],
+        "activity": [
+          {
+            "date": "27 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          }
+        ]
+      },
+      {
+        "id": "097",
+        "track": "Software engineering",
+        "stage": "Joined",
+        "date": "28 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "frontend",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I am interested in the software engineering program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Completed"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Completed"
+          }
+        ],
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "1 Nov 2026",
+            "action": "Offer accepted",
+            "role": "Applicant"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "002",
+        "track": "AI research",
+        "stage": "Joined",
+        "date": "28 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "ai-research",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I am interested in the software engineering program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Completed"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Completed"
+          }
+        ],
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "1 Nov 2026",
+            "action": "Offer accepted",
+            "role": "Applicant"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "003",
+        "track": "Software engineering",
+        "stage": "Joined",
+        "date": "28 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "cloud-engineer",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I am interested in the software engineering program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Completed"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Completed"
+          }
+        ],
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "1 Nov 2026",
+            "action": "Offer accepted",
+            "role": "Applicant"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "004",
+        "track": "AI research",
+        "stage": "Joined",
+        "date": "28 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "ai-research",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I am interested in the software engineering program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Completed"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Completed"
+          }
+        ],
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "1 Nov 2026",
+            "action": "Offer accepted",
+            "role": "Applicant"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "005",
+        "track": "Software engineering",
+        "stage": "Joined",
+        "date": "28 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "frontend",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I am interested in the software engineering program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Completed"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Completed"
+          }
+        ],
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "1 Nov 2026",
+            "action": "Offer accepted",
+            "role": "Applicant"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "018",
+        "track": "Data analysis",
+        "stage": "Joined",
+        "date": "28 Oct 2026",
+        "owner": "Recruiter",
+        "programId": "frontend",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I am interested in the software engineering program and enjoy turning ideas into reliable experiences.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Completed"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Completed"
+          }
+        ],
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "1 Nov 2026",
+            "action": "Offer accepted",
+            "role": "Applicant"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "110",
+        "track": "Frontend engineering",
+        "stage": "New",
+        "date": "8 Nov 2026",
+        "owner": "Recruiter",
+        "programId": "frontend",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I would like to develop my frontend engineering skills through collaborative project work.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Pending"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Pending"
+          }
+        ],
+        "activity": [
+          {
+            "date": "8 Nov 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          }
+        ]
+      },
+      {
+        "id": "111",
+        "track": "AI research",
+        "stage": "New",
+        "date": "8 Nov 2026",
+        "owner": "Recruiter",
+        "programId": "ai-research",
+        "location": "India",
+        "availability": "12 weeks",
+        "skills": [
+          "React",
+          "JavaScript",
+          "Git"
+        ],
+        "statement": "I would like to develop my ai research skills through collaborative project work.",
+        "qualifications": [
+          "Relevant study or equivalent practical experience",
+          "Portfolio demonstrating collaborative project work",
+          "Interest in accessible and maintainable systems"
+        ],
+        "documents": [
+          {
+            "title": "Resume.pdf",
+            "type": "PDF",
+            "size": "512 KB"
+          },
+          {
+            "title": "Portfolio link",
+            "type": "URL"
+          }
+        ],
+        "onboarding": [
+          {
+            "label": "Profile details",
+            "status": "Completed"
+          },
+          {
+            "label": "Resume received",
+            "status": "Completed"
+          },
+          {
+            "label": "Policy acknowledgement",
+            "status": "Pending"
+          },
+          {
+            "label": "Offer acceptance",
+            "status": "Pending"
+          }
+        ],
+        "activity": [
+          {
+            "date": "8 Nov 2026",
+            "action": "Application received",
+            "role": "Recruiter"
+          }
+        ]
+      }
+    ],
+    "olentra-admin-enquiries-v1": [
+      {
+        "id": "018",
+        "topic": "Client portal modernization",
+        "source": "Contact form",
+        "owner": "Sales lead",
+        "status": "In progress",
+        "date": "Today",
+        "message": "We are exploring a new client portal and would like to discuss scope, timeline and your approach. Could your team arrange an introductory call?",
+        "received": "8 Nov 2026",
+        "contact": "contact-018@example.com",
+        "prospect": "Prospect 018",
+        "service": "Software engineering",
+        "priority": "Normal",
+        "region": "Global",
+        "attachment": {
+          "title": "enquiry-018-brief.pdf",
+          "type": "PDF"
+        },
+        "activity": [
+          {
+            "date": "8 Nov 2026",
+            "action": "Enquiry received"
+          },
+          {
+            "date": "8 Nov 2026",
+            "action": "Assigned to Sales lead"
+          }
+        ]
+      },
+      {
+        "id": "020",
+        "topic": "AI engineering consultation",
+        "source": "Services page",
+        "owner": "Unassigned",
+        "status": "New",
+        "date": "Today",
+        "message": "We would like to explore AI engineering support for our product team.",
+        "received": "8 Nov 2026",
+        "contact": "contact-020@example.com",
+        "prospect": "Prospect 020",
+        "service": "AI engineering",
+        "priority": "Normal",
+        "region": "Global",
+        "attachment": {
+          "title": "enquiry-020-brief.pdf",
+          "type": "PDF"
+        },
+        "activity": [
+          {
+            "date": "8 Nov 2026",
+            "action": "Enquiry received"
+          },
+          {
+            "date": "8 Nov 2026",
+            "action": "Assigned to Unassigned"
+          }
+        ]
+      },
+      {
+        "id": "023",
+        "topic": "Partnership opportunity",
+        "source": "Partner form",
+        "owner": "Operations",
+        "status": "Assigned",
+        "date": "Yesterday",
+        "message": "Our team is interested in discussing a potential engineering partnership.",
+        "received": "8 Nov 2026",
+        "contact": "contact-023@example.com",
+        "prospect": "Prospect 023",
+        "service": "General enquiry",
+        "priority": "Normal",
+        "region": "Global",
+        "attachment": {
+          "title": "enquiry-023-brief.pdf",
+          "type": "PDF"
+        },
+        "activity": [
+          {
+            "date": "8 Nov 2026",
+            "action": "Enquiry received"
+          },
+          {
+            "date": "8 Nov 2026",
+            "action": "Assigned to Operations"
+          }
+        ]
+      },
+      {
+        "id": "025",
+        "topic": "Product demonstration",
+        "source": "Product page",
+        "owner": "Sales lead",
+        "status": "Awaiting reply",
+        "date": "Yesterday",
+        "message": "Please share information about your product demonstration process.",
+        "received": "8 Nov 2026",
+        "contact": "contact-025@example.com",
+        "prospect": "Prospect 025",
+        "service": "General enquiry",
+        "priority": "Normal",
+        "region": "Global",
+        "attachment": {
+          "title": "enquiry-025-brief.pdf",
+          "type": "PDF"
+        },
+        "activity": [
+          {
+            "date": "8 Nov 2026",
+            "action": "Enquiry received"
+          },
+          {
+            "date": "8 Nov 2026",
+            "action": "Assigned to Sales lead"
+          }
+        ]
+      },
+      {
+        "id": "027",
+        "topic": "General question",
+        "source": "Contact form",
+        "owner": "Operations",
+        "status": "Resolved",
+        "date": "2 days ago",
+        "message": "Thank you for helping us find the right contact.",
+        "received": "8 Nov 2026",
+        "contact": "contact-027@example.com",
+        "prospect": "Prospect 027",
+        "service": "General enquiry",
+        "priority": "Normal",
+        "region": "Global",
+        "attachment": {
+          "title": "enquiry-027-brief.pdf",
+          "type": "PDF"
+        },
+        "activity": [
+          {
+            "date": "8 Nov 2026",
+            "action": "Enquiry received"
+          },
+          {
+            "date": "8 Nov 2026",
+            "action": "Assigned to Operations"
+          }
+        ]
+      }
+    ],
+    "olentra-admin-interns": [
+      {
+        "id": "024",
+        "track": "Frontend engineering",
+        "project": "Website accessibility",
+        "progress": 0,
+        "status": "Active",
+        "applicationId": "024",
+        "programId": "frontend",
+        "projectIds": [
+          "website-refresh"
+        ],
+        "start": "2 Nov 2026",
+        "end": "5 Feb 2027",
+        "mentor": "Engineering mentor",
+        "timezone": "Asia/Kolkata",
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Applied",
+            "detail": "Application received.",
+            "role": "Recruitment administrator"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "detail": "Application shortlisted.",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "detail": "Intern portal access enabled.",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "002",
+        "track": "AI research",
+        "project": "Knowledge assistant",
+        "progress": 0,
+        "status": "Active",
+        "applicationId": "002",
+        "programId": "ai-research",
+        "projectIds": [
+          "knowledge-assistant"
+        ],
+        "start": "2 Nov 2026",
+        "end": "5 Feb 2027",
+        "mentor": "Research mentor",
+        "timezone": "Asia/Kolkata",
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Applied",
+            "detail": "Application received.",
+            "role": "Recruitment administrator"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "detail": "Application shortlisted.",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "detail": "Intern portal access enabled.",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "003",
+        "track": "Software engineering",
+        "project": "Cloud observability",
+        "progress": 50,
+        "status": "Active",
+        "applicationId": "003",
+        "programId": "cloud-engineer",
+        "projectIds": [
+          "cloud-observability"
+        ],
+        "start": "2 Nov 2026",
+        "end": "5 Feb 2027",
+        "mentor": "Cloud mentor",
+        "timezone": "Asia/Kolkata",
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Applied",
+            "detail": "Application received.",
+            "role": "Recruitment administrator"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "detail": "Application shortlisted.",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "detail": "Intern portal access enabled.",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "004",
+        "track": "AI research",
+        "project": "Knowledge assistant",
+        "progress": 0,
+        "status": "Onboarding",
+        "applicationId": "004",
+        "programId": "ai-research",
+        "projectIds": [
+          "knowledge-assistant"
+        ],
+        "start": "2 Nov 2026",
+        "end": "5 Feb 2027",
+        "mentor": "Research mentor",
+        "timezone": "Asia/Kolkata",
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Applied",
+            "detail": "Application received.",
+            "role": "Recruitment administrator"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "detail": "Application shortlisted.",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "detail": "Intern portal access enabled.",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "005",
+        "track": "Software engineering",
+        "project": "Website accessibility",
+        "progress": 0,
+        "status": "Onboarding",
+        "applicationId": "005",
+        "programId": "frontend",
+        "projectIds": [
+          "website-refresh"
+        ],
+        "start": "2 Nov 2026",
+        "end": "5 Feb 2027",
+        "mentor": "Engineering mentor",
+        "timezone": "Asia/Kolkata",
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Applied",
+            "detail": "Application received.",
+            "role": "Recruitment administrator"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "detail": "Application shortlisted.",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "detail": "Intern portal access enabled.",
+            "role": "Program administrator"
+          }
+        ]
+      },
+      {
+        "id": "018",
+        "track": "Data analysis",
+        "status": "Completed",
+        "applicationId": "018",
+        "programId": "frontend",
+        "projectIds": [
+          "website-refresh"
+        ],
+        "project": "Website accessibility",
+        "start": "2 Nov 2026",
+        "end": "5 Feb 2027",
+        "mentor": "Engineering mentor",
+        "timezone": "Asia/Kolkata",
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Applied",
+            "detail": "Application received.",
+            "role": "Recruitment administrator"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "detail": "Application shortlisted.",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "detail": "Intern portal access enabled.",
+            "role": "Program administrator"
+          }
+        ],
+        "progress": 100,
+        "completedAt": "6 Nov 2026"
+      },
+      {
+        "id": "031",
+        "track": "Design",
+        "status": "Completed",
+        "applicationId": "031",
+        "programId": "frontend",
+        "projectIds": [
+          "website-refresh"
+        ],
+        "project": "Website accessibility",
+        "start": "2 Nov 2026",
+        "end": "5 Feb 2027",
+        "mentor": "Engineering mentor",
+        "timezone": "Asia/Kolkata",
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Applied",
+            "detail": "Application received.",
+            "role": "Recruitment administrator"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "detail": "Application shortlisted.",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "detail": "Intern portal access enabled.",
+            "role": "Program administrator"
+          }
+        ],
+        "progress": 100,
+        "completedAt": "6 Nov 2026"
+      },
+      {
+        "id": "097",
+        "track": "Software engineering",
+        "status": "Active",
+        "applicationId": "097",
+        "programId": "frontend",
+        "projectIds": [
+          "website-refresh"
+        ],
+        "project": "Website accessibility",
+        "start": "2 Nov 2026",
+        "end": "5 Feb 2027",
+        "mentor": "Engineering mentor",
+        "timezone": "Asia/Kolkata",
+        "activity": [
+          {
+            "date": "28 Oct 2026",
+            "action": "Applied",
+            "detail": "Application received.",
+            "role": "Recruitment administrator"
+          },
+          {
+            "date": "31 Oct 2026",
+            "action": "Selected",
+            "detail": "Application shortlisted.",
+            "role": "Hiring manager"
+          },
+          {
+            "date": "2 Nov 2026",
+            "action": "Joined",
+            "detail": "Intern portal access enabled.",
+            "role": "Program administrator"
+          }
+        ],
+        "progress": 0
+      }
+    ],
+    "olentra-admin-media-v1": [
+      {
+        "id": "hero",
+        "title": "homepage-hero.webp",
+        "type": "Images",
+        "size": "248 KB",
+        "art": "wave",
+        "alt": "Abstract blue light flowing across a dark background",
+        "usage": "Homepage \u00b7 Hero",
+        "folder": "Website"
+      },
+      {
+        "id": "office",
+        "title": "office-exterior.jpg",
+        "type": "Images",
+        "size": "1.2 MB",
+        "src": "/images/intern/login-campus-unbranded.webp",
+        "alt": "Modern campus buildings",
+        "usage": "About \u00b7 Company",
+        "folder": "Website"
+      },
+      {
+        "id": "product",
+        "title": "product-ui-preview.png",
+        "type": "Images",
+        "size": "642 KB",
+        "src": "/images/products/dailysupply/dailysupply_analytics_dashboard.png",
+        "alt": "Product analytics dashboard",
+        "usage": "Products \u00b7 Preview",
+        "folder": "Products"
+      },
+      {
+        "id": "brand",
+        "title": "olentra-wordmark.png",
+        "type": "Images",
+        "size": "188 KB",
+        "art": "brand",
+        "alt": "Olentra Technologies wordmark",
+        "usage": "Shared \u00b7 Brand",
+        "folder": "Branding"
+      },
+      {
+        "id": "document",
+        "title": "company-overview.pdf",
+        "type": "Documents",
+        "size": "2.4 MB",
+        "art": "document",
+        "alt": "",
+        "usage": "Company \u00b7 Downloads",
+        "folder": "Website"
+      },
+      {
+        "id": "cloud",
+        "title": "cloud-platform.jpg",
+        "type": "Images",
+        "size": "736 KB",
+        "art": "cloud",
+        "alt": "",
+        "usage": "Services \u00b7 Header",
+        "folder": "Website"
+      }
+    ],
+    "olentra-admin-opportunities": [
+      {
+        "id": "frontend",
+        "title": "Software engineering internship",
+        "type": "Internship",
+        "status": "Closed",
+        "applications": 8,
+        "interns": 2,
+        "closing": "30 Nov 2026"
+      },
+      {
+        "id": "ai-research",
+        "title": "AI research internship",
+        "type": "Internship",
+        "status": "Open",
+        "applications": 5,
+        "interns": 1,
+        "closing": "15 Dec 2026"
+      },
+      {
+        "id": "cloud-engineer",
+        "title": "Cloud engineer",
+        "type": "Full time",
+        "status": "Open",
+        "applications": 3,
+        "interns": 1,
+        "closing": "20 Dec 2026"
+      }
+    ],
+    "olentra-admin-certificates": [
+      {
+        "id": "018",
+        "internId": "018",
+        "track": "Data analysis",
+        "date": "6 Nov 2026",
+        "eligibility": "Approved",
+        "status": "Issued",
+        "serial": "OL-2026-018",
+        "portalPublished": true
+      },
+      {
+        "id": "031",
+        "internId": "031",
+        "track": "Design",
+        "date": "6 Nov 2026",
+        "eligibility": "Approved",
+        "status": "Ready",
+        "serial": "OL-2026-031",
+        "portalPublished": false
+      }
+    ],
+    "olentra-admin-project-tasks-website-refresh": [
+      {
+        "id": "hero",
+        "title": "Update homepage hero copy",
+        "intern": "005",
+        "due": "11 Nov 2026",
+        "status": "To do",
+        "projectId": "website-refresh",
+        "internId": "005",
+        "required": true,
+        "version": 2,
+        "submitted": "8 Nov 2026, 14:20",
+        "notes": "Updated responsive layout.",
+        "file": {
+          "title": "contact-preview.png",
+          "size": "1.2 MB"
+        },
+        "history": [
+          {
+            "version": 2,
+            "status": "Submitted",
+            "date": "8 Nov 2026",
+            "feedback": "Updated responsive layout."
+          },
+          {
+            "version": 1,
+            "status": "Changes requested",
+            "date": "7 Nov 2026",
+            "feedback": "Improve smaller-screen spacing and align fields with the design system."
+          }
+        ]
+      },
+      {
+        "id": "performance",
+        "title": "Improve page performance (CLS)",
+        "intern": "024",
+        "due": "12 Nov 2026",
+        "status": "To do",
+        "projectId": "website-refresh",
+        "internId": "024",
+        "required": true,
+        "version": 2,
+        "submitted": "8 Nov 2026, 14:20",
+        "notes": "Updated responsive layout.",
+        "file": {
+          "title": "contact-preview.png",
+          "size": "1.2 MB"
+        },
+        "history": [
+          {
+            "version": 2,
+            "status": "Submitted",
+            "date": "8 Nov 2026",
+            "feedback": "Updated responsive layout."
+          },
+          {
+            "version": 1,
+            "status": "Changes requested",
+            "date": "7 Nov 2026",
+            "feedback": "Improve smaller-screen spacing and align fields with the design system."
+          }
+        ]
+      },
+      {
+        "id": "contact",
+        "title": "Build contact section",
+        "intern": "024",
+        "due": "13 Nov 2026",
+        "status": "In review",
+        "projectId": "website-refresh",
+        "internId": "024",
+        "required": true,
+        "version": 2,
+        "submitted": "8 Nov 2026, 14:20",
+        "notes": "Updated responsive layout.",
+        "file": {
+          "title": "contact-preview.png",
+          "size": "1.2 MB"
+        },
+        "history": [
+          {
+            "version": 2,
+            "status": "Submitted",
+            "date": "8 Nov 2026",
+            "feedback": "Updated responsive layout."
+          },
+          {
+            "version": 1,
+            "status": "Changes requested",
+            "date": "7 Nov 2026",
+            "feedback": "Improve smaller-screen spacing and align fields with the design system."
+          }
+        ]
+      },
+      {
+        "id": "faq",
+        "title": "Update FAQ content",
+        "intern": "024",
+        "due": "14 Nov 2026",
+        "status": "In progress",
+        "projectId": "website-refresh",
+        "internId": "024",
+        "required": true,
+        "version": 2,
+        "submitted": "8 Nov 2026, 14:20",
+        "notes": "Updated responsive layout.",
+        "file": {
+          "title": "contact-preview.png",
+          "size": "1.2 MB"
+        },
+        "history": [
+          {
+            "version": 2,
+            "status": "Submitted",
+            "date": "8 Nov 2026",
+            "feedback": "Updated responsive layout."
+          },
+          {
+            "version": 1,
+            "status": "Changes requested",
+            "date": "7 Nov 2026",
+            "feedback": "Improve smaller-screen spacing and align fields with the design system."
+          }
+        ]
+      },
+      {
+        "id": "audit",
+        "title": "Audit page accessibility",
+        "intern": "018",
+        "due": "12 Nov 2026",
+        "status": "Approved",
+        "projectId": "website-refresh",
+        "internId": "018",
+        "required": true,
+        "version": 2,
+        "submitted": "8 Nov 2026, 14:20",
+        "notes": "Updated responsive layout.",
+        "file": {
+          "title": "contact-preview.png",
+          "size": "1.2 MB"
+        },
+        "history": [
+          {
+            "version": 2,
+            "status": "Submitted",
+            "date": "8 Nov 2026",
+            "feedback": "Updated responsive layout."
+          },
+          {
+            "version": 1,
+            "status": "Changes requested",
+            "date": "7 Nov 2026",
+            "feedback": "Improve smaller-screen spacing and align fields with the design system."
+          }
+        ]
+      },
+      {
+        "id": "navigation",
+        "title": "Update site navigation",
+        "intern": "031",
+        "internId": "031",
+        "projectId": "website-refresh",
+        "due": "6 Nov 2026",
+        "status": "Approved",
+        "required": true,
+        "version": 1,
+        "submitted": "6 Nov 2026",
+        "notes": "Navigation labels and keyboard support checked.",
+        "file": {
+          "title": "navigation-preview.png",
+          "size": "280 KB"
+        },
+        "history": [
+          {
+            "version": 1,
+            "status": "Approved",
+            "date": "6 Nov 2026",
+            "feedback": "Approved by engineering mentor."
+          }
+        ]
+      }
+    ],
+    "olentra-admin-page-homepage": {
+      "title": "Engineering what comes next",
+      "description": "Software, AI and cloud systems built for ambitious teams.",
+      "button": "Explore services",
+      "destination": "/services",
+      "visibility": "Public",
+      "seo": "Homepage | Olentra Technologies",
+      "blocks": {
+        "Services": {
+          "title": "Services",
+          "description": "Explore services at Olentra."
+        },
+        "Products": {
+          "title": "Products",
+          "description": "Explore products at Olentra."
+        },
+        "Testimonials": {
+          "title": "Testimonials",
+          "description": "Explore testimonials at Olentra."
+        },
+        "Contact": {
+          "title": "Contact",
+          "description": "Explore contact at Olentra."
+        }
+      }
+    },
+    "olentra-admin-page-history-homepage": [
+      {
+        "id": "v1-homepage",
+        "date": "8 Nov 2026, 09:00 UTC",
+        "status": "Published",
+        "model": {
+          "title": "Engineering what comes next",
+          "description": "Software, AI and cloud systems built for ambitious teams.",
+          "button": "Explore services",
+          "destination": "/services",
+          "visibility": "Public",
+          "seo": "Homepage | Olentra Technologies",
+          "blocks": {
+            "Services": {
+              "title": "Services",
+              "description": "Explore services at Olentra."
+            },
+            "Products": {
+              "title": "Products",
+              "description": "Explore products at Olentra."
+            },
+            "Testimonials": {
+              "title": "Testimonials",
+              "description": "Explore testimonials at Olentra."
+            },
+            "Contact": {
+              "title": "Contact",
+              "description": "Explore contact at Olentra."
+            }
+          }
+        },
+        "actor": "Editor"
+      }
+    ],
+    "olentra-admin-page-about": {
+      "title": "Meet Olentra",
+      "description": "An engineering company building thoughtful software for global teams.",
+      "button": "Explore services",
+      "destination": "/services",
+      "visibility": "Public",
+      "seo": "About Olentra | Olentra Technologies",
+      "blocks": {
+        "Services": {
+          "title": "Services",
+          "description": "Explore services at Olentra."
+        },
+        "Products": {
+          "title": "Products",
+          "description": "Explore products at Olentra."
+        },
+        "Testimonials": {
+          "title": "Testimonials",
+          "description": "Explore testimonials at Olentra."
+        },
+        "Contact": {
+          "title": "Contact",
+          "description": "Explore contact at Olentra."
+        }
+      }
+    },
+    "olentra-admin-page-history-about": [
+      {
+        "id": "v1-about",
+        "date": "8 Nov 2026, 09:00 UTC",
+        "status": "Draft",
+        "model": {
+          "title": "Meet Olentra",
+          "description": "An engineering company building thoughtful software for global teams.",
+          "button": "Explore services",
+          "destination": "/services",
+          "visibility": "Public",
+          "seo": "About Olentra | Olentra Technologies",
+          "blocks": {
+            "Services": {
+              "title": "Services",
+              "description": "Explore services at Olentra."
+            },
+            "Products": {
+              "title": "Products",
+              "description": "Explore products at Olentra."
+            },
+            "Testimonials": {
+              "title": "Testimonials",
+              "description": "Explore testimonials at Olentra."
+            },
+            "Contact": {
+              "title": "Contact",
+              "description": "Explore contact at Olentra."
+            }
+          }
+        },
+        "actor": "Editor"
+      }
+    ],
+    "olentra-admin-page-ai-engineering": {
+      "title": "AI engineering, built for impact",
+      "description": "Production-ready AI systems designed around your business.",
+      "button": "Explore services",
+      "destination": "/services",
+      "visibility": "Public",
+      "seo": "AI engineering | Olentra Technologies",
+      "blocks": {
+        "Services": {
+          "title": "Services",
+          "description": "Explore services at Olentra."
+        },
+        "Products": {
+          "title": "Products",
+          "description": "Explore products at Olentra."
+        },
+        "Testimonials": {
+          "title": "Testimonials",
+          "description": "Explore testimonials at Olentra."
+        },
+        "Contact": {
+          "title": "Contact",
+          "description": "Explore contact at Olentra."
+        }
+      }
+    },
+    "olentra-admin-page-history-ai-engineering": [
+      {
+        "id": "v1-ai-engineering",
+        "date": "8 Nov 2026, 09:00 UTC",
+        "status": "In review",
+        "model": {
+          "title": "AI engineering, built for impact",
+          "description": "Production-ready AI systems designed around your business.",
+          "button": "Explore services",
+          "destination": "/services",
+          "visibility": "Public",
+          "seo": "AI engineering | Olentra Technologies",
+          "blocks": {
+            "Services": {
+              "title": "Services",
+              "description": "Explore services at Olentra."
+            },
+            "Products": {
+              "title": "Products",
+              "description": "Explore products at Olentra."
+            },
+            "Testimonials": {
+              "title": "Testimonials",
+              "description": "Explore testimonials at Olentra."
+            },
+            "Contact": {
+              "title": "Contact",
+              "description": "Explore contact at Olentra."
+            }
+          }
+        },
+        "actor": "Editor"
+      }
+    ],
+    "olentra-admin-page-internship": {
+      "title": "Learn by building real things",
+      "description": "Mentored internships in engineering, research and design.",
+      "button": "Explore services",
+      "destination": "/services",
+      "visibility": "Public",
+      "seo": "Internship program | Olentra Technologies",
+      "blocks": {
+        "Services": {
+          "title": "Services",
+          "description": "Explore services at Olentra."
+        },
+        "Products": {
+          "title": "Products",
+          "description": "Explore products at Olentra."
+        },
+        "Testimonials": {
+          "title": "Testimonials",
+          "description": "Explore testimonials at Olentra."
+        },
+        "Contact": {
+          "title": "Contact",
+          "description": "Explore contact at Olentra."
+        }
+      }
+    },
+    "olentra-admin-page-history-internship": [
+      {
+        "id": "v1-internship",
+        "date": "8 Nov 2026, 09:00 UTC",
+        "status": "Hidden",
+        "model": {
+          "title": "Learn by building real things",
+          "description": "Mentored internships in engineering, research and design.",
+          "button": "Explore services",
+          "destination": "/services",
+          "visibility": "Public",
+          "seo": "Internship program | Olentra Technologies",
+          "blocks": {
+            "Services": {
+              "title": "Services",
+              "description": "Explore services at Olentra."
+            },
+            "Products": {
+              "title": "Products",
+              "description": "Explore products at Olentra."
+            },
+            "Testimonials": {
+              "title": "Testimonials",
+              "description": "Explore testimonials at Olentra."
+            },
+            "Contact": {
+              "title": "Contact",
+              "description": "Explore contact at Olentra."
+            }
+          }
+        },
+        "actor": "Editor"
+      }
+    ],
+    "olentra-admin-page-company-insights": {
+      "title": "The future of AI engineering",
+      "description": "Practical ideas from the teams building the next generation of software.",
+      "button": "Explore services",
+      "destination": "/services",
+      "visibility": "Public",
+      "seo": "Company insights | Olentra Technologies",
+      "blocks": {
+        "Services": {
+          "title": "Services",
+          "description": "Explore services at Olentra."
+        },
+        "Products": {
+          "title": "Products",
+          "description": "Explore products at Olentra."
+        },
+        "Testimonials": {
+          "title": "Testimonials",
+          "description": "Explore testimonials at Olentra."
+        },
+        "Contact": {
+          "title": "Contact",
+          "description": "Explore contact at Olentra."
+        }
+      }
+    },
+    "olentra-admin-page-history-company-insights": [
+      {
+        "id": "v1-company-insights",
+        "date": "8 Nov 2026, 09:00 UTC",
+        "status": "Published",
+        "model": {
+          "title": "The future of AI engineering",
+          "description": "Practical ideas from the teams building the next generation of software.",
+          "button": "Explore services",
+          "destination": "/services",
+          "visibility": "Public",
+          "seo": "Company insights | Olentra Technologies",
+          "blocks": {
+            "Services": {
+              "title": "Services",
+              "description": "Explore services at Olentra."
+            },
+            "Products": {
+              "title": "Products",
+              "description": "Explore products at Olentra."
+            },
+            "Testimonials": {
+              "title": "Testimonials",
+              "description": "Explore testimonials at Olentra."
+            },
+            "Contact": {
+              "title": "Contact",
+              "description": "Explore contact at Olentra."
+            }
+          }
+        },
+        "actor": "Editor"
+      }
+    ],
+    "olentra-admin-media-folders": [
+      "Branding",
+      "Website",
+      "Products",
+      "Careers"
+    ],
+    "olentra-admin-spam-filter": true,
+    "olentra-admin-contact-form": {
+      "contact": true,
+      "partners": true
+    },
+    "olentra-admin-projects": [
+      {
+        "id": "website-refresh",
+        "title": "Website accessibility",
+        "name": "Website refresh",
+        "description": "Modernize key website pages, improve UX and accessibility, and update core content.",
+        "due": "15 Nov 2026",
+        "mentor": "Engineering mentor",
+        "internIds": [
+          "005",
+          "018",
+          "024",
+          "031",
+          "097"
+        ],
+        "programId": "frontend",
+        "milestones": [
+          {
+            "title": "Content audit",
+            "status": "Completed"
+          },
+          {
+            "title": "Implementation",
+            "status": "In progress"
+          },
+          {
+            "title": "Accessibility review",
+            "status": "In progress"
+          },
+          {
+            "title": "Final handoff",
+            "status": "To do"
+          }
+        ],
+        "type": "Internship project"
+      },
+      {
+        "id": "knowledge-assistant",
+        "title": "Knowledge assistant",
+        "name": "Knowledge assistant",
+        "description": "Build and evaluate an internal knowledge discovery assistant.",
+        "due": "30 Nov 2026",
+        "mentor": "Research mentor",
+        "internIds": [
+          "002",
+          "004"
+        ],
+        "programId": "ai-research",
+        "milestones": [
+          {
+            "title": "Research plan",
+            "status": "Completed"
+          },
+          {
+            "title": "Evaluation",
+            "status": "In progress"
+          }
+        ],
+        "type": "Internship project"
+      },
+      {
+        "id": "cloud-observability",
+        "title": "Cloud observability",
+        "name": "Cloud observability",
+        "description": "Improve service monitoring and operational dashboards.",
+        "due": "30 Nov 2026",
+        "mentor": "Cloud mentor",
+        "internIds": [
+          "003"
+        ],
+        "programId": "cloud-engineer",
+        "milestones": [
+          {
+            "title": "Metric selection",
+            "status": "Completed"
+          },
+          {
+            "title": "Deployment",
+            "status": "In progress"
+          }
+        ],
+        "type": "Internship project"
+      }
+    ],
+    "olentra-admin-project-tasks-knowledge-assistant": [
+      {
+        "id": "research",
+        "title": "Evaluate retrieval quality",
+        "intern": "002",
+        "internId": "002",
+        "projectId": "knowledge-assistant",
+        "due": "25 Nov 2026",
+        "status": "In progress",
+        "required": true,
+        "version": 1,
+        "submitted": "8 Nov 2026",
+        "notes": "Evaluate retrieval quality first draft.",
+        "file": {
+          "title": "research-preview.txt",
+          "size": "12 KB"
+        },
+        "history": [
+          {
+            "version": 1,
+            "status": "Submitted",
+            "date": "8 Nov 2026",
+            "feedback": "First draft submitted."
+          }
+        ]
+      },
+      {
+        "id": "dataset",
+        "title": "Prepare evaluation dataset",
+        "intern": "004",
+        "internId": "004",
+        "projectId": "knowledge-assistant",
+        "due": "25 Nov 2026",
+        "status": "To do",
+        "required": true,
+        "version": 1,
+        "submitted": "8 Nov 2026",
+        "notes": "Prepare evaluation dataset first draft.",
+        "file": {
+          "title": "dataset-preview.txt",
+          "size": "12 KB"
+        },
+        "history": [
+          {
+            "version": 1,
+            "status": "Submitted",
+            "date": "8 Nov 2026",
+            "feedback": "First draft submitted."
+          }
+        ]
+      }
+    ],
+    "olentra-admin-project-tasks-cloud-observability": [
+      {
+        "id": "metrics",
+        "title": "Define service indicators",
+        "intern": "003",
+        "internId": "003",
+        "projectId": "cloud-observability",
+        "due": "25 Nov 2026",
+        "status": "Approved",
+        "required": true,
+        "version": 1,
+        "submitted": "8 Nov 2026",
+        "notes": "Define service indicators first draft.",
+        "file": {
+          "title": "metrics-preview.txt",
+          "size": "12 KB"
+        },
+        "history": [
+          {
+            "version": 1,
+            "status": "Submitted",
+            "date": "8 Nov 2026",
+            "feedback": "First draft submitted."
+          }
+        ]
+      },
+      {
+        "id": "deploy",
+        "title": "Deploy monitoring dashboard",
+        "intern": "003",
+        "internId": "003",
+        "projectId": "cloud-observability",
+        "due": "25 Nov 2026",
+        "status": "In review",
+        "required": true,
+        "version": 1,
+        "submitted": "8 Nov 2026",
+        "notes": "Deploy monitoring dashboard first draft.",
+        "file": {
+          "title": "deploy-preview.txt",
+          "size": "12 KB"
+        },
+        "history": [
+          {
+            "version": 1,
+            "status": "Submitted",
+            "date": "8 Nov 2026",
+            "feedback": "First draft submitted."
+          }
+        ]
+      }
+    ],
+    "olentra-admin-project-reviews-website-refresh": [],
+    "olentra-admin-project-private-website-refresh": "",
+    "olentra-admin-project-reviews-knowledge-assistant": [],
+    "olentra-admin-project-private-knowledge-assistant": "",
+    "olentra-admin-project-reviews-cloud-observability": [],
+    "olentra-admin-project-private-cloud-observability": "",
+    "olentra-admin-intern-checks-024": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "olentra-admin-intern-completion-024": [
+      false,
+      false,
+      false
+    ],
+    "olentra-admin-intern-access-024": true,
+    "olentra-admin-intern-messages-024": [],
+    "olentra-admin-intern-checks-002": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "olentra-admin-intern-completion-002": [
+      false,
+      false,
+      false
+    ],
+    "olentra-admin-intern-access-002": true,
+    "olentra-admin-intern-messages-002": [],
+    "olentra-admin-intern-checks-003": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "olentra-admin-intern-completion-003": [
+      false,
+      false,
+      false
+    ],
+    "olentra-admin-intern-access-003": true,
+    "olentra-admin-intern-messages-003": [],
+    "olentra-admin-intern-checks-004": [
+      true,
+      true,
+      false,
+      true,
+      false
+    ],
+    "olentra-admin-intern-completion-004": [
+      false,
+      false,
+      false
+    ],
+    "olentra-admin-intern-access-004": true,
+    "olentra-admin-intern-messages-004": [],
+    "olentra-admin-intern-checks-005": [
+      true,
+      true,
+      false,
+      true,
+      false
+    ],
+    "olentra-admin-intern-completion-005": [
+      false,
+      false,
+      false
+    ],
+    "olentra-admin-intern-access-005": true,
+    "olentra-admin-intern-messages-005": [],
+    "olentra-admin-intern-checks-018": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "olentra-admin-intern-completion-018": [
+      true,
+      true,
+      true
+    ],
+    "olentra-admin-intern-access-018": true,
+    "olentra-admin-intern-messages-018": [],
+    "olentra-admin-intern-checks-031": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "olentra-admin-intern-completion-031": [
+      true,
+      true,
+      true
+    ],
+    "olentra-admin-intern-access-031": true,
+    "olentra-admin-intern-messages-031": [],
+    "olentra-admin-intern-checks-097": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "olentra-admin-intern-completion-097": [
+      false,
+      false,
+      false
+    ],
+    "olentra-admin-intern-access-097": true,
+    "olentra-admin-intern-messages-097": [],
+    "olentra-admin-program-frontend": {
+      "title": "Software engineering internship",
+      "track": "Engineering",
+      "mode": "Remote",
+      "duration": "12 weeks",
+      "description": "Build accessible, high-quality web experiences with our product engineering team.",
+      "skills": "React, JavaScript, Accessibility",
+      "opens": "2026-11-15",
+      "closes": "2026-11-30",
+      "timezone": "Asia/Kolkata",
+      "capacity": 24,
+      "regions": "Global",
+      "status": "Draft",
+      "public": true,
+      "applications": false,
+      "portal": true,
+      "eligibility": "Relevant practical experience and interest in collaborative engineering.",
+      "form": [
+        true,
+        true,
+        true,
+        false,
+        true
+      ]
+    },
+    "olentra-admin-program-ai-research": {
+      "title": "AI research internship",
+      "track": "AI research",
+      "mode": "Remote",
+      "duration": "12 weeks",
+      "description": "Evaluate and prototype useful AI systems with our research mentors.",
+      "skills": "Python, Research, Data analysis",
+      "opens": "2026-11-15",
+      "closes": "2026-11-30",
+      "timezone": "Asia/Kolkata",
+      "capacity": 24,
+      "regions": "Global",
+      "status": "Draft",
+      "public": true,
+      "applications": true,
+      "portal": true,
+      "eligibility": "Relevant practical experience and interest in collaborative engineering.",
+      "form": [
+        true,
+        true,
+        true,
+        false,
+        true
+      ]
+    },
+    "olentra-admin-program-cloud-engineer": {
+      "title": "Cloud engineer",
+      "track": "Engineering",
+      "mode": "Remote",
+      "duration": "12 weeks",
+      "description": "Build reliable cloud services and operational tooling.",
+      "skills": "Cloud platforms, Observability, Automation",
+      "opens": "2026-11-15",
+      "closes": "2026-11-30",
+      "timezone": "Asia/Kolkata",
+      "capacity": 24,
+      "regions": "Global",
+      "status": "Draft",
+      "public": true,
+      "applications": true,
+      "portal": true,
+      "eligibility": "Relevant practical experience and interest in collaborative engineering.",
+      "form": [
+        true,
+        true,
+        true,
+        false,
+        true
+      ]
+    },
+    "olentra-admin-enquiry-draft-018": "",
+    "olentra-admin-enquiry-notes-018": [],
+    "olentra-admin-enquiry-followup-018": {
+      "date": "2026-11-15",
+      "time": "10:00",
+      "saved": false
+    },
+    "olentra-admin-enquiry-replies-018": [],
+    "olentra-admin-enquiry-draft-020": "",
+    "olentra-admin-enquiry-notes-020": [],
+    "olentra-admin-enquiry-followup-020": {
+      "date": "2026-11-15",
+      "time": "10:00",
+      "saved": false
+    },
+    "olentra-admin-enquiry-replies-020": [],
+    "olentra-admin-enquiry-draft-023": "",
+    "olentra-admin-enquiry-notes-023": [],
+    "olentra-admin-enquiry-followup-023": {
+      "date": "2026-11-15",
+      "time": "10:00",
+      "saved": false
+    },
+    "olentra-admin-enquiry-replies-023": [],
+    "olentra-admin-enquiry-draft-025": "",
+    "olentra-admin-enquiry-notes-025": [],
+    "olentra-admin-enquiry-followup-025": {
+      "date": "2026-11-15",
+      "time": "10:00",
+      "saved": false
+    },
+    "olentra-admin-enquiry-replies-025": [],
+    "olentra-admin-enquiry-draft-027": "",
+    "olentra-admin-enquiry-notes-027": [],
+    "olentra-admin-enquiry-followup-027": {
+      "date": "2026-11-15",
+      "time": "10:00",
+      "saved": false
+    },
+    "olentra-admin-enquiry-replies-027": [],
+    "olentra-admin-applicant-notes-024": [],
+    "olentra-admin-applicant-notes-031": [],
+    "olentra-admin-applicant-notes-045": [],
+    "olentra-admin-applicant-notes-052": [],
+    "olentra-admin-applicant-notes-067": [],
+    "olentra-admin-applicant-notes-073": [],
+    "olentra-admin-applicant-notes-081": [],
+    "olentra-admin-applicant-notes-088": [],
+    "olentra-admin-applicant-notes-097": [],
+    "olentra-admin-applicant-notes-002": [],
+    "olentra-admin-applicant-notes-003": [],
+    "olentra-admin-applicant-notes-004": [],
+    "olentra-admin-applicant-notes-005": [],
+    "olentra-admin-applicant-notes-018": [],
+    "olentra-admin-applicant-notes-110": [],
+    "olentra-admin-applicant-notes-111": []
+  },
+  "templates": {
+    "olentra-admin-page-": {
+      "title": "",
+      "description": "",
+      "button": "Explore services",
+      "destination": "/services",
+      "visibility": "Public",
+      "seo": "",
+      "blocks": {}
+    },
+    "olentra-admin-page-history-": [],
+    "olentra-admin-applicant-notes-": [],
+    "olentra-admin-program-": {
+      "title": "",
+      "track": "Engineering",
+      "mode": "Remote",
+      "duration": "12 weeks",
+      "description": "",
+      "skills": "",
+      "opens": "2026-11-15",
+      "closes": "2026-11-30",
+      "timezone": "Asia/Kolkata",
+      "capacity": 24,
+      "regions": "Global",
+      "status": "Draft",
+      "public": false,
+      "applications": false,
+      "portal": true,
+      "eligibility": "",
+      "form": [
+        true,
+        true,
+        true,
+        false,
+        true
+      ]
+    },
+    "olentra-admin-project-tasks-": [],
+    "olentra-admin-project-reviews-": [],
+    "olentra-admin-project-private-": "",
+    "olentra-admin-intern-checks-": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "olentra-admin-intern-completion-": [
+      false,
+      false,
+      false
+    ],
+    "olentra-admin-intern-access-": false,
+    "olentra-admin-intern-messages-": [],
+    "olentra-admin-enquiry-draft-": "",
+    "olentra-admin-enquiry-notes-": [],
+    "olentra-admin-enquiry-replies-": [],
+    "olentra-admin-enquiry-followup-": {
+      "date": "2026-11-15",
+      "time": "10:00",
+      "saved": false
+    }
+  },
+  "reference": {
+    "stages": [
+      "New",
+      "Screening",
+      "Interview",
+      "Offer",
+      "Joined",
+      "Declined"
+    ],
+    "blocks": [
+      "Hero",
+      "Services",
+      "Products",
+      "Testimonials",
+      "Contact"
+    ],
+    "taskStatuses": [
+      "To do",
+      "In progress",
+      "In review",
+      "Changes requested",
+      "Approved"
+    ],
+    "publishingChecklist": [
+      {
+        "title": "Accessibility",
+        "detail": "Review before publishing content.",
+        "ready": true
+      },
+      {
+        "title": "SEO metadata",
+        "detail": "Titles and descriptions are set for core pages.",
+        "ready": true
+      },
+      {
+        "title": "Translation coverage",
+        "detail": "Some content is not yet translated.",
+        "ready": false
+      }
+    ],
+    "scheduledContent": {
+      "id": "company-insights",
+      "title": "The future of AI engineering",
+      "date": "15 Nov 2026, 10:00 UTC"
+    },
+    "mediaFolders": [
+      "Branding",
+      "Website",
+      "Products",
+      "Careers"
+    ],
+    "mediaFolderAssets": {
+      "Website": [
+        "hero",
+        "office",
+        "cloud"
+      ],
+      "Branding": [
+        "brand"
+      ],
+      "Products": [
+        "product"
+      ],
+      "Careers": []
+    },
+    "onboardingLabels": [
+      "Complete profile details",
+      "Upload resume (PDF)",
+      "Sign acknowledgement (policies & conduct)",
+      "Accept offer and confirm start date",
+      "Manager approval"
+    ],
+    "completionLabels": [
+      "All required tasks approved",
+      "Mentor final review",
+      "Closure confirmation"
+    ],
+    "programFormLabels": [
+      "Full name",
+      "Work email",
+      "College",
+      "Portfolio",
+      "Resume (PDF)"
+    ],
+    "documentPreview": "OLENTRA \u00b7 Sample document\nShared frontend demonstration.\nNo personal information.",
+    "newTask": {
+      "intern": "024",
+      "internId": "024",
+      "due": "15 Nov 2026",
+      "status": "To do",
+      "required": true,
+      "version": 1,
+      "submitted": null,
+      "notes": "",
+      "file": null,
+      "history": []
+    },
+    "newAsset": {
+      "type": "Images",
+      "alt": "",
+      "usage": "Not used yet",
+      "folder": "Website"
+    },
+    "newContent": {
+      "type": "Page",
+      "status": "Draft",
+      "locale": "EN",
+      "updated": "Just now"
+    },
+    "newApplication": {
+      "stage": "New",
+      "date": "8 Nov 2026",
+      "owner": "Recruiter",
+      "programId": "frontend",
+      "location": "",
+      "availability": "",
+      "skills": [],
+      "statement": "",
+      "qualifications": [],
+      "documents": [],
+      "onboarding": [],
+      "activity": []
+    },
+    "newOpportunity": {
+      "type": "Internship",
+      "status": "Draft",
+      "applications": 0,
+      "interns": 0,
+      "closing": "Not scheduled"
+    },
+    "projectMilestones": [
+      "Content audit",
+      "Implementation",
+      "Accessibility review",
+      "Final handoff"
+    ],
+    "profileSummary": [
+      {
+        "label": "Track",
+        "key": "track"
+      },
+      {
+        "label": "Start",
+        "key": "start"
+      },
+      {
+        "label": "End",
+        "key": "end"
+      },
+      {
+        "label": "Mentor",
+        "key": "mentor"
+      },
+      {
+        "label": "Timezone",
+        "key": "timezone"
+      }
+    ],
+    "heroAsset": {
+      "title": "homepage-hero.webp",
+      "dimensions": "2400 \u00d7 1600",
+      "size": "248 KB"
+    },
+    "blockDefaults": {
+      "Hero": {
+        "title": "Hero",
+        "description": "Explore hero at Olentra."
+      },
+      "Services": {
+        "title": "Services",
+        "description": "Explore services at Olentra."
+      },
+      "Products": {
+        "title": "Products",
+        "description": "Explore products at Olentra."
+      },
+      "Testimonials": {
+        "title": "Testimonials",
+        "description": "Explore testimonials at Olentra."
+      },
+      "Contact": {
+        "title": "Contact",
+        "description": "Explore contact at Olentra."
+      }
+    },
+    "internStatuses": [
+      "Onboarding",
+      "Active",
+      "Completed",
+      "Dropped"
+    ],
+    "careersLinks": [
+      {
+        "title": "Opportunities",
+        "href": "/dashboard/careers"
+      },
+      {
+        "title": "Applications",
+        "href": "/dashboard/careers/applications"
+      },
+      {
+        "title": "Interns & projects",
+        "href": "/dashboard/careers/interns"
+      },
+      {
+        "title": "Certificates",
+        "href": "/dashboard/careers/certificates"
+      }
+    ],
+    "today": "2026-11-08"
+  }
+}

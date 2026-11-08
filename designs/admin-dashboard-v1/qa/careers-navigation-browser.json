@@ -1,0 +1,15 @@
+{
+  "route": "/careers/intern",
+  "verified": [
+    "Desktop hover opens Careers submenu",
+    "Intern menu item navigates to /careers/intern",
+    "Escape closes hover menu and restores focus",
+    "ArrowDown focuses Intern menu item",
+    "Mobile 430px Careers accordion expands and selects Intern",
+    "Mobile menu closes after selection",
+    "Mobile document width430 has no overflow",
+    "Application form and new Apply anchors render",
+    "Canonical metadata uses /careers/intern"
+  ],
+  "screenshot": "/Users/manidinuu/Desktop/olentra-website/designs/admin-dashboard-v1/qa/careers-intern-dropdown.jpg"
+}

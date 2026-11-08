@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import styles from "./futuristic-login.module.css";
+import { useSiteFeatures } from "@/components/site-features";
 
 function GoogleLogo() {
   return (
@@ -157,6 +158,8 @@ export default function FuturisticLogin({
   onChooseDemo,
   onSignOut,
 }) {
+  const { features, ready: featuresReady } = useSiteFeatures();
+  const canApply = Boolean(featuresReady && features.internships && features.applications);
   const [visible, setVisible] = useState(false);
   const [remember, setRemember] = useState(false);
   const [demoProvider, setDemoProvider] = useState(null);
@@ -357,7 +360,7 @@ export default function FuturisticLogin({
               <span>Continue with GitHub</span>
             </button>
           </div>
-          <div className={styles.applyBanner}>
+          {canApply && <div className={styles.applyBanner}>
             <span className={styles.applyIcon}>
               <BenefitArtwork kind="rocket" />
             </span>
@@ -365,10 +368,10 @@ export default function FuturisticLogin({
               <strong>New to Olentra Internship Program?</strong>
               <p>Explore opportunities and apply now.</p>
             </div>
-            <Link href="/intern#internship-application">
+            <Link href="/careers/intern#internship-application">
               Apply Now <ArrowRight size={16} />
             </Link>
-          </div>
+          </div>}
         </section>
 
         <footer className={styles.companyFooter}>

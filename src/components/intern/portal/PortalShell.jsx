@@ -32,6 +32,7 @@ import {
   formatDate,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import { useSiteFeatures } from "@/components/site-features";
 
 const navigation = [
   { href: "/intern/portal", label: "Dashboard", icon: House },
@@ -52,6 +53,7 @@ const navigation = [
 ];
 
 export default function PortalShell({ children }) {
+  const { features, ready: featuresReady } = useSiteFeatures();
   const {
     ready,
     sessionReady,
@@ -227,7 +229,7 @@ export default function PortalShell({ children }) {
             starts here.
           </strong>
           <span>Learn. Build. Grow.</span>
-          <Link href="/intern">
+          <Link href={featuresReady && features.internships ? "/careers/intern" : "/"}>
             Explore Olentra Technologies <ArrowRight size={13} />
           </Link>
         </div>

@@ -1,0 +1,693 @@
+{
+  "datasets": {
+    "olentra-admin-governance-approvals-v1": [
+      {
+        "id": "CHG-024",
+        "title": "Open internship intake",
+        "type": "Feature change",
+        "scope": "Global",
+        "actor": "Recruiter",
+        "submitted": "20 min ago",
+        "status": "pending",
+        "impact": "High impact",
+        "reason": "The new cohort is ready. Open the public internship page and accept new applications.",
+        "changes": {
+          "internships": true,
+          "applications": true,
+          "portal": true
+        },
+        "previous": {
+          "internships": false,
+          "applications": false,
+          "portal": true
+        },
+        "requestedAt": "2026-11-08T10:40:00.000Z",
+        "kind": "features",
+        "environment": "Production"
+      },
+      {
+        "id": "CHG-025",
+        "title": "Homepage hero update",
+        "type": "Content",
+        "scope": "English",
+        "actor": "Editor",
+        "submitted": "1 hour ago",
+        "status": "pending",
+        "impact": "Standard",
+        "reason": "Refresh the homepage introduction for the next release.",
+        "requestedAt": "2026-11-08T10:00:00.000Z",
+        "kind": "content",
+        "target": {
+          "id": "homepage",
+          "model": {
+            "title": "Engineering what comes next",
+            "description": "Software, AI and cloud systems built for ambitious teams.",
+            "button": "Explore services",
+            "destination": "/services",
+            "visibility": "Public",
+            "seo": "Homepage | Olentra Technologies",
+            "blocks": {
+              "Services": {
+                "title": "Services",
+                "description": "Explore services at Olentra."
+              },
+              "Products": {
+                "title": "Products",
+                "description": "Explore products at Olentra."
+              },
+              "Testimonials": {
+                "title": "Testimonials",
+                "description": "Explore testimonials at Olentra."
+              },
+              "Contact": {
+                "title": "Contact",
+                "description": "Explore contact at Olentra."
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "CHG-026",
+        "title": "Product page translation",
+        "type": "Translation",
+        "scope": "French",
+        "actor": "Translator",
+        "submitted": "2 hours ago",
+        "status": "pending",
+        "impact": "Standard",
+        "reason": "Publish the reviewed French product introduction.",
+        "requestedAt": "2026-11-08T09:00:00.000Z",
+        "kind": "translation",
+        "target": {
+          "locale": "fr",
+          "contentId": "products",
+          "fields": {
+            "title": "Des produits pour les \u00e9quipes modernes",
+            "summary": "D\u00e9couvrez des logiciels qui simplifient le travail quotidien.",
+            "cta": "D\u00e9couvrir nos produits"
+          }
+        }
+      }
+    ],
+    "olentra-admin-governance-audit-v1": [
+      {
+        "id": "AUD-105",
+        "time": "10:42",
+        "date": "08 Nov 2026 10:42 UTC",
+        "actor": "Owner",
+        "action": "Published change",
+        "category": "Feature switches",
+        "resource": "Internship visibility",
+        "scope": "Global",
+        "before": "On",
+        "after": "Off",
+        "reason": "Intake closed",
+        "approval": "CHG-024",
+        "restore": {
+          "key": "published-features:Production",
+          "before": {
+            "services": true,
+            "products": true,
+            "internships": true,
+            "blog": true,
+            "assistant": false,
+            "maintenance": false,
+            "applications": true,
+            "portal": true
+          },
+          "after": {
+            "services": true,
+            "products": true,
+            "internships": false,
+            "blog": true,
+            "assistant": false,
+            "maintenance": false,
+            "applications": false,
+            "portal": true
+          }
+        }
+      },
+      {
+        "id": "AUD-104",
+        "time": "10:18",
+        "date": "08 Nov 2026 10:18 UTC",
+        "actor": "Editor",
+        "action": "Updated draft",
+        "category": "Content",
+        "resource": "Homepage",
+        "scope": "English",
+        "before": "Previous draft",
+        "after": "Updated draft",
+        "reason": "Homepage introduction refreshed"
+      },
+      {
+        "id": "AUD-103",
+        "time": "09:57",
+        "date": "08 Nov 2026 09:57 UTC",
+        "actor": "Administrator",
+        "action": "Changed role",
+        "category": "Access",
+        "resource": "Administrator 03",
+        "scope": "Global",
+        "before": "Editor",
+        "after": "Recruiter",
+        "reason": "Team responsibilities updated"
+      },
+      {
+        "id": "AUD-102",
+        "time": "09:30",
+        "date": "08 Nov 2026 09:30 UTC",
+        "actor": "System",
+        "action": "Verified backup",
+        "category": "System",
+        "resource": "Daily backup",
+        "scope": "Global",
+        "before": "Pending verification",
+        "after": "Verified",
+        "reason": "Scheduled integrity check completed"
+      },
+      {
+        "id": "AUD-101",
+        "time": "08:45",
+        "date": "08 Nov 2026 08:45 UTC",
+        "actor": "Translator",
+        "action": "Submitted review",
+        "category": "Content",
+        "resource": "Products",
+        "scope": "French",
+        "before": "Draft",
+        "after": "Awaiting review",
+        "reason": "French translation ready for review"
+      }
+    ],
+    "olentra-admin-integrations-v1": {
+      "email": "connected",
+      "analytics": "connected",
+      "crm": "connected",
+      "monitoring": "connected",
+      "recruitment": "attention",
+      "support": "available"
+    },
+    "olentra-admin-approval-policy-v1": {
+      "production": true,
+      "content": true,
+      "translations": true
+    },
+    "olentra-admin-company-settings-v1": {
+      "company": "Olentra Technologies",
+      "website": "https://example.com",
+      "email": "contact@example.com",
+      "phone": "",
+      "description": "Enterprise technology services for modern organizations, including software, cloud and digital transformation.",
+      "language": "English",
+      "timezone": "Asia/Kolkata",
+      "scope": "Global",
+      "dateFormat": "DD MMM YYYY",
+      "logo": ""
+    },
+    "olentra-admin-security-policy-v1": {
+      "mfa": true,
+      "sso": false,
+      "timeout": "30 minutes",
+      "reauth": true,
+      "allowlist": false
+    },
+    "olentra-admin-security-sessions-v1": [
+      {
+        "id": "session-current",
+        "account": "Company owner",
+        "device": "Current browser",
+        "region": "India",
+        "active": "Now",
+        "current": true,
+        "userId": "owner"
+      },
+      {
+        "id": "session-admin",
+        "account": "Admin 01",
+        "device": "Browser",
+        "region": "Europe",
+        "active": "18 min ago",
+        "userId": "admin-01"
+      },
+      {
+        "id": "session-editor",
+        "account": "Editor 02",
+        "device": "Browser",
+        "region": "Asia Pacific",
+        "active": "1 hour ago",
+        "userId": "editor-02"
+      }
+    ],
+    "olentra-admin-sso-preview-v1": {
+      "name": "",
+      "domain": ""
+    },
+    "olentra-admin-backups-v1": [
+      {
+        "id": "BKP-008",
+        "title": "Daily backup \u00b7 08 Nov",
+        "date": "08 Nov 2026",
+        "time": "02:00 UTC",
+        "scope": "Content + configuration",
+        "size": "84 MB",
+        "status": "Verified",
+        "snapshotRef": "initial",
+        "createdAt": "2026-11-08T02:00:00.000Z"
+      },
+      {
+        "id": "BKP-007",
+        "title": "Daily backup \u00b7 07 Nov",
+        "date": "07 Nov 2026",
+        "time": "02:00 UTC",
+        "scope": "Content + configuration",
+        "size": "83 MB",
+        "status": "Verified",
+        "snapshotRef": "initial",
+        "createdAt": "2026-11-07T02:00:00.000Z"
+      },
+      {
+        "id": "BKP-006",
+        "title": "Daily backup \u00b7 06 Nov",
+        "date": "06 Nov 2026",
+        "time": "02:00 UTC",
+        "scope": "Content + configuration",
+        "size": "82 MB",
+        "status": "Verified",
+        "snapshotRef": "initial",
+        "createdAt": "2026-11-06T02:00:00.000Z"
+      }
+    ],
+    "olentra-admin-backup-settings-v1": {
+      "retention": "30 days",
+      "target": "Staging",
+      "scope": "Content and configuration",
+      "selected": "BKP-008",
+      "review": true
+    },
+    "olentra-admin-restore-preview-v1": null,
+    "olentra-admin-notifications-v1": [
+      {
+        "id": "notice-incident",
+        "title": "Contact form delivery delay",
+        "description": "Some form submissions are delayed. Review the sample incident for details.",
+        "category": "Alerts",
+        "source": "Monitoring",
+        "time": "12 min ago",
+        "tone": "warning",
+        "type": "Warning",
+        "href": "/dashboard/monitoring/incidents/contact-delivery",
+        "action": "View incident",
+        "read": false
+      },
+      {
+        "id": "notice-approval",
+        "title": "Internship visibility needs approval",
+        "description": "Opening the internship page and accepting new applications is waiting for review.",
+        "category": "Approvals",
+        "source": "Approvals",
+        "time": "20 min ago",
+        "tone": "blue",
+        "type": "Review",
+        "href": "/dashboard/approvals/CHG-024",
+        "action": "Review change",
+        "read": false
+      },
+      {
+        "id": "notice-backup",
+        "title": "Daily backup verified",
+        "description": "The sample daily backup completed its integrity check.",
+        "category": "System",
+        "source": "System",
+        "time": "2 hours ago",
+        "tone": "success",
+        "type": "Success",
+        "href": "/dashboard/settings/backups",
+        "action": "View backup",
+        "read": false
+      },
+      {
+        "id": "notice-content",
+        "title": "Homepage draft is ready for review",
+        "description": "The updated homepage introduction is available in the review queue.",
+        "category": "Approvals",
+        "source": "Content",
+        "time": "3 hours ago",
+        "tone": "blue",
+        "type": "Update",
+        "href": "/dashboard/approvals/CHG-025",
+        "action": "Open draft",
+        "read": false
+      }
+    ],
+    "olentra-admin-notification-preferences-v1": {
+      "inApp": true,
+      "email": true,
+      "digest": false,
+      "critical": true,
+      "approvals": true,
+      "content": true,
+      "system": true,
+      "quiet": true,
+      "timezone": "Asia/Kolkata",
+      "from": "22:00",
+      "to": "07:00"
+    },
+    "olentra-admin-account-v1": {
+      "name": "Company owner",
+      "email": "owner@example.com",
+      "role": "Owner",
+      "jobTitle": "Founder",
+      "timezone": "Asia/Kolkata",
+      "language": "English",
+      "dateFormat": "DD MMM YYYY",
+      "emailUpdates": true,
+      "approvalDigest": true,
+      "reduceMotion": false
+    },
+    "olentra-admin-integration-config-email-v1": {
+      "sender": "Olentra Technologies",
+      "email": "notifications@example.com",
+      "environment": "Production",
+      "credential": "",
+      "webhook": "https://example.com/events",
+      "signingSecret": "",
+      "subscriptions": {
+        "applications": true,
+        "enquiries": true,
+        "approvals": true,
+        "incidents": true
+      },
+      "credentialConfigured": true,
+      "signingSecretConfigured": true,
+      "serviceId": "email"
+    },
+    "olentra-admin-integration-config-analytics-v1": {
+      "sender": "Olentra Technologies",
+      "email": "notifications@example.com",
+      "environment": "Production",
+      "credential": "",
+      "webhook": "https://example.com/events",
+      "signingSecret": "",
+      "subscriptions": {
+        "applications": true,
+        "enquiries": true,
+        "approvals": true,
+        "incidents": true
+      },
+      "credentialConfigured": true,
+      "signingSecretConfigured": true,
+      "serviceId": "analytics"
+    },
+    "olentra-admin-integration-config-crm-v1": {
+      "sender": "Olentra Technologies",
+      "email": "notifications@example.com",
+      "environment": "Production",
+      "credential": "",
+      "webhook": "https://example.com/events",
+      "signingSecret": "",
+      "subscriptions": {
+        "applications": true,
+        "enquiries": true,
+        "approvals": true,
+        "incidents": true
+      },
+      "credentialConfigured": true,
+      "signingSecretConfigured": true,
+      "serviceId": "crm"
+    },
+    "olentra-admin-integration-config-monitoring-v1": {
+      "sender": "Olentra Technologies",
+      "email": "notifications@example.com",
+      "environment": "Production",
+      "credential": "",
+      "webhook": "https://example.com/events",
+      "signingSecret": "",
+      "subscriptions": {
+        "applications": true,
+        "enquiries": true,
+        "approvals": true,
+        "incidents": true
+      },
+      "credentialConfigured": true,
+      "signingSecretConfigured": true,
+      "serviceId": "monitoring"
+    },
+    "olentra-admin-integration-config-recruitment-v1": {
+      "sender": "Olentra Technologies",
+      "email": "notifications@example.com",
+      "environment": "Production",
+      "credential": "",
+      "webhook": "https://example.com/events",
+      "signingSecret": "",
+      "subscriptions": {
+        "applications": true,
+        "enquiries": true,
+        "approvals": true,
+        "incidents": true
+      },
+      "credentialConfigured": false,
+      "signingSecretConfigured": false,
+      "serviceId": "recruitment"
+    },
+    "olentra-admin-integration-config-support-v1": {
+      "sender": "Olentra Technologies",
+      "email": "notifications@example.com",
+      "environment": "Production",
+      "credential": "",
+      "webhook": "https://example.com/events",
+      "signingSecret": "",
+      "subscriptions": {
+        "applications": true,
+        "enquiries": true,
+        "approvals": true,
+        "incidents": true
+      },
+      "credentialConfigured": false,
+      "signingSecretConfigured": false,
+      "serviceId": "support"
+    }
+  },
+  "templates": {
+    "olentra-admin-integration-config-": {
+      "sender": "Olentra Technologies",
+      "email": "notifications@example.com",
+      "environment": "Production",
+      "credential": "",
+      "webhook": "https://example.com/events",
+      "signingSecret": "",
+      "subscriptions": {
+        "applications": true,
+        "enquiries": true,
+        "approvals": true,
+        "incidents": true
+      },
+      "credentialConfigured": false,
+      "signingSecretConfigured": false
+    }
+  },
+  "reference": {
+    "integrations": [
+      {
+        "id": "email",
+        "title": "Email delivery",
+        "icon": "Mail",
+        "description": "Send transactional messages and website notifications.",
+        "sync": "Last delivery: 2 minutes ago"
+      },
+      {
+        "id": "analytics",
+        "title": "Website analytics",
+        "icon": "Activity",
+        "description": "Understand visitor activity, traffic sources and conversions.",
+        "sync": "Last sync: 5 minutes ago"
+      },
+      {
+        "id": "crm",
+        "title": "CRM",
+        "icon": "UsersRound",
+        "description": "Route website enquiries to your customer relationship workflow.",
+        "sync": "Last sync: 10 minutes ago"
+      },
+      {
+        "id": "monitoring",
+        "title": "Monitoring",
+        "icon": "Monitor",
+        "description": "Track website availability, performance and critical journeys.",
+        "sync": "Last sync: 1 minute ago"
+      },
+      {
+        "id": "recruitment",
+        "title": "Recruitment",
+        "icon": "Building2",
+        "description": "Connect career applications with your recruitment workflow.",
+        "sync": "Last sync: 2 hours ago"
+      },
+      {
+        "id": "support",
+        "title": "Support inbox",
+        "icon": "Inbox",
+        "description": "Organize support enquiries and website feedback.",
+        "sync": "Connection not configured"
+      }
+    ],
+    "deliveryLogs": [
+      {
+        "id": "DEL-004",
+        "event": "Application received",
+        "time": "Today, 11:42",
+        "status": "Delivered"
+      },
+      {
+        "id": "DEL-003",
+        "event": "Enquiry submitted",
+        "time": "Today, 11:36",
+        "status": "Delivered"
+      },
+      {
+        "id": "DEL-002",
+        "event": "Approval requested",
+        "time": "Today, 11:28",
+        "status": "Retrying"
+      },
+      {
+        "id": "DEL-001",
+        "event": "Incident alert",
+        "time": "Today, 11:21",
+        "status": "Delivered"
+      }
+    ],
+    "integrationActivity": [
+      {
+        "id": 1,
+        "time": "14:28",
+        "integration": "Email delivery",
+        "event": "Message delivered",
+        "status": "Success"
+      },
+      {
+        "id": 2,
+        "time": "14:17",
+        "integration": "Website analytics",
+        "event": "Sync completed",
+        "status": "Success"
+      },
+      {
+        "id": 3,
+        "time": "12:09",
+        "integration": "Recruitment",
+        "event": "Connection needs review",
+        "status": "Warning"
+      }
+    ],
+    "integrationHealth": {
+      "successful": 1742,
+      "failed": 18,
+      "period": "Last 7 days"
+    },
+    "subscriptions": [
+      {
+        "key": "applications",
+        "label": "Application received",
+        "description": "New career or internship applications."
+      },
+      {
+        "key": "enquiries",
+        "label": "Enquiry submitted",
+        "description": "New enquiries from website forms."
+      },
+      {
+        "key": "approvals",
+        "label": "Approval requested",
+        "description": "Changes waiting for review."
+      },
+      {
+        "key": "incidents",
+        "label": "Incident alert",
+        "description": "Availability and website performance alerts."
+      }
+    ],
+    "notificationPreferenceFields": [
+      {
+        "key": "inApp",
+        "label": "In-app notifications",
+        "description": "Show notifications in this workspace."
+      },
+      {
+        "key": "email",
+        "label": "Email alerts",
+        "description": "Receive important updates by email."
+      },
+      {
+        "key": "digest",
+        "label": "Daily digest",
+        "description": "A daily summary of workspace updates."
+      }
+    ],
+    "notificationCategories": [
+      {
+        "key": "critical",
+        "label": "Critical incidents",
+        "description": "Outages and major service issues."
+      },
+      {
+        "key": "approvals",
+        "label": "Approval requests",
+        "description": "Visibility and publishing decisions."
+      },
+      {
+        "key": "content",
+        "label": "Content updates",
+        "description": "Drafts and reviewed content."
+      },
+      {
+        "key": "system",
+        "label": "System notices",
+        "description": "Backups and maintenance updates."
+      }
+    ],
+    "backupTimeline": [
+      {
+        "label": "Backup created",
+        "time": "02:00 UTC"
+      },
+      {
+        "label": "Integrity checked",
+        "time": "02:08 UTC"
+      },
+      {
+        "label": "Restore test passed",
+        "time": "02:20 UTC"
+      }
+    ],
+    "featureReviewSettings": [
+      {
+        "key": "internships",
+        "title": "Public page visibility",
+        "description": "Show internships in public navigation and website pages."
+      },
+      {
+        "key": "applications",
+        "title": "Accept new applications",
+        "description": "Allow new internship applications from website visitors."
+      },
+      {
+        "key": "portal",
+        "title": "Existing intern portal",
+        "description": "Let current interns access their work and information."
+      }
+    ],
+    "connectionHealth": {
+      "lastDelivery": "2 min ago",
+      "deliveryRate": "99.4%",
+      "period": "30 days"
+    },
+    "backupOverview": {
+      "lastBackup": "2 hours ago",
+      "schedule": "Daily 02:00 UTC",
+      "lastRestoreTest": "2 days ago",
+      "lastRestoreStatus": "Passed"
+    }
+  }
+}

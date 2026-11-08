@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "revision": 0,
+  "updatedAt": null,
+  "environments": {
+    "Production": {
+      "services": true,
+      "products": true,
+      "internships": true,
+      "blog": true,
+      "assistant": false,
+      "maintenance": false,
+      "applications": true,
+      "portal": true
+    },
+    "Staging": {
+      "services": true,
+      "products": true,
+      "internships": true,
+      "blog": true,
+      "assistant": false,
+      "maintenance": false,
+      "applications": true,
+      "portal": true
+    }
+  }
+}

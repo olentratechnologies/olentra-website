@@ -3,7 +3,9 @@ export const navLinks = [
     { id: 'nav-about', label: 'About', href: '/about' },
     { id: 'nav-services', label: 'Services', href: '/services', hasDropdown: true },
     { id: 'nav-products', label: 'Products', href: '/products' },
-    { id: 'nav-internship', label: 'Internship', href: '/intern' },
+    { id: 'nav-careers', label: 'Careers', hasDropdown: true, children: [
+        { id: 'nav-careers-intern', label: 'Intern', href: '/careers/intern' },
+    ] },
     { id: 'nav-blogs', label: 'Blogs', href: '/blogs' },
 ];
 

@@ -1,8 +1,12 @@
 import { blogs } from "@/data/blogs";
 import { servicePages } from "@/data/service_pages";
 import { absoluteUrl } from "@/lib/site";
+import { readSiteFeatures } from "@/lib/server/site-features.mjs";
+import { siteRouteStatus } from "@/lib/site-feature-rules.mjs";
+export const dynamic = "force-dynamic";
 
-export default function sitemap() {
+export default async function sitemap() {
+  const { environments } = await readSiteFeatures();
   const staticRoutes = [
     "",
     "/about",
@@ -12,7 +16,7 @@ export default function sitemap() {
     "/products/olenbot",
     "/products/dailysupply",
     "/blogs",
-    "/intern",
+    "/careers/intern",
     "/privacy-policy",
     "/terms-of-service",
     "/cookie-policy",
@@ -35,5 +39,5 @@ export default function sitemap() {
     })),
   ];
 
-  return entries;
+  return entries.filter(entry => siteRouteStatus(new URL(entry.url).pathname, environments.Production) === 200);
 }
