@@ -1,9 +1,17 @@
+/// <reference path="./types/runtime.d.ts" />
+
+import { Elysia } from "elysia";
 import { createContactApp } from "./app/create-app";
 import { readContactEnvironment } from "./config/env";
 import { logger } from "./observability/logger";
 
 const environment = readContactEnvironment();
+// Keep the Elysia import in the recognized Vercel entrypoint. Vercel's
+// zero-config Elysia runtime detects the framework from this file.
 const app = createContactApp(environment);
+if (!(app instanceof Elysia)) {
+  throw new TypeError("Contact application must be an Elysia instance.");
+}
 
 // Vercel detects the default Elysia export and serves its routes as Functions.
 export default app;

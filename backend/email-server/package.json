@@ -8,7 +8,7 @@
     "start": "bun run src/index.ts",
     "start:built": "bun dist/email-server.js",
     "test": "bun test tests/unit tests/contract",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "healthcheck": "bun scripts/healthcheck.ts"
   },
   "dependencies": {
@@ -18,5 +18,5 @@
     "bun-types": "latest",
     "typescript": "^7.0.2"
   },
-  "module": "src/index.js"
+  "module": "src/index.ts"
 }
