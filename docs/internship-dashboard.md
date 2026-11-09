@@ -3,34 +3,41 @@
 The dedicated internship service uses MongoDB and WebSockets for applications,
 accounts, offers, onboarding, work, certificates, messages and notifications.
 Its routes are `/careers/intern`, `/intern/portal` and `/intern/dashboard`.
-The company workspace at `/dashboard` and visitor-count server are separate.
+The company workspace at `/dashboard` is separate; visitor presence is another
+protocol hosted by the same `realtime-server` process.
 Previously saved browser demo data is left in place and is not imported.
 
 ## Local setup
 
 Install the repository dependencies and the Bun dependencies in
-`backend/websockets`. Configure `MONGODB_URI` (or the existing `MONGODB`) in
-`backend/websockets/.env` with a MongoDB Atlas replica-set connection string and
+`backend/realtime-server`. Configure `INTERNSHIP_MONGODB_URI` in
+`backend/realtime-server/.env` with a MongoDB Atlas replica-set connection string and
 database name. The database user needs permission to create indexes, use
 transactions, open change streams and store GridFS files. Do not commit this file.
-The sample settings are in `backend/websockets/.env.example`.
+The sample settings are in `backend/realtime-server/.env.example`.
 
 ```sh
-npm install
-cd backend/websockets && bun install && cd ../..
+npm install --prefix frontend
+cd backend/realtime-server && bun install && cd ../..
 npm run dev
 # In another terminal:
-npm run intern:start
+npm run realtime:start
 ```
 
-The service defaults to `127.0.0.1:3003`. Set
-`NEXT_PUBLIC_INTERN_BACKEND_URL` in the website's local environment if it runs
-elsewhere. `INTERN_ALLOWED_ORIGINS` must list the website's exact browser origins;
-`INTERN_SITE_ORIGIN` is the website origin used to check whether applications
-are enabled. Restart the relevant process after changing environment settings.
-For production configure a shared, random `INTERN_JWT_SECRET` of at least 32 bytes
-and use HTTPS. On a local development machine, an absent secret is generated in
-the ignored `backend/websockets/.data/intern-jwt-secret` file.
+The unified realtime service defaults to `0.0.0.0:3003`. Set
+`NEXT_PUBLIC_INTERNSHIP_BACKEND_URL` in the website's local environment if it
+runs elsewhere. `INTERNSHIP_MONGODB_URI` must point to the service's MongoDB
+database. `REALTIME_ALLOWED_ORIGINS` must list the website's exact browser
+origins; `INTERNSHIP_SITE_ORIGIN` is the website origin used to check whether
+applications are enabled. Restart the relevant process after changing
+environment settings. For production configure a shared, random
+`INTERNSHIP_JWT_SECRET` of at least 32 bytes and use HTTPS. On a local
+development machine, an absent secret is generated in the ignored
+`backend/realtime-server/.data/intern-jwt-secret` file.
+
+The previous `NEXT_PUBLIC_INTERN_BACKEND_URL` and `INTERN_*` names remain
+deprecated fallbacks for one compatibility cycle. Canonical names take
+precedence, and using a deprecated name emits a clear warning.
 
 The service initializes only the two named programs and keeps them closed with
 no fees or stipends configured. Staff must set the real amounts and enable the
@@ -44,16 +51,16 @@ at least 12 characters; the command stores an Argon2id hash and does not print
 the password. Use a test address that does not belong to a real person.
 
 ```sh
-read "INTERN_TEST_STAFF_EMAIL?Test staff email: "
-read -s "INTERN_TEST_STAFF_PASSWORD?Test staff password: "
-export INTERN_TEST_STAFF_EMAIL INTERN_TEST_STAFF_PASSWORD
-npm run intern:bootstrap
-unset INTERN_TEST_STAFF_EMAIL INTERN_TEST_STAFF_PASSWORD
+read "INTERNSHIP_TEST_STAFF_EMAIL?Test staff email: "
+read -s "INTERNSHIP_TEST_STAFF_PASSWORD?Test staff password: "
+export INTERNSHIP_TEST_STAFF_EMAIL INTERNSHIP_TEST_STAFF_PASSWORD
+npm run internship:bootstrap
+unset INTERNSHIP_TEST_STAFF_EMAIL INTERNSHIP_TEST_STAFF_PASSWORD
 ```
 
 The bootstrap command is for an empty staff setup. When upgrading an existing
-staff account instead, set `INTERN_INITIAL_ADMIN_EMAIL` to that account's exact
-email and run `npm run intern:promote-admin`. Only that account is promoted;
+staff account instead, set `INTERNSHIP_INITIAL_ADMIN_EMAIL` to that account's
+exact email and run `npm run internship:promote-admin`. Only that account is promoted;
 other legacy staff accounts remain unassigned. The command does not change its
 password. Once an admin exists, they manage staff from **Staff & Roles** in the
 internship dashboard.
@@ -125,25 +132,27 @@ sequential transaction path.
 ## Verification
 
 ```sh
-npm run test:intern
-npm run test:presence
-npm run bench:intern
-npm run bench:intern:latency
+npm run internship:test
+npm run presence:test
+npm run internship:bench
+npm run internship:bench:latency
+npm run test:naming
 npm run build
 ```
 
-Internship tests and the benchmark use `INTERN_TEST_MONGODB_URI` if provided,
-otherwise the configured `MONGODB_URI` or `MONGODB`. They create unique,
-prefixed test collections and remove only those collections. Use a dedicated
-test database when possible. The benchmark creates 1,000 synthetic applications
-and performs 50 paginated reads with 10 concurrent workers; it reports latency
-and process RSS. It is a small baseline, not an enterprise capacity guarantee.
-The latency benchmark uses a separate isolated database prefix and a local
-ephemeral service to measure sign-in, WebSocket authentication, snapshot load,
-and track and program settings saves. It runs eight sequential samples by
-default; set `INTERN_BENCH_SAMPLES` (2–50) to choose another sample count. Each
-run removes only its own collections. Run it without competing Atlas tests for
-more meaningful measurements.
+Internship integration tests and benchmarks require the explicitly isolated
+`INTERNSHIP_TEST_MONGODB_URI` (the previous `INTERN_TEST_MONGODB_URI` remains a
+deprecated fallback). They create unique, prefixed test collections and remove
+only those collections; they never fall back to the runtime database URI. Use
+a dedicated test database and do not run them against production data. The
+benchmark creates synthetic applications and reports latency and process RSS;
+it is a small baseline, not an enterprise capacity guarantee. The latency
+benchmark uses a separate isolated database prefix and a local ephemeral
+service to measure sign-in, WebSocket authentication, snapshot load, and
+settings saves. It runs eight sequential samples by default; set
+`INTERNSHIP_BENCH_SAMPLES` (2–50) to choose another sample count. Each run
+removes only its own collections. Run it without competing Atlas tests for more
+meaningful measurements.
 
 On the development machine on 2026-11-08, a cold Atlas run took 4,024 ms for
 the 50 reads, with p50 113 ms and p95 2,020 ms; the benchmark process RSS went

@@ -1,0 +1,48 @@
+name: Deploy Realtime Server
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/realtime-server/**'
+      - '.github/workflows/deploy-realtime-server.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: backend/realtime-server
+        run: bun install --frozen-lockfile
+
+      - name: Run realtime unit and contract tests
+        working-directory: backend/realtime-server
+        run: bun test tests/unit tests/contract tests/integration/presence-realtime.test.ts
+
+      - name: Typecheck realtime server
+        working-directory: backend/realtime-server
+        run: bun run typecheck
+
+  deploy:
+    name: Deploy to Oracle Cloud
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute deployment over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: /home/ubuntu/deploy-realtime-server.sh

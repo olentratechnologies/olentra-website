@@ -1,0 +1,22 @@
+{
+  "name": "@olentra/email-server",
+  "version": "1.0.50",
+  "description": "Olentra transactional email backend for contact enquiries – Bun + Elysia + Resend",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build --target=bun --minify --outfile=dist/email-server.js src/index.ts",
+    "start": "bun run src/index.ts",
+    "start:built": "bun dist/email-server.js",
+    "test": "bun test tests/unit tests/contract",
+    "typecheck": "tsc --noEmit",
+    "healthcheck": "bun scripts/healthcheck.ts"
+  },
+  "dependencies": {
+    "elysia": "latest"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^7.0.2"
+  },
+  "module": "src/index.js"
+}

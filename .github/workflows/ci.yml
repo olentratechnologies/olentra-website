@@ -1,0 +1,53 @@
+name: Repository checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Build and consistency checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install website dependencies
+        run: npm ci --prefix frontend
+
+      - name: Install backend dependencies
+        run: |
+          bun install --cwd backend/email-server --frozen-lockfile
+          bun install --cwd backend/realtime-server --frozen-lockfile
+
+      - name: Check naming, routes, and documentation
+        run: npm run test:naming
+
+      - name: Build website
+        run: npm run build
+
+      - name: Run email tests
+        run: npm run email:test
+
+      - name: Run presence tests
+        run: npm run presence:test
+
+      - name: Run company workspace tests
+        run: npm run test:admin
+
+      - name: Typecheck realtime server
+        run: npm run realtime:typecheck

@@ -4,18 +4,18 @@ The former founders experience is the content of `/about`, also reached through
 `/about#founders`. Its portraits, vision, thinking, founder message, and closing
 calls to action make up the About page.
 
-The shared desktop and mobile navigation use `src/data/navigation.js`. About is
+The shared desktop and mobile navigation use `frontend/src/data/navigation.js`. About is
 the top-level destination; Founders is no longer a separate navbar item. The
 footer keeps a useful **Founders** shortcut to `/about#founders`.
 
-`next.config.js` permanently redirects `/founders` to `/about#founders` with HTTP 308.
+`frontend/next.config.js` permanently redirects `/founders` to `/about#founders` with HTTP 308.
 The sitemap lists `/about` as the destination and excludes the redirected
 `/founders` route. Metadata and structured data belong to the About page.
 
 ## Content handoff
 
-Edit `src/data/founders.js` for founder profiles and chapter copy. Portraits use
-`public/Founders Images/mani.jpg` and `Abhi.png`; Next Image supplies responsive
+Edit `frontend/src/data/founders.js` for founder profiles and chapter copy. Portraits use
+`frontend/public/Founders Images/mani.jpg` and `Abhi.png`; Next Image supplies responsive
 optimized versions. The original portrait assets remain unchanged.
 
 Names, titles, portraits, image alternatives, focal points, credits, and chapter

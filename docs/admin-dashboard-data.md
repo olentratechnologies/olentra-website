@@ -34,7 +34,7 @@ These are public demo credentials. Account verification, trusted-device handling
 
 The legacy public URL `/intern` permanently redirects (`308`) to `/careers/intern` while the feature is enabled, preserving query parameters. When internships are disabled, both public URLs return `404`. Registration, login, password reset, private company dashboards and existing intern portals retain their `/intern/...` routes.
 
-The committed seed is `src/data/site-features.json` (schema version `1`). On the first successful change, the server writes `.data/site-features.json`, which is gitignored. `OLENTRA_FEATURE_STORE_PATH` can point to a different persistent file location. The live state contains a revision and separate Production/Staging environments.
+The committed seed is `frontend/src/data/site-features.json` (schema version `1`). On the first successful change, the server writes `.data/site-features.json`, which is gitignored. `OLENTRA_FEATURE_STORE_PATH` can point to a different persistent file location. The live state contains a revision and separate Production/Staging environments.
 
 ```text
 site-features.json seed → persistent runtime JSON file
@@ -50,16 +50,16 @@ Relevant implementation:
 
 | Source | Purpose |
 | --- | --- |
-| `src/lib/server/site-features.mjs` | Validates, reads and atomically updates the persistent server JSON state. |
-| `src/lib/server/site-feature-auth.mjs` | Authorizes live-control sessions and signs their cookie. |
-| `src/app/api/site-features/route.js` | `GET` reads shared state; authenticated same-origin `PUT` changes one switch. |
-| `src/app/api/site-features/session/route.js` | Establishes and clears a live-control session. |
-| `src/app/api/site-features/stream/route.js` | Streams revision updates through SSE with a filesystem polling check. |
-| `src/lib/site-features-client.js` | Shares the live snapshot between client components, reconnects SSE and refreshes through a polling fallback. |
-| `src/components/site-features.jsx` | Supplies `useSiteFeatures()`, `<Feature>` and the open-page route gate. |
-| `src/lib/site-feature-rules.mjs` | Maps routes to flags and derives effective availability. |
-| `src/proxy.js` | Returns `404` for disabled routes and `503` for public maintenance requests. |
-| `src/app/sitemap.js` | Excludes disabled public routes from the dynamically generated sitemap. |
+| `frontend/src/lib/server/site-features.mjs` | Validates, reads and atomically updates the persistent server JSON state. |
+| `frontend/src/lib/server/site-feature-auth.mjs` | Authorizes live-control sessions and signs their cookie. |
+| `frontend/src/app/api/site-features/route.js` | `GET` reads shared state; authenticated same-origin `PUT` changes one switch. |
+| `frontend/src/app/api/site-features/session/route.js` | Establishes and clears a live-control session. |
+| `frontend/src/app/api/site-features/stream/route.js` | Streams revision updates through SSE with a filesystem polling check. |
+| `frontend/src/lib/site-features-client.js` | Shares the live snapshot between client components, reconnects SSE and refreshes through a polling fallback. |
+| `frontend/src/components/site-features.jsx` | Supplies `useSiteFeatures()`, `<Feature>` and the open-page route gate. |
+| `frontend/src/lib/site-feature-rules.mjs` | Maps routes to flags and derives effective availability. |
+| `frontend/src/proxy.js` | Returns `404` for disabled routes and `503` for public maintenance requests. |
+| `frontend/src/app/sitemap.js` | Excludes disabled public routes from the dynamically generated sitemap. |
 
 Already open pages receive SSE updates and remove disabled sections and links. New route requests are checked by the proxy. Internship form and registration handlers also check current availability before creating new records.
 
@@ -85,10 +85,10 @@ The current persistence targets a persistent Node deployment with one shared fil
 
 | File | Contents |
 | --- | --- |
-| `src/data/admin/core.json` | Environment-specific feature flags, navigation, feature rules and schedules, demo accounts and authentication defaults. |
-| `src/data/admin/content.json` | Website content and revisions, media, programs, applications, interns, projects, tasks, certificates and enquiries. |
-| `src/data/admin/operations.json` | Visit events, performance probes, incidents, alert rules, SEO, locales, translations, team members and role permissions. |
-| `src/data/admin/governance.json` | Approvals, audit history, integrations, shared security policy and sessions, company/account preferences, backups and notifications. |
+| `frontend/src/data/admin/core.json` | Environment-specific feature flags, navigation, feature rules and schedules, demo accounts and authentication defaults. |
+| `frontend/src/data/admin/content.json` | Website content and revisions, media, programs, applications, interns, projects, tasks, certificates and enquiries. |
+| `frontend/src/data/admin/operations.json` | Visit events, performance probes, incidents, alert rules, SEO, locales, translations, team members and role permissions. |
+| `frontend/src/data/admin/governance.json` | Approvals, audit history, integrations, shared security policy and sessions, company/account preferences, backups and notifications. |
 
 Each domain file has this structure:
 
@@ -106,7 +106,7 @@ Each domain file has this structure:
 
 `datasets` supplies mutable records and settings. `templates` supplies defaults for dynamic records such as a page editor, program or integration configuration. `reference` contains labels, catalogs and other fixture information.
 
-`src/lib/admin/data-source.js` combines the files through `createInitialState()` in `model.mjs`. Changing a fixture file changes the initial scenario. An existing browser scenario remains until it is reset.
+`frontend/src/lib/admin/data-source.js` combines the files through `createInitialState()` in `model.mjs`. Changing a fixture file changes the initial scenario. An existing browser scenario remains until it is reset.
 
 ## Shared browser store
 
@@ -120,12 +120,12 @@ JSON fixtures → initial database → browser store → page hooks and selector
 
 The implementation is split across:
 
-- `src/lib/admin/data-store.js`: hydration, persistence, command dispatch, export/import/reset and tab synchronization.
-- `src/components/admin/data-hooks.jsx`: `useDatabase()` and `useDataset()` subscriptions. The existing `useLocalState()` UI helper uses the shared dataset system.
-- `src/components/admin/store.jsx`: the dashboard provider, current account, permissions, environment, region and action helpers.
-- `src/lib/admin/model.mjs`: transactions, authentication, feature/navigation commands, snapshot validation and reconciliation.
-- `src/lib/admin/content-commands.mjs`, `operations-commands.mjs` and `governance-commands.mjs`: domain validation and workflow transitions.
-- `src/lib/admin/selectors.mjs`: derived traffic, availability, progress, permissions, effective feature states and overview counts.
+- `frontend/src/lib/admin/data-store.js`: hydration, persistence, command dispatch, export/import/reset and tab synchronization.
+- `frontend/src/components/admin/data-hooks.jsx`: `useDatabase()` and `useDataset()` subscriptions. The existing `useLocalState()` UI helper uses the shared dataset system.
+- `frontend/src/components/admin/store.jsx`: the dashboard provider, current account, permissions, environment, region and action helpers.
+- `frontend/src/lib/admin/model.mjs`: transactions, authentication, feature/navigation commands, snapshot validation and reconciliation.
+- `frontend/src/lib/admin/content-commands.mjs`, `operations-commands.mjs` and `governance-commands.mjs`: domain validation and workflow transitions.
+- `frontend/src/lib/admin/selectors.mjs`: derived traffic, availability, progress, permissions, effective feature states and overview counts.
 
 Records and counters use canonical datasets. For example, `olentra-admin-governance-approvals-v1` drives both the approval queue and pending count; `olentra-admin-notifications-v1` drives the inbox and unread badge. Security and team pages share `olentra-admin-security-policy-v1` and `olentra-admin-security-sessions-v1`.
 
@@ -192,7 +192,7 @@ Backups are a separate recovery workflow. A backup contains a filtered restorabl
 Run the actual-model integration suites with Node:
 
 ```sh
-node --test scripts/admin-core.test.mjs scripts/admin-content.test.mjs scripts/admin-operations.test.mjs scripts/admin-governance.test.mjs
+node --test frontend/scripts/admin-core.test.mjs frontend/scripts/admin-content.test.mjs frontend/scripts/admin-operations.test.mjs frontend/scripts/admin-governance.test.mjs
 ```
 
 The suites use the real fixtures, model and selectors. They cover transitions and derived data, approval publication and rollback, duplicate requests, permissions and demo authentication, configuration validation, backup recovery, notification counts and snapshot validation.

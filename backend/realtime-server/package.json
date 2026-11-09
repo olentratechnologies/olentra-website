@@ -1,0 +1,28 @@
+{
+  "name": "@olentra/realtime-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Olentra unified realtime backend – presence and internship WebSocket/HTTP modules",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build --target=bun --minify --outfile=dist/realtime-server.js src/index.ts",
+    "start": "bun src/index.ts",
+    "start:built": "bun dist/realtime-server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test.mjs",
+    "bench": "bun scripts/bench.ts",
+    "bench:presence": "bun scripts/bench-presence.ts",
+    "bench:latency": "bun scripts/latency-bench.ts",
+    "bootstrap": "bun scripts/bootstrap.ts",
+    "promote-admin": "bun scripts/promote-admin.ts",
+    "healthcheck": "bun scripts/healthcheck.ts"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "jose": "^6.2.15",
+    "mongodb": "^7.8.0"
+  }
+}

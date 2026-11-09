@@ -15,33 +15,33 @@
     "Open http://localhost:3000/dashboard"
   ],
   "source": {
-    "shell": "src/components/admin/shell.jsx",
-    "shared_controls": "src/components/admin/ui.jsx",
-    "preview_state": "src/components/admin/store.jsx",
-    "core": "src/components/admin/core-pages.jsx",
-    "content_careers_enquiries": "src/components/admin/content-pages.jsx",
-    "operations": "src/components/admin/operations-pages.jsx",
-    "governance": "src/components/admin/governance-pages.jsx",
-    "authentication": "src/components/admin/auth-pages.jsx",
-    "database": "src/lib/admin/data-store.js",
-    "transactions": "src/lib/admin/model.mjs",
-    "selectors": "src/lib/admin/selectors.mjs",
-    "features": "src/components/admin/feature-pages.jsx",
-    "overview": "src/components/admin/overview-page.jsx",
-    "website_feature_seed": "src/data/site-features.json",
-    "website_feature_server": "src/lib/server/site-features.mjs",
-    "website_feature_authorization": "src/lib/server/site-feature-auth.mjs",
-    "website_feature_client": "src/lib/site-features-client.js",
-    "website_feature_provider": "src/components/site-features.jsx",
-    "website_feature_rules": "src/lib/site-feature-rules.mjs",
-    "website_feature_proxy": "src/proxy.js"
+    "shell": "frontend/src/components/admin/shell.jsx",
+    "shared_controls": "frontend/src/components/admin/ui.jsx",
+    "preview_state": "frontend/src/components/admin/store.jsx",
+    "core": "frontend/src/components/admin/core-pages.jsx",
+    "content_careers_enquiries": "frontend/src/components/admin/content-pages.jsx",
+    "operations": "frontend/src/components/admin/operations-pages.jsx",
+    "governance": "frontend/src/components/admin/governance-pages.jsx",
+    "authentication": "frontend/src/components/admin/auth-pages.jsx",
+    "database": "frontend/src/lib/admin/data-store.js",
+    "transactions": "frontend/src/lib/admin/model.mjs",
+    "selectors": "frontend/src/lib/admin/selectors.mjs",
+    "features": "frontend/src/components/admin/feature-pages.jsx",
+    "overview": "frontend/src/components/admin/overview-page.jsx",
+    "website_feature_seed": "frontend/src/data/site-features.json",
+    "website_feature_server": "frontend/src/lib/server/site-features.mjs",
+    "website_feature_authorization": "frontend/src/lib/server/site-feature-auth.mjs",
+    "website_feature_client": "frontend/src/lib/site-features-client.js",
+    "website_feature_provider": "frontend/src/components/site-features.jsx",
+    "website_feature_rules": "frontend/src/lib/site-feature-rules.mjs",
+    "website_feature_proxy": "frontend/src/proxy.js"
   },
   "data": {
     "seed_files": [
-      "src/data/admin/core.json",
-      "src/data/admin/content.json",
-      "src/data/admin/operations.json",
-      "src/data/admin/governance.json"
+      "frontend/src/data/admin/core.json",
+      "frontend/src/data/admin/content.json",
+      "frontend/src/data/admin/operations.json",
+      "frontend/src/data/admin/governance.json"
     ],
     "storage_key": "olentra.admin.database.v2",
     "schema_version": 2,
@@ -62,229 +62,229 @@
     {
       "design": 1,
       "route": "/dashboard",
-      "source": "src/app/dashboard/page.jsx",
+      "source": "frontend/src/app/dashboard/page.jsx",
       "exists": true
     },
     {
       "design": 2,
       "route": "/dashboard/website-controls",
-      "source": "src/app/dashboard/website-controls/page.jsx",
+      "source": "frontend/src/app/dashboard/website-controls/page.jsx",
       "exists": true
     },
     {
       "design": 3,
       "route": "/dashboard/website-controls/features/[featureId]",
-      "source": "src/app/dashboard/website-controls/features/[featureId]/page.jsx",
+      "source": "frontend/src/app/dashboard/website-controls/features/[featureId]/page.jsx",
       "exists": true
     },
     {
       "design": 4,
       "route": "/dashboard/website-controls/navigation",
-      "source": "src/app/dashboard/website-controls/navigation/page.jsx",
+      "source": "frontend/src/app/dashboard/website-controls/navigation/page.jsx",
       "exists": true
     },
     {
       "design": 5,
       "route": "/dashboard/content",
-      "source": "src/app/dashboard/content/page.jsx",
+      "source": "frontend/src/app/dashboard/content/page.jsx",
       "exists": true
     },
     {
       "design": 6,
       "route": "/dashboard/content/pages/[pageId]/edit",
-      "source": "src/app/dashboard/content/pages/[pageId]/edit/page.jsx",
+      "source": "frontend/src/app/dashboard/content/pages/[pageId]/edit/page.jsx",
       "exists": true
     },
     {
       "design": 7,
       "route": "/dashboard/content/media",
-      "source": "src/app/dashboard/content/media/page.jsx",
+      "source": "frontend/src/app/dashboard/content/media/page.jsx",
       "exists": true
     },
     {
       "design": 8,
       "route": "/dashboard/careers",
-      "source": "src/app/dashboard/careers/page.jsx",
+      "source": "frontend/src/app/dashboard/careers/page.jsx",
       "exists": true
     },
     {
       "design": 9,
       "route": "/dashboard/careers/applications",
-      "source": "src/app/dashboard/careers/applications/page.jsx",
+      "source": "frontend/src/app/dashboard/careers/applications/page.jsx",
       "exists": true
     },
     {
       "design": 10,
       "route": "/dashboard/careers/applications/[applicationId]",
-      "source": "src/app/dashboard/careers/applications/[applicationId]/page.jsx",
+      "source": "frontend/src/app/dashboard/careers/applications/[applicationId]/page.jsx",
       "exists": true
     },
     {
       "design": 11,
       "route": "/dashboard/careers/interns",
-      "source": "src/app/dashboard/careers/interns/page.jsx",
+      "source": "frontend/src/app/dashboard/careers/interns/page.jsx",
       "exists": true
     },
     {
       "design": 12,
       "route": "/dashboard/enquiries",
-      "source": "src/app/dashboard/enquiries/page.jsx",
+      "source": "frontend/src/app/dashboard/enquiries/page.jsx",
       "exists": true
     },
     {
       "design": 13,
       "route": "/dashboard/enquiries/[enquiryId]",
-      "source": "src/app/dashboard/enquiries/[enquiryId]/page.jsx",
+      "source": "frontend/src/app/dashboard/enquiries/[enquiryId]/page.jsx",
       "exists": true
     },
     {
       "design": 14,
       "route": "/dashboard/analytics",
-      "source": "src/app/dashboard/analytics/page.jsx",
+      "source": "frontend/src/app/dashboard/analytics/page.jsx",
       "exists": true
     },
     {
       "design": 15,
       "route": "/dashboard/analytics/seo",
-      "source": "src/app/dashboard/analytics/seo/page.jsx",
+      "source": "frontend/src/app/dashboard/analytics/seo/page.jsx",
       "exists": true
     },
     {
       "design": 16,
       "route": "/dashboard/monitoring",
-      "source": "src/app/dashboard/monitoring/page.jsx",
+      "source": "frontend/src/app/dashboard/monitoring/page.jsx",
       "exists": true
     },
     {
       "design": 17,
       "route": "/dashboard/monitoring/incidents/[incidentId]",
-      "source": "src/app/dashboard/monitoring/incidents/[incidentId]/page.jsx",
+      "source": "frontend/src/app/dashboard/monitoring/incidents/[incidentId]/page.jsx",
       "exists": true
     },
     {
       "design": 18,
       "route": "/dashboard/monitoring/alert-rules",
-      "source": "src/app/dashboard/monitoring/alert-rules/page.jsx",
+      "source": "frontend/src/app/dashboard/monitoring/alert-rules/page.jsx",
       "exists": true
     },
     {
       "design": 19,
       "route": "/dashboard/localization",
-      "source": "src/app/dashboard/localization/page.jsx",
+      "source": "frontend/src/app/dashboard/localization/page.jsx",
       "exists": true
     },
     {
       "design": 20,
       "route": "/dashboard/localization/[locale]/[contentId]",
-      "source": "src/app/dashboard/localization/[locale]/[contentId]/page.jsx",
+      "source": "frontend/src/app/dashboard/localization/[locale]/[contentId]/page.jsx",
       "exists": true
     },
     {
       "design": 21,
       "route": "/dashboard/team",
-      "source": "src/app/dashboard/team/page.jsx",
+      "source": "frontend/src/app/dashboard/team/page.jsx",
       "exists": true
     },
     {
       "design": 22,
       "route": "/dashboard/team/roles/[roleId]",
-      "source": "src/app/dashboard/team/roles/[roleId]/page.jsx",
+      "source": "frontend/src/app/dashboard/team/roles/[roleId]/page.jsx",
       "exists": true
     },
     {
       "design": 23,
       "route": "/dashboard/approvals",
-      "source": "src/app/dashboard/approvals/page.jsx",
+      "source": "frontend/src/app/dashboard/approvals/page.jsx",
       "exists": true
     },
     {
       "design": 24,
       "route": "/dashboard/approvals/[changeId]",
-      "source": "src/app/dashboard/approvals/[changeId]/page.jsx",
+      "source": "frontend/src/app/dashboard/approvals/[changeId]/page.jsx",
       "exists": true
     },
     {
       "design": 25,
       "route": "/dashboard/audit",
-      "source": "src/app/dashboard/audit/page.jsx",
+      "source": "frontend/src/app/dashboard/audit/page.jsx",
       "exists": true
     },
     {
       "design": 26,
       "route": "/dashboard/integrations",
-      "source": "src/app/dashboard/integrations/page.jsx",
+      "source": "frontend/src/app/dashboard/integrations/page.jsx",
       "exists": true
     },
     {
       "design": 27,
       "route": "/dashboard/integrations/[integrationId]",
-      "source": "src/app/dashboard/integrations/[integrationId]/page.jsx",
+      "source": "frontend/src/app/dashboard/integrations/[integrationId]/page.jsx",
       "exists": true
     },
     {
       "design": 28,
       "route": "/dashboard/settings/company",
-      "source": "src/app/dashboard/settings/company/page.jsx",
+      "source": "frontend/src/app/dashboard/settings/company/page.jsx",
       "exists": true
     },
     {
       "design": 29,
       "route": "/dashboard/settings/security",
-      "source": "src/app/dashboard/settings/security/page.jsx",
+      "source": "frontend/src/app/dashboard/settings/security/page.jsx",
       "exists": true
     },
     {
       "design": 30,
       "route": "/dashboard/settings/backups",
-      "source": "src/app/dashboard/settings/backups/page.jsx",
+      "source": "frontend/src/app/dashboard/settings/backups/page.jsx",
       "exists": true
     },
     {
       "design": 31,
       "route": "/dashboard/notifications",
-      "source": "src/app/dashboard/notifications/page.jsx",
+      "source": "frontend/src/app/dashboard/notifications/page.jsx",
       "exists": true
     },
     {
       "design": 32,
       "route": "/dashboard/login",
-      "source": "src/app/dashboard/login/page.jsx",
+      "source": "frontend/src/app/dashboard/login/page.jsx",
       "exists": true
     },
     {
       "design": 33,
       "route": "/dashboard/verify",
-      "source": "src/app/dashboard/verify/page.jsx",
+      "source": "frontend/src/app/dashboard/verify/page.jsx",
       "exists": true
     },
     {
       "design": 34,
       "route": "/dashboard/account",
-      "source": "src/app/dashboard/account/page.jsx",
+      "source": "frontend/src/app/dashboard/account/page.jsx",
       "exists": true
     },
     {
       "design": 37,
       "route": "/dashboard/careers/projects/[projectId]/tasks/[taskId]",
-      "source": "src/app/dashboard/careers/projects/[projectId]/tasks/[taskId]/page.jsx",
+      "source": "frontend/src/app/dashboard/careers/projects/[projectId]/tasks/[taskId]/page.jsx",
       "exists": true
     },
     {
       "design": 38,
       "route": "/dashboard/careers/certificates",
-      "source": "src/app/dashboard/careers/certificates/page.jsx",
+      "source": "frontend/src/app/dashboard/careers/certificates/page.jsx",
       "exists": true
     },
     {
       "design": 39,
       "route": "/dashboard/careers/interns/[internId]",
-      "source": "src/app/dashboard/careers/interns/[internId]/page.jsx",
+      "source": "frontend/src/app/dashboard/careers/interns/[internId]/page.jsx",
       "exists": true
     },
     {
       "design": 40,
       "route": "/dashboard/careers/programs/[programId]/edit",
-      "source": "src/app/dashboard/careers/programs/[programId]/edit/page.jsx",
+      "source": "frontend/src/app/dashboard/careers/programs/[programId]/edit/page.jsx",
       "exists": true
     }
   ],
@@ -302,7 +302,7 @@
     "careers_menu_browser_report": "designs/admin-dashboard-v1/qa/careers-navigation-browser.json"
   },
   "website_controls": {
-    "seed_file": "src/data/site-features.json",
+    "seed_file": "frontend/src/data/site-features.json",
     "runtime_file": ".data/site-features.json",
     "runtime_file_gitignored": true,
     "schema_version": 1,
