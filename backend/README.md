@@ -87,10 +87,11 @@ Each service has a local Dockerfile and `.dockerignore`. These are packaging
 and healthcheck baselines only; they do not invent a new cloud target.
 
 The Oracle Cloud workflow is
-`.github/workflows/deploy-realtime-server.yml`. It calls the existing
-host-managed `/home/ubuntu/deploy-realtime-server.sh`; that script must deploy
-`backend/realtime-server`, install its Bun lockfile, provide `REALTIME_*` and
-`INTERNSHIP_*` settings, restart the single realtime process, and check
-`/health` (with `/intern/health` checked after MongoDB becomes ready). The host
-script is outside this repository, so no cloud-specific implementation is
-invented here.
+`.github/workflows/deploy-realtime-server.yml`. It connects over SSH, updates
+the `main` checkout, installs the Bun lockfile, builds the service, creates or
+updates the `olentra-realtime` systemd unit, restarts the process, and checks
+`/health` plus `/intern/health`. The deployment host must have Git, Bun, sudo,
+systemd, and curl. Configure the production environment once at
+`backend/realtime-server/.env` in the host checkout, or at
+`/etc/olentra/realtime-server.env`; the workflow never commits or transmits
+those runtime secrets.

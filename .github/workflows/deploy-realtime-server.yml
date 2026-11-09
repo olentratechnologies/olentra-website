@@ -1,5 +1,8 @@
 name: Deploy Realtime Server
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
@@ -41,8 +44,118 @@ jobs:
     steps:
       - name: Execute deployment over SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          OLENTRA_REPOSITORY: ${{ github.repository }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: /home/ubuntu/deploy-realtime-server.sh
+          envs: GITHUB_TOKEN,OLENTRA_REPOSITORY
+          script: |
+            set -Eeuo pipefail
+
+            APP_DIR="${OLENTRA_APP_DIR:-$HOME/olentra-website}"
+            SERVICE_DIR="$APP_DIR/backend/realtime-server"
+            ENV_FILE="${OLENTRA_ENV_FILE:-$SERVICE_DIR/.env}"
+            FALLBACK_ENV_FILE="/etc/olentra/realtime-server.env"
+            SERVICE_NAME="olentra-realtime"
+            REPOSITORY="https://github.com/${OLENTRA_REPOSITORY}.git"
+            command -v git >/dev/null || { echo "git is required on the deployment host"; exit 1; }
+            command -v bun >/dev/null || { echo "Bun is required on the deployment host"; exit 1; }
+            command -v sudo >/dev/null || { echo "sudo is required on the deployment host"; exit 1; }
+            command -v systemctl >/dev/null || { echo "systemd is required on the deployment host"; exit 1; }
+            command -v curl >/dev/null || { echo "curl is required on the deployment host"; exit 1; }
+
+            askpass=""
+            cleanup() { [ -z "$askpass" ] || rm -f "$askpass"; }
+            trap cleanup EXIT
+            if [ -n "${GITHUB_TOKEN:-}" ]; then
+              askpass="$(mktemp)"
+              cat > "$askpass" <<'ASKPASS'
+            #!/bin/sh
+            case "$1" in
+              *Username*) printf '%s\n' x-access-token ;;
+              *) printf '%s\n' "$GITHUB_TOKEN" ;;
+            esac
+            ASKPASS
+              chmod 700 "$askpass"
+              export GIT_ASKPASS="$askpass"
+              export GIT_TERMINAL_PROMPT=0
+            fi
+
+            if [ -e "$APP_DIR" ] && [ ! -d "$APP_DIR/.git" ]; then
+              echo "Deployment path exists but is not a Git checkout: $APP_DIR"
+              exit 1
+            fi
+            if [ ! -d "$APP_DIR/.git" ]; then
+              git clone --branch main --single-branch "$REPOSITORY" "$APP_DIR"
+            else
+              git -C "$APP_DIR" remote set-url origin "$REPOSITORY"
+              git -C "$APP_DIR" fetch origin main
+              git -C "$APP_DIR" switch main
+              git -C "$APP_DIR" pull --ff-only origin main
+            fi
+
+            if [ ! -f "$ENV_FILE" ] && [ -f "$FALLBACK_ENV_FILE" ]; then
+              ENV_FILE="$FALLBACK_ENV_FILE"
+            fi
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "Missing realtime production environment file: $ENV_FILE"
+              echo "Create it on the host or set the OLENTRA_ENV_FILE SSH environment value."
+              exit 1
+            fi
+
+            cd "$SERVICE_DIR"
+            bun install --frozen-lockfile
+            bun run build
+
+            deploy_user="$(id -un)"
+            bun_path="$(command -v bun)"
+            sudo tee "/etc/systemd/system/${SERVICE_NAME}.service" >/dev/null <<UNIT
+            [Unit]
+            Description=Olentra unified realtime server
+            After=network-online.target
+            Wants=network-online.target
+
+            [Service]
+            Type=simple
+            User=${deploy_user}
+            WorkingDirectory=${SERVICE_DIR}
+            EnvironmentFile=${ENV_FILE}
+            ExecStart=${bun_path} dist/realtime-server.js
+            Restart=always
+            RestartSec=5
+            KillSignal=SIGINT
+            TimeoutStopSec=30
+            NoNewPrivileges=true
+            PrivateTmp=true
+
+            [Install]
+            WantedBy=multi-user.target
+            UNIT
+
+            sudo systemctl daemon-reload
+            sudo systemctl enable "$SERVICE_NAME"
+            sudo systemctl restart "$SERVICE_NAME"
+
+            realtime_port="$(awk -F= '$1 == "REALTIME_PORT" {print $2; exit}' "$ENV_FILE" | tr -d "[:space:]\"'")"
+            realtime_port="${realtime_port:-3003}"
+            case "$realtime_port" in
+              ''|*[!0-9]*) echo "Invalid REALTIME_PORT in $ENV_FILE"; exit 1 ;;
+            esac
+
+            for attempt in $(seq 1 60); do
+              health_code="$(curl --silent --show-error --max-time 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${realtime_port}/health" || true)"
+              internship_code="$(curl --silent --show-error --max-time 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${realtime_port}/intern/health" || true)"
+              if [ "$health_code" = "200" ] && [ "$internship_code" = "200" ]; then
+                echo "Realtime deployment healthy on port $realtime_port"
+                exit 0
+              fi
+              sleep 1
+            done
+
+            echo "Realtime deployment failed health checks: /health=$health_code /intern/health=$internship_code"
+            sudo systemctl status "$SERVICE_NAME" --no-pager || true
+            sudo journalctl -u "$SERVICE_NAME" -n 80 --no-pager || true
+            exit 1
