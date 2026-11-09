@@ -301,7 +301,6 @@ export default function DashboardShell({ children }) {
       </aside>
 
       <main className={styles.main}>
-        <BackgroundWaves />
         <header className={styles.topbar}>
           <button
             className={styles.menuButton}

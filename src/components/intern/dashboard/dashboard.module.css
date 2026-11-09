@@ -5,7 +5,7 @@
   position: relative;
   min-height: 100vh;
   color: var(--ink);
-  background: #e4ebff;
+  background: #ffffff;
   font-family: var(--font-inter), Arial, sans-serif;
   font-size: 14px;
   line-height: 1.4;
@@ -207,16 +207,14 @@
   min-height: 100vh;
   padding: 26px 26px 46px 35px;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 91% 1%, #96b0ff72, transparent 49%),
-    radial-gradient(ellipse at 9% 10%, #c2dcffac, transparent 57%),
-    linear-gradient(110deg, #e4f1ff 0%, #eff0ff 65%, #e5ecff 100%);
+  background: #ffffff;
 }
 .main > :not(.backgroundWaves) {
   position: relative;
   z-index: 1;
 }
 .backgroundWaves {
+  display: none;
   position: absolute;
   inset: 0;
   width: 100%;

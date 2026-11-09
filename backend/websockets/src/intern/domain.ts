@@ -343,6 +343,10 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         return { id: user._id, applicationId: user.applicationId };
       });
     }
+    if (method === "account.changePassword") {
+      if (!actor?.id) throw new DomainError("UNAUTHENTICATED", "Sign in to change your password.");
+      return changePassword(actor.id, str(params.currentPassword), str(params.newPassword));
+    }
     if (queries.supports(method)) {
       if (method === "application.workflow" && actor?.role === "company" && !isAdmin(actor)) return { offer: null, onboarding: null, intern: null };
       return queries.execute(method, params, actor);
@@ -391,5 +395,47 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   async function findApplicationByEmail(email: string): Promise<Row | null> {
     return applications.findOne({ email: emailOf(email) });
   }
-  return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, autoProvisionAccount, findApplicationByEmail };
+  async function findUserByEmail(email: string): Promise<Row | null> {
+    return users.findOne({ email: emailOf(email), disabled: { $ne: true } });
+  }
+  async function selfResetPassword(userId: string, newPassword: string): Promise<{ id: string }> {
+    const password = str(newPassword);
+    if (password.length < 8 || password.length > 256) {
+      throw new DomainError("INVALID_REQUEST", "Password must be at least 8 characters.");
+    }
+    const user = await users.findOne({ _id: userId, disabled: { $ne: true } });
+    if (!user) throw new DomainError("NOT_FOUND", "Account not found.");
+    const passwordHash = await Bun.password.hash(password, { algorithm: "argon2id" });
+    await credentials.updateOne(
+      { userId },
+      { $set: { userId, passwordHash, updatedAt: new Date() } },
+      { upsert: true }
+    );
+    await users.updateOne({ _id: userId }, { $inc: { sessionVersion: 1 } });
+    await events.insertOne({ _id: id("EVT"), type: "account.selfResetPassword", applicationIds: user.applicationId ? [user.applicationId] : [], createdAt: new Date() });
+    return { id: user._id };
+  }
+  async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{ id: string }> {
+    const nextPassword = str(newPassword);
+    if (nextPassword.length < 8 || nextPassword.length > 256) {
+      throw new DomainError("INVALID_REQUEST", "New password must be at least 8 characters.");
+    }
+    const user = await users.findOne({ _id: userId, disabled: { $ne: true } });
+    if (!user) throw new DomainError("NOT_FOUND", "Account not found.");
+    const cred = await credentials.findOne({ userId });
+    if (cred) {
+      const valid = await Bun.password.verify(str(currentPassword), cred.passwordHash);
+      if (!valid) throw new DomainError("UNAUTHENTICATED", "Your current password is incorrect.");
+    }
+    const passwordHash = await Bun.password.hash(nextPassword, { algorithm: "argon2id" });
+    await credentials.updateOne(
+      { userId },
+      { $set: { userId, passwordHash, updatedAt: new Date() } },
+      { upsert: true }
+    );
+    await users.updateOne({ _id: userId }, { $inc: { sessionVersion: 1 } });
+    await events.insertOne({ _id: id("EVT"), type: "account.passwordChanged", applicationIds: user.applicationId ? [user.applicationId] : [], createdAt: new Date() });
+    return { id: user._id };
+  }
+  return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
 }

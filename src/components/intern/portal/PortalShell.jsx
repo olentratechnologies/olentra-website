@@ -249,7 +249,6 @@ export default function PortalShell({ children }) {
         </small>
       </aside>
       <main className={styles.main}>
-        <div className={styles.backgroundOrb} />
         <header className={styles.topbar}>
           <button
             ref={menuRef}

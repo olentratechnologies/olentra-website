@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Save, UserRound } from "lucide-react";
+import { Check, Eye, EyeOff, LockKeyhole, Save, UserRound } from "lucide-react";
 import { useInternship } from "@/components/intern/InternshipProvider";
 import {
   Button,
@@ -16,6 +16,117 @@ import {
   useAction,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+
+function PasswordInput({ id, label, value, onChange, autoComplete = "current-password", hint }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <label className={styles.field} htmlFor={id}>
+      {label}
+      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+        <LockKeyhole size={15} style={{ position: "absolute", left: 10, color: "var(--color-text-muted, #9ca3af)", pointerEvents: "none" }} />
+        <input
+          id={id}
+          type={visible ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          autoComplete={autoComplete}
+          required
+          style={{ paddingLeft: 32, paddingRight: 36 }}
+        />
+        <button
+          type="button"
+          aria-label={visible ? `Hide ${label}` : `Show ${label}`}
+          onClick={() => setVisible((v) => !v)}
+          style={{ position: "absolute", right: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--color-text-muted, #9ca3af)" }}
+        >
+          {visible ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+      {hint && <small>{hint}</small>}
+    </label>
+  );
+}
+
+function ChangePasswordForm() {
+  const { commands, notify } = useInternship();
+  const action = useAction();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirmNext, setConfirmNext] = useState("");
+  const [localError, setLocalError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  async function save(event) {
+    event.preventDefault();
+    setLocalError("");
+    setSaved(false);
+    if (next.length < 8) {
+      setLocalError("New password must be at least 8 characters.");
+      return;
+    }
+    if (next !== confirmNext) {
+      setLocalError("New passwords do not match.");
+      return;
+    }
+    await action.run(
+      () => commands.changePassword({ currentPassword: current, newPassword: next }),
+      () => {
+        setSaved(true);
+        setCurrent("");
+        setNext("");
+        setConfirmNext("");
+        notify("Your password has been updated.");
+      },
+    );
+  }
+
+  return (
+    <form onSubmit={save}>
+      <Panel>
+        <div className={styles.panelHeader}>
+          <h2>Security &amp; password</h2>
+          <LockKeyhole size={19} />
+        </div>
+        <p className={styles.panelDescription}>
+          Update your password to keep your account secure.
+        </p>
+        <ErrorMessage>{localError || action.error}</ErrorMessage>
+        <fieldset className={styles.fieldset} disabled={action.busy}>
+          <div className={styles.formGrid}>
+            <PasswordInput
+              id="current-password"
+              label="Current password"
+              autoComplete="current-password"
+              value={current}
+              onChange={(e) => { setCurrent(e.target.value); setSaved(false); }}
+            />
+            <PasswordInput
+              id="new-password"
+              label="New password"
+              autoComplete="new-password"
+              value={next}
+              onChange={(e) => { setNext(e.target.value); setSaved(false); }}
+              hint="Minimum 8 characters"
+            />
+            <PasswordInput
+              id="confirm-new-password"
+              label="Confirm new password"
+              autoComplete="new-password"
+              value={confirmNext}
+              onChange={(e) => { setConfirmNext(e.target.value); setSaved(false); }}
+            />
+          </div>
+        </fieldset>
+        <div className={styles.formActions}>
+          <Button type="submit" disabled={action.busy} busy={action.busy}>
+            {saved ? <Check size={15} /> : <Save size={15} />}
+            {saved ? "Password saved" : "Update password"}
+          </Button>
+        </div>
+      </Panel>
+    </form>
+  );
+}
 
 function ProfileForm({ account, application }) {
   const { commands, notify } = useInternship();
@@ -195,11 +306,14 @@ export default function PortalProfile() {
         description="A little about the person behind the next big idea."
       />
       {my.application ? (
-        <ProfileForm
-          key={account.id}
-          account={account}
-          application={my.application}
-        />
+        <>
+          <ProfileForm
+            key={account.id}
+            account={account}
+            application={my.application}
+          />
+          <ChangePasswordForm key={`${account.id}-pw`} />
+        </>
       ) : (
         <Panel>
           <EmptyState

@@ -4,7 +4,7 @@
   position: relative;
   min-height: 100vh;
   color: var(--ink);
-  background: #e8efff;
+  background: #ffffff;
   font:
     14px/1.5 var(--font-inter),
     Arial,
@@ -189,12 +189,10 @@
   margin-left: 220px;
   padding: 25px 34px 46px;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse at 96% -4%, #9dc3ffba, transparent 43%),
-    radial-gradient(ellipse at 6% 0%, #bedcffb5, transparent 55%),
-    linear-gradient(115deg, #e6f1ff, #f0efff 64%, #e6eeff);
+  background: #ffffff;
 }
 .backgroundOrb {
+  display: none;
   position: absolute;
   right: -200px;
   top: -300px;

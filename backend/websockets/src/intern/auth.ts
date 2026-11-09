@@ -7,6 +7,7 @@ import type { createInternshipDomain } from "./domain";
 const ACCESS_SECONDS = 15 * 60;
 const REFRESH_SECONDS = 7 * 24 * 60 * 60;
 const MAGIC_LINK_SECONDS = 24 * 60 * 60;
+const PASSWORD_RESET_SECONDS = 60 * 60;
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 const random = () => randomBytes(32).toString("base64url");
 
@@ -84,6 +85,34 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
       throw new DomainError("UNAUTHENTICATED", "This sign-in link is invalid or has expired.");
     }
   }
+  async function generatePasswordResetToken(email: string, userId: string): Promise<string> {
+    const now = Math.floor(Date.now() / 1000);
+    return new SignJWT({ uid: userId })
+      .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+      .setIssuer("olentra-intern-reset")
+      .setAudience("olentra-intern-portal")
+      .setSubject(email.trim().toLowerCase())
+      .setIssuedAt(now)
+      .setExpirationTime(now + PASSWORD_RESET_SECONDS)
+      .setJti(randomUUID())
+      .sign(key);
+  }
+  async function verifyPasswordResetToken(token: string): Promise<{ email: string; userId: string }> {
+    try {
+      const { payload } = await jwtVerify(token, key, {
+        algorithms: ["HS256"],
+        issuer: "olentra-intern-reset",
+        audience: "olentra-intern-portal",
+      });
+      if (typeof payload.sub !== "string" || typeof payload.uid !== "string") {
+        throw new DomainError("UNAUTHENTICATED", "This password reset link is invalid or has expired.");
+      }
+      return { email: payload.sub, userId: payload.uid };
+    } catch (err: any) {
+      if (err instanceof DomainError) throw err;
+      throw new DomainError("UNAUTHENTICATED", "This password reset link is invalid or has expired.");
+    }
+  }
   async function verify(token: string) {
     let payload: Awaited<ReturnType<typeof jwtVerify>>["payload"];
     const nowSec = Math.floor(Date.now() / 1000);
@@ -145,5 +174,5 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
     const [sid, secret, ...extra] = value.split(".");
     if (sid && secret && !extra.length) { const secretHash = digest(secret); await sessions.updateOne({ _id: sid, $or: [{ refreshHash: secretHash }, { previousHash: secretHash }] }, { $set: { revoked: true } }); }
   }
-  return { initialize, login, createSessionForAccount, verify, refresh, revoke, revokeRefresh, generateMagicLinkToken, verifyMagicLinkToken };
+  return { initialize, login, createSessionForAccount, verify, refresh, revoke, revokeRefresh, generateMagicLinkToken, verifyMagicLinkToken, generatePasswordResetToken, verifyPasswordResetToken };
 }

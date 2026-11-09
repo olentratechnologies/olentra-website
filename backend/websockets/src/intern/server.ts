@@ -181,6 +181,37 @@ export async function createInternshipServer({ domain, secret, port = 3003, host
           const result = await auth.createSessionForAccount(account);
           return sendJson({ ok: true, data: { account: result.account, token: result.token, expiresAt: result.expiresAt } }, origin, 200, { "Set-Cookie": cookie(request, context, result.refreshToken, 604800) });
         }
+        if (url.pathname === "/intern/auth/request-password-reset" && request.method === "POST") {
+          const input = await request.json() as { email?: string };
+          const email = String(input.email || "").trim().toLowerCase();
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            throw new DomainError("INVALID_REQUEST", "Please enter a valid email address.");
+          }
+          let user = await domain.findUserByEmail(email);
+          if (!user) {
+            const app = await domain.findApplicationByEmail(email);
+            if (app) {
+              const provisioned = await domain.autoProvisionAccount(app._id, app.email);
+              user = { _id: provisioned.id, name: provisioned.name, email: provisioned.email } as any;
+            }
+          }
+          if (user) {
+            const token = await auth.generatePasswordResetToken(user.email, user._id);
+            const resetUrl = `${siteOrigin}/intern/reset-password?token=${token}`;
+            await mailer.sendPasswordResetLink({ to: user.email, name: user.name, resetUrl });
+          }
+          return sendJson({ ok: true, data: { message: "If an account exists with this email, password reset instructions have been sent to your inbox." } }, origin, 200);
+        }
+        if (url.pathname === "/intern/auth/reset-password" && request.method === "POST") {
+          const input = await request.json() as { token?: string; password?: string };
+          const rawToken = String(input.token || "").trim();
+          const password = String(input.password || "");
+          if (!rawToken) throw new DomainError("INVALID_REQUEST", "A reset token is required.");
+          if (password.length < 8 || password.length > 256) throw new DomainError("INVALID_REQUEST", "Password must be at least 8 characters.");
+          const { email, userId } = await auth.verifyPasswordResetToken(rawToken);
+          await domain.selfResetPassword(userId, password);
+          return sendJson({ ok: true, data: { message: "Your password has been successfully reset. Sign in to continue." } }, origin, 200);
+        }
         if (url.pathname === "/intern/auth/refresh" && request.method === "POST") return await refresh(request, origin);
         if (url.pathname === "/intern/auth/logout" && request.method === "POST") {
           const context = safeContext(request.headers.get("x-intern-context"));

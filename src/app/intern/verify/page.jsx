@@ -89,7 +89,6 @@ function VerifyContent() {
 
   return (
     <main className={styles.authPage}>
-      <div className={styles.backgroundOrbit} />
       <div
         style={{
           minHeight: "100vh",

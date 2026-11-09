@@ -62,7 +62,6 @@ function AuthShell({ children, eyebrow = "YOUR NEXT CHAPTER STARTS HERE" }) {
   const { features, ready } = useSiteFeatures();
   return (
     <main className={styles.authPage}>
-      <div className={styles.backgroundOrbit} />
       <div className={styles.authLayout}>
         <aside className={styles.authStory}>
           <Brand />
@@ -483,5 +482,160 @@ function FileIcon() {
 }
 
 export function ResetPasswordPage() {
-  return <AuthShell eyebrow="INTERNSHIP ACCOUNT ACCESS"><div className={styles.panelHeading}><span className={styles.headingIcon}><LockKeyhole size={23}/></span><h2>Reset your password.</h2><p>Contact the internship team for help resetting your password. They will verify your identity and provide a new password.</p></div><Link href="/intern/login" className={styles.textLink}><ArrowLeft size={13}/> Back to sign in</Link></AuthShell>;
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const token = searchParams.get("token");
+  const { requestPasswordReset, resetPassword } = useInternship();
+
+  // ── Mode 1: no token → email request form ─────────────────────────────
+  const [email, setEmail] = useState("");
+  const [requestState, setRequestState] = useState("idle"); // idle | busy | sent
+  const [requestError, setRequestError] = useState("");
+
+  async function handleRequestReset(event) {
+    event.preventDefault();
+    setRequestError("");
+    setRequestState("busy");
+    const result = await requestPasswordReset(email);
+    if (result.ok) {
+      setRequestState("sent");
+    } else {
+      setRequestError(result.error || "Unable to send reset link. Please try again.");
+      setRequestState("idle");
+    }
+  }
+
+  // ── Mode 2: token present → new password form ─────────────────────────
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [resetState, setResetState] = useState("idle"); // idle | busy | done
+  const [resetError, setResetError] = useState("");
+
+  async function handleReset(event) {
+    event.preventDefault();
+    setResetError("");
+    if (password.length < 8) {
+      setResetError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setResetError("Passwords do not match.");
+      return;
+    }
+    setResetState("busy");
+    const result = await resetPassword({ token, password });
+    if (result.ok) {
+      setResetState("done");
+      router.replace("/intern/login?role=intern&notice=password-reset");
+    } else {
+      setResetError(result.error || "Unable to reset password. The link may have expired.");
+      setResetState("idle");
+    }
+  }
+
+  return (
+    <AuthShell eyebrow="INTERNSHIP ACCOUNT ACCESS">
+      {!token ? (
+        // ── Email request mode ───────────────────────────────────────────
+        <>
+          <div className={styles.panelHeading}>
+            <span className={styles.headingIcon}><LockKeyhole size={23} /></span>
+            <h2>Forgot your password?</h2>
+            <p>Enter the email address linked to your internship account and we&apos;ll send you a reset link.</p>
+          </div>
+          {requestState === "sent" ? (
+            <div className={styles.applicationLinked}>
+              <CheckCircle2 size={19} />
+              <div>
+                <strong>Check your inbox</strong>
+                <span>A reset link was sent to <strong>{email}</strong>. It expires in 1 hour.</span>
+              </div>
+            </div>
+          ) : (
+            <form className={styles.authForm} onSubmit={handleRequestReset}>
+              <fieldset disabled={requestState === "busy"}>
+                <label className={styles.field} htmlFor="reset-email">
+                  <span>Email address</span>
+                  <div className={styles.inputControl}>
+                    <Mail size={16} />
+                    <input
+                      id="reset-email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                </label>
+                <ErrorMessage>{requestError}</ErrorMessage>
+                <button type="submit" className={styles.primaryButton} disabled={requestState === "busy"}>
+                  {requestState === "busy" ? (
+                    <><LoaderCircle size={15} className={styles.spin} /> Sending…</>
+                  ) : (
+                    <>Send reset link <ArrowRight size={15} /></>
+                  )}
+                </button>
+              </fieldset>
+            </form>
+          )}
+          <Link href="/intern/login" className={styles.textLink}>
+            <ArrowLeft size={13} /> Back to sign in
+          </Link>
+        </>
+      ) : (
+        // ── New password mode ────────────────────────────────────────────
+        <>
+          <div className={styles.panelHeading}>
+            <span className={styles.headingIcon}><LockKeyhole size={23} /></span>
+            <h2>Set a new password.</h2>
+            <p>Choose a strong password for your internship account. Must be at least 8 characters.</p>
+          </div>
+          {resetState === "done" ? (
+            <div className={styles.applicationLinked}>
+              <CheckCircle2 size={19} />
+              <div>
+                <strong>Password updated!</strong>
+                <span>Redirecting you to sign in…</span>
+              </div>
+            </div>
+          ) : (
+            <form className={styles.authForm} onSubmit={handleReset}>
+              <fieldset disabled={resetState === "busy"}>
+                <PasswordField
+                  id="new-password"
+                  label="New password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  hint="Minimum 8 characters"
+                  required
+                />
+                <PasswordField
+                  id="confirm-password"
+                  label="Confirm new password"
+                  autoComplete="new-password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  required
+                />
+                <ErrorMessage>{resetError}</ErrorMessage>
+                <button type="submit" className={styles.primaryButton} disabled={resetState === "busy"}>
+                  {resetState === "busy" ? (
+                    <><LoaderCircle size={15} className={styles.spin} /> Saving…</>
+                  ) : (
+                    <>Set new password <ArrowRight size={15} /></>
+                  )}
+                </button>
+              </fieldset>
+            </form>
+          )}
+          <Link href="/intern/login" className={styles.textLink}>
+            <ArrowLeft size={13} /> Back to sign in
+          </Link>
+        </>
+      )}
+    </AuthShell>
+  );
 }

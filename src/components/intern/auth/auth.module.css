@@ -4,10 +4,7 @@
   overflow: hidden;
   padding: 42px;
   color: #163061;
-  background:
-    radial-gradient(ellipse at 85% 0, #a3bdfd9e, transparent 45%),
-    radial-gradient(ellipse at 0 100%, #bfe8ffb3, transparent 50%),
-    linear-gradient(125deg, #deefff, #e8edff 55%, #e2e7ff);
+  background: #ffffff;
   font-family: var(--font-inter), Arial, sans-serif;
   font-size: 14px;
   line-height: 1.5;
@@ -43,6 +40,7 @@
   margin: 0;
 }
 .backgroundOrbit {
+  display: none;
   position: absolute;
   z-index: -1;
   width: 950px;
@@ -198,7 +196,7 @@
   justify-content: center;
   min-width: 0;
   padding: 44px 45px 25px;
-  background: linear-gradient(145deg, #fcfeffd9, #f1f5ffc2);
+  background: #ffffff;
 }
 .mobileBrand {
   display: none;
