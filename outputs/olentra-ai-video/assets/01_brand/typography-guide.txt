@@ -1,0 +1,48 @@
+OLENTRA AI VIDEO — TYPOGRAPHY AND BRAND USE
+
+PRIMARY FONT
+Manrope, unmodified Google Fonts variable TTF, weights 200–800.
+Install Manrope[wght].ttf before editing in desktop design software.
+Use Manrope 800 for company lockup/headlines, 700 for key labels,
+500–600 for supporting text, 500 for contact details.
+The website requests weight 900 for its wordmark; the actual font maximum
+is 800, used in these compositions. Manrope is embedded in supplied SVGs.
+The complete SIL Open Font License is in OFL-Manrope.txt; keep it with the font.
+
+PALETTE
+#070B12 — background
+#0B64F4 — primary accent (website HSL 217 91% 50%)
+#1877F2 — CTA/highlight blue
+#FFFFFF — text
+Retain the existing logo’s original multicolor appearance.
+
+LOGO USE
+Use olentra-emblem-original.png untouched.
+Use olentra-lockup-dark-background.png on dark backgrounds and
+olentra-lockup-light-background.png on light backgrounds.
+Both exported lockups have transparent backgrounds.
+The emblem is raster, not vector. SVG compositions embed the original PNG
+and retain editable text/layout; an SVG extension does not add logo detail.
+Do not generate or redraw the logo in an AI video model. Composite it intact.
+Do not stretch, recolor, remove the white keyline, or crop through the mark.
+Keep a clear zone of at least 20% of the visible emblem width around it.
+Keep the main company name visually separate from product names.
+
+VIDEO TYPE
+16:9 master: 3840×2160; 1920×1080 delivery may be derived.
+Keep important text at least 10% from frame edges; avoid overlong captions.
+Maintain high contrast and allow reading time; use short on-screen phrases.
+Avoid body text below 48 px at 4K / 24 px at 1080p.
+
+END CARD — SCENE S10
+Use the supplied complete end-card PNG from 01:22 to 01:30.
+Do not stagger its reveal or let transitions obscure contact information.
+Narration may finish before the image; hold the fully legible closing card.
+The supplied SVG is self-contained and editable. If an editor does not
+support embedded variable fonts, install the bundled TTF before import.
+
+ASSET HONESTY
+DailySupply dashboard images are public demonstration artwork with example
+data, not evidence of customer traction or measured results. AI Studio and
+Olenbot images are conceptual artwork. Preserve Olenbot’s In Pilot status.
+No certifications, customer logos, testimonials, or company size are implied.

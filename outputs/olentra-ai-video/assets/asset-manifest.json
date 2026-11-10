@@ -1,0 +1,519 @@
+{
+  "schemaVersion": 1,
+  "createdDate": "2026-11-10",
+  "packageRoot": "olentra-ai-video",
+  "pathConvention": "All paths are relative to the package root. Null means not applicable.",
+  "notes": [
+    "Original assets copied without alteration. Derived layouts are clearly labeled.",
+    "No true vector Olentra master was found. Editable SVGs embed the original raster emblem and an OFL-licensed Manrope font.",
+    "Public demonstration or conceptual product imagery is not proof of real business metrics.",
+    "The manifest does not list itself to avoid a recursive size field."
+  ],
+  "sceneMap": {
+    "S01": "00:00\u201300:06 opening",
+    "S02": "00:06\u201300:14 brand",
+    "S03": "00:14\u201300:24 purpose",
+    "S04": "00:24\u201300:43 services",
+    "S05": "00:43\u201300:49 Daily Supply",
+    "S06": "00:49\u201300:55 AI Studio",
+    "S07": "00:55\u201301:01 Olenbot",
+    "S08": "01:01\u201301:15 delivery",
+    "S09": "01:15\u201301:22 commitment",
+    "S10": "01:22\u201301:30 closing"
+  },
+  "assets": [
+    {
+      "path": "assets/01_brand/olentra-emblem-original.png",
+      "source": "frontend/public/images/branding/Logo/Olentra-Logo-Without-Background.png",
+      "kind": "official-brand-original",
+      "intendedScenes": [
+        "S02",
+        "S10"
+      ],
+      "usage": "Untouched official raster emblem with native transparency. Preserve proportions, colors, and white keyline. Native visible artwork is 744\u00d7770 px within a 1024\u00d71024 canvas; do not enlarge the visible artwork beyond native detail.",
+      "width": 1024,
+      "height": 1024,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 482700
+    },
+    {
+      "path": "assets/02_products/dailysupply-wordmark-white.png",
+      "source": "frontend/public/images/products/dailysupply/dailysupply-logo-white-text.png",
+      "kind": "official-product-brand",
+      "intendedScenes": [
+        "S05"
+      ],
+      "usage": "Current transparent white wordmark for dark backgrounds; 380\u00d7100 native raster. Keep small; do not treat upscaling as added detail.",
+      "width": 380,
+      "height": 100,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 13372
+    },
+    {
+      "path": "assets/02_products/dailysupply-wordmark-black.png",
+      "source": "frontend/public/images/products/dailysupply/dailysupply-logo-black-text.png",
+      "kind": "official-product-brand",
+      "intendedScenes": [
+        "S05"
+      ],
+      "usage": "Current transparent dark wordmark for light backgrounds; 380\u00d7100 native raster.",
+      "width": 380,
+      "height": 100,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 13553
+    },
+    {
+      "path": "assets/02_products/dailysupply-erp-overview-demo.png",
+      "source": "frontend/public/images/products/dailysupply/dailysupply_erp_dashboard_overview.png",
+      "kind": "public-product-demonstration",
+      "intendedScenes": [
+        "S05"
+      ],
+      "usage": "Public product demonstration artwork with example data. Do not treat sales, stores, suppliers, or customer figures as verified business outcomes.",
+      "width": 1448,
+      "height": 1086,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 1718369
+    },
+    {
+      "path": "assets/02_products/dailysupply-pos-billing-demo.png",
+      "source": "frontend/public/images/products/dailysupply/dailysupply_pos_and_billing_dashboard.png",
+      "kind": "public-product-demonstration",
+      "intendedScenes": [
+        "S05"
+      ],
+      "usage": "Public POS/billing demonstration artwork with example data. Overlay exact UI rather than asking a video model to redraw readable text.",
+      "width": 1448,
+      "height": 1086,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 1589511
+    },
+    {
+      "path": "assets/02_products/ai-studio-concept.png",
+      "source": "frontend/public/images/products/ai-studio-new.png",
+      "kind": "conceptual-product-art",
+      "intendedScenes": [
+        "S06"
+      ],
+      "usage": "Conceptual public product artwork; not a verified live product screen or actual office.",
+      "width": 640,
+      "height": 640,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 59539
+    },
+    {
+      "path": "assets/02_products/olenbot-concept.png",
+      "source": "frontend/public/images/products/olen-bot.png",
+      "kind": "conceptual-product-art",
+      "intendedScenes": [
+        "S07"
+      ],
+      "usage": "Conceptual public product artwork. Olenbot is described as In Pilot in website product metadata; retain pilot status in narration/on-screen context.",
+      "width": 640,
+      "height": 640,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 86112
+    },
+    {
+      "path": "assets/02_products/dailysupply-wordmark-large-reference.jpeg",
+      "source": "frontend/public/Company names and product logo/DailySupply.jpeg",
+      "kind": "official-product-brand-reference",
+      "intendedScenes": [
+        "S05"
+      ],
+      "usage": "Larger opaque JPEG wordmark reference; has a baked background. Preserve intact; use transparent white/black variants for small overlays.",
+      "width": 1300,
+      "height": 380,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 73046
+    },
+    {
+      "path": "assets/03_capabilities/ai-solutions.png",
+      "source": "frontend/public/images/capabilities/ai-solutions.png",
+      "kind": "conceptual-capability-art",
+      "intendedScenes": [
+        "S04"
+      ],
+      "usage": "Website service illustration with alpha; conceptual supporting visual, not evidence of certifications, measured performance, or client outcomes. Native 640\u00d7640.",
+      "width": 640,
+      "height": 640,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 659456
+    },
+    {
+      "path": "assets/03_capabilities/realtime-systems.png",
+      "source": "frontend/public/images/capabilities/realtime-systems.png",
+      "kind": "conceptual-capability-art",
+      "intendedScenes": [
+        "S04"
+      ],
+      "usage": "Website service illustration with alpha; conceptual supporting visual, not evidence of certifications, measured performance, or client outcomes. Native 640\u00d7640.",
+      "width": 640,
+      "height": 640,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 505731
+    },
+    {
+      "path": "assets/03_capabilities/cloud-architecture.png",
+      "source": "frontend/public/images/capabilities/cloud-architecture.png",
+      "kind": "conceptual-capability-art",
+      "intendedScenes": [
+        "S04",
+        "S09"
+      ],
+      "usage": "Website service illustration with alpha; conceptual supporting visual, not evidence of certifications, measured performance, or client outcomes. Native 640\u00d7640.",
+      "width": 640,
+      "height": 640,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 630959
+    },
+    {
+      "path": "assets/03_capabilities/security-compliance.png",
+      "source": "frontend/public/images/capabilities/security-compliance.png",
+      "kind": "conceptual-capability-art",
+      "intendedScenes": [
+        "S04",
+        "S09"
+      ],
+      "usage": "Website service illustration with alpha; conceptual supporting visual, not evidence of certifications, measured performance, or client outcomes. Native 640\u00d7640.",
+      "width": 640,
+      "height": 640,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 536251
+    },
+    {
+      "path": "assets/03_capabilities/product-engineering.png",
+      "source": "frontend/public/images/capabilities/product-engineering.png",
+      "kind": "conceptual-capability-art",
+      "intendedScenes": [
+        "S04"
+      ],
+      "usage": "Website service illustration with alpha; conceptual supporting visual, not evidence of certifications, measured performance, or client outcomes. Native 640\u00d7640.",
+      "width": 640,
+      "height": 640,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 334046
+    },
+    {
+      "path": "assets/03_capabilities/seo-growth.png",
+      "source": "frontend/public/images/capabilities/seo-growth.png",
+      "kind": "conceptual-capability-art",
+      "intendedScenes": [
+        "S04"
+      ],
+      "usage": "Website service illustration with alpha; conceptual supporting visual, not evidence of certifications, measured performance, or client outcomes. Native 640\u00d7640.",
+      "width": 640,
+      "height": 640,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 328078
+    },
+    {
+      "path": "assets/03_capabilities/branding-creative.png",
+      "source": "frontend/public/images/capabilities/branding-creative.png",
+      "kind": "conceptual-capability-art",
+      "intendedScenes": [
+        "S04"
+      ],
+      "usage": "Website service illustration with alpha; conceptual supporting visual, not evidence of certifications, measured performance, or client outcomes. Native 640\u00d7640.",
+      "width": 640,
+      "height": 640,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 429307
+    },
+    {
+      "path": "assets/04_motion_reference/olentra-hero-reference.mp4",
+      "source": "frontend/public/videos/hero-video.mp4",
+      "kind": "website-motion-reference",
+      "intendedScenes": [
+        "S01",
+        "S04"
+      ],
+      "usage": "Existing homepage motion reference, 1080p/24 fps, silent. Use for visual continuity or reference; do not present generated environments as actual offices.",
+      "width": 1920,
+      "height": 1080,
+      "alpha": false,
+      "fps": 24,
+      "durationSec": 10.041667,
+      "sizeBytes": 36547256
+    },
+    {
+      "path": "assets/04_motion_reference/olentra-hero-poster.jpg",
+      "source": "frontend/public/videos/hero-poster.jpg",
+      "kind": "website-motion-poster",
+      "intendedScenes": [
+        "S01",
+        "S04"
+      ],
+      "usage": "Existing homepage video poster reference.",
+      "width": 1536,
+      "height": 1024,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 568789
+    },
+    {
+      "path": "assets/04_motion_reference/dailysupply-rings-reference-4k.mp4",
+      "source": "frontend/public/videos/dailysupply-rings-aligned-4k.mp4",
+      "kind": "website-motion-reference",
+      "intendedScenes": [
+        "S05"
+      ],
+      "usage": "Current website DailySupply ring loop, 4K/30 fps, 6 seconds, silent.",
+      "width": 3840,
+      "height": 2160,
+      "alpha": false,
+      "fps": 30,
+      "durationSec": 6,
+      "sizeBytes": 5223439
+    },
+    {
+      "path": "assets/04_motion_reference/dailysupply-rings-poster.png",
+      "source": "frontend/public/videos/dailysupply-rings-aligned-poster.png",
+      "kind": "website-motion-poster",
+      "intendedScenes": [
+        "S05"
+      ],
+      "usage": "Poster corresponding to the current DailySupply ring loop.",
+      "width": 3840,
+      "height": 2160,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 2533660
+    },
+    {
+      "path": "assets/01_brand/Manrope[wght].ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/Manrope%5Bwght%5D.ttf",
+      "kind": "font",
+      "intendedScenes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10"
+      ],
+      "usage": "Official Google Fonts Manrope variable font, unmodified; weights 200\u2013800. Bundled with SIL Open Font License.",
+      "width": null,
+      "height": null,
+      "alpha": null,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 164700
+    },
+    {
+      "path": "assets/01_brand/OFL-Manrope.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/manrope/OFL.txt",
+      "kind": "font-license",
+      "intendedScenes": [],
+      "usage": "SIL Open Font License and copyright for bundled Manrope font; retain with redistributed font.",
+      "width": null,
+      "height": null,
+      "alpha": null,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 4387
+    },
+    {
+      "path": "assets/01_brand/olentra-lockup-dark-background.svg",
+      "source": "frontend/src/components/Navbar.js",
+      "kind": "derived-brand-lockup-source",
+      "intendedScenes": [
+        "S02",
+        "S10"
+      ],
+      "usage": "Self-contained editable SVG composition with intact embedded raster emblem and embedded Manrope. Transparent canvas; not a true vector logo. Name text uses Manrope 800, the available font maximum.",
+      "width": 2200,
+      "height": 420,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 864234
+    },
+    {
+      "path": "assets/01_brand/olentra-lockup-light-background.svg",
+      "source": "frontend/src/components/Navbar.js",
+      "kind": "derived-brand-lockup-source",
+      "intendedScenes": [
+        "S02",
+        "S10"
+      ],
+      "usage": "Self-contained editable SVG composition with intact embedded raster emblem and embedded Manrope. Transparent canvas; not a true vector logo. Name text uses Manrope 800, the available font maximum.",
+      "width": 2200,
+      "height": 420,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 864236
+    },
+    {
+      "path": "assets/01_brand/brand-palette.svg",
+      "source": "frontend/src/app/globals.css",
+      "kind": "brand-reference-source",
+      "intendedScenes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10"
+      ],
+      "usage": "Editable palette reference with embedded Manrope. Hex values: #070B12, #0B64F4, #1877F2, #FFFFFF.",
+      "width": 1920,
+      "height": 1080,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 222444
+    },
+    {
+      "path": "assets/05_end_card/olentra-end-card-4k.svg",
+      "source": "frontend/src/data/contact.js",
+      "kind": "end-card-editable-source",
+      "intendedScenes": [
+        "S10"
+      ],
+      "usage": "Self-contained 3840\u00d72160 editable SVG with embedded Manrope and intact original raster emblem. Hold the complete card from 01:22\u201301:30; no staged reveal that delays reading. All text is already typeset and must not be regenerated by AI. Embedded emblem is 1024\u00d71024 canvas with native 744\u00d7770 visible art; not a true vector logo.",
+      "width": 3840,
+      "height": 2160,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 865682
+    },
+    {
+      "path": "assets/01_brand/typography-guide.txt",
+      "source": "frontend/src/app/globals.css",
+      "kind": "typography-and-brand-guide",
+      "intendedScenes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10"
+      ],
+      "usage": "Plain-text font, color, logo, export, and end-card instructions.",
+      "width": null,
+      "height": null,
+      "alpha": null,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 2383
+    },
+    {
+      "path": "assets/01_brand/olentra-lockup-dark-background.png",
+      "source": "assets/01_brand/olentra-lockup-dark-background.svg",
+      "kind": "derived-brand-lockup-render",
+      "intendedScenes": [
+        "S02",
+        "S10"
+      ],
+      "usage": "Transparent PNG rendered from the corresponding editable SVG (assets/01_brand/olentra-lockup-dark-background.svg). It contains the intact original raster emblem and typeset Manrope name text. Use on the background color indicated by the filename. This PNG is flattened artwork with alpha, not editable text or a true vector logo. Preserve proportions and colors; do not regenerate the emblem with AI.",
+      "width": 2200,
+      "height": 420,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 109638
+    },
+    {
+      "path": "assets/01_brand/olentra-lockup-light-background.png",
+      "source": "assets/01_brand/olentra-lockup-light-background.svg",
+      "kind": "derived-brand-lockup-render",
+      "intendedScenes": [
+        "S02",
+        "S10"
+      ],
+      "usage": "Transparent PNG rendered from the corresponding editable SVG (assets/01_brand/olentra-lockup-light-background.svg). It contains the intact original raster emblem and typeset Manrope name text. Use on the background color indicated by the filename. This PNG is flattened artwork with alpha, not editable text or a true vector logo. Preserve proportions and colors; do not regenerate the emblem with AI.",
+      "width": 2200,
+      "height": 420,
+      "alpha": true,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 111845
+    },
+    {
+      "path": "assets/01_brand/brand-palette.png",
+      "source": "assets/01_brand/brand-palette.svg",
+      "kind": "brand-reference-render",
+      "intendedScenes": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10"
+      ],
+      "usage": "PNG rendered from the corresponding editable SVG (assets/01_brand/brand-palette.svg). Static brand reference showing #070B12, #0B64F4, #1877F2, and #FFFFFF. Edit the accompanying SVG to change text or layout.",
+      "width": 1920,
+      "height": 1080,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 73291
+    },
+    {
+      "path": "assets/05_end_card/olentra-end-card-4k.png",
+      "source": "assets/05_end_card/olentra-end-card-4k.svg",
+      "kind": "end-card-editable-render",
+      "intendedScenes": [
+        "S10"
+      ],
+      "usage": "3840\u00d72160 PNG rendered from the corresponding editable SVG (assets/05_end_card/olentra-end-card-4k.svg). Hold the complete card from 01:22\u201301:30; no staged reveal that delays reading. All text is already typeset within 10% safe margins and must not be regenerated by AI. Contains the intact original raster emblem at native detail. This PNG is the ready-to-use video overlay; edit the accompanying SVG for layout/text changes.",
+      "width": 3840,
+      "height": 2160,
+      "alpha": false,
+      "fps": null,
+      "durationSec": null,
+      "sizeBytes": 1296647
+    }
+  ]
+}
