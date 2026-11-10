@@ -1100,3 +1100,164 @@
   box-shadow: 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80;
 }
 :global(html[data-intern-theme]) .authPage input { color: var(--ad-text); }
+
+.verifyPage {
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: 76px 24px 40px;
+}
+.verifyCard {
+  width: 100%;
+  max-width: 460px;
+  min-width: 0;
+  padding: 40px 32px;
+  border: 1px solid var(--ad-accent-border, #8cd7ff);
+  border-radius: 24px;
+  background: var(--ad-card, #f9fcff);
+  box-shadow: var(--ad-shadow-lift);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.verifyBrand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+.verifyBrand [data-company-brand] {
+  --brand-font: clamp(16px, 4.8vw, 22px);
+  --brand-mark: 44px;
+}
+.verifyIcon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  border: 1px solid var(--ad-blue-border, #a9c6ff);
+  border-radius: 50%;
+  background: var(--ad-blue-soft, #dbe7ff);
+  color: var(--ad-blue, #0045f8);
+}
+.verifyIcon[data-status="success"] {
+  border-color: var(--ad-success-border, #a6dcc4);
+  background: var(--ad-success-bg, #e0f5ec);
+  color: var(--ad-success, #0b6b4f);
+}
+.verifyIcon[data-status="error"] {
+  border-color: var(--ad-danger-border, #ecc4cf);
+  background: var(--ad-danger-bg, #fff3f5);
+  color: var(--ad-danger, #a22746);
+}
+.verifyTitle {
+  color: var(--ad-text, #080e48);
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.6px;
+  line-height: 1.3;
+}
+.verifyDescription {
+  margin-top: 10px !important;
+  color: var(--ad-muted, #46567c);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.verifyResend,
+.verifyResent {
+  margin-top: 24px !important;
+  padding: 16px;
+  border: 1px solid var(--ad-border, #c7daf6);
+  border-radius: 14px;
+  background: var(--ad-panel-alt, #f2f7ff);
+  text-align: left;
+}
+.verifyResend label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--ad-muted, #46567c);
+  font-size: 12px;
+  font-weight: 550;
+}
+.verifyResendControls {
+  display: flex;
+  gap: 8px;
+}
+.verifyResendControls input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--ad-border-strong, #9bb5df);
+  border-radius: 10px;
+  background: var(--ad-field, #f4f9ff);
+  color: var(--ad-text, #080e48);
+  font-size: 13px;
+}
+.verifyResendControls input::placeholder {
+  color: var(--ad-subtle, #5d6d92);
+}
+.verifyResendControls .primaryButton {
+  flex: none;
+  width: auto;
+  padding-inline: 15px;
+  white-space: nowrap;
+}
+.verifyResent {
+  border-color: var(--ad-success-border, #a6dcc4);
+  background: var(--ad-success-bg, #e0f5ec);
+  color: var(--ad-success, #0b6b4f);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.verifyLinks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 20px;
+  color: var(--ad-subtle, #5d6d92);
+  font-size: 13px;
+}
+.verifyLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ad-link, #003bc9);
+}
+.verifyLinks a:hover {
+  text-decoration: underline;
+}
+.verifyFooter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ad-border, #c7daf6);
+  color: var(--ad-subtle, #5d6d92);
+  font-size: 11px;
+}
+.verifyFooter svg {
+  flex: none;
+}
+@media (max-width: 480px) {
+  .verifyPage {
+    padding: 64px 13px 24px;
+  }
+  .verifyCard {
+    padding: 30px 20px;
+    border-radius: 20px;
+  }
+  .verifyResendControls {
+    flex-direction: column;
+  }
+  .verifyResendControls input {
+    font-size: 16px;
+  }
+  .verifyResendControls .primaryButton {
+    width: 100%;
+  }
+}

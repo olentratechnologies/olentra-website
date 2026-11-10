@@ -36,8 +36,8 @@
   border: 1px solid color-mix(in srgb, var(--ad-blue, #3b7dff) 33%, transparent);
   border-top-color: var(--ad-border-strong, #a1c9ff);
   border-radius: 10px;
-  color: #fff;
-  background: linear-gradient(130deg, var(--ad-blue, #2584ff), var(--ad-blue, #2f65ff));
+  color: var(--ad-primary-text, #fff);
+  background: var(--ad-primary-gradient, linear-gradient(130deg, #2584ff, #2f65ff));
   box-shadow: 0 3px 9px #3264dc22;
   font-size: 12px !important;
   font-weight: 550 !important;
@@ -438,8 +438,8 @@
 }
 .pagination button[aria-current="page"] {
   border-color: var(--ad-blue, #2a75ff);
-  background: var(--ad-blue, #2a75ff);
-  color: #fff;
+  background: var(--ad-primary-gradient, #2a75ff);
+  color: var(--ad-primary-text, #fff);
 }
 .pagination button:disabled {
   opacity: 0.35;

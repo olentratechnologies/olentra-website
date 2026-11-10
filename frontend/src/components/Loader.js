@@ -11,7 +11,7 @@ const FADE_OUT_MS = 400;
 export default function Loader({ isInitialLoad = true }) {
   const pathname = usePathname();
   // The public program at /careers/intern uses the normal website loader.
-  const privateInternRoute = /^\/intern\/(login|register|reset-password|portal|dashboard)(\/|$)/.test(pathname);
+  const privateInternRoute = /^\/intern\/(login|register|reset-password|verify|portal|dashboard)(\/|$)/.test(pathname);
   // Never cover server-rendered content while JavaScript is still downloading.
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState("show");

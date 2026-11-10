@@ -23,7 +23,7 @@ function PasswordInput({ id, label, value, onChange, autoComplete = "current-pas
     <label className={styles.field} htmlFor={id}>
       {label}
       <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-        <LockKeyhole size={15} style={{ position: "absolute", left: 10, color: "var(--color-text-muted, #9ca3af)", pointerEvents: "none" }} />
+        <LockKeyhole size={15} style={{ position: "absolute", left: 10, color: "var(--ad-subtle, #6c84aa)", pointerEvents: "none" }} />
         <input
           id={id}
           type={visible ? "text" : "password"}
@@ -37,7 +37,7 @@ function PasswordInput({ id, label, value, onChange, autoComplete = "current-pas
           type="button"
           aria-label={visible ? `Hide ${label}` : `Show ${label}`}
           onClick={() => setVisible((v) => !v)}
-          style={{ position: "absolute", right: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--color-text-muted, #9ca3af)" }}
+          style={{ position: "absolute", right: 8, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--ad-subtle, #6c84aa)" }}
         >
           {visible ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
@@ -81,7 +81,7 @@ function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={save}>
+    <form onSubmit={save} className={styles.sectionGap}>
       <Panel>
         <div className={styles.panelHeader}>
           <h2>Security &amp; password</h2>

@@ -586,8 +586,8 @@
   background: var(--ad-panel-soft, #dce6ff);
 }
 .periodTabs .periodActive {
-  background: linear-gradient(140deg, var(--ad-blue, #507aff), var(--ad-blue, #3071ff));
-  color: white;
+  background: var(--ad-primary-gradient, linear-gradient(140deg, #507aff, #3071ff));
+  color: var(--ad-primary-text, white);
   box-shadow:
     0 2px 5px #4970ff55,
     inset 0 1px #93bdff;
@@ -926,9 +926,9 @@
   border-top-color: var(--ad-border-strong, #77cfff);
   border-radius: 18px;
   background:
-    radial-gradient(ellipse at 1% 0%, var(--ad-blue, #21adff), transparent 56%),
+    radial-gradient(ellipse at 1% 0%, #0045f8, transparent 56%),
     radial-gradient(ellipse at 66% 86%, var(--ad-inverse, #162d62), transparent 74%),
-    linear-gradient(145deg, var(--ad-blue, #065bcb), var(--ad-inverse, #173a79) 60%, var(--ad-inverse, #0c1c44));
+    linear-gradient(145deg, #0045f8, var(--ad-inverse, #173a79) 60%, var(--ad-inverse, #0c1c44));
   box-shadow:
     0 3px 5px #4c71af20,
     inset 0 1px #b4eaff44;
@@ -1145,7 +1145,7 @@
   font-size: 11px;
 }
 .popoverArrow {
-  fill: #f5f8ff;
+  fill: var(--ad-panel, #f5f8ff);
 }
 .profilePopover {
   width: 245px;

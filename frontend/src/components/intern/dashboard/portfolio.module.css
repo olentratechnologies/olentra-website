@@ -82,7 +82,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--ad-subtle, #c0d4fa);
+  color: #c0d4fa;
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 1.2px;
@@ -93,11 +93,11 @@
   left: 17px;
   z-index: 1;
 }
-.coverStatus span {
+.projectCover .coverStatus span {
   padding: 5px 9px;
-  border: 1px solid color-mix(in srgb, var(--ad-border-strong, #adc9ff) 30%, transparent);
-  background: color-mix(in srgb, var(--ad-panel-soft, #dce9ff) 13%, transparent);
-  color: var(--ad-subtle, #d2e5ff);
+  border: 1px solid #adc9ff4d;
+  background: #dce9ff21;
+  color: #d2e5ff;
   font-size: 9px;
   backdrop-filter: blur(6px);
 }

@@ -676,13 +676,13 @@ export function ApplicationsAreaChart({ period, className }) {
             />
             <path
               d={explorerPath}
-              stroke="#237cff"
+              stroke="var(--ad-chart-series-1, #237cff)"
               strokeWidth="2.3"
               vectorEffect="non-scaling-stroke"
             />
             <path
               d={innovatorPath}
-              stroke="#9c5bff"
+              stroke="var(--ad-chart-series-2, #9c5bff)"
               strokeWidth="2.3"
               vectorEffect="non-scaling-stroke"
             />
@@ -695,23 +695,23 @@ export function ApplicationsAreaChart({ period, className }) {
               x2={x(hoveredIndex)}
               y1={plot.top}
               y2={plot.bottom}
-              stroke="#6b8cda"
+              stroke="var(--ad-subtle, #6b8cda)"
               strokeDasharray="4 4"
             />
             <circle
               cx={x(hoveredIndex)}
               cy={y(hovered.explorer)}
               r="4"
-              fill="#237cff"
-              stroke="white"
+              fill="var(--ad-chart-series-1, #237cff)"
+              stroke="var(--ad-panel, white)"
               strokeWidth="2"
             />
             <circle
               cx={x(hoveredIndex)}
               cy={y(hovered.innovator)}
               r="4"
-              fill="#9c5bff"
-              stroke="white"
+              fill="var(--ad-chart-series-2, #9c5bff)"
+              stroke="var(--ad-panel, white)"
               strokeWidth="2"
             />
           </g>
@@ -737,10 +737,10 @@ export function ApplicationsAreaChart({ period, className }) {
           }}
         >
           <strong>{hovered.label}</strong>
-          <div style={{ color: "#237cff" }}>
+          <div style={{ color: "var(--ad-link, #237cff)" }}>
             Explorer: {hovered.explorer.toLocaleString()}
           </div>
-          <div style={{ color: "#9355ed" }}>
+          <div style={{ color: "var(--ad-purple, #9355ed)" }}>
             Innovator: {hovered.innovator.toLocaleString()}
           </div>
         </div>

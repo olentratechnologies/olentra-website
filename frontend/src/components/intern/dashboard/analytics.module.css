@@ -727,6 +727,9 @@
   .barChart {
     height: 235px;
   }
+  .barChart svg text {
+    font-size: 16px;
+  }
   .legend {
     font-size: 9px;
     gap: 9px;

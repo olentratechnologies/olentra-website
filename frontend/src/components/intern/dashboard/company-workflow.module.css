@@ -96,7 +96,7 @@
   font-size: 12px;
   width: 100%;
   min-width: 0;
-  color-scheme: light;
+  color-scheme: var(--ad-scheme, light);
 }
 .workflow textarea {
   resize: vertical;

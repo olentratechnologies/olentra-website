@@ -261,8 +261,9 @@
   height: 15px;
   padding: 0 3px;
   border-radius: 9px;
-  background: var(--ad-danger, #ff537d);
-  color: #fff;
+  border: 1px solid var(--ad-danger-border, #f2c2d0);
+  background: var(--ad-danger-bg, #ffe2ed);
+  color: var(--ad-danger, #ce5275);
   font-size: 9px;
 }
 .profileButton {
@@ -375,11 +376,10 @@
   gap: 7px;
   min-height: 37px;
   padding: 9px 15px;
-  border: 1px solid color-mix(in srgb, var(--ad-blue, #468dff) 50%, transparent);
-  border-top-color: var(--ad-border-strong, #a2cdff);
+  border: 1px solid var(--ad-primary-border, #468dff);
   border-radius: 10px;
-  color: #fff;
-  background: linear-gradient(130deg, var(--ad-blue, #268cff), var(--ad-blue, #3866f5));
+  color: var(--ad-primary-text, #fff);
+  background: var(--ad-primary-gradient, linear-gradient(130deg, #268cff, #3866f5));
   box-shadow: 0 3px 9px #3371df1b;
   font:
     550 12px/1.3 var(--font-inter),
@@ -1094,8 +1094,8 @@
   height: 24px;
   border: 1px solid var(--ad-success-border, #9de1cf);
   border-radius: 50%;
-  color: #fff;
-  background: linear-gradient(135deg, var(--ad-success, #53d4b5), var(--ad-success, #21b491));
+  color: var(--ad-success, #139d76);
+  background: var(--ad-success-bg, #d0f3e6);
   box-shadow: 0 1px 4px #41bf9920;
 }
 .timeline strong {
@@ -1160,6 +1160,7 @@
   border-radius: 9px;
   background: color-mix(in srgb, var(--ad-panel, #ffffff) 88%, transparent);
   color: var(--ad-muted, #385781);
+  color-scheme: var(--ad-scheme, light);
   font:
     400 12px/1.5 var(--font-inter),
     Arial,
@@ -1346,7 +1347,7 @@
   border-radius: 50%;
   background: linear-gradient(135deg, var(--ad-blue-border, #8bc7ff), var(--ad-blue-border, #8c9df5));
   box-shadow: 0 4px 12px #7b9acf1d;
-  color: #fff;
+  color: var(--ad-link, #235fc4);
   font-size: 29px;
   letter-spacing: -1px;
   font-weight: 500;
@@ -1479,6 +1480,7 @@
 .projectCard h2 {
   font-size: 17px !important;
   line-height: 1.5 !important;
+  overflow-wrap: anywhere;
 }
 .projectCard h2 a {
   color: var(--ad-muted, #375782);
@@ -1493,6 +1495,7 @@
   font-size: 11px;
   line-height: 1.9;
   color: var(--ad-subtle, #91a3be);
+  overflow-wrap: anywhere;
 }
 .projectProgressLabel {
   display: flex;
@@ -1546,6 +1549,7 @@
   color: var(--ad-subtle, #91a3be);
   font-size: 12px;
   line-height: 1.9;
+  overflow-wrap: anywhere;
 }
 .projectFacts {
   display: grid;
@@ -1618,6 +1622,7 @@
 .taskTop h3 {
   font-size: 13px !important;
   color: var(--ad-subtle, #7390b4);
+  overflow-wrap: anywhere;
 }
 .taskTop p {
   margin-top: 7px !important;
@@ -1625,6 +1630,7 @@
   font-size: 11px;
   line-height: 1.85;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .requiredBadge {
   display: inline-flex;

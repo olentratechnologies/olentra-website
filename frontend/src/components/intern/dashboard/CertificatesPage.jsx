@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import CompanyBrand from "@/components/intern/CompanyBrand";
 import {
@@ -248,7 +248,7 @@ export function CertificatesPage() {
                     >
                       <Avatar
                         person={
-                          people.get(certificate.applicationId) || {
+                          certificate.application || {
                             name: certificate.recipient,
                           }
                         }
