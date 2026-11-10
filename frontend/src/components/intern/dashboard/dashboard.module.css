@@ -5,7 +5,7 @@
   position: relative;
   min-height: 100vh;
   color: var(--ink);
-  background: #ffffff;
+  background: var(--ad-panel, #ffffff);
   font-family: var(--font-inter), Arial, sans-serif;
   font-size: 14px;
   line-height: 1.4;
@@ -47,7 +47,7 @@
 .dashboard :focus-visible,
 .popover :focus-visible,
 .dialogContent :focus-visible {
-  outline: 3px solid #5a8cff;
+  outline: 3px solid var(--ad-border-strong, #5a8cff);
   outline-offset: 4px;
 }
 .dashboard h1,
@@ -78,9 +78,9 @@
   padding: 27px 16px 48px 13px;
   color: #fff;
   background:
-    radial-gradient(ellipse at 90% 39%, #15284b45, transparent 60%),
-    linear-gradient(155deg, #0c1730, #0a142b 50%, #0a1227);
-  border-right: 1px solid #6b9dff28;
+    radial-gradient(ellipse at 90% 39%, color-mix(in srgb, var(--ad-inverse, #15284b) 27%, transparent), transparent 60%),
+    linear-gradient(155deg, var(--ad-inverse, #0c1730), var(--ad-inverse, #0a142b) 50%, var(--ad-inverse, #0a1227));
+  border-right: 1px solid color-mix(in srgb, var(--ad-border-strong, #6b9dff) 16%, transparent);
   box-shadow: 5px 0 22px #669aff10;
 }
 .brand {
@@ -108,7 +108,7 @@
   padding: 10px 18px;
   border-radius: 15px;
   border: 1px solid transparent;
-  color: #a2b6df;
+  color: var(--ad-subtle, #a2b6df);
   background: transparent;
   text-align: left;
   transition:
@@ -125,14 +125,14 @@
 }
 .navItem:hover {
   color: #fff;
-  background: #2e579631;
+  background: color-mix(in srgb, var(--ad-blue, #2e5796) 19%, transparent);
 }
 .navActive {
   color: white;
-  border-color: #2981ff66;
+  border-color: color-mix(in srgb, var(--ad-blue, #2981ff) 40%, transparent);
   background:
-    radial-gradient(ellipse at 27% 50%, #1760f6b5, transparent 58%),
-    linear-gradient(110deg, #123e96a8, #173667a6);
+    radial-gradient(ellipse at 27% 50%, color-mix(in srgb, var(--ad-blue, #1760f6) 71%, transparent), transparent 58%),
+    linear-gradient(110deg, color-mix(in srgb, var(--ad-blue, #123e96) 66%, transparent), color-mix(in srgb, var(--ad-inverse, #173667) 65%, transparent));
   box-shadow:
     inset 1px 0 13px #126dff8c,
     inset -2px 0 11px #2e76df44,
@@ -195,11 +195,11 @@
   padding: 60px 8px 0;
   font-size: 11px;
   line-height: 1.8;
-  color: #c2cdec;
+  color: var(--ad-subtle, #c2cdec);
   white-space: nowrap;
 }
 .sidebarFooter span {
-  color: #8fa8d3;
+  color: var(--ad-subtle, #8fa8d3);
 }
 .main {
   position: relative;
@@ -207,7 +207,7 @@
   min-height: 100vh;
   padding: 26px 26px 46px 35px;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--ad-panel, #ffffff);
 }
 .main > :not(.backgroundWaves) {
   position: relative;
@@ -239,11 +239,11 @@
   max-width: 58%;
   height: 48px;
   padding: 0 13px 0 16px;
-  color: #4b69a6;
-  border: 1px solid #b6c8ff90;
-  border-top-color: #ffffffb3;
+  color: var(--ad-subtle, #4b69a6);
+  border: 1px solid color-mix(in srgb, var(--ad-border, #b6c8ff) 56%, transparent);
+  border-top-color: color-mix(in srgb, var(--ad-border, #ffffff) 70%, transparent);
   border-radius: 16px;
-  background: linear-gradient(120deg, #ffffff61, #f6f2ff90);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--ad-panel, #ffffff) 38%, transparent), color-mix(in srgb, var(--ad-purple-soft, #f6f2ff) 56%, transparent));
   box-shadow:
     0 3px 6px #5272b31c,
     inset 0 1px #ffffff33;
@@ -253,7 +253,7 @@
   min-width: 0;
   height: 100%;
   padding: 0;
-  color: #253d78;
+  color: var(--ad-muted, #253d78);
   background: transparent;
   border: 0;
   outline: none;
@@ -261,7 +261,7 @@
   letter-spacing: -0.15px;
 }
 .searchField input::placeholder {
-  color: #516ea9;
+  color: var(--ad-subtle, #516ea9);
   opacity: 1;
 }
 .searchField > svg {
@@ -274,10 +274,10 @@
   flex: none;
   width: 43px;
   height: 27px;
-  border: 1px solid #b3c4fa6e;
+  border: 1px solid color-mix(in srgb, var(--ad-border, #b3c4fa) 43%, transparent);
   border-radius: 7px;
-  color: #536aa5;
-  background: #dee6ff65;
+  color: var(--ad-subtle, #536aa5);
+  background: color-mix(in srgb, var(--ad-panel-soft, #dee6ff) 40%, transparent);
   font:
     14px var(--font-inter),
     sans-serif;
@@ -291,10 +291,10 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  background: #e5ecff;
+  background: var(--ad-panel-alt, #e5ecff);
   border: none;
   border-radius: 5px;
-  color: #435789;
+  color: var(--ad-muted, #435789);
 }
 .topbarActions {
   display: flex;
@@ -308,10 +308,10 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  border: 1px solid #bfccff60;
+  border: 1px solid color-mix(in srgb, var(--ad-border, #bfccff) 38%, transparent);
   border-radius: 50%;
-  color: #102960;
-  background: linear-gradient(135deg, #e9edff70, #d9e4ff35);
+  color: var(--ad-text, #102960);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ad-panel-alt, #e9edff) 44%, transparent), color-mix(in srgb, var(--ad-blue-soft, #d9e4ff) 21%, transparent));
   box-shadow: inset 0 1px #ffffff66;
 }
 .bellButton > span {
@@ -325,14 +325,14 @@
   height: 17px;
   border-radius: 50%;
   color: white;
-  background: #ff496d;
+  background: var(--ad-danger, #ff496d);
   font-size: 10px;
   box-shadow: 0 0 0 2px #c9d6ff;
 }
 .topbarDivider {
   height: 34px;
   width: 1px;
-  background: #fff3;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 20%, transparent);
 }
 .profileButton {
   display: flex;
@@ -367,7 +367,7 @@
 }
 .profileText > span {
   font-size: 12.5px;
-  color: #35558f;
+  color: var(--ad-muted, #35558f);
 }
 .profileButton > svg {
   margin-left: 0;
@@ -389,7 +389,7 @@
   margin-top: 6px;
   font-size: 17px;
   line-height: 1.45;
-  color: #2e4b81;
+  color: var(--ad-muted, #2e4b81);
   letter-spacing: -0.25px;
 }
 .wave {
@@ -406,12 +406,12 @@
   margin-top: 6px;
   height: 43px;
   padding: 0 14px;
-  border: 1px solid #b2c5ff90;
-  border-top-color: #fff8;
+  border: 1px solid color-mix(in srgb, var(--ad-border, #b2c5ff) 56%, transparent);
+  border-top-color: color-mix(in srgb, var(--ad-border, #ffffff) 53%, transparent);
   border-radius: 16px;
-  background: linear-gradient(120deg, #f3f4ff82, #e4e8ff9c);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--ad-panel, #f3f4ff) 51%, transparent), color-mix(in srgb, var(--ad-panel-alt, #e4e8ff) 61%, transparent));
   box-shadow: 0 3px 4px #536dbc16;
-  color: #13275e;
+  color: var(--ad-text, #13275e);
 }
 .dateSelect select {
   appearance: none;
@@ -426,8 +426,8 @@
   width: 91px;
 }
 .dateSelect select option {
-  background: #f1f5ff;
-  color: #142557;
+  background: var(--ad-panel-alt, #f1f5ff);
+  color: var(--ad-text, #142557);
 }
 .dateSelect > svg:last-child {
   pointer-events: none;
@@ -447,28 +447,28 @@
   height: 124px;
   padding: 16px 17px;
   overflow: hidden;
-  border: 1px solid #bfd9ff90;
-  border-top-color: #ffffffcf;
+  border: 1px solid color-mix(in srgb, var(--ad-border, #bfd9ff) 56%, transparent);
+  border-top-color: color-mix(in srgb, var(--ad-border, #ffffff) 81%, transparent);
   border-radius: 20px;
-  background: linear-gradient(120deg, #f9fdff99, #e2eeff8a);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--ad-panel, #f9fdff) 60%, transparent), color-mix(in srgb, var(--ad-panel-soft, #e2eeff) 54%, transparent));
   box-shadow:
     0 3px 6px #5284c713,
     inset 0 1px #ffffff26;
 }
 .metricCard[data-tone="green"] {
-  background: linear-gradient(120deg, #f6ffffad, #e5f1ff99);
-  border-color: #bce4f58c;
-  border-top-color: #fff9;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--ad-blue-soft, #f6ffff) 68%, transparent), color-mix(in srgb, var(--ad-panel-alt, #e5f1ff) 60%, transparent));
+  border-color: color-mix(in srgb, var(--ad-border, #bce4f5) 55%, transparent);
+  border-top-color: color-mix(in srgb, var(--ad-border, #ffffff) 60%, transparent);
 }
 .metricCard[data-tone="purple"] {
-  background: linear-gradient(120deg, #fffaffb0, #e7deffb0);
-  border-color: #d6c8ff80;
-  border-top-color: #fff9;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--ad-purple-soft, #fffaff) 69%, transparent), color-mix(in srgb, var(--ad-panel-soft, #e7deff) 69%, transparent));
+  border-color: color-mix(in srgb, var(--ad-border, #d6c8ff) 50%, transparent);
+  border-top-color: color-mix(in srgb, var(--ad-border, #ffffff) 60%, transparent);
 }
 .metricCard[data-tone="orange"] {
-  background: linear-gradient(120deg, #fffffdbd, #f1e7f0b0);
-  border-color: #f2dce27f;
-  border-top-color: #fff9;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--ad-warning-bg, #fffffd) 74%, transparent), color-mix(in srgb, var(--ad-purple-soft, #f1e7f0) 69%, transparent));
+  border-color: color-mix(in srgb, var(--ad-danger-border, #f2dce2) 50%, transparent);
+  border-top-color: color-mix(in srgb, var(--ad-border, #ffffff) 60%, transparent);
 }
 .metricGlyph {
   width: 66px;
@@ -492,7 +492,7 @@
 }
 .metricText > span {
   font-size: 13px;
-  color: #304c86;
+  color: var(--ad-muted, #304c86);
   white-space: nowrap;
   letter-spacing: -0.25px;
 }
@@ -503,7 +503,7 @@
   position: absolute;
   right: 23px;
   top: 28px;
-  color: #00ad68;
+  color: var(--ad-success, #00ad68);
   font-size: 13px;
   font-weight: 650;
   letter-spacing: -0.3px;
@@ -536,10 +536,10 @@
 }
 .panel {
   min-width: 0;
-  border: 1px solid #cbd7ffa6;
-  border-top-color: #ffffffd1;
+  border: 1px solid color-mix(in srgb, var(--ad-border, #cbd7ff) 65%, transparent);
+  border-top-color: color-mix(in srgb, var(--ad-border, #ffffff) 82%, transparent);
   border-radius: 18px;
-  background: linear-gradient(125deg, #ffffffae, #f7f5ffb8);
+  background: linear-gradient(125deg, color-mix(in srgb, var(--ad-panel, #ffffff) 68%, transparent), color-mix(in srgb, var(--ad-panel, #f7f5ff) 72%, transparent));
   box-shadow:
     0 2px 5px #7d94d01a,
     inset 0 1px #ffffff29;
@@ -555,8 +555,8 @@
   padding: 14px 15px 12px 16px;
 }
 .headingChartIcon {
-  color: #2379ff;
-  fill: #2783ff23;
+  color: var(--ad-blue, #2379ff);
+  fill: color-mix(in srgb, var(--ad-blue, #2783ff) 14%, transparent);
 }
 .periodTabs {
   display: flex;
@@ -565,9 +565,9 @@
   width: 199px;
   height: 28px;
   padding: 2px;
-  border: 1px solid #d8e0ff;
+  border: 1px solid var(--ad-border, #d8e0ff);
   border-radius: 14px;
-  background: #f0f4ff70;
+  background: color-mix(in srgb, var(--ad-panel-alt, #f0f4ff) 44%, transparent);
 }
 .periodTabs button {
   display: flex;
@@ -578,15 +578,15 @@
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: #355083;
+  color: var(--ad-muted, #355083);
   font-size: 12px;
   transition: 0.15s;
 }
 .periodTabs button:hover {
-  background: #dce6ff;
+  background: var(--ad-panel-soft, #dce6ff);
 }
 .periodTabs .periodActive {
-  background: linear-gradient(140deg, #507aff, #3071ff);
+  background: linear-gradient(140deg, var(--ad-blue, #507aff), var(--ad-blue, #3071ff));
   color: white;
   box-shadow:
     0 2px 5px #4970ff55,
@@ -599,7 +599,7 @@
   height: 43px;
   padding-top: 14px;
   padding-right: 53px;
-  color: #2c447c;
+  color: var(--ad-muted, #2c447c);
 }
 .chartLegend span {
   display: inline-flex;
@@ -640,9 +640,9 @@
   min-height: 194px;
   padding: 24px 7px 10px;
   margin-top: 4px;
-  border: 1px solid #dbe3ff6e;
+  border: 1px solid color-mix(in srgb, var(--ad-border, #dbe3ff) 43%, transparent);
   border-radius: 13px;
-  background: linear-gradient(140deg, #e9e7ffb8, #deebffb8);
+  background: linear-gradient(140deg, color-mix(in srgb, var(--ad-panel-alt, #e9e7ff) 72%, transparent), color-mix(in srgb, var(--ad-panel-soft, #deebff) 72%, transparent));
 }
 .growthCard > span {
   font-size: 12px;
@@ -656,11 +656,11 @@
   letter-spacing: -1px;
 }
 .growthCard em {
-  color: #05b77c;
+  color: var(--ad-success, #05b77c);
   font-style: normal;
 }
 .growthCard > svg:not(.growthArtwork) {
-  color: #13bb84;
+  color: var(--ad-success, #13bb84);
   margin-top: 0;
 }
 .growthArtwork {
@@ -681,7 +681,7 @@
   padding: 15px 16px 13px;
 }
 .programHeadingIcon {
-  color: #6748ff;
+  color: var(--ad-blue, #6748ff);
   font-size: 22px;
   line-height: 1;
   text-shadow: 1px 1px #3ad9fd;
@@ -717,7 +717,7 @@
 .programLegend small {
   display: block;
   font-size: 11px;
-  color: #30457e;
+  color: var(--ad-muted, #30457e);
   font-weight: 400;
 }
 .programLegend strong {
@@ -736,8 +736,8 @@
   height: 233px;
 }
 .bulbIcon {
-  stroke: #eeb342;
-  fill: #ffdd8055;
+  stroke: var(--ad-warning, #eeb342);
+  fill: color-mix(in srgb, var(--ad-warning, #ffdd80) 33%, transparent);
   filter: drop-shadow(0 0 4px #ffe5a4);
 }
 .insightGrid {
@@ -749,10 +749,10 @@
 .insightCard {
   height: 158px;
   padding: 10px 14px;
-  border: 1px solid #d3e1ff;
-  border-top-color: #e4eaff;
+  border: 1px solid var(--ad-border, #d3e1ff);
+  border-top-color: var(--ad-border, #e4eaff);
   border-radius: 13px;
-  background: linear-gradient(130deg, #eef4ffb8, #e6eeff88);
+  background: linear-gradient(130deg, color-mix(in srgb, var(--ad-panel-alt, #eef4ff) 72%, transparent), color-mix(in srgb, var(--ad-panel-alt, #e6eeff) 53%, transparent));
   box-shadow: 0 2px 3px #597be00b;
 }
 .insightGlyph {
@@ -773,7 +773,7 @@
   font-size: 13px;
   line-height: 1.45;
   margin-top: 2px;
-  color: #2d457e;
+  color: var(--ad-muted, #2d457e);
   letter-spacing: -0.1px;
 }
 .insightCard p > span {
@@ -781,7 +781,7 @@
   align-items: center;
   gap: 3px;
   font-weight: 600;
-  color: #08af6c;
+  color: var(--ad-success, #08af6c);
   white-space: nowrap;
 }
 .recentApplications {
@@ -795,15 +795,15 @@
   flex: none;
   min-height: 27px;
   padding: 3px 10px;
-  border: 1px solid #d4dfff;
+  border: 1px solid var(--ad-border, #d4dfff);
   border-radius: 11px;
-  background: #ffffff70;
-  color: #064aff;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 44%, transparent);
+  color: var(--ad-blue, #064aff);
   font-size: 11px !important;
   box-shadow: 0 2px 4px #4879db0a;
 }
 .viewAll:hover {
-  background: #e5edff;
+  background: var(--ad-panel-alt, #e5edff);
 }
 .tableScroll {
   margin-top: 6px;
@@ -816,14 +816,14 @@
   font-size: 11px;
   line-height: 1.25;
   white-space: nowrap;
-  color: #263c73;
+  color: var(--ad-muted, #263c73);
 }
 .recentTable th {
   padding: 6px 7px;
   height: 29px;
-  border: 1px solid #d6ddf9;
+  border: 1px solid var(--ad-border, #d6ddf9);
   border-right: none;
-  background: #e9eaff75;
+  background: color-mix(in srgb, var(--ad-panel-alt, #e9eaff) 46%, transparent);
   text-align: left;
   font-weight: 400;
 }
@@ -833,12 +833,12 @@
 }
 .recentTable th:last-child {
   border-radius: 0 9px 9px 0;
-  border-right: 1px solid #d6ddf9;
+  border-right: 1px solid var(--ad-border, #d6ddf9);
 }
 .recentTable td {
   height: 29px;
   padding: 3px 7px;
-  border-bottom: 1px solid #dfe5ff;
+  border-bottom: 1px solid var(--ad-border, #dfe5ff);
   letter-spacing: -0.25px;
 }
 .recentTable td:first-child {
@@ -848,7 +848,7 @@
   padding-right: 0;
 }
 .recentTable tr:nth-child(odd) td {
-  background: #ffffff62;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 38%, transparent);
 }
 .recentTable tr:last-child td {
   border-bottom: none;
@@ -865,7 +865,7 @@
   white-space: nowrap;
 }
 .recentTable td button:hover {
-  color: #1554dc;
+  color: var(--ad-link, #1554dc);
 }
 .personAvatar {
   display: inline-flex;
@@ -877,11 +877,11 @@
   border-radius: 50%;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--avatar-color, #668acb), white 72%),
-    color-mix(in srgb, var(--avatar-color, #668acb), white 40%)
+    color-mix(in srgb, var(--avatar-color, var(--ad-subtle, #668acb)), white 72%),
+    color-mix(in srgb, var(--avatar-color, var(--ad-subtle, #668acb)), white 40%)
   );
-  border: 1px solid #ffffffd9;
-  color: #243a69;
+  border: 1px solid color-mix(in srgb, var(--ad-border, #ffffff) 85%, transparent);
+  color: var(--ad-muted, #243a69);
   font-size: 7px;
   font-weight: 700;
   box-shadow: 0 1px 2px #17396920;
@@ -894,23 +894,23 @@
   padding: 3px 9px;
   line-height: 1.15;
   font-size: 11px;
-  color: #6432e9;
-  background: #e7dbff;
+  color: var(--ad-blue, #6432e9);
+  background: var(--ad-purple-soft, #e7dbff);
 }
 .status[data-status="selected"],
 .status[data-status="joined"] {
-  color: #06975d;
-  background: #c6efe1;
+  color: var(--ad-success, #06975d);
+  background: var(--ad-success-bg, #c6efe1);
 }
 .status[data-status="shortlisted"] {
-  color: #0055ee;
-  background: #c5ddff;
+  color: var(--ad-link, #0055ee);
+  background: var(--ad-blue-soft, #c5ddff);
 }
 .emptyState {
   padding: 30px 8px;
   font-size: 13px;
   text-align: center;
-  color: #57709d;
+  color: var(--ad-subtle, #57709d);
 }
 .rightRail {
   display: flex;
@@ -922,13 +922,13 @@
   height: 284px;
   padding: 19px 16px 18px;
   overflow: hidden;
-  border: 1px solid #4282d45e;
-  border-top-color: #77cfff;
+  border: 1px solid color-mix(in srgb, var(--ad-blue, #4282d4) 37%, transparent);
+  border-top-color: var(--ad-border-strong, #77cfff);
   border-radius: 18px;
   background:
-    radial-gradient(ellipse at 1% 0%, #21adff, transparent 56%),
-    radial-gradient(ellipse at 66% 86%, #162d62, transparent 74%),
-    linear-gradient(145deg, #065bcb, #173a79 60%, #0c1c44);
+    radial-gradient(ellipse at 1% 0%, var(--ad-blue, #21adff), transparent 56%),
+    radial-gradient(ellipse at 66% 86%, var(--ad-inverse, #162d62), transparent 74%),
+    linear-gradient(145deg, var(--ad-blue, #065bcb), var(--ad-inverse, #173a79) 60%, var(--ad-inverse, #0c1c44));
   box-shadow:
     0 3px 5px #4c71af20,
     inset 0 1px #b4eaff44;
@@ -959,10 +959,10 @@
   right: -90px;
   width: 238px;
   height: 262px;
-  border: 1px solid #6bd5ff5c;
+  border: 1px solid color-mix(in srgb, var(--ad-border-strong, #6bd5ff) 36%, transparent);
   border-radius: 50%;
   transform: rotate(24deg);
-  background: linear-gradient(150deg, #3f9cda4a, #0e2a5e0a 60%);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--ad-blue, #3f9cda) 29%, transparent), color-mix(in srgb, var(--ad-inverse, #0e2a5e) 4%, transparent) 60%);
   box-shadow: -10px -4px 25px #3aabff25;
 }
 .quickActionList {
@@ -978,11 +978,11 @@
   gap: 12px;
   height: 43px;
   padding: 0 13px;
-  border: 1px solid #a4c8ff12;
-  border-top-color: #acd1ff35;
+  border: 1px solid color-mix(in srgb, var(--ad-border-strong, #a4c8ff) 7%, transparent);
+  border-top-color: color-mix(in srgb, var(--ad-border-strong, #acd1ff) 21%, transparent);
   border-radius: 13px;
   color: #fff;
-  background: linear-gradient(105deg, #65a3fc42, #557bb92b);
+  background: linear-gradient(105deg, color-mix(in srgb, var(--ad-blue, #65a3fc) 26%, transparent), color-mix(in srgb, var(--ad-subtle, #557bb9) 17%, transparent));
   box-shadow:
     inset 0 1px #ffffff0b,
     0 2px 3px #09204b16;
@@ -992,7 +992,7 @@
     transform 0.18s;
 }
 .quickActionList button:hover {
-  background: #6099ed5c;
+  background: color-mix(in srgb, var(--ad-blue, #6099ed) 36%, transparent);
   transform: translateX(2px);
 }
 .quickActionList button > svg:first-child {
@@ -1004,7 +1004,7 @@
 }
 .quickActionList .quickArrow {
   margin-left: auto;
-  color: #abc3e4;
+  color: var(--ad-subtle, #abc3e4);
 }
 .activity {
   flex: 1;
@@ -1018,7 +1018,7 @@
   gap: 2px;
   padding: 0;
   font-size: 10px !important;
-  color: #0750ff;
+  color: var(--ad-blue, #0750ff);
   background: none;
   border: none;
 }
@@ -1042,7 +1042,7 @@
   left: 14px;
   bottom: -16px;
   width: 1px;
-  background: linear-gradient(#c5d8ff, #d9dfff);
+  background: linear-gradient(var(--ad-blue-soft, #c5d8ff), var(--ad-blue-soft, #d9dfff));
 }
 .activityIcon {
   position: relative;
@@ -1054,21 +1054,21 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  color: #245eff;
-  background: linear-gradient(130deg, #e0ecff, #c6d9ff);
+  color: var(--ad-blue, #245eff);
+  background: linear-gradient(130deg, var(--ad-panel-soft, #e0ecff), var(--ad-blue-soft, #c6d9ff));
   box-shadow: 0 1px 3px #4c6bb515;
 }
 .activityIcon[data-tone="green"] {
-  color: #06b58b;
-  background: linear-gradient(130deg, #e2fcf3, #d1ecea);
+  color: var(--ad-success, #06b58b);
+  background: linear-gradient(130deg, var(--ad-success-bg, #e2fcf3), var(--ad-blue-soft, #d1ecea));
 }
 .activityIcon[data-tone="orange"] {
-  color: #ee9b20;
-  background: linear-gradient(130deg, #fff7e6, #f9ead4);
+  color: var(--ad-warning, #ee9b20);
+  background: linear-gradient(130deg, var(--ad-warning-bg, #fff7e6), var(--ad-warning-bg, #f9ead4));
 }
 .activityIcon[data-tone="purple"] {
-  color: #854bff;
-  background: linear-gradient(130deg, #f1e9ff, #e4d9ff);
+  color: var(--ad-purple, #854bff);
+  background: linear-gradient(130deg, var(--ad-purple-soft, #f1e9ff), var(--ad-blue-soft, #e4d9ff));
 }
 .activityList li > div {
   flex: 1;
@@ -1087,7 +1087,7 @@
 }
 .activityLine time {
   flex: none;
-  color: #4c66a0;
+  color: var(--ad-subtle, #4c66a0);
   font-size: 9px;
   letter-spacing: -0.3px;
 }
@@ -1095,16 +1095,16 @@
   margin-top: 3px;
   font-size: 10.5px;
   line-height: 1.5;
-  color: #3b558e;
+  color: var(--ad-muted, #3b558e);
   letter-spacing: -0.2px;
 }
 .popover {
   z-index: 70;
-  border: 1px solid #cbd9ff;
+  border: 1px solid var(--ad-border, #cbd9ff);
   border-radius: 17px;
   padding: 18px;
-  color: #102354;
-  background: #f5f8fff5;
+  color: var(--ad-text, #102354);
+  background: color-mix(in srgb, var(--ad-panel, #f5f8ff) 96%, transparent);
   backdrop-filter: blur(25px);
   box-shadow:
     0 15px 60px #1e3e7b30,
@@ -1131,7 +1131,7 @@
   border: none;
   padding: 0;
   background: transparent;
-  color: #2465e9;
+  color: var(--ad-blue, #2465e9);
   font-size: 10px;
 }
 .popover .activityList {
@@ -1154,11 +1154,11 @@
 .profilePopover p {
   font-size: 11px;
   line-height: 1.8;
-  color: #64789c;
+  color: var(--ad-subtle, #64789c);
   padding: 0 6px 12px;
 }
 .profilePopover p strong {
-  color: #213965;
+  color: var(--ad-muted, #213965);
   font-weight: 500;
 }
 .profilePopover button,
@@ -1170,20 +1170,20 @@
   padding: 10px 8px;
   border: none;
   border-radius: 8px;
-  color: #264176;
+  color: var(--ad-muted, #264176);
   background: transparent;
   font-size: 12px;
   text-decoration: none;
 }
 .profilePopover button:hover,
 .profilePopover a:hover {
-  background: #e4ecff;
+  background: var(--ad-panel-alt, #e4ecff);
 }
 .dialogOverlay {
   position: fixed;
   z-index: 90;
   inset: 0;
-  background: #06173370;
+  background: color-mix(in srgb, var(--ad-inverse, #061733) 44%, transparent);
   backdrop-filter: blur(7px);
   animation: enter 0.15s;
 }
@@ -1198,10 +1198,10 @@
   padding: 30px;
   overflow-y: auto;
   transform: translate(-50%, -50%);
-  border: 1px solid #cfddff;
+  border: 1px solid var(--ad-border, #cfddff);
   border-radius: 23px;
-  color: #13265b;
-  background: linear-gradient(140deg, #f8fcff, #eff0ff);
+  color: var(--ad-text, #13265b);
+  background: linear-gradient(140deg, var(--ad-panel, #f8fcff), var(--ad-panel-alt, #eff0ff));
   box-shadow: 0 24px 100px #041a5650;
   font-family: var(--font-inter), Arial, sans-serif;
   color-scheme: light;
@@ -1217,8 +1217,8 @@
   height: 28px;
   border: none;
   border-radius: 50%;
-  background: #e3ebff;
-  color: #435985;
+  background: var(--ad-panel-alt, #e3ebff);
+  color: var(--ad-muted, #435985);
 }
 .dialogTitle {
   margin: 0;
@@ -1230,7 +1230,7 @@
   margin-top: 8px !important;
   font-size: 12px;
   line-height: 1.6;
-  color: #5a709b;
+  color: var(--ad-subtle, #5a709b);
 }
 .applicantProfile {
   display: flex;
@@ -1238,9 +1238,9 @@
   gap: 13px;
   margin: 25px 0;
   padding: 16px;
-  border: 1px solid #d4e0ff;
+  border: 1px solid var(--ad-border, #d4e0ff);
   border-radius: 14px;
-  background: #e9efff88;
+  background: color-mix(in srgb, var(--ad-panel-alt, #e9efff) 53%, transparent);
 }
 .applicantProfile .personAvatar {
   width: 44px;
@@ -1254,7 +1254,7 @@
 }
 .applicantProfile p {
   font-size: 12px;
-  color: #526b9a;
+  color: var(--ad-subtle, #526b9a);
   margin-top: 4px;
 }
 .applicationDetails {
@@ -1269,7 +1269,7 @@
   gap: 12px;
 }
 .applicationDetails dt {
-  color: #687da3;
+  color: var(--ad-subtle, #687da3);
 }
 .applicationDetails dd {
   margin: 0;
@@ -1279,7 +1279,7 @@
 .formLabel {
   display: grid;
   gap: 8px;
-  color: #334c7c;
+  color: var(--ad-muted, #334c7c);
   font-size: 12px;
   font-weight: 500;
 }
@@ -1288,16 +1288,16 @@
 .formLabel textarea {
   width: 100%;
   padding: 11px 12px;
-  border: 1px solid #c8d7ff;
+  border: 1px solid var(--ad-border, #c8d7ff);
   border-radius: 10px;
-  color: #1a3565;
-  background: #ffffffb5;
+  color: var(--ad-muted, #1a3565);
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 71%, transparent);
   font-size: 12px;
   font-weight: 400;
 }
 .formLabel input::placeholder,
 .formLabel textarea::placeholder {
-  color: #7c8caf;
+  color: var(--ad-subtle, #7c8caf);
 }
 .formLabel textarea {
   resize: vertical;
@@ -1310,15 +1310,15 @@
   width: 100%;
   margin-top: 22px;
   padding: 12px 18px;
-  border: 1px solid #3a76f4;
+  border: 1px solid var(--ad-blue, #3a76f4);
   border-radius: 11px;
-  background: linear-gradient(130deg, #387aff, #5264f4);
+  background: linear-gradient(130deg, var(--ad-blue, #387aff), var(--ad-blue, #5264f4));
   color: #fff;
   font-size: 13px !important;
   box-shadow: 0 4px 14px #3776e930;
 }
 .primaryButton:hover {
-  background: #235fe6;
+  background: var(--ad-blue, #235fe6);
 }
 .notificationForm {
   display: grid;
@@ -1329,7 +1329,7 @@
   margin-top: 0;
 }
 .previewNote {
-  color: #7184a3;
+  color: var(--ad-subtle, #7184a3);
   font-size: 11px;
 }
 .toast {
@@ -1342,10 +1342,10 @@
   gap: 10px;
   max-width: calc(100vw - 40px);
   padding: 13px 17px;
-  border: 1px solid #c6e8db;
+  border: 1px solid var(--ad-success-border, #c6e8db);
   border-radius: 14px;
-  color: #1b4350;
-  background: #f5fffcf5;
+  color: var(--ad-chart-series-3, #1b4350);
+  background: color-mix(in srgb, var(--ad-success-bg, #f5fffc) 96%, transparent);
   box-shadow: 0 8px 35px #1e42622a;
   font-size: 12px;
   animation: enter 0.2s ease-out;
@@ -1358,15 +1358,15 @@
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  color: #119d6a;
-  background: #daf4e8;
+  color: var(--ad-success, #119d6a);
+  background: var(--ad-success-bg, #daf4e8);
 }
 .toast > button {
   display: flex;
   margin-left: 5px;
   padding: 4px;
   border: 0;
-  color: #64858a;
+  color: var(--ad-subtle, #64858a);
   background: transparent;
 }
 .menuButton,
@@ -1789,7 +1789,7 @@
     z-index: 25;
     inset: 0;
     border: 0;
-    background: #07152d65;
+    background: color-mix(in srgb, var(--ad-inverse, #07152d) 40%, transparent);
     backdrop-filter: blur(3px);
   }
   .closeNav {
@@ -1802,10 +1802,10 @@
     width: 25px;
     height: 25px;
     padding: 0;
-    background: #ffffff0c;
+    background: color-mix(in srgb, var(--ad-panel, #ffffff) 5%, transparent);
     border: none;
     border-radius: 50%;
-    color: #9db9f2;
+    color: var(--ad-subtle, #9db9f2);
   }
   .navigation {
     margin-top: 35px;
@@ -1846,7 +1846,7 @@
     height: 40px;
     padding: 0;
     background: none;
-    color: #254578;
+    color: var(--ad-muted, #254578);
     border: none;
   }
   .searchField {
@@ -2166,6 +2166,89 @@
   text-decoration: none;
 }
 .notificationLink:hover {
-  color: #2469f4;
+  color: var(--ad-blue, #2469f4);
   text-decoration: underline;
 }
+
+/* ---- Sky theme shell (shared look with the admin dashboard) ----------------
+   Applies only while html[data-intern-theme] is set by InternThemeProvider. */
+:global(html[data-intern-theme]) .dashboard {
+  --ink: var(--ad-text);
+  --muted: var(--ad-muted);
+  --blue: var(--ad-blue);
+  color-scheme: var(--ad-scheme);
+  background: var(--ad-stage);
+  background-attachment: fixed;
+}
+:global(html[data-intern-theme]) .main { background: transparent; }
+:global(html[data-intern-theme]) .dashboard h1 { font-weight: 750; letter-spacing: -1.4px; color: var(--ad-text); }
+:global(html[data-intern-theme]) .dashboard :focus-visible,
+:global(html[data-intern-theme]) .popover :focus-visible,
+:global(html[data-intern-theme]) .dialogContent :focus-visible { outline-color: var(--ad-focus); }
+:global(html[data-intern-theme]) .sidebar {
+  color: var(--ad-text);
+  border: 1px solid var(--ad-border);
+  background: var(--ad-glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--ad-shadow);
+}
+:global(html[data-intern-theme]) .navItem { border-radius: 999px; color: var(--ad-muted); }
+:global(html[data-intern-theme]) .navItem:hover { color: var(--ad-text); background: var(--ad-panel-soft); }
+:global(html[data-intern-theme]) .navActive,
+:global(html[data-intern-theme]) .navActive:hover {
+  color: #fff;
+  border-color: var(--ad-primary-border);
+  background: var(--ad-primary-gradient);
+  box-shadow: 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80;
+}
+:global(html[data-intern-theme]) .navActive span { font-weight: 650; }
+:global(html[data-intern-theme]) .sidebarFooter { color: var(--ad-subtle); }
+:global(html[data-intern-theme]) .searchField {
+  border: 1px solid var(--ad-border);
+  border-radius: 999px;
+  color: var(--ad-subtle);
+  background: var(--ad-glass);
+  box-shadow: var(--ad-shadow);
+}
+:global(html[data-intern-theme]) .searchField input { color: var(--ad-text); }
+:global(html[data-intern-theme]) .searchField input::placeholder { color: var(--ad-subtle); }
+:global(html[data-intern-theme]) .bellButton {
+  border: 1px solid var(--ad-border-strong);
+  color: var(--ad-button-text);
+  background: var(--ad-button-bg);
+  box-shadow: none;
+}
+:global(html[data-intern-theme]) .bellButton:hover { border-color: var(--ad-blue); color: var(--ad-link); }
+:global(html[data-intern-theme]) .topbarDivider { background: var(--ad-border); }
+:global(html[data-intern-theme]) .profileText small { color: var(--ad-subtle); }
+:global(html[data-intern-theme]) .panel,
+:global(html[data-intern-theme]) .metricCard {
+  border: 1px solid var(--ad-border);
+  background: var(--ad-card);
+  box-shadow: var(--ad-shadow);
+}
+:global(html[data-intern-theme]) .panel { border-radius: 22px; }
+:global(html[data-intern-theme]) .popover,
+:global(html[data-intern-theme]) .dialogContent {
+  color-scheme: var(--ad-scheme);
+  color: var(--ad-text);
+  border: 1px solid var(--ad-border);
+  background: var(--ad-panel);
+  box-shadow: var(--ad-modal-shadow);
+}
+:global(html[data-intern-theme]) .dialogOverlay,
+:global(html[data-intern-theme]) .sidebarBackdrop { background: var(--ad-backdrop); }
+:global(html[data-intern-theme]) .primaryButton {
+  border: 1px solid #6bb6ff88;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--ad-primary-gradient);
+  box-shadow: 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80;
+}
+@media (min-width: 681px) {
+  :global(html[data-intern-theme]) .sidebar { inset: 12px auto 12px 12px; border-radius: 24px; }
+}
+:global(html[data-intern-theme]) .sidebarPromo { color: #fff; }
+:global(html[data-intern-theme]) .dashboard select,
+:global(html[data-intern-theme]) .dialogContent select { color: var(--ad-text); background-color: var(--ad-field); border-color: var(--ad-border-strong); }

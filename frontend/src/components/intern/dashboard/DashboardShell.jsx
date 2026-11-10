@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import CompanyBrand from "@/components/intern/CompanyBrand";
 import * as Dialog from "@radix-ui/react-dialog";
+import { InternThemeToggle } from "../InternTheme";
 import * as Popover from "@radix-ui/react-popover";
 import {
   ArrowDown,
@@ -330,6 +331,7 @@ export default function DashboardShell({ children }) {
             )}
           </div>}
           <div className={styles.topbarActions}>
+            <InternThemeToggle />
             {can("notifications.read") && <Popover.Root>
               <Popover.Trigger asChild>
                 <button

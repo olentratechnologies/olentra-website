@@ -123,6 +123,7 @@ backend/
 /dashboard/content/media       Media management
 /dashboard/content/pages/[pageId]/edit Page editor
 /dashboard/enquiries/[enquiryId] Enquiry detail
+/dashboard/email-templates     Email template catalog and browser-local preset selection
 /dashboard/integrations        Integration settings
 /dashboard/integrations/[integrationId] Integration detail
 /dashboard/localization        Localization management

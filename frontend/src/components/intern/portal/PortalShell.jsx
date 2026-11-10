@@ -33,6 +33,7 @@ import {
   formatDate,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import { InternThemeToggle } from "../InternTheme";
 import { useSiteFeatures } from "@/components/site-features";
 
 const navigation = [
@@ -266,6 +267,7 @@ export default function PortalShell({ children }) {
             <strong>{current?.label || "Dashboard"}</strong>
           </div>
           <div className={styles.topbarActions}>
+            <InternThemeToggle />
             <button
               className={styles.roundButton}
               aria-label="Open messages"

@@ -15,6 +15,7 @@ import {
 import { useInternship } from "@/components/intern/InternshipProvider";
 import CompanyBrand from "@/components/intern/CompanyBrand";
 import styles from "@/components/intern/auth/auth.module.css";
+import { InternThemeProvider, InternThemeToggle } from "@/components/intern/InternTheme";
 
 function VerifyContent() {
   const router = useRouter();
@@ -88,6 +89,8 @@ function VerifyContent() {
   }
 
   return (
+    <InternThemeProvider>
+    <InternThemeToggle floating />
     <main className={styles.authPage}>
       <div
         style={{
@@ -394,6 +397,7 @@ function VerifyContent() {
         </div>
       </div>
     </main>
+    </InternThemeProvider>
   );
 }
 

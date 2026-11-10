@@ -2,17 +2,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Monitor, Image, BriefcaseBusiness, ClipboardList, ChartNoAxesCombined, Bell, Globe2, Users, ListChecks, Plug, Settings, Menu, X, Search, ExternalLink, ChevronDown, ArrowRight, Inbox } from "lucide-react";
+import { Home, Monitor, Image, BriefcaseBusiness, ClipboardList, ChartNoAxesCombined, Bell, Globe2, Users, ListChecks, Plug, Settings, Menu, X, Search, ExternalLink, ChevronDown, ArrowRight, Inbox, Mail } from "lucide-react";
 import { AdminProvider, useAdmin } from "./store";
 import { Button, Modal, SearchInput, Select } from "./ui";
 import { designRoutes } from "./routes";
 import { CompanyLogo } from "./company-logo";
 import { LiveUserPill } from "./live-user-count";
+import { DashboardThemeProvider, DashboardThemeToggle } from "./dashboard-theme";
 
 const navigation = [
   ["Overview", "/dashboard", Home], ["Website Controls", "/dashboard/website-controls", Monitor],
   ["Content & Media", "/dashboard/content", Image], ["Careers & Internships", "/dashboard/careers", BriefcaseBusiness],
   ["Forms & Enquiries", "/dashboard/enquiries", ClipboardList], ["Analytics & SEO", "/dashboard/analytics", ChartNoAxesCombined],
+  ["Email Templates", "/dashboard/email-templates", Mail],
   ["Monitoring & Alerts", "/dashboard/monitoring", Bell], ["Regions & Languages", "/dashboard/localization", Globe2],
   ["Team & Access", "/dashboard/team", Users], ["Approvals & Audit Log", "/dashboard/approvals", ListChecks],
   ["Integrations", "/dashboard/integrations", Plug], ["Settings & Backups", "/dashboard/settings/company", Settings],
@@ -38,12 +40,12 @@ function Workspace({ children }) {
   const results = designRoutes.filter(route => route.module !== "Authentication" && allowed(route.href) && (route.title + " " + route.module).toLowerCase().includes(query.toLowerCase()));
   const visibleNavigation = navigation.filter(([label]) => can(label, "view") || label === "Careers & Internships" && can("Applications", "view")).map(row => row[0] === "Careers & Internships" && !can(row[0], "view") ? [row[0], "/dashboard/careers/applications", row[2]] : row);
   const signOut = () => { command("auth.signOut"); router.push("/dashboard/login"); };
-  if (authPage) return <div className="ad-root">{children}</div>;
+  if (authPage) return <div className="ad-root"><div className="ad-auth-theme"><DashboardThemeToggle /></div>{children}</div>;
   if (!ready || session?.status !== "authenticated") return <div className="ad-root ad-session-loading" role="status">Loading company workspace…</div>;
   return <div className="ad-root">
     {menuOpen && <button className="ad-menu-scrim" aria-label="Close navigation" onClick={() => setMenuOpen(false)} />}
     <aside className={"ad-sidebar " + (menuOpen ? "is-open" : "")} aria-label="Company navigation">
-      <Link href="/dashboard" className="ad-brand"><CompanyLogo /></Link>
+      <Link href="/dashboard" className="ad-brand"><CompanyLogo /><span className="ad-brand-wordmark">Olentra<span className="ad-brand-subtitle">Technologies</span></span></Link>
       <button className="ad-mobile-close ad-icon-button" aria-label="Close navigation" onClick={() => setMenuOpen(false)}><X size={21} /></button>
       <div className="ad-workspace">Company workspace</div>
       <nav className="ad-nav">{visibleNavigation.map(([label, href, Icon]) => <Link key={href} href={href} className={isActive(href) ? "active" : ""} aria-current={isActive(href) ? "page" : undefined}><Icon aria-hidden="true" /><span>{label}</span></Link>)}</nav>
@@ -56,8 +58,9 @@ function Workspace({ children }) {
         <div className="ad-breadcrumb">Workspace / <b>{pathname === "/dashboard/account" ? "My account" : current?.[0] || "Notifications"}</b></div>
         <LiveUserPill />
         <span className="ad-concept">LOCAL DEMO · JSON DATA</span>
-        <button className="ad-search ad-topbar-search" onClick={() => setSearchOpen(true)} aria-label="Search dashboard pages"><Search size={16} /><span style={{ fontSize: 11, color: "#a9b8ce" }}>Search website, content, settings…</span><kbd style={{ marginLeft: "auto", fontSize: 9 }}>⌘K</kbd></button>
+        <button className="ad-search ad-topbar-search" onClick={() => setSearchOpen(true)} aria-label="Search dashboard pages"><Search size={16} /><span>Search workspace…</span><kbd>⌘K</kbd></button>
         <div className="ad-topbar-actions"><Link className="ad-icon-button ad-bell" href="/dashboard/notifications" aria-label={`Notification center, ${unreadNotifications} unread`}><Bell size={21} />{unreadNotifications > 0 && <span className="ad-unread-count">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</Link>
+          <DashboardThemeToggle />
           <Select className="ad-topbar-environment" aria-label="Environment" options={["Production", "Staging"]} value={environment} onChange={event => setEnvironment(event.target.value)} />
           <Select className="ad-topbar-scope" aria-label="Region scope" options={["Global", "Americas", "Europe", "Asia Pacific"]} value={scope} onChange={event => setScope(event.target.value)} />
           <Button href="/" target="_blank" rel="noopener noreferrer" variant="primary" icon={ExternalLink} className="ad-view-website">View website</Button>
@@ -66,7 +69,7 @@ function Workspace({ children }) {
       <main className="ad-content" id="dashboard-main">{error && <div className="ad-storage-error" role="alert">{error}</div>}{allowed(pathname) ? children : <div className="ad-empty"><h1>Access restricted</h1><p>Your {account?.role} role cannot view this module.</p><Button href={visibleNavigation[0]?.[1] || "/dashboard/account"}>Go to an available page</Button></div>}</main>
     </div>
     <nav className="ad-mobile-dock" aria-label="Mobile navigation">{[["Overview", "/dashboard", Home], ["Controls", "/dashboard/website-controls", Monitor], ["Inbox", "/dashboard/enquiries", Inbox]].filter(([, href]) => allowed(href)).map(([label, href, Icon]) => <Link key={href} className={isActive(href) ? "active" : ""} href={href}><Icon />{label}</Link>)}<button onClick={() => setMenuOpen(true)}><Menu />More</button></nav>
-    <Modal open={searchOpen} onClose={() => setSearchOpen(false)} title="Search your workspace"><div className="ad-stack"><SearchInput autoFocus value={query} onChange={setQuery} placeholder="Search all dashboard pages…" /><div className="ad-list">{results.slice(0, 12).map(route => <Link key={route.id} className="ad-list-row" href={route.href}><div><strong>{route.title}</strong><p>{route.module}</p></div><ArrowRight size={16} /></Link>)}{results.length === 0 && <p className="ad-muted">No pages match your search.</p>}</div></div></Modal>
+    <Modal open={searchOpen} onClose={() => setSearchOpen(false)} title="Search your workspace"><div className="ad-stack"><SearchInput autoFocus value={query} onChange={setQuery} placeholder="Search all dashboard pages…" /><div className="ad-list">{results.slice(0, 12).map(route => <Link key={route.id} className="ad-list-row" href={route.href} onClick={() => setSearchOpen(false)}><div><strong>{route.title}</strong><p>{route.module}</p></div><ArrowRight size={16} /></Link>)}{results.length === 0 && <p className="ad-muted">No pages match your search.</p>}</div></div></Modal>
   </div>;
 }
-export default function AdminShell({ children }) { return <AdminProvider><Workspace>{children}</Workspace></AdminProvider>; }
+export default function AdminShell({ children }) { return <DashboardThemeProvider><AdminProvider><Workspace>{children}</Workspace></AdminProvider></DashboardThemeProvider>; }

@@ -42,7 +42,8 @@
 }
 
 [data-company-brand] .name {
-  color: #334155;
+  /* --ad-brand-ink is only set by themed dark surfaces; everywhere else the original ink applies. */
+  color: var(--ad-brand-ink, #334155);
 }
 
 [data-company-brand] .technologies {

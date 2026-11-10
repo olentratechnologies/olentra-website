@@ -608,7 +608,7 @@ export function ApplicationsAreaChart({ period, className }) {
                 x2={plot.right}
                 y1={y(value)}
                 y2={y(value)}
-                stroke="#bdcff5"
+                stroke="var(--ad-chart-grid, #bdcff5)"
                 strokeOpacity=".62"
                 strokeWidth=".7"
                 strokeDasharray={index ? "2 2" : undefined}
@@ -617,7 +617,7 @@ export function ApplicationsAreaChart({ period, className }) {
                 x="21"
                 y={y(value) + 4}
                 textAnchor="middle"
-                fill="#344c8a"
+                fill="var(--ad-muted, #344c8a)"
                 fontFamily="Arial, sans-serif"
                 fontSize="12"
               >
@@ -633,7 +633,7 @@ export function ApplicationsAreaChart({ period, className }) {
               x2={x(tick.index)}
               y1={plot.top}
               y2={plot.bottom}
-              stroke="#bdcff5"
+              stroke="var(--ad-chart-grid, #bdcff5)"
               strokeOpacity=".55"
               strokeWidth=".7"
               strokeDasharray="2 2"
@@ -648,7 +648,7 @@ export function ApplicationsAreaChart({ period, className }) {
                     ? "middle"
                     : "middle"
               }
-              fill="#344c8a"
+              fill="var(--ad-muted, #344c8a)"
               fontFamily="Arial, sans-serif"
               fontSize="12"
             >
@@ -661,7 +661,7 @@ export function ApplicationsAreaChart({ period, className }) {
           x2={plot.left}
           y1={plot.top}
           y2={plot.bottom}
-          stroke="#bbcef6"
+          stroke="var(--ad-chart-grid, #bbcef6)"
           strokeWidth="1"
         />
         {points.length > 0 && (
@@ -724,11 +724,11 @@ export function ApplicationsAreaChart({ period, className }) {
             pointerEvents: "none",
             top: 4,
             left: `${Math.min(66, Math.max(8, x(hoveredIndex) / 6 - 9))}%`,
-            border: "1px solid #d6e1ff",
+            border: "1px solid var(--ad-border, #d6e1ff)",
             borderRadius: 9,
             padding: "9px 12px",
-            background: "rgba(255,255,255,.96)",
-            color: "#152451",
+            background: "var(--ad-panel, rgba(255,255,255,.96))",
+            color: "var(--ad-text, #152451)",
             boxShadow: "0 6px 18px #294c9b18",
             fontSize: 11,
             zIndex: 2,
@@ -821,7 +821,7 @@ export function ProgramDonut({ programs = [], className }) {
         x="90"
         y="94"
         textAnchor="middle"
-        fill="#0a164c"
+        fill="var(--ad-text, #0a164c)"
         fontFamily="Inter, Arial, sans-serif"
         fontWeight="750"
         fontSize="27"
@@ -833,7 +833,7 @@ export function ProgramDonut({ programs = [], className }) {
         x="90"
         y="112"
         textAnchor="middle"
-        fill="#172655"
+        fill="var(--ad-muted, #172655)"
         fontFamily="Inter, Arial, sans-serif"
         fontSize="12.5"
       >

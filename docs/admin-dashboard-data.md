@@ -4,6 +4,8 @@ The company dashboard under `/dashboard` combines two data systems. Website visi
 
 ## Run the dashboard
 
+The dashboard provides neutral framed styling in light and dark modes, with rounded double borders, quiet surfaces, and a restrained serif page heading. Use the sun/moon control in the header (also available on sign-in and verification screens). Light is the initial default; an explicit choice is saved under `olentra.admin.theme.v1` independently of workspace data, restored before paint, and synchronized between tabs. Leaving `/dashboard` removes the dashboard theme attribute from the document, preserving public-page styling.
+
 ```sh
 npm run dev
 ```
@@ -82,6 +84,8 @@ In development, an automatic local demo session is available on loopback URLs wh
 The current persistence targets a persistent Node deployment with one shared filesystem path. Mount a durable volume for the runtime JSON file. A container or host with ephemeral storage loses its runtime settings when that storage is replaced. Separate replicas with separate files do not provide a shared fleet-wide database; distributed database storage is not implemented here.
 
 ## Browser-local fixture files
+
+The [Email Templates catalog](email-templates.md) adds 49 email types with three preset previews each at `/dashboard/email-templates`. Template choices use the shared browser store and are not connected to email delivery.
 
 | File | Contents |
 | --- | --- |

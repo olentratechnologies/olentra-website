@@ -4,11 +4,11 @@
   gap: 9px;
   height: 39px;
   padding: 0 12px;
-  color: #284475;
-  border: 1px solid #cbdaff;
-  border-top-color: #fff;
+  color: var(--ad-muted, #284475);
+  border: 1px solid var(--ad-border, #cbdaff);
+  border-top-color: var(--ad-border, #ffffff);
   border-radius: 11px;
-  background: linear-gradient(130deg, #ffffff8a, #e5edffb8);
+  background: linear-gradient(130deg, color-mix(in srgb, var(--ad-panel, #ffffff) 54%, transparent), color-mix(in srgb, var(--ad-panel-alt, #e5edff) 72%, transparent));
   box-shadow: 0 2px 5px #4870c210;
 }
 .rangeSelect select {
@@ -21,8 +21,8 @@
   cursor: pointer;
 }
 .rangeSelect option {
-  color: #27416f;
-  background: #f4f7ff;
+  color: var(--ad-muted, #27416f);
+  background: var(--ad-panel, #f4f7ff);
 }
 .analyticsGrid {
   display: grid;
@@ -49,7 +49,7 @@
 .chartHeader h2,
 .sectionTitle {
   margin: 0;
-  color: #10214e;
+  color: var(--ad-text, #10214e);
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.55px;
@@ -64,7 +64,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 17px;
-  color: #536ba0;
+  color: var(--ad-subtle, #536ba0);
   font-size: 11px;
 }
 .legend > span {
@@ -82,10 +82,10 @@
   flex: none;
 }
 .blueDot {
-  background: #369dff;
+  background: var(--ad-blue, #369dff);
 }
 .purpleDot {
-  background: #9b63ff;
+  background: var(--ad-purple, #9b63ff);
 }
 .iconButton {
   display: grid;
@@ -93,14 +93,14 @@
   width: 29px;
   height: 29px;
   padding: 0;
-  color: #7c94c5;
+  color: var(--ad-subtle, #7c94c5);
   border: 0;
   border-radius: 8px;
-  background: #eaf0ff;
+  background: var(--ad-panel-alt, #eaf0ff);
 }
 .iconButton:hover {
-  color: #2e6ee4;
-  background: #dee8ff;
+  color: var(--ad-blue, #2e6ee4);
+  background: var(--ad-panel-soft, #dee8ff);
 }
 .barChart {
   position: relative;
@@ -119,7 +119,7 @@
   outline: none;
 }
 .barChart svg g[role="button"]:focus-visible rect:first-child {
-  stroke: #88aeff;
+  stroke: var(--ad-subtle, #88aeff);
   stroke-width: 1;
 }
 .chartTooltip {
@@ -130,10 +130,10 @@
   gap: 5px;
   min-width: 148px;
   padding: 10px 12px;
-  border: 1px solid #d6e1ff;
+  border: 1px solid var(--ad-border, #d6e1ff);
   border-radius: 10px;
-  background: #fffffff5;
-  color: #273f70;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 96%, transparent);
+  color: var(--ad-muted, #273f70);
   font-size: 11px;
   box-shadow: 0 6px 20px #3555a221;
   pointer-events: none;
@@ -157,15 +157,15 @@
   justify-content: space-between;
   gap: 12px;
   padding-top: 12px;
-  border-top: 1px solid #dce5fc;
-  color: #8293b4;
+  border-top: 1px solid var(--ad-border, #dce5fc);
+  color: var(--ad-subtle, #8293b4);
   font-size: 10px;
 }
 .chartFootnote > span:last-child {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #4a8e86;
+  color: var(--ad-chart-series-3, #4a8e86);
 }
 .funnel {
   display: flex;
@@ -197,35 +197,35 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  color: #3b5285;
+  color: var(--ad-muted, #3b5285);
   font-size: 12px;
 }
 .funnelStages strong {
   font-size: 14px;
   font-weight: 700;
-  color: #102558;
+  color: var(--ad-text, #102558);
 }
 .funnelStages small {
   display: block;
   margin-top: 5px;
   font-size: 10px;
-  color: #8798ba;
+  color: var(--ad-subtle, #8798ba);
 }
 .funnelFootnote {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  border-top: 1px solid #dce5fc;
+  border-top: 1px solid var(--ad-border, #dce5fc);
   padding-top: 13px;
-  color: #8394b6;
+  color: var(--ad-subtle, #8394b6);
   font-size: 10px;
 }
 .funnelFootnote strong {
   display: flex;
   align-items: center;
   gap: 3px;
-  color: #09a978;
+  color: var(--ad-success, #09a978);
   font-weight: 600;
 }
 .comparisonPanel {
@@ -239,9 +239,9 @@
 }
 .trackSummary {
   padding: 17px 18px;
-  border: 1px solid #d7e2ff;
+  border: 1px solid var(--ad-border, #d7e2ff);
   border-radius: 13px;
-  background: linear-gradient(120deg, #edf5ff70, #e8eeff45);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--ad-panel-alt, #edf5ff) 44%, transparent), color-mix(in srgb, var(--ad-panel-alt, #e8eeff) 27%, transparent));
 }
 .trackSummary > div:first-child {
   display: flex;
@@ -250,7 +250,7 @@
   gap: 10px;
 }
 .trackSummary > div:first-child > span:last-child {
-  color: #8293b4;
+  color: var(--ad-subtle, #8293b4);
   font-size: 11px;
 }
 .trackSummary > strong {
@@ -260,10 +260,10 @@
   margin-top: 13px;
   font-size: 26px;
   letter-spacing: -0.8px;
-  color: #153364;
+  color: var(--ad-text, #153364);
 }
 .trackSummary > strong small {
-  color: #7186b0;
+  color: var(--ad-subtle, #7186b0);
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0;
@@ -273,11 +273,11 @@
   justify-content: space-between;
   gap: 10px;
   margin-top: 14px;
-  color: #7287b2;
+  color: var(--ad-subtle, #7287b2);
   font-size: 11px;
 }
 .trackSummaryBottom > span:last-child {
-  color: #438e82;
+  color: var(--ad-chart-series-3, #438e82);
 }
 .comparisonTablePanel {
   margin-top: 18px;
@@ -286,7 +286,7 @@
   margin-bottom: 18px;
 }
 .positive {
-  color: #08a371;
+  color: var(--ad-success, #08a371);
   font-weight: 600;
 }
 .conversionGrid {
@@ -297,12 +297,12 @@
 }
 .description {
   margin: 7px 0 0;
-  color: #7c8fb5;
+  color: var(--ad-subtle, #7c8fb5);
   font-size: 12px;
   line-height: 1.65;
 }
 .periodNote {
-  color: #7e93b9;
+  color: var(--ad-subtle, #7e93b9);
   font-size: 11px;
   white-space: nowrap;
 }
@@ -338,10 +338,10 @@
   flex: none;
   width: 35px;
   height: 35px;
-  border: 1px solid #d2dfff;
+  border: 1px solid var(--ad-border, #d2dfff);
   border-radius: 11px;
-  background: #e7efff;
-  color: #5d8cda;
+  background: var(--ad-panel-alt, #e7efff);
+  color: var(--ad-blue, #5d8cda);
   font-size: 12px;
 }
 .conversionStep > div:nth-child(2) {
@@ -352,18 +352,18 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #7287b0;
+  color: var(--ad-subtle, #7287b0);
 }
 .conversionStep strong {
   display: block;
   margin: 8px 0 5px;
-  color: #213d73;
+  color: var(--ad-muted, #213d73);
   font-size: 28px;
   font-weight: 650;
   letter-spacing: -1px;
 }
 .conversionStep small {
-  color: #7e92b9;
+  color: var(--ad-subtle, #7e92b9);
   font-size: 10px;
 }
 .conversionProgress {
@@ -371,7 +371,7 @@
   height: 5px;
   margin-top: 2px;
   overflow: hidden;
-  background: #e0e9fc;
+  background: var(--ad-panel-soft, #e0e9fc);
   border-radius: 5px;
 }
 .conversionProgress > span {
@@ -389,21 +389,21 @@
   flex: none;
   padding: 0 11px;
   height: 36px;
-  border: 1px solid #cfddff;
+  border: 1px solid var(--ad-border, #cfddff);
   border-radius: 10px;
-  background: #ffffff70;
-  color: #6d8abd;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 44%, transparent);
+  color: var(--ad-subtle, #6d8abd);
 }
 .skillSearch input {
   width: 140px;
   outline: none;
   border: none;
-  color: #365684;
+  color: var(--ad-muted, #365684);
   background: transparent;
   font-size: 11px;
 }
 .skillSearch input::placeholder {
-  color: #8b9cbb;
+  color: var(--ad-subtle, #8b9cbb);
 }
 .skillsGrid {
   display: grid;
@@ -421,24 +421,24 @@
   margin-bottom: 12px;
 }
 .skillRank {
-  color: #9babca;
+  color: var(--ad-subtle, #9babca);
   font-size: 10px;
 }
 .skillRow strong {
   font-size: 12px;
-  color: #3a5281;
+  color: var(--ad-muted, #3a5281);
   font-weight: 550;
 }
 .skillRow > div:first-child > span:last-child {
   margin-left: auto;
-  color: #7e93b9;
+  color: var(--ad-subtle, #7e93b9);
   font-size: 10px;
 }
 .skillBar {
   height: 9px;
   overflow: hidden;
   border-radius: 6px;
-  background: #e4ebfc;
+  background: var(--ad-panel-soft, #e4ebfc);
 }
 .skillBar span {
   display: block;
@@ -464,7 +464,7 @@
   place-items: center;
   width: 17px;
   height: 17px;
-  background: #ffffff36;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 21%, transparent);
   border-radius: 5px;
   font-size: 10px;
 }
@@ -493,22 +493,22 @@
 .filterFields label {
   display: grid;
   gap: 7px;
-  color: #7188b1;
+  color: var(--ad-subtle, #7188b1);
   font-size: 11px;
 }
 .filterFields select {
   min-width: 180px;
   height: 36px;
   padding: 0 30px 0 11px;
-  color: #385281;
-  background: #ffffffa6;
-  border: 1px solid #cfddff;
+  color: var(--ad-muted, #385281);
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 65%, transparent);
+  border: 1px solid var(--ad-border, #cfddff);
   border-radius: 8px;
   font-size: 12px;
 }
 .filterFields option {
-  color: #385281;
-  background: #f6f9ff;
+  color: var(--ad-muted, #385281);
+  background: var(--ad-panel, #f6f9ff);
 }
 .internTablePanel {
   padding: 0;
@@ -530,13 +530,13 @@
   opacity: 0.65;
 }
 .sortButton:hover {
-  color: #246be8;
+  color: var(--ad-blue, #246be8);
 }
 .internPerson {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #253f72;
+  color: var(--ad-muted, #253f72);
   text-decoration: none;
 }
 .internPerson strong {
@@ -546,38 +546,38 @@
 }
 .internPerson small {
   display: block;
-  color: #8b9bbd;
+  color: var(--ad-subtle, #8b9bbd);
   font-size: 10px;
   margin-top: 4px;
 }
 .internPerson:hover strong {
-  color: #246fff;
+  color: var(--ad-blue, #246fff);
 }
 .projectLink {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #3c598c;
+  color: var(--ad-muted, #3c598c);
   font-size: 11px;
   text-decoration: none;
 }
 .projectLink:hover {
-  color: #2673e6;
+  color: var(--ad-blue, #2673e6);
 }
 .projectLink > span {
-  color: #8497bc;
+  color: var(--ad-subtle, #8497bc);
   padding: 2px 5px;
   border-radius: 5px;
-  background: #e8eeff;
+  background: var(--ad-panel-alt, #e8eeff);
   font-size: 9px;
 }
 .unassigned {
-  color: #9ba9c5;
+  color: var(--ad-subtle, #9ba9c5);
   font-size: 11px;
 }
 .batchText {
   font-size: 11px;
-  color: #536c99;
+  color: var(--ad-subtle, #536c99);
 }
 .actionsHeading {
   text-align: right;

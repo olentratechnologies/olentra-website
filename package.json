@@ -49,6 +49,7 @@
 
     "test:admin": "npm --prefix frontend run test:admin",
     "test:naming": "node --test scripts/naming-and-routes.test.mjs",
-    "test:all": "npm run email:test && npm run presence:test && npm run internship:test && npm run test:admin && npm run test:naming"
+    "test:services": "node --test scripts/run-services.test.mjs scripts/service-restart.test.mjs",
+    "test:all": "npm run email:test && npm run presence:test && npm run internship:test && npm run test:admin && npm run test:naming && npm run test:services"
   }
 }

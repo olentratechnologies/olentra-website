@@ -2,7 +2,7 @@
 
 import { initialDatabase } from "./data-source";
 import { can } from "./selectors.mjs";
-import { executeCommand, resolveDataset, updateDataset, validateSnapshot } from "./model.mjs";
+import { executeCommand, migrateSnapshot, resolveDataset, updateDataset, validateSnapshot } from "./model.mjs";
 
 const STORAGE_KEY="olentra.admin.database.v2";
 const clone=value=>JSON.parse(JSON.stringify(value));
@@ -53,7 +53,7 @@ export function syncSiteFeatureState(state){
 }
 export function hydrateDatabase(){
   if(hydrated||typeof window==="undefined")return;hydrated=true;
-  try{const text=localStorage.getItem(STORAGE_KEY);if(text){const parsed=JSON.parse(text);validateSnapshot(parsed,initialDatabase);database={...initialDatabase,meta:parsed.meta,datasets:parsed.datasets};if(Number.isFinite(parsed.meta.wallSavedAt)){const elapsed=Math.max(0,Date.now()-parsed.meta.wallSavedAt);database.meta={...database.meta,clock:new Date(Date.parse(parsed.meta.clock)+elapsed).toISOString()};}}status={ready:true,error:null,persisted:true};}
+  try{const text=localStorage.getItem(STORAGE_KEY);if(text){const parsed=migrateSnapshot(JSON.parse(text));validateSnapshot(parsed,initialDatabase);database={...initialDatabase,meta:parsed.meta,datasets:parsed.datasets};if(Number.isFinite(parsed.meta.wallSavedAt)){const elapsed=Math.max(0,Date.now()-parsed.meta.wallSavedAt);database.meta={...database.meta,clock:new Date(Date.parse(parsed.meta.clock)+elapsed).toISOString()};}}status={ready:true,error:null,persisted:true};}
   catch{database=initialDatabase;status={ready:true,persisted:false,error:"Saved dashboard data could not be loaded. The JSON fixtures are available; export or reset your local scenario in Company settings."};}
   database=overlayLiveFeatures(database);anchor=Date.now();emit();
 }
@@ -72,7 +72,7 @@ export function exportData(){
   return clone({format:"olentra-admin-database",meta:{...database.meta,schemaVersion:2},datasets:database.datasets});
 }
 export function importData(value){
-  hydrateDatabase();try{if(!can({...database,meta:{...database.meta,clock:actionNow()}},"Settings & Backups","manage"))throw new Error("Sign in with a role that can import workspace data.");validateSnapshot(value,initialDatabase);const next={...initialDatabase,meta:{...value.meta,revision:database.meta.revision+1,lastAction:"data.import"},datasets:clone(value.datasets)};commit(next);return{ok:true};}catch(error){return{ok:false,error:error.message};}
+  hydrateDatabase();try{if(!can({...database,meta:{...database.meta,clock:actionNow()}},"Settings & Backups","manage"))throw new Error("Sign in with a role that can import workspace data.");const migrated=migrateSnapshot(value);validateSnapshot(migrated,initialDatabase);const next={...initialDatabase,meta:{...migrated.meta,revision:database.meta.revision+1,lastAction:"data.import"},datasets:clone(migrated.datasets)};commit(next);return{ok:true,persisted:status.persisted};}catch(error){return{ok:false,error:error.message};}
 }
 export function resetData(){
   hydrateDatabase();if(!can({...database,meta:{...database.meta,clock:actionNow()}},"Settings & Backups","manage"))return{ok:false,error:"Sign in with a role that can reset the workspace data."};const next=clone(initialDatabase);next.meta.revision=database.meta.revision+1;next.meta.lastAction="data.reset";commit(next);return{ok:true};
@@ -80,7 +80,7 @@ export function resetData(){
 export function startDataClock(){
   if(typeof window==="undefined")return()=>{};hydrateDatabase();
   const timer=setInterval(()=>command("clock.tick",{}),30000);
-  const sync=event=>{if(event.key!==STORAGE_KEY||!event.newValue)return;try{const next=JSON.parse(event.newValue);validateSnapshot(next,initialDatabase);database=shareUnchanged(database,{...initialDatabase,meta:next.meta,datasets:next.datasets});anchor=Date.now();status={ready:true,error:null,persisted:true};emit();}catch{status={...status,error:"A different tab supplied invalid dashboard data; it was ignored."};emit();}};
+  const sync=event=>{if(event.key!==STORAGE_KEY||!event.newValue)return;try{const next=migrateSnapshot(JSON.parse(event.newValue));validateSnapshot(next,initialDatabase);database=shareUnchanged(database,{...initialDatabase,meta:next.meta,datasets:next.datasets});anchor=Date.now();status={ready:true,error:null,persisted:true};emit();}catch{status={...status,error:"A different tab supplied invalid dashboard data; it was ignored."};emit();}};
   window.addEventListener("storage",sync);return()=>{clearInterval(timer);window.removeEventListener("storage",sync);};
 }
 export async function hashDemoSecret(value){

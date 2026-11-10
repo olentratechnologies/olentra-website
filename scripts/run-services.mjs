@@ -1,105 +1,218 @@
 import { spawn } from "node:child_process";
+import { realpath } from "node:fs/promises";
 import process from "node:process";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
+import { checkServicePorts, resolveServices } from "./service-preflight.mjs";
+import { stopExistingServices } from "./service-restart.mjs";
+import { acquireStartupLock } from "./service-startup-lock.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-const bun = process.platform === "win32" ? "bun.exe" : "bun";
-const mode = process.argv[2];
 
-const services = mode === "dev"
-  ? [
-      { name: "frontend", command: npm, args: ["--prefix", "frontend", "run", "dev"], cwd: root },
-      { name: "email-server", command: bun, args: ["run", "--cwd", "backend/email-server", "dev"], cwd: root },
-      { name: "realtime-server", command: bun, args: ["run", "--cwd", "backend/realtime-server", "dev"], cwd: root },
-    ]
-  : mode === "start"
-    ? [
-        { name: "frontend", command: npm, args: ["--prefix", "frontend", "run", "start"], cwd: root },
-        { name: "email-server", command: bun, args: ["run", "--cwd", "backend/email-server", "start:built"], cwd: root },
-        { name: "realtime-server", command: bun, args: ["run", "--cwd", "backend/realtime-server", "start:built"], cwd: root },
-      ]
-    : null;
+const shutdownSignals = process.platform === "win32"
+  ? ["SIGINT", "SIGTERM"]
+  : ["SIGINT", "SIGTERM", "SIGHUP"];
 
-if (!services) {
-  console.error("Usage: node scripts/run-services.mjs <dev|start>");
-  process.exit(2);
-}
+// Exporting the supervisor lets tests exercise real process trees on disposable
+// ports without starting Next.js or connecting to the application's database.
+export async function runServices(services, {
+  env = process.env, shutdownTimeout = 10000, onStartupComplete,
+} = {}) {
+  if (services.length === 0) return 0;
+  const records = new Set();
+  const startup = new AbortController();
+  let stopping = false;
+  let launching = true;
+  let exitCode = 0;
+  let startedCount = 0;
+  let shutdownTimer;
+  let monitor;
+  let forcedAt;
+  let finished = false;
+  let resolveCompletion;
+  const completion = new Promise(resolve => { resolveCompletion = resolve; });
 
-const children = new Set();
-let stopping = false;
-let exitCode = 0;
-let forcedShutdownTimer;
-
-function stopChild(child, signal) {
-  // npm starts Next as a nested process. On POSIX, each detached service gets
-  // its own process group so an interrupt stops the wrapper and its server.
-  if (process.platform !== "win32" && child.pid) {
+  function groupExists(record) {
+    if (process.platform === "win32" || !record.child.pid) return !record.exited;
     try {
-      process.kill(-child.pid, signal);
-      return;
+      process.kill(-record.child.pid, 0);
+      return true;
     } catch (error) {
-      if (error.code !== "ESRCH") throw error;
+      if (error.code === "ESRCH") return false;
+      // EPERM still means the group exists. A signal failure is reported by
+      // signalRecord, and the bounded forced-shutdown path handles it.
+      return true;
     }
   }
-  child.kill(signal);
-}
 
-function stopChildren(signal = "SIGTERM") {
-  if (stopping) return;
-  stopping = true;
-  for (const child of children) stopChild(child, signal);
-  // A process manager must not leave an npm/Next wrapper behind forever if a
-  // child ignores a graceful signal. The normal path exits well before this.
-  forcedShutdownTimer = setTimeout(() => {
-    if (children.size === 0) return;
-    console.warn("[all] graceful shutdown timed out; force-stopping remaining services");
-    for (const child of children) stopChild(child, "SIGKILL");
-  }, 10000);
-  forcedShutdownTimer.unref();
-}
+  function signalRecord(record, signal) {
+    try {
+      if (process.platform !== "win32" && record.child.pid) {
+        try {
+          process.kill(-record.child.pid, signal);
+          return;
+        } catch (error) {
+          if (error.code !== "ESRCH") throw error;
+        }
+      }
+      if (!record.exited) record.child.kill(signal);
+    } catch (error) {
+      exitCode = 1;
+      console.error(`[all] could not send ${signal} to ${record.name}: ${error.message}`);
+    }
+  }
 
-for (const service of services) {
-  console.log(`[all] starting ${service.name}`);
-  const child = spawn(service.command, service.args, {
-    cwd: service.cwd,
-    env: process.env,
-    stdio: "inherit",
-    detached: process.platform !== "win32",
-  });
-  children.add(child);
+  function finish() {
+    if (finished) return;
+    finished = true;
+    clearTimeout(shutdownTimer);
+    clearInterval(monitor);
+    for (const signal of shutdownSignals) process.off(signal, onSignal);
+    resolveCompletion(exitCode);
+  }
 
-  child.once("error", error => {
-    console.error(`[all] ${service.name} failed to start: ${error.message}`);
-    exitCode = 1;
-    stopChildren();
-  });
+  function checkCompletion() {
+    if (!stopping || launching || finished) return;
+    for (const record of records) {
+      // A wrapper's exit is not proof that its Next/Bun descendants exited.
+      if (record.exited && !groupExists(record)) records.delete(record);
+    }
+    if (records.size === 0) {
+      if (startedCount > 0) console.log("[all] all started services stopped");
+      finish();
+    } else if (forcedAt !== undefined && Date.now() - forcedAt >= 2000) {
+      // SIGKILL cannot be caught, but unreaped zombies (or an OS permission
+      // failure) can keep kill(pgid, 0) succeeding. Never hang indefinitely.
+      exitCode = 1;
+      console.error(`[all] could not confirm shutdown of: ${[...records].map(record =>
+        `${record.name} (${process.platform === "win32" ? "PID" : "process group"} ${record.child.pid})`
+      ).join(", ")}; inspect these processes before restarting`);
+      for (const record of records) record.child.unref();
+      finish();
+    }
+  }
 
-  child.once("exit", (code, signal) => {
-    children.delete(child);
-    if (stopping || signal === "SIGINT" || signal === "SIGTERM") {
-      if (!stopping) stopChildren();
+  function forceStop(message) {
+    if (finished || forcedAt !== undefined) return;
+    clearTimeout(shutdownTimer);
+    console.warn(`[all] ${message}; force-stopping remaining services`);
+    forcedAt = Date.now();
+    for (const record of records) signalRecord(record, "SIGKILL");
+    checkCompletion();
+  }
+
+  function stopServices(signal = "SIGTERM") {
+    if (stopping) return;
+    stopping = true;
+    startup.abort();
+    // These timers stay referenced until whole groups disappear, including
+    // descendants whose original wrapper has already exited.
+    monitor = setInterval(checkCompletion, 50);
+    shutdownTimer = setTimeout(() => forceStop("graceful shutdown timed out"), shutdownTimeout);
+    for (const record of records) signalRecord(record, signal);
+    checkCompletion();
+  }
+
+  function onSignal(signal) {
+    if (stopping) {
+      forceStop(`received ${signal} again`);
       return;
     }
-    exitCode = code ?? 1;
-    console.error(`[all] ${service.name} stopped${signal ? ` from ${signal}` : ` with exit code ${exitCode}`}`);
-    stopChildren();
-  });
-}
-
-for (const signal of ["SIGINT", "SIGTERM"]) {
-  process.once(signal, () => {
     console.log(`[all] received ${signal}; stopping services`);
-    stopChildren(signal);
-  });
+    // Backends handle SIGTERM/SIGINT themselves. Translate a terminal hangup
+    // into their graceful shutdown path rather than forwarding SIGHUP.
+    stopServices(signal === "SIGHUP" ? "SIGTERM" : signal);
+  }
+
+  for (const signal of shutdownSignals) process.on(signal, onSignal);
+
+  try {
+    await checkServicePorts(services, { signal: startup.signal });
+    for (const service of services) {
+      if (stopping) break;
+      console.log(`[all] starting ${service.name}`);
+      const child = spawn(service.command, service.args, {
+        cwd: service.cwd,
+        env,
+        stdio: "inherit",
+        detached: process.platform !== "win32",
+      });
+      if (child.pid) startedCount++;
+      const record = { name: service.name, child, exited: false };
+      records.add(record);
+
+      child.on("error", error => {
+        if (!child.pid) record.exited = true;
+        console.error(`[all] ${service.name} failed: ${error.message}`);
+        exitCode = 1;
+        stopServices();
+        checkCompletion();
+      });
+
+      child.once("exit", (code, signal) => {
+        record.exited = true;
+        if (!stopping) {
+          exitCode = code || 1;
+          console.error(`[all] ${service.name} stopped${signal ? ` from ${signal}` : ` with exit code ${code}`}`);
+          stopServices();
+        }
+        checkCompletion();
+      });
+    }
+  } catch (error) {
+    if (!startup.signal.aborted) {
+      console.error(`[all] ${error.message}`);
+      exitCode = 1;
+    }
+    stopServices();
+  } finally {
+    launching = false;
+    try { await onStartupComplete?.(); }
+    catch (error) {
+      console.error(`[all] could not finish startup: ${error.message}`);
+      exitCode = 1;
+      stopServices();
+    }
+    checkCompletion();
+  }
+
+  return completion;
 }
 
-const forceExitTimer = setInterval(() => {
-  if (stopping && children.size === 0) {
-    if (forcedShutdownTimer) clearTimeout(forcedShutdownTimer);
-    clearInterval(forceExitTimer);
-    process.exit(exitCode);
+async function main() {
+  const mode = process.argv[2];
+  if (mode !== "dev" && mode !== "start") {
+    console.error("Usage: node scripts/run-services.mjs <dev|start>");
+    return 2;
   }
-}, 50);
 
-forceExitTimer.unref();
+  const startup = new AbortController();
+  let releaseStartupLock;
+  const cancelStartup = signal => {
+    console.log(`[all] received ${signal}; cancelling startup`);
+    startup.abort();
+  };
+  for (const signal of shutdownSignals) process.on(signal, cancelStartup);
+  try {
+    const services = await resolveServices(mode, { signal: startup.signal });
+    if (mode === "dev" && process.platform !== "win32") {
+      releaseStartupLock = await acquireStartupLock(root, { signal: startup.signal });
+      await stopExistingServices({ root, signal: startup.signal });
+    }
+    if (startup.signal.aborted) return 0;
+    for (const signal of shutdownSignals) process.off(signal, cancelStartup);
+    return await runServices(services, { onStartupComplete: releaseStartupLock });
+  } catch (error) {
+    if (startup.signal.aborted) return 0;
+    console.error(`[all] ${error.message}`);
+    return 1;
+  } finally {
+    for (const signal of shutdownSignals) process.off(signal, cancelStartup);
+    await releaseStartupLock?.();
+  }
+}
+
+const entrypoint = process.argv[1] && await realpath(process.argv[1]).catch(() => null);
+if (entrypoint && import.meta.url === pathToFileURL(entrypoint).href) {
+  process.exitCode = await main();
+}

@@ -1,5 +1,7 @@
 import { RoleGuard } from "@/components/intern/InternshipProvider";
 import PortalShell from "@/components/intern/portal/PortalShell";
+import { InternThemeProvider } from "@/components/intern/InternTheme";
+import { INTERN_THEME_BOOTSTRAP } from "@/lib/intern/theme.mjs";
 
 export const metadata = {
   title: {
@@ -11,8 +13,13 @@ export const metadata = {
 
 export default function InternPortalLayout({ children }) {
   return (
-    <RoleGuard role="intern">
-      <PortalShell>{children}</PortalShell>
-    </RoleGuard>
+    <>
+      <script dangerouslySetInnerHTML={{ __html: INTERN_THEME_BOOTSTRAP }} />
+      <InternThemeProvider>
+        <RoleGuard role="intern">
+          <PortalShell>{children}</PortalShell>
+        </RoleGuard>
+      </InternThemeProvider>
+    </>
   );
 }

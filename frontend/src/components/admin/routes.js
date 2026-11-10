@@ -1,5 +1,11 @@
 export const designRoutes = [
   {
+    "id": 41,
+    "title": "Email templates & preset selection",
+    "module": "Email Templates",
+    "href": "/dashboard/email-templates"
+  },
+  {
     "id": 1,
     "title": "Company overview",
     "module": "Overview",

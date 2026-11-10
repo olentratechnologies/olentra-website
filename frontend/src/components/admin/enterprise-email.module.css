@@ -1,0 +1,170 @@
+.email { --ink: #172a40; --muted: #607085; --brand: #2157d8; background: #fff; color: var(--ink); color-scheme: light; font: 14px/1.7 Arial, Helvetica, sans-serif; text-align: left; letter-spacing: normal; overflow-wrap: anywhere; border-radius: 2px; isolation: isolate; }
+.email *, .email *::before, .email *::after { box-sizing: border-box; }
+.professional { --brand: #2157d8; }
+.email .info { color: #285aa6; }
+.email .accent { height: 4px; background: #2157d8; }
+.email .masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 26px 40px; border-bottom: 1px solid #e7ecf2; }
+.brand { display: flex; align-items: center; gap: 9px; }
+.logoFrame { display: block; position: relative; width: 38px; height: 40px; flex: 0 0 auto; }
+.logoFrame img { width: 56px; height: 56px; position: absolute; left: -9px; top: -7px; object-fit: contain; max-width: none; }
+.wordmark { display: flex; flex-direction: column; font: 700 29px/.95 Arial, Helvetica, sans-serif; letter-spacing: -1.3px; color: #102740; }
+.wordmark > span { font-size: 7px; font-weight: 500; letter-spacing: 3px; line-height: 1; margin-top: 8px; padding-left: 1px; }
+.department { color: #52657c; font-size: 10px; line-height: 1.7; text-align: right; }
+.department > span { display: block; color: #8c99a9; font-size: 7px; letter-spacing: 2px; font-weight: 700; }
+.email .hero { padding: 26px 40px 29px; background: #f5f8fd; border-bottom: 1px solid #e6ecf4; position: relative; overflow: hidden; }
+.documentLine { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 27px; font-size: 8px; font-weight: 700; line-height: 1.5; letter-spacing: 1.8px; color: #65809e; text-transform: uppercase; }
+.email .status { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border: 1px solid #d7e4fa; border-radius: 3px; background: #eaf1ff; color: #285aa6; letter-spacing: .5px; font-size: 8px; white-space: nowrap; }
+.status i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.email .success { color: #297859; border-color: #d3e9dd; background: #edf7f1; }
+.email .attention { color: #9a6228; border-color: #eddec4; background: #fcf5e9; }
+.email .neutral { color: #637186; border-color: #dce3eb; background: #eff2f6; }
+.statusIcon { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: #e7effe; border: 1px solid #d7e4ff; border-radius: 11px; color: #3260b5; margin-bottom: 17px; }
+.email .headline { max-width: 500px; margin: 0 0 12px; padding: 0; font: 700 32px/1.16 Arial, Helvetica, sans-serif; letter-spacing: -.9px; color: #132d4d; }
+.email .summary { margin: 0; max-width: 490px; font-size: 13px; line-height: 1.75; color: #5b6e85; }
+.reference { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-top: 20px; font-size: 10px; color: #718299; }
+.reference strong { color: #355473; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 10px; font-weight: 500; }
+.email .content { padding: 30px 40px 29px; }
+.email .paragraphs p { margin: 0 0 15px; font: 13px/1.85 Arial, Helvetica, sans-serif; color: #546377; white-space: pre-line; }
+.email .paragraphs p:first-child { color: #233a54; font-weight: 600; margin-bottom: 15px; }
+.email .paragraphs p:last-child { margin-bottom: 0; }
+.actionGroup { margin: 23px 0; }
+.action { display: inline-flex; align-items: center; justify-content: center; gap: 24px; padding: 12px 19px; background: #2255d7; border: 1px solid #194bcb; border-radius: 4px; color: #fff; font-size: 12px; line-height: 1.5; font-weight: 700; }
+.detailPanel { border: 1px solid #e1e8f1; border-radius: 5px; margin: 25px 0 23px; overflow: hidden; }
+.sectionLabel { display: flex; justify-content: space-between; gap: 15px; font-size: 8px; font-weight: 700; letter-spacing: 1.4px; color: #5b7390; padding: 12px 15px; background: #f7f9fc; border-bottom: 1px solid #e7ecf3; }
+.sectionLabel > span { color: #94a1b1; font-size: 8px; font-weight: 400; letter-spacing: 0; }
+.email .details { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 5px 15px; column-gap: 20px; }
+.details > div { padding: 11px 0; min-width: 0; }
+.details dt { color: #7d8b9e; font-size: 9px; line-height: 1.5; margin: 0 0 5px; }
+.details dd { color: #2b405a; font-size: 11px; line-height: 1.6; font-weight: 600; margin: 0; }
+.email .nextSteps { margin: 24px 0 0; }
+.email .nextSteps h4 { margin: 0 0 13px; color: #223a55; font-size: 12px; font-weight: 700; }
+.email .nextSteps ol { display: flex; flex-direction: column; gap: 12px; list-style: none; padding: 0; margin: 0; }
+.nextSteps li { display: flex; align-items: flex-start; gap: 12px; }
+.nextSteps li > span { flex: 0 0 23px; height: 23px; display: flex; align-items: center; justify-content: center; border: 1px solid #dce5f0; border-radius: 50%; font: 9px/1 ui-monospace, SFMono-Regular, Consolas, monospace; color: #526f95; background: #f8fafd; }
+.email .nextSteps p { color: #5d6c80; font-size: 11px; line-height: 1.85; margin: 0; }
+.email .notice { display: flex; gap: 11px; padding: 15px; margin-top: 24px; border-left: 2px solid #7e9bc5; background: #f4f7fb; }
+.notice > svg { color: #6c86aa; flex-shrink: 0; margin-top: 2px; }
+.notice strong { display: block; color: #3c5676; font-size: 10px; }
+.email .notice p { margin: 3px 0 0; font-size: 10px; line-height: 1.8; color: #6c7d92; }
+.signature { display: flex; flex-direction: column; gap: 2px; padding-top: 28px; font-size: 11px; }
+.email .signature p { color: #8390a0; font-size: 10px; margin: 0 0 4px; }
+.signature > strong { color: #243c59; font-size: 12px; font-weight: 600; }
+.signature > span { color: #8b98a8; font-size: 9px; }
+.email .footer { background: #f7f9fc; border-top: 1px solid #e6ebf2; padding: 22px 40px 24px; color: #8593a6; }
+.footerTop { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 9px; }
+.footerTop strong { font-size: 10px; color: #5d718b; font-weight: 600; }
+.email .footer > p { margin: 9px 0 11px; font-size: 9px; line-height: 1.8; color: #8694a6; }
+.footerLinks { display: flex; flex-wrap: wrap; gap: 14px; font-size: 9px; color: #5c769b; }
+.support { font-size: 9px; border-top: 1px solid #e4eaf2; padding-top: 13px; margin-top: 16px; color: #8e9bad; }
+.support > span { color: #607b9e; }
+.heroMonogram { display: none; }
+
+/* Signature letter: dark brand masthead, editorial headline, open letter body. */
+.warm .accent { background: #8587cf; }
+.warm .masthead { background: #111f38; border-bottom-color: #2b3a54; padding-top: 25px; padding-bottom: 25px; }
+.warm .wordmark { color: #fff; }
+.warm .department { color: #b2bdd1; }
+.warm .department > span { color: #6e819e; }
+.warm .hero { background: #111f38; border-bottom: 0; padding-top: 26px; padding-bottom: 35px; }
+.warm .documentLine { color: #a3adcc; margin-bottom: 25px; position: relative; z-index: 1; }
+.warm .status { background: #24334c; border-color: #3e4d64; color: #c4d1e8; }
+.warm .statusIcon { display: none; }
+.warm .headline { font-size: 36px; line-height: 1.15; font-weight: 500; letter-spacing: -1.1px; color: #fff; position: relative; z-index: 1; max-width: 450px; }
+.warm .summary { color: #a9b6cf; position: relative; z-index: 1; }
+.warm .reference { color: #7a8eac; position: relative; z-index: 1; }
+.warm .reference strong { color: #c4d0e5; }
+.warm .heroMonogram { position: absolute; right: -15px; bottom: -57px; display: block; color: #24344d; font: 700 230px/1 Arial, Helvetica, sans-serif; letter-spacing: -20px; pointer-events: none; user-select: none; }
+.warm .content { padding-top: 33px; }
+.warm .action { background: #273a67; border-color: #273a67; border-radius: 2px; padding-left: 23px; padding-right: 23px; }
+.warm .detailPanel { border: 0; border-top: 1px solid #dce3ec; border-bottom: 1px solid #dce3ec; border-radius: 0; }
+.warm .sectionLabel { background: #fff; border-bottom: 0; padding: 15px 0 2px; color: #7783a1; }
+.warm .details { padding: 3px 0 10px; }
+.warm .signatureRule { display: block; width: 36px; height: 2px; background: #8c99b8; margin-bottom: 10px; }
+.warm .footer { background: #f5f6f9; }
+
+/* Executive memo: monochrome masthead, ruled rows, compact document hierarchy. */
+.minimal .accent { height: 3px; background: #253749; }
+.minimal .masthead { padding-top: 24px; padding-bottom: 22px; }
+.minimal .department > span { display: none; }
+.minimal .hero { padding-top: 24px; padding-bottom: 0; border-bottom: 0; background: white; }
+.minimal .documentLine { margin-bottom: 23px; color: #7d8796; }
+.minimal .status { border: 0; background: #eef2f5; color: #596c80; border-radius: 0; }
+.minimal .headline { font-size: 29px; letter-spacing: -.7px; }
+.minimal .summary { font-size: 12px; }
+.minimal .reference { border-bottom: 1px solid #dce3eb; padding-bottom: 18px; margin-top: 18px; }
+.minimal .content { padding-top: 22px; }
+.minimal .paragraphs p { font-size: 12px; line-height: 1.8; }
+.minimal .action { background: #22354b; border-color: #22354b; border-radius: 2px; font-size: 11px; padding: 10px 16px; }
+.minimal .detailPanel { border: 0; border-radius: 0; }
+.minimal .sectionLabel { padding: 0 0 11px; border-bottom: 1px solid #ccd6e2; background: white; color: #5c6a7c; }
+.minimal .sectionLabel > span { display: none; }
+.minimal .details { display: block; padding: 0; }
+.minimal .details > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 15px; padding: 10px 0; border-bottom: 1px solid #e7ebf0; }
+.minimal .details dt { font-size: 10px; margin: 0; }
+.minimal .details dd { font-size: 10px; font-weight: 500; }
+.minimal .nextSteps li > span { border: 0; background: none; width: 16px; flex-basis: 16px; border-radius: 0; }
+.minimal .nextSteps h4 { font-size: 11px; }
+.minimal .notice { border-left: 1px solid #aebccd; background: white; padding-top: 0; padding-bottom: 0; }
+.minimal .footer { background: white; }
+
+/* The picker uses an intentional miniature, not tiny full-email screenshots. */
+.compact .masthead { padding: 15px 17px; gap: 9px; }
+.compact .logoFrame { width: 22px; height: 25px; }
+.compact .logoFrame img { width: 34px; height: 34px; left: -6px; top: -4px; }
+.compact .brand { gap: 5px; }
+.compact .wordmark { font-size: 18px; letter-spacing: -.9px; }
+.compact .wordmark > span { font-size: 4px; letter-spacing: 1.7px; margin-top: 5px; }
+.compact .department { font-size: 6px; max-width: 70px; }
+.compact .department > span { font-size: 4px; letter-spacing: 1px; }
+.compact .hero { padding: 15px 17px 18px; }
+.compact .documentLine { font-size: 5px; margin-bottom: 15px; letter-spacing: .8px; gap: 4px; }
+.compact .status { font-size: 5px; padding: 2px 4px; letter-spacing: 0; gap: 3px; }
+.compact .status i { width: 3px; height: 3px; }
+.compact .statusIcon { width: 25px; height: 25px; border-radius: 6px; margin-bottom: 10px; }
+.compact .statusIcon svg { width: 15px; height: 15px; }
+.compact .headline { font-size: 20px; line-height: 1.17; letter-spacing: -.6px; margin-bottom: 8px; }
+.compact .summary { font-size: 7px; line-height: 1.7; }
+.compact .reference { margin-top: 10px; font-size: 6px; gap: 5px; }
+.compact .reference strong { font-size: 6px; }
+.compact .content { padding: 17px; }
+.compact .paragraphs p { font-size: 7px; line-height: 1.8; margin-bottom: 8px; }
+.compact .paragraphs p:first-child { margin-bottom: 8px; }
+.compact .actionGroup { margin: 13px 0; }
+.compact .action { font-size: 6px; padding: 7px 10px; gap: 12px; }
+.compact .action svg { width: 9px; height: 9px; }
+.compact .detailPanel { margin: 15px 0; border-radius: 3px; }
+.compact .sectionLabel { font-size: 5px; padding: 7px 8px; letter-spacing: .7px; }
+.compact .sectionLabel > span { display: none; }
+.compact .details { padding: 0 8px; gap: 8px; }
+.compact .details > div { padding: 8px 0; }
+.compact .details dt { font-size: 5px; margin-bottom: 3px; }
+.compact .details dd { font-size: 6px; }
+.compact .footer { padding: 12px 17px; }
+.compact .footerTop strong { font-size: 6px; }
+.compact .footerTop > span, .compact .footerLinks { display: none; }
+.compact .footer > p { font-size: 5px; margin: 4px 0 0; }
+.warm.compact .hero { padding-bottom: 22px; }
+.warm.compact .heroMonogram { font-size: 150px; bottom: -37px; right: -8px; letter-spacing: -10px; }
+.warm.compact .headline { font-size: 23px; }
+.minimal.compact .hero { padding-bottom: 0; }
+.minimal.compact .headline { font-size: 19px; }
+.minimal.compact .reference { padding-bottom: 12px; }
+.minimal.compact .details { padding: 0; }
+.minimal.compact .details > div { grid-template-columns: 68px minmax(0, 1fr); }
+
+@container email-preview (max-width: 520px) {
+  .email:not(.compact) .masthead { padding: 22px 24px; }
+  .email:not(.compact) .hero { padding: 23px 24px 25px; }
+  .email:not(.compact) .headline { font-size: 29px; }
+  .email:not(.compact) .content { padding: 25px 24px; }
+  .email:not(.compact) .footer { padding: 22px 24px; }
+  .email:not(.compact) .department { max-width: 108px; font-size: 9px; }
+  .email:not(.compact) .documentLine { font-size: 7px; letter-spacing: .8px; }
+  .email:not(.compact) .status { font-size: 7px; }
+  .email:not(.compact) .details { column-gap: 15px; }
+  .email:not(.compact) .sectionLabel > span { display: none; }
+  .email:not(.compact) .action { width: 100%; justify-content: space-between; padding: 13px 17px; }
+  .minimal:not(.compact) .hero { padding-bottom: 0; }
+  .minimal:not(.compact) .details > div { grid-template-columns: 100px minmax(0, 1fr); }
+  .email:not(.compact) .footerLinks { column-gap: 12px; }
+}

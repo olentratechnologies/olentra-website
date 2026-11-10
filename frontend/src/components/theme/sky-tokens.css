@@ -1,0 +1,163 @@
+/* Shared "sky" palette for the admin dashboard and the internship dashboards.
+   Colours come from the public internship page (/careers/intern); dark mode is
+   its night-sky counterpart. Light is the default. Pages that set neither
+   data-admin-theme nor data-intern-theme on <html> never receive these tokens. */
+html[data-admin-theme],
+html[data-intern-theme] {
+  --ad-scheme: light;
+  --ad-bg: #edf3ff;
+  --ad-panel: #f9fcff;
+  --ad-panel-alt: #f2f7ff;
+  --ad-panel-soft: #e3edff;
+  --ad-sidebar: #ffffff;
+  --ad-topbar: #ffffff;
+  --ad-border: #c7daf6;
+  --ad-border-strong: #9bb5df;
+  --ad-text: #080e48;
+  --ad-muted: #46567c;
+  --ad-subtle: #5d6d92;
+  --ad-blue: #0045f8;
+  --ad-link: #003bc9;
+  --ad-blue-soft: #dbe7ff;
+  --ad-blue-border: #a9c6ff;
+  --ad-purple: #7722f5;
+  --ad-purple-soft: #ece4ff;
+  --ad-primary-gradient: linear-gradient(180deg, #0879ff, #0045f7 60%, #063cda);
+  --ad-primary-text: #ffffff;
+  --ad-primary-border: #4f95ff;
+  --ad-success: #0b6b4f;
+  --ad-success-bg: #e0f5ec;
+  --ad-success-border: #a6dcc4;
+  --ad-warning: #855000;
+  --ad-warning-bg: #fff3d9;
+  --ad-warning-border: #f0d49a;
+  --ad-danger: #a22746;
+  --ad-danger-bg: #fff3f5;
+  --ad-danger-border: #ecc4cf;
+  --ad-chart-grid: #d3e1f8;
+  --ad-chart-series-1: #0045f8;
+  --ad-chart-series-2: #7722f5;
+  --ad-chart-series-3: #0f8fb3;
+  --ad-chart-series-4: #46567c;
+  --ad-map: #b9cef2;
+  --ad-glow: #72aaff;
+  --ad-lilac-glow: #b6d0ff;
+  --ad-ambient: #bce4ff8c;
+  --ad-backdrop: #080e4861;
+  --ad-shadow: 0 10px 24px #7397ce24, inset 0 1px 1px #ffffffb3;
+  --ad-shadow-lift: 0 16px 34px #5f8fd638, inset 0 1px 1px #ffffffb3;
+  --ad-frame: #f2f7ff;
+  --ad-frame-border: #c7daf6;
+  --ad-accent-glow: 0 7px 18px #0054e83d;
+  --ad-card: linear-gradient(135deg, #fbfdff, #eef5ff 65%, #dcedff);
+  --ad-stage:
+    radial-gradient(ellipse 50% 34% at 100% 0%, #72aaff 0%, #b6d4ff 60%, transparent 100%),
+    radial-gradient(ellipse 50% 30% at 0% 12%, #b6d0ff 0%, transparent 90%),
+    radial-gradient(ellipse 42% 38% at 100% 60%, #c7d9ff 0%, transparent 100%),
+    radial-gradient(ellipse 40% 30% at 20% 100%, #b8dcff 0%, transparent 100%),
+    linear-gradient(135deg, #e7efff, #f4f8ff 60%, #dceaff);
+  --ad-glass: #ffffffd9;
+  --ad-chip: #c1d5ffb3;
+  --ad-icon-bg: linear-gradient(150deg, #e6f0ff, #cfe1ff);
+  --ad-icon-border: #ffffff;
+  --ad-button-bg: #f2f7ffcc;
+  --ad-button-text: #293b6d;
+  --ad-button-hover: #ffffff;
+  --ad-field: #f4f9ff;
+  --ad-switch-off: #c3d3ee;
+  --ad-switch-off-border: #b0c4e6;
+  --ad-accent-border: #8cd7ff;
+  --ad-selection: #b6d4ff;
+  --ad-selection-text: #070c50;
+  --ad-focus: #0064ed;
+  --ad-modal-shadow: 0 30px 80px -20px #20365a66;
+  --ad-hero-bg:
+    radial-gradient(ellipse 46% 90% at 100% 0%, #72aaff 0%, #b6d4ffb3 55%, transparent 100%),
+    radial-gradient(ellipse 40% 70% at 78% 110%, #d0c4ffb3 0%, transparent 100%),
+    linear-gradient(125deg, #f3f8ff, #deedff 60%, #bce4ff);
+  --ad-hero-ring: #ffffffcc;
+  --ad-hero-ring-glow: #ffffff80;
+  --ad-hero-copy: #26365e;
+  --ad-hero-accent: #003bf1;
+  --ad-hero-chip: #ffffffb3;
+  --ad-inverse: #0c1730;
+}
+
+html[data-admin-theme="dark"],
+html[data-intern-theme="dark"] {
+  --ad-scheme: dark;
+  --ad-bg: #060a1c;
+  --ad-panel: #0d1430;
+  --ad-panel-alt: #111a3d;
+  --ad-panel-soft: #18234d;
+  --ad-sidebar: #0c1230;
+  --ad-topbar: #0c1230;
+  --ad-border: #223063;
+  --ad-border-strong: #34467f;
+  --ad-text: #eaf0ff;
+  --ad-muted: #a3b1d6;
+  --ad-subtle: #8494bf;
+  --ad-blue: #4d8dff;
+  --ad-link: #8fb8ff;
+  --ad-blue-soft: #16265a;
+  --ad-blue-border: #2f4aa0;
+  --ad-purple: #b08cff;
+  --ad-purple-soft: #251a52;
+  --ad-primary-border: #4f95ff;
+  --ad-success: #6fdcb0;
+  --ad-success-bg: #0d2c26;
+  --ad-success-border: #1d5a48;
+  --ad-warning: #f3c770;
+  --ad-warning-bg: #30260f;
+  --ad-warning-border: #6b5220;
+  --ad-danger: #ff9db0;
+  --ad-danger-bg: #35141f;
+  --ad-danger-border: #70303f;
+  --ad-chart-grid: #1f2b57;
+  --ad-chart-series-1: #5b9bff;
+  --ad-chart-series-2: #b08cff;
+  --ad-chart-series-3: #4fd0e6;
+  --ad-chart-series-4: #a3b1d6;
+  --ad-map: #2a3a70;
+  --ad-glow: #1b3fa8;
+  --ad-lilac-glow: #2a1a70;
+  --ad-ambient: #2456d633;
+  --ad-backdrop: #02040ecc;
+  --ad-shadow: 0 14px 30px #00000059, inset 0 1px 0 #ffffff0f;
+  --ad-shadow-lift: 0 20px 40px #00000080, inset 0 1px 0 #ffffff14, 0 0 0 1px #4d8dff40;
+  --ad-frame: #111a3d;
+  --ad-frame-border: #223063;
+  --ad-accent-glow: 0 7px 22px #2f6dff66;
+  --ad-card: linear-gradient(135deg, #121c42, #0d1430 65%, #0f1f4a);
+  --ad-stage:
+    radial-gradient(ellipse 50% 34% at 100% 0%, #1b3fa8 0%, #12286e 55%, transparent 100%),
+    radial-gradient(ellipse 50% 30% at 0% 12%, #1a1c66 0%, transparent 90%),
+    radial-gradient(ellipse 42% 38% at 100% 60%, #0f2466 0%, transparent 100%),
+    radial-gradient(ellipse 40% 30% at 20% 100%, #0c2a5e 0%, transparent 100%),
+    linear-gradient(135deg, #060a1c, #080f2a 60%, #050818);
+  --ad-glass: #0c1230d9;
+  --ad-chip: #1c2f70b3;
+  --ad-icon-bg: linear-gradient(150deg, #1a2b64, #122050);
+  --ad-icon-border: #2a3c7c;
+  --ad-button-bg: #18234dcc;
+  --ad-button-text: #dbe5ff;
+  --ad-button-hover: #223063;
+  --ad-field: #0a1130;
+  --ad-switch-off: #26325e;
+  --ad-switch-off-border: #34467f;
+  --ad-accent-border: #2f6dc4;
+  --ad-selection: #2a4fb0;
+  --ad-selection-text: #ffffff;
+  --ad-focus: #7fb0ff;
+  --ad-modal-shadow: 0 30px 90px -20px #000000cc;
+  --ad-hero-bg:
+    radial-gradient(ellipse 46% 90% at 100% 0%, #2a5fe0 0%, #1b3a9cb3 55%, transparent 100%),
+    radial-gradient(ellipse 40% 70% at 78% 110%, #4a2bb099 0%, transparent 100%),
+    linear-gradient(125deg, #0d1638, #101f52 60%, #0c2a66);
+  --ad-hero-ring: #ffffff2e;
+  --ad-hero-ring-glow: #ffffff14;
+  --ad-hero-copy: #c3cff0;
+  --ad-hero-accent: #7fb0ff;
+  --ad-hero-chip: #ffffff1f;
+  --ad-inverse: #1a2757;
+}

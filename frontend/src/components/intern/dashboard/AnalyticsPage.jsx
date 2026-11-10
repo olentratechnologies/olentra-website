@@ -53,7 +53,7 @@ function TrackPerformance({ months, large = false }) {
                 x2={chart.right}
                 y1={y(value)}
                 y2={y(value)}
-                stroke="#cfdbf8"
+                stroke="var(--ad-chart-grid, #cfdbf8)"
                 strokeDasharray={step ? "3 3" : undefined}
                 strokeWidth=".8"
               />
@@ -62,7 +62,7 @@ function TrackPerformance({ months, large = false }) {
                 y={y(value) + 4}
                 textAnchor="end"
                 fontSize="11"
-                fill="#536b9e"
+                fill="var(--ad-muted, #536b9e)"
               >
                 {value >= 1000 ? `${value / 1000}K` : value}
               </text>
@@ -111,7 +111,7 @@ function TrackPerformance({ months, large = false }) {
                 y="263"
                 textAnchor="middle"
                 fontSize={months.length > 8 ? "9" : "11"}
-                fill="#536b9e"
+                fill="var(--ad-muted, #536b9e)"
               >
                 {month.label}
               </text>

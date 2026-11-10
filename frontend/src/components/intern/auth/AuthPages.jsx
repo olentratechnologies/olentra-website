@@ -27,6 +27,7 @@ import { useInternship } from "@/components/intern/InternshipProvider";
 import { PlanetArtwork } from "@/components/intern/dashboard/DashboardVisuals";
 import styles from "./auth.module.css";
 import FuturisticLogin from "./FuturisticLogin";
+import { InternThemeProvider, InternThemeToggle } from "../InternTheme";
 import { useSiteFeatures } from "@/components/site-features";
 
 const destinationFor = (account) =>
@@ -61,6 +62,8 @@ function Brand() {
 function AuthShell({ children, eyebrow = "YOUR NEXT CHAPTER STARTS HERE" }) {
   const { features, ready } = useSiteFeatures();
   return (
+    <InternThemeProvider>
+    <InternThemeToggle floating />
     <main className={styles.authPage}>
       <div className={styles.authLayout}>
         <aside className={styles.authStory}>
@@ -111,6 +114,7 @@ function AuthShell({ children, eyebrow = "YOUR NEXT CHAPTER STARTS HERE" }) {
         </section>
       </div>
     </main>
+    </InternThemeProvider>
   );
 }
 

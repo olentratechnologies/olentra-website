@@ -1,0 +1,26 @@
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid var(--ad-border-strong);
+  border-radius: 999px;
+  background: var(--ad-button-bg);
+  color: var(--ad-button-text);
+  font: 600 12px var(--font-inter), Arial, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+}
+.toggle:hover { border-color: var(--ad-blue); color: var(--ad-link); background: var(--ad-button-hover); }
+.toggle:focus-visible { outline: 3px solid var(--ad-focus); outline-offset: 3px; }
+.toggle svg { color: var(--ad-blue); flex: none; }
+.floating { position: fixed; top: 20px; right: 20px; z-index: 100; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 760px) {
+  .toggle { min-width: 38px; padding: 8px; }
+  .toggle span { display: none; }
+  .floating { top: 12px; right: 12px; }
+}

@@ -3,7 +3,7 @@
   overflow: visible;
 }
 .applicationTabs {
-  border-bottom: 1px solid #d4e0ff;
+  border-bottom: 1px solid var(--ad-border, #d4e0ff);
   padding: 0 17px;
 }
 .listToolbar {
@@ -26,14 +26,14 @@
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  color: #6880ac;
+  color: var(--ad-subtle, #6880ac);
   white-space: nowrap;
 }
 .pageSize select {
   height: 31px;
-  color: #34517f;
-  background: #f7faffaa;
-  border: 1px solid #d1defb;
+  color: var(--ad-muted, #34517f);
+  background: color-mix(in srgb, var(--ad-panel, #f7faff) 67%, transparent);
+  border: 1px solid var(--ad-border, #d1defb);
   border-radius: 7px;
   padding: 0 6px;
   font: inherit;
@@ -61,15 +61,15 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #173763;
+  color: var(--ad-text, #173763);
   font-weight: 550;
   text-decoration: none;
 }
 .applicantLink:hover {
-  color: #1768f2;
+  color: var(--ad-blue, #1768f2);
 }
 .collegeCell {
-  color: #536d99;
+  color: var(--ad-subtle, #536d99);
   max-width: 220px;
   white-space: normal !important;
 }
@@ -79,7 +79,7 @@
   padding-right: 19px !important;
 }
 .paginationRow {
-  border-top: 1px solid #dce6ff;
+  border-top: 1px solid var(--ad-border, #dce6ff);
   padding: 14px 18px;
 }
 .filterFields {
@@ -92,7 +92,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #2b4775;
+  color: var(--ad-muted, #2b4775);
   margin-bottom: 1px;
 }
 .filterHeading strong {
@@ -103,8 +103,8 @@
   margin-left: auto;
   border-radius: 5px;
   padding: 2px 5px;
-  background: #dce9ff;
-  color: #1768ed;
+  background: var(--ad-panel-soft, #dce9ff);
+  color: var(--ad-blue, #1768ed);
   font-size: 10px;
 }
 .filterFields label,
@@ -114,7 +114,7 @@
   flex-direction: column;
   gap: 8px;
   font-size: 12px;
-  color: #526b96;
+  color: var(--ad-subtle, #526b96);
 }
 .filterFields input,
 .filterFields select,
@@ -124,10 +124,10 @@
 .statusForm select {
   width: 100%;
   min-height: 38px;
-  border: 1px solid #c9d9fa;
+  border: 1px solid var(--ad-border, #c9d9fa);
   border-radius: 8px;
-  background: #ffffffbf;
-  color: #254577;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 75%, transparent);
+  color: var(--ad-muted, #254577);
   padding: 9px 10px;
   font: inherit;
   font-size: 12px;
@@ -136,13 +136,13 @@
 .filterFields select option,
 .statusForm select option,
 .modalForm select option {
-  background: #f5f8ff;
-  color: #17385f;
+  background: var(--ad-panel, #f5f8ff);
+  color: var(--ad-text, #17385f);
 }
 .fieldError {
   margin: 0;
   font-size: 11px;
-  color: #cd5570;
+  color: var(--ad-danger, #cd5570);
   line-height: 1.5;
 }
 .modalForm {
@@ -157,8 +157,8 @@
   min-height: 100px;
 }
 .modalForm input[readonly] {
-  background: #eaf1ff;
-  color: #7a8bad;
+  background: var(--ad-panel-alt, #eaf1ff);
+  color: var(--ad-subtle, #7a8bad);
 }
 .modalActions {
   display: flex;
@@ -187,13 +187,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #2b4b80;
+  color: var(--ad-muted, #2b4b80);
   font-size: 12px;
   font-weight: 550;
   text-decoration: none;
 }
 .backLink:hover {
-  color: #1e6bf0;
+  color: var(--ad-blue, #1e6bf0);
 }
 .profileActions {
   display: flex;
@@ -214,24 +214,24 @@
   font-size: clamp(23px, 2.2vw, 31px);
   font-weight: 730;
   letter-spacing: -1px;
-  color: #0a214e;
+  color: var(--ad-text, #0a214e);
   line-height: 1.2;
   margin: 0 0 10px;
 }
 .verifiedBadge {
-  color: #2678ff;
+  color: var(--ad-blue, #2678ff);
   stroke: #fff;
   stroke-width: 1.8px;
   flex-shrink: 0;
 }
 .profilePage .profileIdentity > p {
   font-size: 13px;
-  color: #45618e;
+  color: var(--ad-muted, #45618e);
   margin: 0;
   line-height: 1.6;
 }
 .profileIdentity > p > span {
-  color: #849ac1;
+  color: var(--ad-subtle, #849ac1);
   margin: 0 8px;
 }
 .profileMeta {
@@ -241,7 +241,7 @@
   margin-top: 10px;
 }
 .profileTabs {
-  border-bottom: 1px solid #bfd2fa;
+  border-bottom: 1px solid var(--ad-border, #bfd2fa);
   margin-bottom: 18px;
 }
 .overviewGrid {
@@ -260,7 +260,7 @@
   align-items: center;
   gap: 8px;
   font-size: 15px;
-  color: #102852;
+  color: var(--ad-text, #102852);
   font-weight: 650;
   letter-spacing: -0.3px;
   margin: 0 0 22px;
@@ -277,13 +277,13 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  color: #3e5c8a;
+  color: var(--ad-muted, #3e5c8a);
   font-size: 12px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 .personalDetails li > svg {
-  color: #5682cd;
+  color: var(--ad-subtle, #5682cd);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -291,7 +291,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #286ae4;
+  color: var(--ad-blue, #286ae4);
   text-decoration: none;
 }
 .personalDetails a:hover {
@@ -311,22 +311,22 @@
   line-height: 1.5;
 }
 .detailsList dt {
-  color: #6880a8;
+  color: var(--ad-subtle, #6880a8);
 }
 .detailsList dd {
   margin: 0;
   font-weight: 550;
-  color: #2e4874;
+  color: var(--ad-muted, #2e4874);
 }
 .mutedText {
-  color: #7c90b2 !important;
+  color: var(--ad-subtle, #7c90b2) !important;
   font-weight: 400;
   font-size: 12px;
   line-height: 1.7;
 }
 .profilePage .skillsHeading {
   margin: 0 0 13px;
-  color: #1d3a68;
+  color: var(--ad-muted, #1d3a68);
   font-weight: 600;
   font-size: 13px;
 }
@@ -338,9 +338,9 @@
 .skills > span {
   display: inline-flex;
   padding: 5px 9px;
-  color: #436ca7;
-  background: #deebff;
-  border: 1px solid #d0e1fe;
+  color: var(--ad-subtle, #436ca7);
+  background: var(--ad-panel-soft, #deebff);
+  border: 1px solid var(--ad-border, #d0e1fe);
   border-radius: 20px;
   font-size: 10px;
 }
@@ -369,7 +369,7 @@
   bottom: 0;
   left: 8px;
   width: 1px;
-  background: linear-gradient(#b9e6e2, #bed8fa);
+  background: linear-gradient(var(--ad-blue-soft, #b9e6e2), var(--ad-blue-soft, #bed8fa));
 }
 .flowDot {
   position: relative;
@@ -380,14 +380,14 @@
   display: grid;
   place-items: center;
   color: #fff;
-  background: linear-gradient(135deg, #5ae0bd, #0bb68c);
-  border: 2px solid #d6f7ee;
+  background: linear-gradient(135deg, var(--ad-success, #5ae0bd), var(--ad-success, #0bb68c));
+  border: 2px solid var(--ad-success-border, #d6f7ee);
   box-shadow: 0 0 0 3px #d6f7ee55;
   border-radius: 50%;
 }
 .currentFlow .flowDot {
-  background: #e8f0ff;
-  border: 2px solid #7aafff;
+  background: var(--ad-panel-alt, #e8f0ff);
+  border: 2px solid var(--ad-border-strong, #7aafff);
   box-shadow: 0 0 0 3px #d5e5ff;
 }
 .currentFlow .flowDot > span {
@@ -395,31 +395,31 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #287dff;
+  background: var(--ad-blue, #287dff);
 }
 .flowList strong {
   display: block;
   font-size: 11px;
-  color: #294779;
+  color: var(--ad-muted, #294779);
   font-weight: 600;
   line-height: 1.4;
 }
 .flowList time {
   display: block;
-  color: #7b91b7;
+  color: var(--ad-subtle, #7b91b7);
   font-size: 10px;
   margin-top: 5px;
 }
 .profilePage .flowList p {
   margin: 7px 0 0;
-  color: #8195b6;
+  color: var(--ad-subtle, #8195b6);
   font-size: 10px;
   line-height: 1.6;
 }
 .noHistory {
   display: flex;
   gap: 10px;
-  color: #728bb4;
+  color: var(--ad-subtle, #728bb4);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -441,7 +441,7 @@
   min-width: 0;
 }
 .profilePage .bio {
-  color: #6e84a9;
+  color: var(--ad-subtle, #6e84a9);
   line-height: 1.85;
   font-size: 13px;
   margin: 0 0 19px;
@@ -451,29 +451,29 @@
   align-items: center;
   gap: 12px;
   padding: 14px;
-  border: 1px solid #d8e4fe;
+  border: 1px solid var(--ad-border, #d8e4fe);
   border-radius: 10px;
-  color: #5e84bf;
-  background: #e8f0ff65;
+  color: var(--ad-subtle, #5e84bf);
+  background: color-mix(in srgb, var(--ad-panel-alt, #e8f0ff) 40%, transparent);
 }
 .applicationSummary > div {
   flex: 1;
 }
 .applicationSummary strong {
   font-size: 11px;
-  color: #3e5a88;
+  color: var(--ad-muted, #3e5a88);
   display: block;
   font-weight: 550;
 }
 .applicationSummary span {
-  color: #8ca0c0;
+  color: var(--ad-subtle, #8ca0c0);
   display: block;
   font-size: 10px;
   margin-top: 5px;
 }
 .noteCount {
-  color: #5482c8;
-  background: #e0ecff;
+  color: var(--ad-subtle, #5482c8);
+  background: var(--ad-panel-soft, #e0ecff);
   padding: 3px 6px;
   border-radius: 5px;
   font-size: 10px;
@@ -485,9 +485,9 @@
   gap: 13px;
 }
 .note {
-  border: 1px solid #d9e4fc;
+  border: 1px solid var(--ad-border, #d9e4fc);
   border-radius: 9px;
-  background: #f8fbff70;
+  background: color-mix(in srgb, var(--ad-panel, #f8fbff) 44%, transparent);
   padding: 13px;
 }
 .noteHeading {
@@ -496,23 +496,23 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px;
-  color: #4e6fa1;
+  color: var(--ad-subtle, #4e6fa1);
   font-size: 10px;
 }
 .noteHeading time {
-  color: #96a6bf;
+  color: var(--ad-subtle, #96a6bf);
   font-size: 9px;
 }
 .profilePage .note p {
   font-size: 12px;
   line-height: 1.7;
-  color: #5d759c;
+  color: var(--ad-subtle, #5d759c);
   margin: 9px 0 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .noteForm {
-  border-top: 1px solid #dae5ff;
+  border-top: 1px solid var(--ad-border, #dae5ff);
   padding-top: 18px;
   margin-top: 18px;
   display: flex;
@@ -520,16 +520,16 @@
   gap: 10px;
 }
 .noteForm label {
-  color: #58739c;
+  color: var(--ad-subtle, #58739c);
   font-size: 12px;
 }
 .noteForm textarea {
   resize: vertical;
   width: 100%;
-  border: 1px solid #cbdcfb;
+  border: 1px solid var(--ad-border, #cbdcfb);
   border-radius: 9px;
-  background: #ffffffa6;
-  color: #34547f;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 65%, transparent);
+  color: var(--ad-muted, #34547f);
   padding: 12px;
   line-height: 1.6;
   font: inherit;
@@ -537,7 +537,7 @@
   min-height: 85px;
 }
 .noteForm textarea::placeholder {
-  color: #94a5bf;
+  color: var(--ad-subtle, #94a5bf);
 }
 .noteForm > div {
   display: flex;
@@ -546,13 +546,13 @@
   gap: 12px;
 }
 .noteForm > div > span {
-  color: #96a7c0;
+  color: var(--ad-subtle, #96a7c0);
   font-size: 10px;
 }
 .profilePage .reviewDescription {
   font-size: 12px;
   line-height: 1.7;
-  color: #7a90b2;
+  color: var(--ad-subtle, #7a90b2);
   margin: -7px 0 20px;
 }
 .statusForm {
@@ -574,7 +574,7 @@
   margin: 0;
 }
 .sectionTitleRow > span {
-  color: #879cc1;
+  color: var(--ad-subtle, #879cc1);
   font-size: 11px;
 }
 .linkedProjects {
@@ -583,10 +583,10 @@
   gap: 17px;
 }
 .linkedProject {
-  border: 1px solid #d3e0ff;
+  border: 1px solid var(--ad-border, #d3e0ff);
   border-radius: 13px;
   padding: 20px;
-  background: linear-gradient(135deg, #ffffff9c, #e8f0ff6b);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ad-panel, #ffffff) 61%, transparent), color-mix(in srgb, var(--ad-panel-alt, #e8f0ff) 42%, transparent));
 }
 .linkedProjectIcon {
   display: grid;
@@ -595,8 +595,8 @@
   height: 44px;
   border-radius: 12px;
   margin-bottom: 17px;
-  color: #387ff0;
-  background: linear-gradient(140deg, #e4f3ff, #d5e6ff);
+  color: var(--ad-blue, #387ff0);
+  background: linear-gradient(140deg, var(--ad-panel-alt, #e4f3ff), var(--ad-blue-soft, #d5e6ff));
 }
 .linkedProjectHeading {
   display: flex;
@@ -606,14 +606,14 @@
   gap: 9px;
 }
 .profilePage .linkedProject h3 {
-  color: #2d4a77;
+  color: var(--ad-muted, #2d4a77);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.5;
   margin: 0;
 }
 .profilePage .linkedProject > p {
-  color: #7f94b6;
+  color: var(--ad-subtle, #7f94b6);
   font-size: 12px;
   line-height: 1.7;
   margin: 12px 0 21px;
@@ -621,25 +621,25 @@
 .projectProgressLabel {
   display: flex;
   justify-content: space-between;
-  color: #8398bb;
+  color: var(--ad-subtle, #8398bb);
   font-size: 10px;
   margin-bottom: 8px;
 }
 .projectProgressLabel strong {
-  color: #4f7dda;
+  color: var(--ad-blue, #4f7dda);
   font-weight: 550;
 }
 .projectProgress {
   height: 6px;
   border-radius: 10px;
   overflow: hidden;
-  background: #dce7ff;
+  background: var(--ad-panel-soft, #dce7ff);
 }
 .projectProgress > span {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #4199ff, #8c66ff);
+  background: linear-gradient(90deg, var(--ad-blue, #4199ff), var(--ad-blue-border, #8c66ff));
 }
 .projectFooter {
   display: flex;
@@ -648,15 +648,15 @@
   gap: 10px;
   margin-top: 19px;
   padding-top: 15px;
-  border-top: 1px solid #d9e3fc;
+  border-top: 1px solid var(--ad-border, #d9e3fc);
   font-size: 10px;
-  color: #8b9ec0;
+  color: var(--ad-subtle, #8b9ec0);
 }
 .projectFooter a {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  color: #4b7dd1;
+  color: var(--ad-subtle, #4b7dd1);
   text-decoration: none;
 }
 .activityTimeline {
@@ -681,7 +681,7 @@
   top: 31px;
   bottom: 0;
   left: 15px;
-  background: #d2e0ff;
+  background: var(--ad-blue-soft, #d2e0ff);
 }
 .activityDot {
   display: grid;
@@ -689,28 +689,28 @@
   width: 31px;
   height: 31px;
   border-radius: 50%;
-  color: #417fee;
-  background: #e0ecff;
+  color: var(--ad-blue, #417fee);
+  background: var(--ad-panel-soft, #e0ecff);
   flex-shrink: 0;
   position: relative;
   z-index: 1;
 }
 .profilePage .activityTimeline h3 {
   font-size: 12px;
-  color: #34527c;
+  color: var(--ad-muted, #34527c);
   font-weight: 600;
   margin: 2px 0 6px;
 }
 .profilePage .activityTimeline p {
   margin: 0 0 7px;
   font-size: 12px;
-  color: #7088ae;
+  color: var(--ad-subtle, #7088ae);
   line-height: 1.8;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .activityTimeline time {
-  color: #96a9c5;
+  color: var(--ad-subtle, #96a9c5);
   font-size: 10px;
 }
 @media (max-width: 1200px) {

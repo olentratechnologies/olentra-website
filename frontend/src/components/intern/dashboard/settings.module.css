@@ -19,8 +19,8 @@
   width: 38px;
   height: 38px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #dbeaff, #e6e3ff);
-  color: #4379f7;
+  background: linear-gradient(135deg, var(--ad-blue-soft, #dbeaff), var(--ad-panel-alt, #e6e3ff));
+  color: var(--ad-blue, #4379f7);
 }
 .sectionHeading h2 {
   font-size: 16px !important;
@@ -28,7 +28,7 @@
 .sectionHeading p {
   margin: 4px 0 0 !important;
   font-size: 11px;
-  color: #6a80aa;
+  color: var(--ad-subtle, #6a80aa);
 }
 .switches {
   display: grid;
@@ -45,12 +45,12 @@
 .switchRow strong {
   font-size: 13px;
   font-weight: 500;
-  color: #263e73;
+  color: var(--ad-muted, #263e73);
 }
 .switchRow p {
   margin-top: 5px !important;
   font-size: 11px;
-  color: #6a80a8;
+  color: var(--ad-subtle, #6a80a8);
   line-height: 1.6;
 }
 .switch {
@@ -58,9 +58,9 @@
   height: 22px;
   padding: 3px !important;
   flex: none;
-  border: 1px solid #c2d3f6;
+  border: 1px solid var(--ad-border, #c2d3f6);
   border-radius: 20px;
-  background: #ccd9ef;
+  background: var(--ad-panel-soft, #ccd9ef);
   transition: background 0.2s;
   box-shadow: inset 0 1px 2px #5271a61a;
 }
@@ -74,8 +74,8 @@
   transition: transform 0.2s;
 }
 .switch[aria-checked="true"] {
-  background: #2876ff;
-  border-color: #2876ff;
+  background: var(--ad-blue, #2876ff);
+  border-color: var(--ad-blue, #2876ff);
 }
 .switch[aria-checked="true"] > span {
   transform: translateX(15px);
@@ -89,12 +89,12 @@
 }
 .stipendRow label {
   font-size: 13px;
-  color: #294478;
+  color: var(--ad-muted, #294478);
 }
 .stipendRow label > span {
   display: block;
   font-size: 11px;
-  color: #7387ad;
+  color: var(--ad-subtle, #7387ad);
   margin-top: 6px;
 }
 .stipendRow > div {
@@ -104,10 +104,10 @@
   width: 205px;
   flex: none;
   padding: 10px 13px;
-  border: 1px solid #cfddfb;
+  border: 1px solid var(--ad-border, #cfddfb);
   border-radius: 10px;
-  background: #e8efff88;
-  color: #7086ab;
+  background: color-mix(in srgb, var(--ad-panel-alt, #e8efff) 53%, transparent);
+  color: var(--ad-subtle, #7086ab);
 }
 .stipendRow input {
   min-width: 0;
@@ -116,19 +116,19 @@
   border: 0;
   outline: none;
   text-align: right;
-  color: #213c76;
+  color: var(--ad-muted, #213c76);
   background: transparent;
   font-size: 13px;
 }
 .divider {
-  border-top: 1px solid #d8e2fb;
+  border-top: 1px solid var(--ad-border, #d8e2fb);
   margin: 22px 0;
 }
 .subheading {
   font-size: 13px;
   font-weight: 600;
   margin: 0 0 17px;
-  color: #2a447b;
+  color: var(--ad-muted, #2a447b);
 }
 .saveRow {
   display: flex;
@@ -137,14 +137,14 @@
   gap: 20px;
   margin-top: 26px;
   padding-top: 22px;
-  border-top: 1px solid #d9e3fc;
+  border-top: 1px solid var(--ad-border, #d9e3fc);
 }
 .saveRow > span {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #7186ab;
+  color: var(--ad-subtle, #7186ab);
 }
 .trackCards {
   display: grid;
@@ -153,13 +153,13 @@
 }
 .trackCard {
   padding: 21px;
-  border: 1px solid #cbdcfe;
+  border: 1px solid var(--ad-border, #cbdcfe);
   border-radius: 15px;
-  background: linear-gradient(140deg, #f9fcff, #e6efff86);
+  background: linear-gradient(140deg, var(--ad-panel, #f9fcff), color-mix(in srgb, var(--ad-panel-alt, #e6efff) 53%, transparent));
 }
 .trackCard[data-track="innovator"] {
-  background: linear-gradient(140deg, #fcfaff, #eee5ff86);
-  border-color: #ded1ff;
+  background: linear-gradient(140deg, var(--ad-purple-soft, #fcfaff), color-mix(in srgb, var(--ad-purple-soft, #eee5ff) 53%, transparent));
+  border-color: var(--ad-border, #ded1ff);
 }
 .trackIcon {
   display: flex;
@@ -168,13 +168,13 @@
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: #e1edff;
-  color: #347fff;
+  background: var(--ad-panel-soft, #e1edff);
+  color: var(--ad-blue, #347fff);
   margin-bottom: 15px;
 }
 .trackCard[data-track="innovator"] .trackIcon {
-  color: #8857f1;
-  background: #ece1ff;
+  color: var(--ad-purple, #8857f1);
+  background: var(--ad-purple-soft, #ece1ff);
 }
 .trackCard h3 {
   font-size: 17px;
@@ -183,7 +183,7 @@
 }
 .trackCard > span {
   display: block;
-  color: #5874a8;
+  color: var(--ad-subtle, #5874a8);
   font-size: 11px;
   margin-top: 5px;
 }
@@ -191,11 +191,11 @@
   min-height: 60px;
   margin-top: 15px !important;
   font-size: 12px;
-  color: #7184a8;
+  color: var(--ad-subtle, #7184a8);
   line-height: 1.8;
 }
 .trackCard .switchRow {
-  border-top: 1px solid #d5dffc;
+  border-top: 1px solid var(--ad-border, #d5dffc);
   margin-top: 17px;
   padding-bottom: 0;
 }
@@ -207,7 +207,7 @@
   align-items: flex-start;
   gap: 7px;
   margin: 22px 0 0 !important;
-  color: #7488aa;
+  color: var(--ad-subtle, #7488aa);
   font-size: 11px;
   line-height: 1.7;
 }
@@ -224,9 +224,9 @@
   align-items: center;
   gap: 15px;
   padding: 19px;
-  border: 1px solid #d1dfff;
+  border: 1px solid var(--ad-border, #d1dfff);
   border-radius: 13px;
-  background: #ffffff45;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 27%, transparent);
 }
 .integrationIcon {
   display: flex;
@@ -235,8 +235,8 @@
   width: 45px;
   height: 45px;
   flex: none;
-  background: #e5ecff;
-  color: #5479c2;
+  background: var(--ad-panel-alt, #e5ecff);
+  color: var(--ad-subtle, #5479c2);
   border-radius: 13px;
 }
 .integration > div {
@@ -248,18 +248,18 @@
 }
 .integration p {
   font-size: 11px;
-  color: #7a8bad;
+  color: var(--ad-subtle, #7a8bad);
   margin-top: 3px !important;
 }
 .integration small {
   display: block;
   font-size: 10px;
-  color: #3977df;
+  color: var(--ad-blue, #3977df);
   margin-top: 5px;
 }
 .error {
   margin-top: 20px !important;
-  color: #c53c6b;
+  color: var(--ad-danger, #c53c6b);
   font-size: 12px;
 }
 .resetPanel {
@@ -275,11 +275,11 @@
   font-size: 12px;
   font-weight: 550;
   margin: 0;
-  color: #4b6597;
+  color: var(--ad-subtle, #4b6597);
 }
 .resetPanel p {
   font-size: 11px;
-  color: #8394b3;
+  color: var(--ad-subtle, #8394b3);
   margin-top: 5px !important;
 }
 @media (max-width: 900px) {

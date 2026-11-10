@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Activity, Users, MessageSquare, ClipboardCheck, ChevronRight, FilePenLine, SlidersHorizontal, FileText, Check, Clock3, TriangleAlert } from "lucide-react";
-import { Button, LineChart, MiniMap, PageHeader, Panel, Progress, Select, Stat } from "./ui";
+import { Activity, Users, MessageSquare, ClipboardCheck, ChevronRight, FilePenLine, SlidersHorizontal, FileText, Check, Clock3, TriangleAlert, Mail, ArrowUpRight, Rocket } from "lucide-react";
+import { Button, LineChart, MiniMap, Panel, Progress, Select, Stat } from "./ui";
 import { useAdmin } from "./store";
 import { LiveUsersStat } from "./live-user-count";
 import { selectOverview, selectAnalytics, selectMonitoring } from "@/lib/admin/selectors.mjs";
 import coreFixtures from "@/data/admin/core.json";
 import styles from "./core.module.css";
+import hero from "./overview-hero.module.css";
 
 const formatNumber = (value) => Number(value || 0).toLocaleString("en-GB");
 const formatPercent = (value) => Number(value || 0).toFixed(2) + "%";
@@ -61,7 +62,19 @@ export function OverviewPage() {
   ];
 
   return <div className={"ad-stack " + styles.overviewPage}>
-    <PageHeader title="Company overview" description={description} actions={<><Button href="/" target="_blank" rel="noreferrer">View website</Button>{can("Content & Media", "edit") && <Button href="/dashboard/content" variant="primary" icon={FilePenLine}>Create update</Button>}</>} />
+    <section className={hero.hero} aria-labelledby="company-overview-title">
+      <div className={hero.heroCopy}>
+        <span className={hero.eyebrow}><Rocket size={14} aria-hidden="true" />Company workspace</span>
+        <h1 id="company-overview-title">Company <span>overview</span></h1>
+        <p>{description}</p>
+        <div className={hero.heroActions}>
+          {can("Website Controls", "view") && <Button href="/dashboard/website-controls" variant="primary" icon={SlidersHorizontal}>Website controls<ChevronRight size={15} aria-hidden="true" /></Button>}
+          {can("Email Templates", "view") && <Button href="/dashboard/email-templates" icon={Mail}>Email templates</Button>}
+          {can("Content & Media", "edit") && <Link className={hero.textAction} href="/dashboard/content">Create update<ArrowUpRight size={14} aria-hidden="true" /></Link>}
+        </div>
+      </div>
+      <Link className={hero.websiteLink} href="/" target="_blank" rel="noreferrer">View website<ArrowUpRight size={13} aria-hidden="true" /></Link>
+    </section>
     <MetricCards visitorFirst />
     <div className={styles.overviewTop}>
       <Panel title="Visitor activity" description={`Unique visitors over time · ${scope}.`} actions={<Select aria-label="Visitor chart timeframe" options={["Last 24 hours", "Last 7 days", "Last 30 days"]} value={period} onChange={(event) => setPeriod(event.target.value)} />}>
@@ -97,8 +110,8 @@ export function OverviewPage() {
         </table></div>
       </Panel>
       <Panel title="Needs attention" description="Items that require your action.">
-        <Link className={styles.attention} href="/dashboard/approvals"><ClipboardCheck size={24} color="#aa9bff" /><div><strong>{formatNumber(approvals.length)} changes awaiting review</strong><p>Open the approval queue</p></div><ChevronRight size={17} /></Link>
-        <Link className={styles.attention} href="/dashboard/enquiries"><MessageSquare size={24} color="#619fff" /><div><strong>{formatNumber(unassigned.length)} {unassigned.length === 1 ? "enquiry" : "enquiries"} unassigned</strong><p>Open enquiries need an owner</p></div><ChevronRight size={17} /></Link>
+        <Link className={styles.attention} href="/dashboard/approvals"><ClipboardCheck size={24} color="var(--ad-purple)" /><div><strong>{formatNumber(approvals.length)} changes awaiting review</strong><p>Open the approval queue</p></div><ChevronRight size={17} /></Link>
+        <Link className={styles.attention} href="/dashboard/enquiries"><MessageSquare size={24} color="var(--ad-blue)" /><div><strong>{formatNumber(unassigned.length)} {unassigned.length === 1 ? "enquiry" : "enquiries"} unassigned</strong><p>Open enquiries need an owner</p></div><ChevronRight size={17} /></Link>
       </Panel>
       <Panel title="Recent activity" description="Latest changes across your workspace.">
         {overview.activity.map((event) => <div key={event.id} className={styles.activity}>

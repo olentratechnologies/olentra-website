@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { INTERN_THEME_BOOTSTRAP } from "@/lib/intern/theme.mjs";
 import { AuthLoading, RegisterPage } from "@/components/intern/auth/AuthPages";
 
 export const metadata = {
@@ -7,8 +8,11 @@ export const metadata = {
 };
 export default function Page() {
   return (
-    <Suspense fallback={<AuthLoading />}>
-      <RegisterPage />
-    </Suspense>
+    <>
+      <script dangerouslySetInnerHTML={{ __html: INTERN_THEME_BOOTSTRAP }} />
+      <Suspense fallback={<AuthLoading />}>
+        <RegisterPage />
+      </Suspense>
+    </>
   );
 }
