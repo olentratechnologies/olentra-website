@@ -1,0 +1,9 @@
+.loading { min-width: 0; color: var(--ad-text, #17315e); font-family: var(--font-inter), Arial, sans-serif; }
+.header { margin-bottom: 20px; }
+.header h1 { margin: 0; color: var(--ad-text, #17315e); font-size: clamp(27px, 3vw, 36px); font-weight: 750; line-height: 1.2; letter-spacing: -1px; }
+.header p { margin: 9px 0 0; color: var(--ad-muted, #536c8f); font-size: 13px; line-height: 1.6; }
+.status { margin: 0 0 16px; color: var(--ad-muted, #536c8f); font-size: 13px; line-height: 1.6; }
+.indicator { min-height: clamp(260px, 45dvh, 420px); }
+.retry { min-height: 42px; padding: 9px 18px; border: 1px solid var(--ad-border-strong, #9bb5df); border-radius: 999px; color: var(--ad-button-text, #17315e); background: var(--ad-button-bg, #f2f7ff); font: inherit; cursor: pointer; }
+.retry:hover { border-color: var(--ad-link, #003bc9); }
+.retry:focus-visible { outline: 3px solid var(--ad-focus, #0064ed); outline-offset: 3px; }

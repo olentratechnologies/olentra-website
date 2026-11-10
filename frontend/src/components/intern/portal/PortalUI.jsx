@@ -10,6 +10,7 @@ import {
   LockKeyhole,
 } from "lucide-react";
 import { useInternship } from "@/components/intern/InternshipProvider";
+import LoadingIndicator from "@/components/LoadingIndicator";
 import { Modal, formatDate } from "../dashboard/DashboardUI";
 import styles from "./portal.module.css";
 
@@ -96,9 +97,8 @@ export function EmptyState({
 }
 export function Loading() {
   return (
-    <div className={styles.loading} role="status">
-      <LoaderCircle size={24} className={styles.spinner} />
-      Loading your workspace…
+    <div className={styles.loading}>
+      <LoadingIndicator label="Loading your workspace…" />
     </div>
   );
 }

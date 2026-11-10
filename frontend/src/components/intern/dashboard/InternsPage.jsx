@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { hasStaffPermission } from "./staffAccess";
+import { useInternQuery, useInternSearch } from "../useInternQuery";
+import QueryStatus from "./QueryStatus";
 import { useInternHistory } from "@/components/intern/useInternHistory";
+import LoadingIndicator from "@/components/LoadingIndicator";
 import {
   Avatar,
   Button,
@@ -49,35 +52,29 @@ export default function InternsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
-  const [listing, setListing] = useState({items:[],total:0,counts:{statuses:{},programs:{}},batches:[]});
-  const [summary, setSummary] = useState({total:0,counts:{statuses:{},programs:{}},batches:[]});
-  const [listError, setListError] = useState("");
+  const debouncedSearch = useInternSearch(search);
+  const debouncedQuery = useInternSearch(query);
+  const params = { search: debouncedSearch, query: debouncedQuery, programId: track, batch };
+  const listQuery = useInternQuery("intern.list", { ...params, status: tab, page, pageSize, sortField: sort.key, sortDirection: sort.direction });
+  const summaryQuery = useInternQuery("intern.list", { ...params, status: "all", page: 1, pageSize: 1 });
+  const listing = listQuery.data || { items: [], total: 0 };
+  const summary = summaryQuery.data;
   useEffect(() => { setPage(1); }, [query, search, track, batch, tab]);
   useEffect(() => {
-    let live = true;
-    const timer = setTimeout(async () => {
-      const common = {search,query,programId:track,batch,sortField:sort.key,sortDirection:sort.direction};
-      const [pageResult, summaryResult] = await Promise.all([
-        commands.listInterns({...common,status:tab,page,pageSize}),
-        commands.listInterns({...common,status:"all",page:1,pageSize:1}),
-      ]);
-      if (!live) return;
-      if (!pageResult.ok || !summaryResult.ok) { setListError(pageResult.error || summaryResult.error); return; }
-      setListError(""); setListing(pageResult.data); setSummary(summaryResult.data);
-      if (page > 1 && page > Math.max(1, Math.ceil(pageResult.data.total / pageSize))) setPage(Math.max(1, Math.ceil(pageResult.data.total / pageSize)));
-    }, 180);
-    return () => { live = false; clearTimeout(timer); };
-  }, [page,pageSize,search,query,track,batch,tab,sort.key,sort.direction,commands,data.interns]);
+    if (!listQuery.data || page <= 1) return;
+    const lastPage = Math.max(1, Math.ceil(listQuery.data.total / pageSize));
+    if (page > lastPage) setPage(lastPage);
+  }, [listQuery.data, page, pageSize]);
   const interns = listing.items.map(intern => ({...intern.application,...intern,name:intern.application?.name || intern.name || "Intern",email:intern.application?.email || intern.email || "",programId:intern.application?.programId || intern.programId,program:intern.application?.program || intern.program,projects:intern.projects || []}));
-  const counts = {all:summary.total,active:summary.counts?.statuses?.Active || 0,completed:summary.counts?.statuses?.Completed || 0,dropped:summary.counts?.statuses?.Dropped || 0};
-  const batches = summary.batches || [];
+  const counts = summary ? { all: summary.total, active: summary.counts?.statuses?.Active || 0, completed: summary.counts?.statuses?.Completed || 0, dropped: summary.counts?.statuses?.Dropped || 0 } : {};
+  const batches = summary?.batches || [];
   const baseline = data.metrics?.find((metric) => metric.id === "joined");
   const metrics = [
     {
       ...baseline,
       id: "total",
       label: "Total Interns",
-      value: counts.all,
+      value: counts.all ?? "—",
       tone: "orange",
       icon: "trophy",
       change: null,
@@ -86,7 +83,7 @@ export default function InternsPage() {
       ...baseline,
       id: "active",
       label: "Active",
-      value: counts.active,
+      value: counts.active ?? "—",
       tone: "blue",
       icon: "users",
       change: null,
@@ -95,7 +92,7 @@ export default function InternsPage() {
       ...baseline,
       id: "completed",
       label: "Completed",
-      value: counts.completed,
+      value: counts.completed ?? "—",
       tone: "green",
       icon: "check",
       change: null,
@@ -104,7 +101,7 @@ export default function InternsPage() {
       ...baseline,
       id: "dropped",
       label: "Dropped",
-      value: counts.dropped,
+      value: counts.dropped ?? "—",
       tone: "purple",
       icon: "users",
       change: null,
@@ -172,7 +169,7 @@ export default function InternsPage() {
         description="Manage your active and completed interns"
       >
         <div className={styles.headerActions}>
-          <Button variant="secondary" onClick={exportInterns}>
+          <Button variant="secondary" onClick={exportInterns} disabled={!listQuery.data || !filtered.length}>
             <Download size={16} />
             Export current page
           </Button>
@@ -190,6 +187,7 @@ export default function InternsPage() {
         </div>
       </PageHeader>
       <StatCards items={metrics} />
+      <QueryStatus query={summaryQuery} label="intern totals" compact/>
       <div className={styles.internTabsRow}>
         <Tabs
           label="Intern status"
@@ -254,7 +252,7 @@ export default function InternsPage() {
           </div>
         </Panel>
       )}
-      <Panel className={styles.internTablePanel}>
+      <Panel className={styles.internTablePanel} aria-busy={listQuery.loading || listQuery.refreshing}>
         <div className={ui.tableWrap}>
           <table className={ui.table}>
             <thead>
@@ -360,22 +358,23 @@ export default function InternsPage() {
             </tbody>
           </table>
         </div>
-        {listError && <p role="alert">{listError}</p>}
-        {!filtered.length && !listError && (
+        <QueryStatus query={listQuery} label="interns"/>
+        {listQuery.data && !filtered.length && (
           <EmptyState
             title="No interns found"
             description="Try a different search, track, batch, or status."
           />
         )}
-        <Pagination
+        {listQuery.data && <Pagination
           page={safePage}
           pageSize={pageSize}
           total={listing.total}
           onChange={setPage}
-        />
+        />}
       </Panel>
       <Modal open={Boolean(recipient)} onOpenChange={open=>{if(!open)setRecipient(null)}} title={`Message ${recipient?.name || "intern"}`} description="Communicate with an intern in their workspace.">
         {messages.error && <p role="alert">{messages.error}</p>}
+        {messages.loading && <LoadingIndicator label="Loading messages…" compact={messages.items.length > 0} />}
         {messages.items.map(item=><article key={item.id}><strong>{item.subject}</strong><p>{item.body}</p></article>)}
         {messages.hasMore && <Button variant="ghost" onClick={messages.loadMore} disabled={messages.loading}>Load older messages</Button>}
         <form onSubmit={async event=>{event.preventDefault();setSending(true);setMessageError("");const result=await commands.sendMessage(recipient.applicationId,{subject:subject.trim(),body:body.trim()});setSending(false);if(!result.ok){setMessageError(result.error);return}setSubject("");setBody("");notify("Message sent.")}}>

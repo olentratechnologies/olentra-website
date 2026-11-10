@@ -1,0 +1,10 @@
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 0;
+  color: var(--ad-danger, #b93862);
+  font-size: 12px;
+}

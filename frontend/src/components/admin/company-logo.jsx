@@ -11,7 +11,7 @@ export function CompanyLogo({ className = "", src, companyName }) {
   const [failedSource, setFailedSource] = useState("");
   const source = (src === undefined ? company.logo : src) || COMPANY_LOGO_SRC;
   return <img
-    className={`ad-company-logo ${className}`.trim()}
+    className={`workspace-company-logo ${className}`.trim()}
     src={failedSource === source ? COMPANY_LOGO_SRC : source}
     alt={`${companyName || company.company || "Olentra Technologies"} logo`}
     width={80}

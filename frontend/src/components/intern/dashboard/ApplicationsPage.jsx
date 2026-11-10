@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { hasStaffPermission } from "./staffAccess";
+import { useInternQuery, useInternSearch } from "../useInternQuery";
+import QueryStatus from "./QueryStatus";
 import {
   Avatar,
   Button,
@@ -52,7 +54,7 @@ function applicationMetric(data, id, label, value, tone, icon) {
 }
 
 export default function ApplicationsPage() {
-  const { data, query, setQuery, notify, updateApplication, commands, account } = useDashboard();
+  const { data, query, setQuery, notify, updateApplication, account } = useDashboard();
   const canReview = hasStaffPermission(account, "applications.review");
   const isAdmin = account?.staffRole === "admin";
   const [search, setSearch] = useState("");
@@ -66,9 +68,6 @@ export default function ApplicationsPage() {
   const [editingApplication, setEditingApplication] = useState(null);
   const [nextStatus, setNextStatus] = useState("");
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState({items:[],total:0,counts:{statuses:{},programs:{}}});
-  const [listError, setListError] = useState("");
-  const applications = result.items;
   const activeFilters =
     Number(status !== "all") +
     Number(Boolean(dateFrom)) +
@@ -79,23 +78,24 @@ export default function ApplicationsPage() {
     setPage(1);
   }, [query, search, track, status, dateFrom, dateTo, pageSize]);
 
+  const debouncedSearch = useInternSearch(search);
+  const debouncedQuery = useInternSearch(query);
+  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, dateFrom, dateTo };
+  const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction }, { enabled: !invalidDateRange });
+  const summaryQuery = useInternQuery("application.list", { ...queryParams, page: 1, pageSize: 1 }, { enabled: !invalidDateRange });
+  const result = listQuery.data || { items: [], total: 0 };
+  const summary = summaryQuery.data;
   useEffect(() => {
-    if (invalidDateRange) return;
-    let active = true;
-    const timer = setTimeout(async () => {
-      const response = await commands.listApplications({page,pageSize,search,query,status,programId:track,dateFrom,dateTo,sortField:sort.key,sortDirection:sort.direction});
-      if (!active) return;
-      if (!response.ok) { setListError(response.error); return; }
-      setListError(""); setResult(response.data);
-      if (page > 1 && page > Math.max(1, Math.ceil(response.data.total / pageSize))) setPage(Math.max(1, Math.ceil(response.data.total / pageSize)));
-    }, 180);
-    return () => { active = false; clearTimeout(timer); };
-  }, [page,pageSize,search,query,status,track,dateFrom,dateTo,sort.key,sort.direction,invalidDateRange,commands,data.applications]);
+    if (!listQuery.data || page <= 1) return;
+    const lastPage = Math.max(1, Math.ceil(listQuery.data.total / pageSize));
+    if (page > lastPage) setPage(lastPage);
+  }, [listQuery.data, page, pageSize]);
+  const applications = result.items;
   const filtered = applications;
   const currentPage = page;
   const displayed = applications;
-  const trackTabs = [{ id:"all",label:"All",count:result.total }, ...(data.programs || []).map(program=>({id:program.id,label:program.name,count:result.counts.programs[program.id] || 0}))];
-  const metricItems = [applicationMetric(data,"applications","Total Applications",result.total,"blue","users"),applicationMetric(data,"under-review","Under Review",result.counts.statuses["Under Review"] || 0,"orange","users"),applicationMetric(data,"shortlisted","Shortlisted",result.counts.statuses.Shortlisted || 0,"green","check"),applicationMetric(data,"rejected","Rejected",result.counts.statuses.Rejected || 0,"purple","users")];
+  const trackTabs = [{ id: "all", label: "All", count: summary?.total }, ...(data.programs || []).map(program => ({ id: program.id, label: program.name, count: summary ? summary.counts?.programs?.[program.id] || 0 : undefined }))];
+  const metricItems = [applicationMetric(data, "applications", "Total Applications", summary?.total ?? "—", "blue", "users"), applicationMetric(data, "under-review", "Under Review", summary ? summary.counts?.statuses?.["Under Review"] || 0 : "—", "orange", "users"), applicationMetric(data, "shortlisted", "Shortlisted", summary ? summary.counts?.statuses?.Shortlisted || 0 : "—", "green", "check"), applicationMetric(data, "rejected", "Rejected", summary ? summary.counts?.statuses?.Rejected || 0 : "—", "purple", "users")];
 
   function changeSort(key) {
     setSort((previous) => ({
@@ -184,7 +184,7 @@ export default function ApplicationsPage() {
         title="Applications"
         description="Manage and review all internship applications."
       >
-        <Button variant="secondary" onClick={exportApplications}>
+        <Button variant="secondary" onClick={exportApplications} disabled={!listQuery.data || !filtered.length || invalidDateRange}>
           <ArrowDownToLine size={16} />
           Export current page
         </Button>
@@ -199,7 +199,7 @@ export default function ApplicationsPage() {
               Status
               <select
                 value={status}
-                onChange={(event) => setStatus(event.target.value)}
+                onChange={(event) => { setStatus(event.target.value); setPage(1); }}
               >
                 <option value="all">All statuses</option>
                 {STATUSES.map((value) => (
@@ -213,7 +213,7 @@ export default function ApplicationsPage() {
                 type="date"
                 value={dateFrom}
                 max={dateTo || undefined}
-                onChange={(event) => setDateFrom(event.target.value)}
+                onChange={(event) => { setDateFrom(event.target.value); setPage(1); }}
               />
             </label>
             <label>
@@ -222,7 +222,7 @@ export default function ApplicationsPage() {
                 type="date"
                 value={dateTo}
                 min={dateFrom || undefined}
-                onChange={(event) => setDateTo(event.target.value)}
+                onChange={(event) => { setDateTo(event.target.value); setPage(1); }}
               />
             </label>
             {invalidDateRange && (
@@ -239,20 +239,21 @@ export default function ApplicationsPage() {
       </PageHeader>
 
       <StatCards items={metricItems} />
+      <QueryStatus query={summaryQuery} label="application totals" compact/>
 
-      <Panel className={styles.applicationsPanel}>
+      <Panel className={styles.applicationsPanel} aria-busy={listQuery.loading || listQuery.refreshing}>
         <div className={styles.applicationTabs}>
           <Tabs
             items={trackTabs}
             value={track}
-            onChange={setTrack}
+            onChange={value => { setTrack(value); setPage(1); }}
             label="Application track"
           />
         </div>
         <div className={styles.listToolbar}>
           <SearchBox
             value={search}
-            onChange={setSearch}
+            onChange={value => { setSearch(value); setPage(1); }}
             placeholder="Search applicants, college, or email..."
           />
           <div className={styles.listToolbarRight}>
@@ -267,7 +268,7 @@ export default function ApplicationsPage() {
               <select
                 aria-label="Applications per page"
                 value={pageSize}
-                onChange={(event) => setPageSize(Number(event.target.value))}
+                onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }}
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
@@ -276,7 +277,7 @@ export default function ApplicationsPage() {
             </label>
           </div>
         </div>
-        {listError && <p role="alert">{listError}</p>}
+        <QueryStatus query={listQuery} label="applications"/>
         {filtered.length ? (
           <div className={common.tableWrap}>
             <table className={`${common.table} ${styles.applicationTable}`}>
@@ -384,7 +385,7 @@ export default function ApplicationsPage() {
               </tbody>
             </table>
           </div>
-        ) : (
+        ) : listQuery.data || invalidDateRange ? (
           <div className={styles.emptyContainer}>
             <EmptyState
               title="No applications found"
@@ -398,15 +399,15 @@ export default function ApplicationsPage() {
               Clear filters
             </Button>
           </div>
-        )}
-        <div className={styles.paginationRow}>
+        ) : null}
+        {listQuery.data && <div className={styles.paginationRow}>
           <Pagination
             page={currentPage}
             pageSize={pageSize}
             total={result.total}
             onChange={setPage}
           />
-        </div>
+        </div>}
       </Panel>
 
       <Modal

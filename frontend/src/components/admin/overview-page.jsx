@@ -32,7 +32,7 @@ export function MetricCards({ visitorFirst = false }) {
   const overview = selectOverview(scopedData(db, scope));
   const traffic = <Stat spark={false} key="traffic" label="Visitors · 24 hours" value={formatNumber(overview.traffic.visitors)} icon={Users} />;
   const uptime = <Stat spark={false} key="uptime" label="Uptime · 30 days" value={overview.monitoring.probes.length ? formatPercent(overview.monitoring.uptime) : "No data"} icon={Activity} color="#22c55e" />;
-  return <div className="ad-metrics ad-metrics-5">
+  return <div className="workspace-metrics workspace-metrics-5">
     <LiveUsersStat />
     {visitorFirst ? [traffic, uptime] : [uptime, traffic]}
     <Stat spark={false} label="Open enquiries" value={formatNumber(overview.openEnquiries)} icon={MessageSquare} color="#a78bfa" />
@@ -61,7 +61,7 @@ export function OverviewPage() {
     { icon: Users, label: "View applications", href: "/dashboard/careers/applications" },
   ];
 
-  return <div className={"ad-stack " + styles.overviewPage}>
+  return <div className={"workspace-stack " + styles.overviewPage}>
     <section className={hero.hero} aria-labelledby="company-overview-title">
       <div className={hero.heroCopy}>
         <span className={hero.eyebrow}><Rocket size={14} aria-hidden="true" />Company workspace</span>
@@ -79,7 +79,7 @@ export function OverviewPage() {
     <div className={styles.overviewTop}>
       <Panel title="Visitor activity" description={`Unique visitors over time · ${scope}.`} actions={<Select aria-label="Visitor chart timeframe" options={["Last 24 hours", "Last 7 days", "Last 30 days"]} value={period} onChange={(event) => setPeriod(event.target.value)} />}>
         <LineChart values={analytics.chart.values} labels={analytics.chart.labels} height={235} />
-        <p className="ad-small ad-muted">{formatNumber(analytics.visitors)} unique visitors · {formatNumber(analytics.pageViews)} visits · {period.toLowerCase()}</p>
+        <p className="workspace-small workspace-muted">{formatNumber(analytics.visitors)} unique visitors · {formatNumber(analytics.pageViews)} visits · {period.toLowerCase()}</p>
       </Panel>
       <Panel title="Regional visitor distribution" description={`Visit share · ${period.toLowerCase()} · ${scope}.`}>
         <div className={styles.regionPanel}>
@@ -88,13 +88,13 @@ export function OverviewPage() {
             <div><b>{region.name}</b><b>{region.percent.toFixed(1)}%</b></div>
             <Progress value={region.percent} />
             <small>{formatNumber(region.count)} visits</small>
-          </div>)}{!analytics.regions.length && <p className="ad-muted ad-small">No visits in this period.</p>}</div>
+          </div>)}{!analytics.regions.length && <p className="workspace-muted workspace-small">No visits in this period.</p>}</div>
         </div>
       </Panel>
     </div>
     <div className={styles.overviewBottom}>
       <Panel title="Website health" description={`Availability · ${period.toLowerCase()}. Performance from the latest regional website probe.`}>
-        <div className="ad-table-wrap"><table className={styles.healthyTable}>
+        <div className="workspace-table-wrap"><table className={styles.healthyTable}>
           <thead><tr>{["Region", "Uptime", "LCP", "INP", "CLS"].map((label) => <th key={label}>{label}</th>)}</tr></thead>
           <tbody>{monitoring.regionalRows.map((region) => {
             const probe = latestProbe(region.name);
@@ -118,7 +118,7 @@ export function OverviewPage() {
           <FileText size={21} />
           <div><strong>{event.action}</strong><p>{event.resource} · {event.actor}</p><p>{event.date || event.at || event.createdAt}</p></div>
         </div>)}
-        {!overview.activity.length && <p className="ad-small ad-muted">No workspace activity yet.</p>}
+        {!overview.activity.length && <p className="workspace-small workspace-muted">No workspace activity yet.</p>}
         <Button href="/dashboard/audit" variant="ghost">View audit history <ChevronRight size={15} /></Button>
       </Panel>
     </div>

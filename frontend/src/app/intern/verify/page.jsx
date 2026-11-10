@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { useInternship } from "@/components/intern/InternshipProvider";
 import CompanyBrand from "@/components/intern/CompanyBrand";
+import LoadingIndicator from "@/components/LoadingIndicator";
 import styles from "@/components/intern/auth/auth.module.css";
 import { InternThemeProvider, InternThemeToggle } from "@/components/intern/InternTheme";
-import { INTERN_THEME_BOOTSTRAP } from "@/lib/intern/theme.mjs";
 
 function VerifyContent() {
   const router = useRouter();
@@ -173,13 +173,11 @@ function VerifyContent() {
 export default function VerifyPage() {
   return (
     <InternThemeProvider>
-      <script dangerouslySetInnerHTML={{ __html: INTERN_THEME_BOOTSTRAP }} />
       <InternThemeToggle floating />
       <Suspense
         fallback={
           <main className={styles.loadingPage}>
-            <LoaderCircle size={28} className={styles.spin} aria-hidden="true" />
-            <p>Loading verification…</p>
+            <LoadingIndicator label="Loading verification…" />
           </main>
         }
       >

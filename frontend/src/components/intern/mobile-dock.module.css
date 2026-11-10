@@ -27,7 +27,7 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     pointer-events: auto;
-    color-scheme: light;
+    color-scheme: var(--ad-scheme, light);
   }
 
   .action {
@@ -69,9 +69,9 @@
   }
 
   .apply {
-    color: #fff;
-    background: linear-gradient(110deg, var(--ad-blue, #168cff), var(--ad-blue, #075cf4) 65%, var(--ad-blue, #5143ed));
-    box-shadow: 0 3px 10px #1769ff30, inset 0 1px 0 #ffffff40;
+    color: var(--ad-primary-text, #fff);
+    background: var(--ad-mobile-primary-bg, linear-gradient(110deg, var(--ad-blue, #168cff), var(--ad-blue, #075cf4) 65%, var(--ad-blue, #5143ed)));
+    box-shadow: var(--ad-primary-shadow, 0 3px 10px #1769ff30, inset 0 1px 0 #ffffff40);
   }
 
   .apply:hover {

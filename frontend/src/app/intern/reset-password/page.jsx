@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { INTERN_THEME_BOOTSTRAP } from "@/lib/intern/theme.mjs";
 import {
   AuthLoading,
   ResetPasswordPage,
@@ -12,7 +11,6 @@ export const metadata = {
 export default function Page() {
   return (
     <>
-      <script dangerouslySetInnerHTML={{ __html: INTERN_THEME_BOOTSTRAP }} />
       <Suspense fallback={<AuthLoading />}>
         <ResetPasswordPage />
       </Suspense>

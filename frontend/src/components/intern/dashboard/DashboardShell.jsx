@@ -1,5 +1,6 @@
 "use client";
 import { useInternHistory } from "@/components/intern/useInternHistory";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -45,6 +46,8 @@ import {
 } from "./DashboardVisuals";
 import styles from "./dashboard.module.css";
 import { useSiteFeatures } from "@/components/site-features";
+import WorkspaceLoading from "@/components/intern/WorkspaceLoading";
+import useWorkspaceNavigation from "@/components/intern/useWorkspaceNavigation";
 import { canOpenInternSection, hasStaffPermission } from "./staffAccess";
 import ProjectSummary from "./ProjectSummary";
 
@@ -122,6 +125,8 @@ export default function DashboardShell({ children }) {
     commands,
     signOut,
     ready,
+    workspaceState,
+    retryWorkspace,
     query,
     setQuery,
     toast,
@@ -136,7 +141,11 @@ export default function DashboardShell({ children }) {
   const searchRef = useRef(null);
   const pathname = usePathname();
   const router = useRouter();
+  const { navigate: navigateTo, pendingPathname } = useWorkspaceNavigation(pathname);
   const section = pathname.split("/")[3] || "dashboard";
+  const selectedSection = (pendingPathname || pathname).split("/")[3] || "dashboard";
+  const contentState = workspaceState || (!ready ? "loading" : null);
+  const workspaceReady = !contentState;
   const allowed = canOpenInternSection(account, section);
   const can = permission => hasStaffPermission(account, permission);
   const noticeHistory = useInternHistory("notifications", { enabled: can("notifications.read"), revision: my.notifications });
@@ -170,7 +179,7 @@ export default function DashboardShell({ children }) {
   function navigate(next) {
     setMobileNav(false);
     setQuery("");
-    router.push(
+    navigateTo(
       next === "dashboard" ? "/intern/dashboard" : `/intern/dashboard/${next}`,
     );
   }
@@ -233,7 +242,7 @@ export default function DashboardShell({ children }) {
     <div
       className={styles.dashboard}
       data-demo-ready={ready}
-      aria-busy={!ready}
+      aria-busy={Boolean(contentState || pendingPathname)}
     >
       {mobileNav && (
         <button
@@ -266,15 +275,16 @@ export default function DashboardShell({ children }) {
             return (
               <Link
                 key={item.id}
+                prefetch={true}
                 href={
                   item.id === "dashboard"
                     ? "/intern/dashboard"
                     : `/intern/dashboard/${item.id}`
                 }
-                className={`${styles.navItem} ${section === item.id ? styles.navActive : ""}`}
-                onClick={() => {
-                  setMobileNav(false);
-                  setQuery("");
+                className={`${styles.navItem} ${selectedSection === item.id ? styles.navActive : ""}`}
+                onNavigate={event => {
+                  event.preventDefault();
+                  navigate(item.id);
                 }}
                 aria-current={section === item.id ? "page" : undefined}
               >
@@ -337,6 +347,7 @@ export default function DashboardShell({ children }) {
                 <button
                   className={styles.bellButton}
                   aria-label={`Notifications, ${unreadCount} unread`}
+                  disabled={!workspaceReady}
                 >
                   <Bell size={26} strokeWidth={1.6} />
                   {unreadCount > 0 && <span>{unreadCount}</span>}
@@ -356,6 +367,7 @@ export default function DashboardShell({ children }) {
                     </button>
                   </div>
                   {activityList(true)}
+                  {noticeHistory.loading && <LoadingIndicator label="Loading notifications…" compact />}
                   {noticeHistory.error && <p role="alert">{noticeHistory.error}</p>}
                   {noticeHistory.hasMore && <button onClick={noticeHistory.loadMore} disabled={noticeHistory.loading}>Load older notifications</button>}
                   <Popover.Arrow className={styles.popoverArrow} />
@@ -420,11 +432,11 @@ export default function DashboardShell({ children }) {
         </header>
 
         <div key={`${account?.id || "none"}:${account?.staffRole || ""}:${(account?.permissions || []).join(",")}`}>
-          {!allowed ? <section role="alert" className={styles.popover}><h2>Access unavailable</h2><p>Your internship role does not have permission to open this page. Contact an internship admin if access is needed.</p></section> : section === "projects" && !can("projects.read") ? <ProjectSummary /> : children}
+          {!allowed ? <section role="alert" className={styles.popover}><h2>Access unavailable</h2><p>Your internship role does not have permission to open this page. Contact an internship admin if access is needed.</p></section> : pendingPathname || contentState ? <WorkspaceLoading pathname={pendingPathname || pathname} state={pendingPathname ? "loading" : contentState} onRetry={retryWorkspace} /> : section === "projects" && !can("projects.read") ? <ProjectSummary /> : children}
         </div>
       </main>
       <Dialog.Root
-        open={account?.staffRole === "admin" && notificationDialog}
+        open={workspaceReady && account?.staffRole === "admin" && notificationDialog}
         onOpenChange={setNotificationDialog}
       >
         <Dialog.Portal>

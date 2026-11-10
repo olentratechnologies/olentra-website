@@ -4,7 +4,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { InternClient, internAuth, refreshInternSession, forgetInternToken, internLogoutPending } from "@/lib/intern-client.mjs";
 import { createSnapshotRefresh } from "@/lib/intern-snapshot-refresh.mjs";
 import { prepareInternSession } from "@/lib/intern-session-startup.mjs";
+import { createInternQueryCache } from "@/lib/intern-query-cache.mjs";
+import { internQueryScope } from "@/lib/intern-query-scope.mjs";
 import { canReconcileInternWrite, canRefreshInternWriteInBackground, reconcileInternWrite } from "@/lib/intern-committed-write.mjs";
+import LoadingIndicator from "@/components/LoadingIndicator";
 import styles from "./session.module.css";
 
 const Context = createContext(null);
@@ -15,7 +18,7 @@ const navigation = [{ id:"dashboard",label:"Dashboard",icon:"home" },{ id:"appli
 const dateRanges = [{id:"all",label:"All time",chartPeriod:"1Y"}];
 const chart = { periods: ["30D","7D","3M","1Y"].map(id => ({ id, label:id, growth:0, comparison:"", maxValue:1, points:[{label:"",explorer:0,innovator:0},{label:"",explorer:0,innovator:0}] })) };
 const emptyMy = { application:null, intern:null, offer:null, onboarding:{status:"Not started",acknowledged:false}, projects:[],tasks:[],submissions:[],certificates:[],messages:[],notifications:[],resources:[] };
-const blank = { organization:{name:"Olentra",legalName:"Olentra Technologies Pvt. Ltd.",website:"/"}, user:{name:"",firstName:"",initials:"",email:"",role:""}, navigation, dateRanges, chart, quickActions:[], insights:[], programs:[], settings:{programEnabled:false,explorerEnabled:false,innovatorEnabled:false,programName:"Olentra Internship Program",defaultBatch:"",maxStipend:0,integrations:{}}, applications:[],interns:[],projects:[],tasks:[],submissions:[],offers:[],onboarding:[],certificates:[],messages:[],notifications:[],resources:[],activity:[],metrics:[],analytics:{months:[],previousMonths:[],skills:[]} };
+const blank = { organization:{name:"Olentra",legalName:"Olentra Technologies Pvt. Ltd.",website:"/"}, user:{name:"",firstName:"",initials:"",email:"",role:""}, navigation, dateRanges, chart, quickActions:[], insights:[], programs:[], settings:{programEnabled:false,compensationMode:"both",explorerEnabled:false,innovatorEnabled:false,programName:"Olentra Internship Program",defaultBatch:"",maxStipend:0,integrations:{}}, applications:[],interns:[],projects:[],tasks:[],submissions:[],offers:[],onboarding:[],certificates:[],messages:[],notifications:[],resources:[],activity:[],metrics:[],analytics:{months:[],previousMonths:[],skills:[]} };
 function mergeApplicationWorkflow(data, applicationId, workflow) {
   const next = { ...data };
   for (const [collection, key] of [["offers", "offer"], ["onboarding", "onboarding"], ["interns", "intern"]]) {
@@ -33,7 +36,7 @@ function shapeSnapshot(snapshot) {
 }
 export function InternshipProvider({ children }) {
   const [snapshot,setSnapshot]=useState(()=>shapeSnapshot(null)), [ready,setReady]=useState(false), [authReady,setAuthReady]=useState(false), [sessionReady,setSessionReady]=useState(false), [authUnavailable,setAuthUnavailable]=useState(false), [connected,setConnected]=useState(false), [workspaceState,setWorkspaceState]=useState(null), [pending,setPending]=useState(null), [sessionNotice,setSessionNotice]=useState(""), [toast,setToast]=useState(""), [query,setQuery]=useState(""), [dateRange,setDateRange]=useState("all"), [notificationDialog,setNotificationDialog]=useState(false);
-  const client = useRef(null), snapshotRef = useRef(snapshot), mounted = useRef(false), refreshTimer = useRef(null), applicationCache = useRef(new Map()), snapshotVersion = useRef(0), refreshCoordinator = useRef(null);
+  const client = useRef(null), snapshotRef = useRef(snapshot), mounted = useRef(false), refreshTimer = useRef(null), applicationCache = useRef(new Map()), snapshotVersion = useRef(0), refreshCoordinator = useRef(null), queryCacheRef = useRef(null);
   snapshotRef.current = snapshot;
   const notify = useCallback(message=>setToast(message),[]);
   const loadSnapshot = useCallback(async () => {
@@ -43,7 +46,7 @@ export function InternshipProvider({ children }) {
       const value=await client.current.request("intern.snapshot");
       if (!mounted.current || version!==snapshotVersion.current) return false;
       const next=shapeSnapshot(value), prior=snapshotRef.current.account;
-      if (prior?.id !== next.account?.id || prior?.staffRole !== next.account?.staffRole || JSON.stringify(prior?.permissions || []) !== JSON.stringify(next.account?.permissions || [])) applicationCache.current.clear();
+      if (internQueryScope(prior) !== internQueryScope(next.account)) { applicationCache.current.clear(); queryCacheRef.current?.clear(); }
       if(next.account?.role === "company") {
         for (const id of applicationCache.current.keys()) {
           try {
@@ -58,7 +61,7 @@ export function InternshipProvider({ children }) {
     } catch(error) {
       if (!mounted.current || version!==snapshotVersion.current) return false;
       if(error.code === "UNAUTHENTICATED") {
-        snapshotVersion.current++; applicationCache.current.clear(); forgetInternToken(); setSnapshot(shapeSnapshot(null)); setWorkspaceState(null); setSessionNotice("Your session ended. Please sign in again."); client.current?.authenticate().catch(()=>{});
+        snapshotVersion.current++; applicationCache.current.clear(); queryCacheRef.current?.clear(); forgetInternToken(); setSnapshot(shapeSnapshot(null)); setWorkspaceState(null); setSessionNotice("Your session ended. Please sign in again."); client.current?.authenticate().catch(()=>{});
       } else setWorkspaceState(state=>state === "loading" ? "error" : state);
       return false;
     }
@@ -69,12 +72,12 @@ export function InternshipProvider({ children }) {
   const resetSnapshot = useCallback(() => refreshCoordinator.current.reset(),[]);
   useEffect(()=>{
     let live=true, initializing=true, changedDuringInit=false, refreshingBackground=false, startupTimer, refreshRetryTimer, startupDelay=2000, refreshDelay=2000; mounted.current=true; setPending(readPending());
-    const instance=new InternClient({onChange:reason=>{if(initializing){if(reason!=="connected")changedDuringInit=true;return;}if(reason==="connected")void reload();else void invalidateSnapshot()},onConnection:value=>{if(live && mounted.current)setConnected(value)},onSessionChanged:()=>{snapshotVersion.current++;applicationCache.current.clear();if(live && mounted.current){setAuthUnavailable(false);setSnapshot(shapeSnapshot(null));setWorkspaceState(null);setSessionNotice("Your access changed. Please sign in again.")}}}); client.current=instance;
+    const instance=new InternClient({onChange:reason=>{queryCacheRef.current?.invalidate();if(initializing){if(reason!=="connected")changedDuringInit=true;return;}if(reason==="connected")void reload();else void invalidateSnapshot()},onConnection:value=>{if(live && mounted.current)setConnected(value)},onSessionChanged:()=>{snapshotVersion.current++;applicationCache.current.clear();queryCacheRef.current?.clear();if(live && mounted.current){setAuthUnavailable(false);setSnapshot(shapeSnapshot(null));setWorkspaceState(null);setSessionNotice("Your access changed. Please sign in again.")}}}); client.current=instance;
     const startSession=async()=>{
       try {
         const session=await prepareInternSession({restore:refreshInternSession,connect:()=>instance.connect(),authenticate:()=>instance.authenticate(),clear:forgetInternToken,isActive:()=>live});
         if(!live || !session)return;
-        if(session.account){snapshotVersion.current++;applicationCache.current.clear();setSnapshot(shapeSnapshot({account:session.account}));setWorkspaceState("loading");}
+        if(session.account){snapshotVersion.current++;applicationCache.current.clear();queryCacheRef.current?.clear();setSnapshot(shapeSnapshot({account:session.account}));setWorkspaceState("loading");}
         initializing=false;setAuthUnavailable(false);setAuthReady(true);setSessionReady(true);startupDelay=2000;
         if(changedDuringInit || session.account) await invalidateSnapshot(); else await reload();
       } catch { if(live){setAuthUnavailable(true);startupTimer=setTimeout(startSession,startupDelay);startupDelay=Math.min(startupDelay*2,30000);} }
@@ -87,7 +90,7 @@ export function InternshipProvider({ children }) {
       try { await refreshInternSession(); await instance.authenticate(); if(live){clearTimeout(refreshRetryTimer);refreshDelay=2000;setAuthUnavailable(false);} }
       catch(error) {
         if(!live)return;
-        if(error?.code === "UNAUTHENTICATED") { if(internLogoutPending())return; snapshotVersion.current++;applicationCache.current.clear();forgetInternToken();setAuthUnavailable(false);if(mounted.current){setSnapshot(shapeSnapshot(null));setWorkspaceState(null);setSessionNotice("Your session ended. Please sign in again.");} }
+        if(error?.code === "UNAUTHENTICATED") { if(internLogoutPending())return; snapshotVersion.current++;applicationCache.current.clear();queryCacheRef.current?.clear();forgetInternToken();setAuthUnavailable(false);if(mounted.current){setSnapshot(shapeSnapshot(null));setWorkspaceState(null);setSessionNotice("Your session ended. Please sign in again.");} }
         else { setAuthUnavailable(true);clearTimeout(refreshRetryTimer);refreshRetryTimer=setTimeout(refreshSession,refreshDelay);refreshDelay=Math.min(refreshDelay*2,30000); }
       }
       finally { refreshingBackground=false; }
@@ -99,7 +102,9 @@ export function InternshipProvider({ children }) {
   const call=useCallback(async(method,params={},write=true)=>{
     try {
       const actor=snapshotRef.current.account, data=await client.current.request(method,params,write);
+      if (internQueryScope(actor) !== internQueryScope(snapshotRef.current.account)) return { ok:false, error:"Your session changed. Reload this view." };
       if(write) {
+        queryCacheRef.current?.invalidate();
         if(canRefreshInternWriteInBackground(method)) {
           if(canReconcileInternWrite(method)) { snapshotVersion.current++; setSnapshot(old=>reconcileInternWrite(old,actor,method,params,data)); }
           void invalidateSnapshot();
@@ -108,10 +113,20 @@ export function InternshipProvider({ children }) {
       return {ok:true,data};
     } catch(error) { return {ok:false,error:error?.message || "The internship service is unavailable. Please try again."}; }
   },[invalidateSnapshot]);
-  const signIn=useCallback(async({email,password,returnTo})=>{try {const result=await internAuth("login",{email,password});snapshotVersion.current++;await client.current.authenticate();snapshotVersion.current++;applicationCache.current.clear();setSnapshot(shapeSnapshot({account:result.account}));setWorkspaceState("loading");setSessionNotice("");void resetSnapshot();return {ok:true,role:result.account.role,redirect:safeRedirect(returnTo,result.account.role)};}catch(error){return {ok:false,error:error?.message || "Unable to sign in."}}},[resetSnapshot]);
-  const signOut=useCallback(async()=>{snapshotVersion.current++;setWorkspaceState(null);try{await internAuth("logout")}catch{}forgetInternToken();try{await client.current?.authenticate()}catch{}setSnapshot(shapeSnapshot(null));setQuery("");await resetSnapshot()},[resetSnapshot]);
+  const queryScope = internQueryScope(snapshot.account);
+  const queryCache = useMemo(() => {
+    const cache = createInternQueryCache((method, params) => call(method, params, false));
+    cache.setScope(queryScope);
+    return cache;
+  }, [call, queryScope]);
+  queryCacheRef.current = queryCache;
+  // Effect cleanup is also replayed by React Strict Mode. Clear pending data
+  // without permanently disabling the cache that the replay will reuse.
+  useEffect(() => () => queryCache.clear(), [queryCache]);
+  const signIn=useCallback(async({email,password,returnTo})=>{queryCacheRef.current?.clear();try {const result=await internAuth("login",{email,password});snapshotVersion.current++;await client.current.authenticate();snapshotVersion.current++;applicationCache.current.clear();setSnapshot(shapeSnapshot({account:result.account}));setWorkspaceState("loading");setSessionNotice("");void resetSnapshot();return {ok:true,role:result.account.role,redirect:safeRedirect(returnTo,result.account.role)};}catch(error){return {ok:false,error:error?.message || "Unable to sign in."}}},[resetSnapshot]);
+  const signOut=useCallback(async()=>{queryCacheRef.current?.clear();snapshotVersion.current++;setWorkspaceState(null);try{await internAuth("logout")}catch{}forgetInternToken();try{await client.current?.authenticate()}catch{}setSnapshot(shapeSnapshot(null));setQuery("");await resetSnapshot()},[resetSnapshot]);
   const register=useCallback(async({applicationId,password})=>{const claim=readPending();if(claim?.applicationId!==applicationId)return {ok:false,error:"Apply first to create an account."};const result=await call("account.register",{applicationId,claimToken:claim.claimToken,password});if(!result.ok)return result;try{sessionStorage.removeItem(PENDING_KEY)}catch{}setPending(null);const login=await signIn({email:claim.application.email,password});return login.ok ? {...result,redirect:"/intern/portal"} : {ok:false,error:"Your account was created. Please sign in with your email and password."}},[call,signIn]);
-  const verifyMagicLink=useCallback(async(token)=>{try{const result=await internAuth("verify-magic-link",{token});snapshotVersion.current++;await client.current?.authenticate();snapshotVersion.current++;applicationCache.current.clear();setSnapshot(shapeSnapshot({account:result.account}));setWorkspaceState("loading");setSessionNotice("");void resetSnapshot();return {ok:true,role:result.account.role,redirect:"/intern/portal"};}catch(error){return {ok:false,error:error?.message||"Invalid or expired sign-in link."};}},[resetSnapshot]);
+  const verifyMagicLink=useCallback(async(token)=>{queryCacheRef.current?.clear();try{const result=await internAuth("verify-magic-link",{token});snapshotVersion.current++;await client.current?.authenticate();snapshotVersion.current++;applicationCache.current.clear();setSnapshot(shapeSnapshot({account:result.account}));setWorkspaceState("loading");setSessionNotice("");void resetSnapshot();return {ok:true,role:result.account.role,redirect:"/intern/portal"};}catch(error){return {ok:false,error:error?.message||"Invalid or expired sign-in link."};}},[resetSnapshot]);
   const requestMagicLink=useCallback(async(email)=>{try{const result=await internAuth("magic-link",{email});return {ok:true,message:result?.message||"A sign-in link has been sent to your email."};}catch(error){return {ok:false,error:error?.message||"Unable to send sign-in link. Please try again."};}},[]);
   const commands=useMemo(()=>({
     submitApplication:async payload=>{const result=await call("application.submit",payload);if(!result.ok)return result;const {claimToken,...application}=result.data;const claim={applicationId:application.id,claimToken,application:{id:application.id,name:application.name,email:application.email,program:application.program}};try{sessionStorage.setItem(PENDING_KEY,JSON.stringify(claim));}catch{return {ok:false,error:"Your application was received, but this browser could not save your account registration link. Contact the internship team."}}setPending(claim);return {...result,data:application}},
@@ -121,9 +136,26 @@ export function InternshipProvider({ children }) {
   }),[call]);
   const legacy=useCallback(async(method,params,failure=false)=>{const result=await call(method,params);if(!result.ok){notify(result.error);return failure}return result.data},[call,notify]);
   const retryWorkspace=useCallback(()=>{setWorkspaceState("loading");void invalidateSnapshot()},[invalidateSnapshot]);
-  const value={...snapshot,seed:{metrics:[],metricsByRange:{}},ready,authReady,sessionReady,authUnavailable,connected,workspaceState,retryWorkspace,session:snapshot.account ? {role:snapshot.account.role,accountId:snapshot.account.id}:null,sessionNotice,pendingApplication:pending?.application || null,demoAccounts:[],commands,signIn,register,verifyMagicLink,requestMagicLink,signOut,requestPasswordReset:async(email)=>{try{const result=await internAuth("request-password-reset",{email});return {ok:true,message:result?.message||"Password reset instructions sent."};}catch(error){return {ok:false,error:error?.message||"Unable to send reset link. Please try again."};}},resetPassword:async({token,password})=>{try{await internAuth("reset-password",{token,password});return {ok:true};}catch(error){return {ok:false,error:error?.message||"Unable to reset password. The link may have expired."};}},notify,toast,dismissToast:()=>setToast(""),query,setQuery,dateRange,setDateRange,notificationDialog,setNotificationDialog,
+  const value={...snapshot,queryCache,seed:{metrics:[],metricsByRange:{}},ready,authReady,sessionReady,authUnavailable,connected,workspaceState,retryWorkspace,session:snapshot.account ? {role:snapshot.account.role,accountId:snapshot.account.id}:null,sessionNotice,pendingApplication:pending?.application || null,demoAccounts:[],commands,signIn,register,verifyMagicLink,requestMagicLink,signOut,requestPasswordReset:async(email)=>{try{const result=await internAuth("request-password-reset",{email});return {ok:true,message:result?.message||"Password reset instructions sent."};}catch(error){return {ok:false,error:error?.message||"Unable to send reset link. Please try again."};}},resetPassword:async({token,password})=>{try{await internAuth("reset-password",{token,password});return {ok:true};}catch(error){return {ok:false,error:error?.message||"Unable to reset password. The link may have expired."};}},notify,toast,dismissToast:()=>setToast(""),query,setQuery,dateRange,setDateRange,notificationDialog,setNotificationDialog,
     updateApplication:(id,patch,version)=>legacy("application.update",{id,patch,expectedVersion:version ?? snapshotRef.current.data.applications.find(a=>a.id===id)?.version}),updateIntern:(id,patch)=>legacy("intern.update",{id,patch}),createProject:project=>legacy("project.create",{project},null),updateProject:(id,patch)=>legacy("project.update",{id,patch}),generateCertificates:internIds=>legacy("certificate.generate",{internIds},[]),updateSettings:patch=>legacy("settings.update",{patch}),addActivity:entry=>legacy("activity.add",entry),markNotificationsRead:()=>commands.markNotificationsRead(snapshotRef.current.my.notifications.map(n=>n.id)),resetDemo:async()=>{notify("Demo data is not used by the internship service.");return false},reload};
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useInternship(){const context=useContext(Context);if(!context)throw new Error("useInternship must be inside InternshipProvider");return context}
-export function RoleGuard({role,children}){const {ready,sessionReady,authUnavailable,account,sessionNotice,connected,workspaceState,retryWorkspace}=useInternship();const router=useRouter(),pathname=usePathname();useEffect(()=>{if(!ready||!sessionReady||!connected||authUnavailable)return;if(!account){const target=pathname+(typeof window!=="undefined"?window.location.search:"");router.replace(`/intern/login?role=${role}&returnTo=${encodeURIComponent(target)}${sessionNotice?"&notice=session":""}`)}else if(account.role!==role)router.replace(account.role==="company"?"/intern/dashboard":"/intern/portal")},[ready,sessionReady,authUnavailable,account,role,pathname,router,sessionNotice,connected]);if(!ready||!sessionReady||!connected||authUnavailable||account?.role!==role||workspaceState)return <div className={styles.loading} role="status"><span className={styles.loadingMark}>O</span><strong>{authUnavailable||ready&&!connected?"Internship service unavailable":workspaceState==="error"?"Unable to load your workspace":"Opening your workspace"}</strong><p>{authUnavailable||ready&&!connected?"Check your connection. We will reconnect automatically.":workspaceState==="error"?"Please try again.":workspaceState==="loading"?"Loading your latest data…":ready&&sessionReady?"Taking you to the right place…":"Restoring your session…"}</p>{workspaceState==="error" && connected && !authUnavailable && <button type="button" onClick={retryWorkspace}>Try again</button>}</div>;return children}
+export function RoleGuard({ role, children }) {
+  const { sessionReady, authUnavailable, account, sessionNotice, connected } = useInternship();
+  const router = useRouter(), pathname = usePathname();
+  useEffect(() => {
+    if (!sessionReady || !connected || authUnavailable) return;
+    if (!account) {
+      const target = pathname + (typeof window !== "undefined" ? window.location.search : "");
+      router.replace(`/intern/login?role=${role}&returnTo=${encodeURIComponent(target)}${sessionNotice ? "&notice=session" : ""}`);
+    } else if (account.role !== role) router.replace(account.role === "company" ? "/intern/dashboard" : "/intern/portal");
+  }, [sessionReady, connected, authUnavailable, account, role, pathname, router, sessionNotice]);
+  // Authentication is the boundary. The persistent shell owns snapshot loading,
+  // so a verified session can see navigation before its workspace data arrives.
+  if (!sessionReady || !connected || authUnavailable || account?.role !== role) {
+    const unavailable = authUnavailable || (sessionReady && !connected);
+    return <div className={styles.loading}>{unavailable ? <strong role="alert">Internship service unavailable</strong> : <LoadingIndicator label="Opening your workspace…" />}<p>{unavailable ? "Check your connection. We will reconnect automatically." : sessionReady ? "Taking you to the right place…" : "Restoring your session…"}</p></div>;
+  }
+  return children;
+}

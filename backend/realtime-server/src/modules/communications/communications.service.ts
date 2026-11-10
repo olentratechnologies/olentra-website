@@ -3,6 +3,7 @@ import { MongoClientBulkWriteError, MongoServerError, type ClientBulkWriteModel,
 import { DomainError } from "../../shared/errors";
 import type { Principal } from "../../shared/principal";
 import { can, isAdmin } from "../access/policy";
+import { isCompensationMode } from "../programs/compensation";
 
 type Row = Document & { _id: string };
 type Transact = <T>(key: string, actor: Principal | null, input: unknown, action: (session: ClientSession) => Promise<T>) => Promise<T>;
@@ -260,6 +261,10 @@ export function createCommunications({ collection, transact }: Options) {
       const account = staff(actor), patch = params.patch;
       if (!patch || typeof patch !== "object" || Array.isArray(patch)) throw new DomainError("INVALID_REQUEST", "Provide valid settings.");
       const values: Document = {};
+      if (patch.compensationMode !== undefined) {
+        if (!isCompensationMode(patch.compensationMode)) throw new DomainError("INVALID_REQUEST", "Choose free, paid, or both internship types.");
+        values.compensationMode = patch.compensationMode;
+      }
       for (const field of ["programName", "defaultBatch"]) if (patch[field] !== undefined) { const value = str(patch[field]); if ((field === "programName" && !value) || value.length > 120) throw new DomainError("INVALID_REQUEST", `Enter a valid ${field}.`); values[field] = value; }
       for (const field of ["programEnabled", "applicationAlerts", "weeklyDigest", "reviewReminder"]) if (patch[field] !== undefined) { if (typeof patch[field] !== "boolean") throw new DomainError("INVALID_REQUEST", `Invalid ${field}.`); values[field] = patch[field]; }
       if (patch.maxStipend !== undefined) { const amount = Number(patch.maxStipend); if (!Number.isSafeInteger(amount) || amount < 0 || amount > 1000000) throw new DomainError("INVALID_REQUEST", "Enter a valid stipend."); values.maxStipend = amount; }

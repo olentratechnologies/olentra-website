@@ -591,12 +591,12 @@ export function ApplicationsAreaChart({ period, className }) {
         <title>Applications overview: Tech Explorer and Tech Innovator</title>
         <defs>
           <linearGradient id={`${id}-blue`} x1="0" y1="0" x2="0" y2="1">
-            <stop stopColor="#438cff" stopOpacity=".3" />
-            <stop offset="1" stopColor="#5798ff" stopOpacity=".03" />
+            <stop stopColor="var(--ad-chart-fill-1, #438cff)" stopOpacity=".3" />
+            <stop offset="1" stopColor="var(--ad-chart-fill-1, #5798ff)" stopOpacity=".03" />
           </linearGradient>
           <linearGradient id={`${id}-purple`} x1="0" y1="0" x2="0" y2="1">
-            <stop stopColor="#a36bff" stopOpacity=".43" />
-            <stop offset="1" stopColor="#ad91ff" stopOpacity=".23" />
+            <stop stopColor="var(--ad-chart-fill-2, #a36bff)" stopOpacity=".43" />
+            <stop offset="1" stopColor="var(--ad-chart-fill-2, #ad91ff)" stopOpacity=".23" />
           </linearGradient>
         </defs>
         {[0, 1, 2, 3, 4].map((index) => {

@@ -1093,13 +1093,60 @@
 :global(html[data-intern-theme]) .authPanel { background: transparent; }
 :global(html[data-intern-theme]) .panelHeading h2 { font-weight: 750; letter-spacing: -1.2px; }
 :global(html[data-intern-theme]) .primaryButton {
-  border: 1px solid #6bb6ff88;
+  border: 1px solid var(--ad-primary-button-border, #6bb6ff88);
   border-radius: 999px;
-  color: #fff;
+  color: var(--ad-primary-text, #fff);
   background: var(--ad-primary-gradient);
-  box-shadow: 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80;
+  box-shadow: var(--ad-primary-shadow, 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80);
 }
 :global(html[data-intern-theme]) .authPage input { color: var(--ad-text); }
+
+/* The reset flow has a short form; keep its supporting story within the screen. */
+.resetPage {
+  display: grid;
+  align-items: center;
+  min-height: 100dvh;
+  padding: 24px;
+}
+.resetPage .authLayout { width: 100%; min-height: min(660px, calc(100dvh - 48px)); }
+.resetPage .authStory { padding: 24px 30px; }
+.resetPage .storyContent { padding: 16px 0; }
+.resetPage .storyContent h1 { margin-top: 16px; font-size: 44px; line-height: 1.08; }
+.resetPage .storyContent > p { margin-top: 14px; line-height: 1.7; }
+.resetPage .storyArtwork { height: 140px; margin: 6px 0; }
+.resetPage .storyArtwork svg { top: -6px; left: 10px; width: 240px; height: 155px; }
+.resetPage .storyFeatures { gap: 10px; padding-top: 6px; }
+.resetPage .authPanel { min-height: 0; padding: 28px 36px; }
+.resetPage .authFooter { margin-top: 20px; }
+
+@media (min-width: 821px) and (max-height: 700px) {
+  .resetPage .authStory { padding: 20px 28px; }
+  .resetPage .storyContent { padding: 12px 0; }
+  .resetPage .storyContent h1 { margin-top: 12px; font-size: 38px; }
+  .resetPage .storyContent > p { margin-top: 12px; }
+  .resetPage .storyArtwork, .resetPage .storyFeatures { display: none; }
+}
+@media (max-width: 820px) {
+  .resetPage { padding: 64px 16px 16px; }
+  .resetPage .authLayout { min-height: 0; }
+  .resetPage .authPanel { min-height: 0; padding: 24px; }
+  .resetPage .mobileBrand { margin-bottom: 20px; }
+  .resetPage .mobileBrand .brand small { display: none; }
+  .resetPage .panelHeading { margin-bottom: 16px; }
+  .resetPage .authForm fieldset { gap: 14px; }
+  .resetPage .field { gap: 6px; }
+  .resetPage .textLink { margin-top: 14px; }
+  .resetPage .authFooter { margin-top: 18px; padding-top: 6px; }
+}
+@media (max-width: 820px) and (max-height: 700px) {
+  .resetPage .authPanel { padding: 20px; }
+  .resetPage .mobileBrand { margin-bottom: 12px; }
+  .resetPage .mobileBrand [data-company-brand] { --brand-mark: 32px; --brand-font: 18px; }
+  .resetPage .panelHeading { margin-bottom: 12px; }
+  .resetPage .authForm fieldset { gap: 12px; }
+  .resetPage .textLink { margin-top: 12px; }
+  .resetPage .authFooter { display: none; }
+}
 
 .verifyPage {
   display: grid;

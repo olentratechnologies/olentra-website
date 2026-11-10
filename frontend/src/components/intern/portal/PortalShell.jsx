@@ -1,5 +1,6 @@
 "use client";
 import { useInternHistory } from "@/components/intern/useInternHistory";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -35,6 +36,8 @@ import {
 import styles from "./portal.module.css";
 import { InternThemeToggle } from "../InternTheme";
 import { useSiteFeatures } from "@/components/site-features";
+import WorkspaceLoading from "@/components/intern/WorkspaceLoading";
+import useWorkspaceNavigation from "@/components/intern/useWorkspaceNavigation";
 
 const navigation = [
   { href: "/intern/portal", label: "Dashboard", icon: House },
@@ -59,6 +62,8 @@ export default function PortalShell({ children }) {
   const {
     ready,
     sessionReady,
+    workspaceState,
+    retryWorkspace,
     account,
     my,
     data,
@@ -70,6 +75,10 @@ export default function PortalShell({ children }) {
   } = useInternship();
   const pathname = usePathname();
   const router = useRouter();
+  const { navigate, pendingPathname } = useWorkspaceNavigation(pathname);
+  const visiblePathname = pendingPathname || pathname;
+  const contentState = workspaceState || (!ready ? "loading" : null);
+  const workspaceReady = !contentState;
   const [mobile, setMobile] = useState(false);
   const [dialog, setDialog] = useState(null);
   const [compose, setCompose] = useState(false);
@@ -88,8 +97,8 @@ export default function PortalShell({ children }) {
   );
   const current = navigation.find(
     (item) =>
-      item.href === pathname ||
-      (item.href !== "/intern/portal" && pathname.startsWith(`${item.href}/`)),
+      item.href === visiblePathname ||
+      (item.href !== "/intern/portal" && visiblePathname.startsWith(`${item.href}/`)),
   );
   const initials =
     account?.name
@@ -178,6 +187,7 @@ export default function PortalShell({ children }) {
       className={styles.portal}
       data-portal-ready={ready && sessionReady}
       data-testid="intern-portal"
+      aria-busy={Boolean(contentState || pendingPathname)}
     >
       {mobile && (
         <button
@@ -216,9 +226,14 @@ export default function PortalShell({ children }) {
             <Link
               key={href}
               href={href}
+              prefetch={true}
               className={`${styles.navItem} ${current?.href === href ? styles.navActive : ""}`}
               aria-current={current?.href === href ? "page" : undefined}
-              onClick={() => setMobile(false)}
+              onNavigate={event => {
+                event.preventDefault();
+                setMobile(false);
+                navigate(href);
+              }}
             >
               <Icon size={21} strokeWidth={1.7} />
               <span>{label}</span>
@@ -271,6 +286,7 @@ export default function PortalShell({ children }) {
             <button
               className={styles.roundButton}
               aria-label="Open messages"
+              disabled={!workspaceReady}
               onClick={() => {
                 action.setError("");
                 setDialog("messages");
@@ -281,6 +297,7 @@ export default function PortalShell({ children }) {
             <button
               className={styles.roundButton}
               aria-label={`Notifications, ${unread.length} unread`}
+              disabled={!workspaceReady}
               onClick={() => {
                 action.setError("");
                 setDialog("notifications");
@@ -302,7 +319,7 @@ export default function PortalShell({ children }) {
             </Link>
           </div>
         </header>
-        <div className={styles.content}>{children}</div>
+        <div className={styles.content}>{pendingPathname || contentState ? <WorkspaceLoading pathname={pendingPathname || pathname} state={pendingPathname ? "loading" : contentState} onRetry={retryWorkspace} /> : children}</div>
       </main>
       {toast && (
         <div className={styles.toast} role="status">
@@ -316,7 +333,7 @@ export default function PortalShell({ children }) {
         </div>
       )}
       <Modal
-        open={dialog === "notifications"}
+        open={workspaceReady && dialog === "notifications"}
         onOpenChange={(open) => {
           if (!open) setDialog(null);
         }}
@@ -355,18 +372,19 @@ export default function PortalShell({ children }) {
               ))}
             </ol>
           </>
-        ) : (
+        ) : !noticesHistory.loading && !noticesHistory.error ? (
           <EmptyState
             icon={Bell}
             title="You’re all caught up"
             description="Your next internship updates will appear here."
           />
-        )}
+        ) : null}
+        {noticesHistory.loading && <LoadingIndicator label="Loading notifications…" compact={notifications.length > 0} />}
         {noticesHistory.error && <p role="alert">{noticesHistory.error}</p>}
         {noticesHistory.hasMore && <Button variant="secondary" onClick={noticesHistory.loadMore} disabled={noticesHistory.loading}>Load older notifications</Button>}
       </Modal>
       <Modal
-        open={dialog === "messages"}
+        open={workspaceReady && dialog === "messages"}
         onOpenChange={(open) => {
           if (!open) {
             setDialog(null);
@@ -413,6 +431,7 @@ export default function PortalShell({ children }) {
           </form>
         )}
         {messagesHistory.error && <p role="alert">{messagesHistory.error}</p>}
+        {messagesHistory.loading && <LoadingIndicator label="Loading messages…" compact={messages.length > 0} />}
         {messagesHistory.hasMore && <Button variant="secondary" onClick={messagesHistory.loadMore} disabled={messagesHistory.loading}>Load older messages</Button>}
         {messages.length ? (
           <ol className={styles.messages}>
@@ -430,7 +449,7 @@ export default function PortalShell({ children }) {
             ))}
           </ol>
         ) : (
-          !compose && (
+          !compose && !messagesHistory.loading && !messagesHistory.error && (
             <EmptyState
               icon={MessageSquare}
               title="Start a conversation"

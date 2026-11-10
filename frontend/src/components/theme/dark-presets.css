@@ -1,0 +1,170 @@
+/* Shared workspace dark designs. Original Night Sky keeps the sky tokens.
+   Attributes live on html so dialogs and toasts inherit the selected design. */
+html[data-admin-theme="dark"]:is(
+  [data-admin-dark-preset="obsidian-blue"],
+  [data-admin-dark-preset="carbon-silver"],
+  [data-admin-dark-preset="black-emerald"]
+),
+html[data-intern-theme="dark"]:is(
+  [data-intern-dark-preset="obsidian-blue"],
+  [data-intern-dark-preset="carbon-silver"],
+  [data-intern-dark-preset="black-emerald"]
+) {
+  --ad-scheme: dark;
+  --ad-bg: var(--preset-canvas);
+  --ad-panel: var(--preset-panel);
+  --ad-panel-alt: var(--preset-raised);
+  --ad-panel-soft: var(--preset-soft);
+  --ad-sidebar: var(--preset-chrome);
+  --ad-topbar: var(--preset-chrome);
+  --ad-border: var(--preset-border);
+  --ad-border-strong: var(--preset-border-strong);
+  --ad-text: var(--preset-text);
+  --ad-muted: var(--preset-muted);
+  --ad-subtle: var(--preset-muted);
+  --ad-blue: var(--preset-accent);
+  --ad-link: var(--preset-link);
+  --ad-blue-soft: var(--preset-accent-soft);
+  --ad-blue-border: var(--preset-accent-border);
+  --ad-purple: var(--preset-secondary);
+  --ad-purple-soft: var(--preset-soft);
+  --ad-primary-gradient: var(--preset-primary);
+  --ad-primary-text: var(--preset-primary-text);
+  --ad-primary-border: var(--preset-primary-border);
+  --ad-primary-button-border: var(--preset-primary-border);
+  --ad-primary-shadow: 0 3px 8px #00000040, inset 0 1px 0 #ffffff14;
+  --ad-primary-shadow-hover: 0 5px 12px #00000059, inset 0 1px 0 #ffffff21;
+  --ad-nav-active-text: var(--preset-primary-text);
+  --ad-mobile-primary-bg: var(--preset-primary);
+  --ad-promo-bg: var(--preset-card);
+  --ad-promo-border: var(--preset-border);
+  --ad-avatar-bg: var(--preset-primary);
+  --ad-avatar-text: var(--preset-primary-text);
+  --ad-quick-actions-bg: var(--preset-card);
+  --ad-period-shadow: var(--ad-primary-shadow);
+  --ad-chart-fill-1: var(--preset-accent);
+  --ad-chart-fill-2: var(--preset-secondary);
+  --ad-chart-gradient-1: linear-gradient(90deg, var(--preset-accent), var(--preset-accent));
+  --ad-chart-gradient-2: linear-gradient(90deg, var(--preset-secondary), var(--preset-secondary));
+  --ad-chart-grid: var(--preset-border);
+  --ad-chart-series-1: var(--preset-accent);
+  --ad-chart-series-2: var(--preset-secondary);
+  --ad-chart-series-3: var(--preset-tertiary);
+  --ad-chart-series-4: var(--preset-muted);
+  --ad-map: var(--preset-map);
+  --ad-glow: var(--preset-accent-soft);
+  --ad-lilac-glow: var(--preset-soft);
+  --ad-ambient: transparent;
+  --ad-backdrop: #000000b8;
+  --ad-shadow: 0 8px 20px #00000033, inset 0 1px 0 #ffffff05;
+  --ad-shadow-lift: 0 12px 26px #00000059, inset 0 1px 0 #ffffff0a;
+  --ad-frame: var(--preset-raised);
+  --ad-frame-border: var(--preset-border);
+  --ad-accent-glow: 0 3px 10px #00000040;
+  --ad-card: var(--preset-card);
+  --ad-stage: var(--preset-canvas);
+  --ad-glass: var(--preset-glass);
+  --ad-chip: var(--preset-soft);
+  --ad-icon-bg: var(--preset-raised);
+  --ad-icon-border: var(--preset-border);
+  --ad-icon-shadow: 0 2px 4px #0000001a;
+  --ad-button-bg: var(--preset-panel);
+  --ad-button-text: var(--preset-text);
+  --ad-button-hover: var(--preset-soft);
+  --ad-field: var(--preset-canvas);
+  --ad-switch-off: var(--preset-soft);
+  --ad-switch-off-border: var(--preset-border-strong);
+  --ad-switch-thumb: var(--preset-muted);
+  --ad-switch-thumb-on: var(--preset-primary-text);
+  --ad-switch-thumb-shadow: 0 1px 3px #0000004d;
+  --ad-accent-border: var(--preset-border-strong);
+  --ad-selection: var(--preset-accent-soft);
+  --ad-selection-text: var(--preset-text);
+  --ad-focus: var(--preset-link);
+  --ad-modal-shadow: 0 24px 80px -16px #000000cc;
+  --ad-hero-bg: var(--preset-hero);
+  --ad-hero-ring: var(--preset-border-strong);
+  --ad-hero-ring-glow: transparent;
+  --ad-hero-copy: var(--preset-muted);
+  --ad-hero-accent: var(--preset-link);
+  --ad-hero-chip: var(--preset-soft);
+  --ad-inverse: var(--preset-raised);
+}
+
+html[data-admin-theme="dark"][data-admin-dark-preset="obsidian-blue"],
+html[data-intern-theme="dark"][data-intern-dark-preset="obsidian-blue"] {
+  --preset-canvas: #08090b;
+  --preset-panel: #121418;
+  --preset-raised: #1b1e24;
+  --preset-soft: #232730;
+  --preset-chrome: #101215;
+  --preset-glass: #101215f2;
+  --preset-border: #2b2f34;
+  --preset-border-strong: #414954;
+  --preset-text: #f4f6f8;
+  --preset-muted: #a6afba;
+  --preset-accent: #527dff;
+  --preset-link: #91abff;
+  --preset-accent-soft: #1a2236;
+  --preset-accent-border: #435f9d;
+  --preset-secondary: #adbde8;
+  --preset-tertiary: #88b6c4;
+  --preset-primary: linear-gradient(180deg, #4267e8, #3154cc);
+  --preset-primary-text: #ffffff;
+  --preset-primary-border: #6487ff;
+  --preset-map: #3c424d;
+  --preset-card: linear-gradient(140deg, #17191e, #121418);
+  --preset-hero: radial-gradient(ellipse at 100% 100%, #527dff15, transparent 65%), linear-gradient(125deg, #121418, #171b22);
+}
+
+html[data-admin-theme="dark"][data-admin-dark-preset="carbon-silver"],
+html[data-intern-theme="dark"][data-intern-dark-preset="carbon-silver"] {
+  --preset-canvas: #090909;
+  --preset-panel: #171717;
+  --preset-raised: #211f1d;
+  --preset-soft: #2c2925;
+  --preset-chrome: #111110;
+  --preset-glass: #111110f2;
+  --preset-border: #32312f;
+  --preset-border-strong: #66625b;
+  --preset-text: #f3f0e9;
+  --preset-muted: #aaa79f;
+  --preset-accent: #e2ddd2;
+  --preset-link: #e2ddd2;
+  --preset-accent-soft: #292722;
+  --preset-accent-border: #827b6e;
+  --preset-secondary: #b7b0a3;
+  --preset-tertiary: #c5b98f;
+  --preset-primary: linear-gradient(180deg, #e9e5dc, #d4cec2);
+  --preset-primary-text: #171510;
+  --preset-primary-border: #e2ddd2;
+  --preset-map: #4f4d48;
+  --preset-card: linear-gradient(140deg, #1c1b19, #171717);
+  --preset-hero: linear-gradient(125deg, #171717, #211f1c);
+}
+
+html[data-admin-theme="dark"][data-admin-dark-preset="black-emerald"],
+html[data-intern-theme="dark"][data-intern-dark-preset="black-emerald"] {
+  --preset-canvas: #070a09;
+  --preset-panel: #121715;
+  --preset-raised: #1a221e;
+  --preset-soft: #222e27;
+  --preset-chrome: #0e1210;
+  --preset-glass: #0e1210f2;
+  --preset-border: #2b3430;
+  --preset-border-strong: #46584d;
+  --preset-text: #edf3ef;
+  --preset-muted: #a2afa7;
+  --preset-accent: #62d5a3;
+  --preset-link: #80e2b7;
+  --preset-accent-soft: #142e23;
+  --preset-accent-border: #38745a;
+  --preset-secondary: #9ebdac;
+  --preset-tertiary: #83bfc4;
+  --preset-primary: linear-gradient(180deg, #77dfb2, #52c992);
+  --preset-primary-text: #091710;
+  --preset-primary-border: #80dfb4;
+  --preset-map: #36483e;
+  --preset-card: linear-gradient(140deg, #171e1a, #121715);
+  --preset-hero: radial-gradient(ellipse at 100% 100%, #62d5a315, transparent 65%), linear-gradient(125deg, #111613, #18231d);
+}

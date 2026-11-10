@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { useInternship } from "@/components/intern/InternshipProvider";
+import LoadingIndicator from "@/components/LoadingIndicator";
 import { hasStaffPermission } from "./staffAccess";
 import {
   downloadAttachment,
@@ -150,7 +151,7 @@ export default function ApplicantDetailPage({ applicationId }) {
     return (
       <div className={common.page} aria-busy="true">
         <Panel>
-          <p className={common.muted}>Loading application…</p>
+          <LoadingIndicator label="Loading application…" />
         </Panel>
       </div>
     );

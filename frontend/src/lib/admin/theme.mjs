@@ -1,3 +1,13 @@
+import {
+  DARK_PRESET_KEY as ADMIN_DARK_PRESET_KEY,
+  DEFAULT_DARK_PRESET as DEFAULT_ADMIN_DARK_PRESET,
+  DARK_PRESETS as ADMIN_DARK_PRESETS,
+  isDarkPreset as isAdminDarkPreset,
+  readDarkPreset as readAdminDarkPreset,
+  saveDarkPreset as saveAdminDarkPreset,
+} from "../theme/dark-presets.mjs";
+
+export { ADMIN_DARK_PRESET_KEY, DEFAULT_ADMIN_DARK_PRESET, ADMIN_DARK_PRESETS, isAdminDarkPreset, readAdminDarkPreset, saveAdminDarkPreset };
 export const ADMIN_THEME_KEY = "olentra.admin.theme.v1";
 export const DEFAULT_ADMIN_THEME = "light";
 
@@ -26,4 +36,4 @@ export function saveAdminTheme(storage, theme) {
 }
 
 // Static application code only: no request or user input is interpolated here.
-export const ADMIN_THEME_BOOTSTRAP = `(function(){var t="light";try{var s=localStorage.getItem("${ADMIN_THEME_KEY}");if(s==="light"||s==="dark")t=s}catch(e){}document.documentElement.setAttribute("data-admin-theme",t)})()`;
+export const ADMIN_THEME_BOOTSTRAP = `(function(){var t="${DEFAULT_ADMIN_THEME}",p="${DEFAULT_ADMIN_DARK_PRESET}";try{var s=localStorage.getItem("${ADMIN_THEME_KEY}");if(s==="light"||s==="dark")t=s}catch(e){}try{var d=localStorage.getItem("${ADMIN_DARK_PRESET_KEY}");if(${JSON.stringify(ADMIN_DARK_PRESETS.map(preset => preset.id))}.indexOf(d)!==-1)p=d}catch(e){}document.documentElement.setAttribute("data-admin-theme",t);document.documentElement.setAttribute("data-admin-dark-preset",p)})()`;

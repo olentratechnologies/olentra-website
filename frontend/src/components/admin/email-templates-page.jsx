@@ -18,7 +18,7 @@ function PreviewDialog({ type, variant, selected, saved, canManage, onSelect, on
   const [mode, setMode] = useState("desktop");
   const rendered = renderEmailTemplate(type, variant);
   return <Dialog.Root open onOpenChange={open => { if (!open) onClose(); }}><Dialog.Portal>
-    <Dialog.Overlay className="ad-modal-overlay" />
+    <Dialog.Overlay className="workspace-modal-overlay" />
     <Dialog.Content className={styles.dialog} onCloseAutoFocus={event => { event.preventDefault(); onRestoreFocus(); }}>
       <div className={styles.dialogHeader}><div><span className={styles.eyebrow}>TEMPLATE PREVIEW</span><Dialog.Title>{type.title}</Dialog.Title><Dialog.Description>{variant.label} · Fictional sample data. Preview links are inactive.</Dialog.Description></div><Dialog.Close className={styles.close} aria-label="Close template preview"><X size={21} /></Dialog.Close></div>
       <div className={styles.previewToolbar}>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import CompanyBrand from "@/components/intern/CompanyBrand";
+import LoadingIndicator from "@/components/LoadingIndicator";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -59,12 +60,12 @@ function Brand() {
   );
 }
 
-function AuthShell({ children, eyebrow = "YOUR NEXT CHAPTER STARTS HERE" }) {
+function AuthShell({ children, eyebrow = "YOUR NEXT CHAPTER STARTS HERE", className = "" }) {
   const { features, ready } = useSiteFeatures();
   return (
     <InternThemeProvider>
     <InternThemeToggle floating />
-    <main className={styles.authPage}>
+    <main className={[styles.authPage, className].filter(Boolean).join(" ")}>
       <div className={styles.authLayout}>
         <aside className={styles.authStory}>
           <Brand />
@@ -207,8 +208,7 @@ function ErrorMessage({ children }) {
 export function AuthLoading() {
   return (
     <main className={styles.loadingPage}>
-      <LoaderCircle size={28} className={styles.spin} />
-      <p>Preparing your internship workspace...</p>
+      <LoadingIndicator label="Preparing your internship workspace…" />
     </main>
   );
 }
@@ -354,7 +354,7 @@ export function RegisterPage() {
       setBusy(false);
     }
   };
-  if (!featuresReady) return <AuthShell><div className={styles.inlineLoading}><LoaderCircle size={22} className={styles.spin} /> Checking registration availability...</div></AuthShell>;
+  if (!featuresReady) return <AuthShell><div className={styles.inlineLoading}><LoadingIndicator label="Checking registration availability…" /></div></AuthShell>;
   if (!registrationOpen) return <AuthShell eyebrow="INTERNSHIP ACCOUNT ACCESS"><div className={styles.panelHeading}><span className={styles.headingIcon}><LockKeyhole size={23} /></span><h2>Registration is currently closed.</h2><p>New internship applications and account registration are unavailable at the moment.</p></div>{(features.portal || account?.role === "company") && <Link href={account ? destinationFor(account) : "/intern/login?role=intern"} className={styles.primaryButton}>{account ? "Go to my workspace" : "Existing account? Sign in"}<ArrowRight size={16} /></Link>}<Link href="/" className={styles.textLink}>Return to Olentra</Link></AuthShell>;
   return (
     <AuthShell eyebrow="YOUR APPLICATION IS JUST THE BEGINNING">
@@ -369,8 +369,7 @@ export function RegisterPage() {
       </div>
       {!ready || !sessionReady ? (
         <div className={styles.inlineLoading}>
-          <LoaderCircle size={22} className={styles.spin} /> Loading your
-          application...
+          <LoadingIndicator label="Loading your application…" />
         </div>
       ) : !pendingApplication ? (
         <div className={styles.emptyApplication}>
@@ -538,7 +537,7 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <AuthShell eyebrow="INTERNSHIP ACCOUNT ACCESS">
+    <AuthShell eyebrow="INTERNSHIP ACCOUNT ACCESS" className={styles.resetPage}>
       {!token ? (
         // ── Email request mode ───────────────────────────────────────────
         <>

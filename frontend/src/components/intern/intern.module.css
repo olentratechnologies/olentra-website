@@ -228,6 +228,66 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
 }
+.tracksEmpty {
+  padding: 32px 24px;
+  color: #29375f;
+  text-align: center;
+  font-size: 14px;
+}
+.trackCard:only-child {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  grid-template-areas:
+    "heading art"
+    "description art"
+    "benefits art"
+    "action art";
+  gap: 20px 44px;
+  padding: 40px;
+  align-items: start;
+}
+.trackCard:only-child .trackContent {
+  display: contents;
+}
+.trackCard:only-child .trackHeading {
+  grid-area: heading;
+  min-height: 0;
+  padding: 0;
+}
+.trackCard:only-child h2 {
+  font-size: 36px;
+  line-height: 1.15;
+}
+.trackCard:only-child .trackDescription {
+  grid-area: description;
+  max-width: 620px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 25px;
+}
+.trackCard:only-child .trackBenefits {
+  grid-area: benefits;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+.trackCard:only-child .trackArt {
+  grid-area: art;
+  position: static;
+  width: 100%;
+  max-width: 280px;
+  align-self: center;
+  justify-self: center;
+}
+.trackCard:only-child .trackButton {
+  grid-area: action;
+  justify-self: start;
+  margin: 4px 0 0;
+}
 .trackCard {
   position: relative;
   isolation: isolate;
@@ -272,25 +332,11 @@
   width: 100%;
 }
 .trackHeading {
+  display: grid;
+  align-content: start;
+  gap: 12px;
   min-height: 136px;
-  padding-right: 160px;
-}
-.trackBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 28px;
-  padding: 4px 14px;
-  border-radius: 999px;
-  color: #fff;
-  background: linear-gradient(#00b7ff, #0089ff);
-  box-shadow: inset 0 1px 1px #ffffff70;
-  font-size: 12px;
-  line-height: 20px;
-  font-weight: 650;
-}
-.innovator .trackBadge {
-  background: linear-gradient(#a653ff, #721fff);
+  padding-right: 184px;
 }
 .trackContent h2 {
   margin-top: 12px;
@@ -299,12 +345,57 @@
   letter-spacing: -0.9px;
   font-weight: 750;
 }
-.trackSubtitle {
-  margin-top: 4px;
+.trackContent h2:first-child {
+  margin-top: 0;
+}
+.trackDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, max-content));
+  justify-content: start;
+  gap: 12px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0;
+  padding: 2px 0;
+}
+.trackDetails > div {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+}
+.trackDetails > div + div {
+  padding-left: 12px;
+  border-left: 1px solid #aebfd566;
+}
+.trackDetails dt {
+  color: #5b6b82;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.trackDetails dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  min-height: 24px;
+  margin: 0;
+  color: #15213b;
   font-size: 16px;
-  line-height: 25px;
+  line-height: 22px;
   font-weight: 650;
   letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.trackDetails .trackPeriod {
+  color: #5b6b82;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
 }
 .trackDescription {
   margin-top: 16px;
@@ -323,7 +414,7 @@
 }
 .trackBenefits li {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   font-size: 14px;
   line-height: 22px;
@@ -335,6 +426,7 @@
   flex-shrink: 0;
   width: 18px;
   height: 18px;
+  margin-top: 2px;
   border-radius: 50%;
   color: #fff;
   background: #0054ff;
@@ -931,6 +1023,11 @@
 }
 
 @media (max-width: 1199px) {
+  .trackCard:only-child {
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: 20px 28px;
+    padding: 32px;
+  }
   .heroInner {
     grid-template-columns: 1.1fr 1fr;
     gap: 24px;
@@ -949,7 +1046,7 @@
     padding: 28px;
   }
   .trackHeading {
-    padding-right: 140px;
+    padding-right: 164px;
   }
   .trackContent h2 {
     font-size: 27px;
@@ -989,7 +1086,23 @@
     line-height: 23px;
   }
 }
+@media (min-width: 1024px) and (max-width: 1231px) {
+  .trackCard:not(:only-child) .trackDetails {
+    grid-template-columns: repeat(2, minmax(0, max-content));
+  }
+  .trackCard:not(:only-child) .trackDetails > div:last-child {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 8px 0 0;
+    border-top: 1px solid #aebfd566;
+    border-left: 0;
+  }
+}
 @media (max-width: 1023px) {
+  .trackCard:only-child .trackBenefits {
+    grid-template-columns: 1fr;
+  }
   .container {
     width: calc(100% - 64px);
   }
@@ -1022,7 +1135,7 @@
   }
   .trackHeading {
     min-height: 150px;
-    padding-right: 190px;
+    padding-right: 214px;
   }
   .trackContent h2 {
     font-size: 30px;
@@ -1048,6 +1161,33 @@
   }
 }
 @media (max-width: 767px) {
+  .trackCard:only-child {
+    grid-template-columns: minmax(0, 1fr) 104px;
+    grid-template-areas:
+      "heading heading"
+      "description art"
+      "benefits benefits"
+      "action action";
+    gap: 20px 12px;
+    padding: 24px;
+  }
+  .trackCard:only-child h2 {
+    font-size: 25px;
+    line-height: 32px;
+  }
+  .trackCard:only-child .trackDescription {
+    font-size: 14px;
+    line-height: 23px;
+  }
+  .trackCard:only-child .trackBenefits {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .trackCard:only-child .trackButton {
+    justify-self: stretch;
+    justify-content: center;
+    width: 100%;
+  }
   .main {
     padding-bottom: 56px;
   }
@@ -1090,17 +1230,24 @@
     padding-top: 24px;
   }
   .trackCard {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 104px;
+    grid-template-areas:
+      "heading heading"
+      "description art"
+      "benefits benefits"
+      "action action";
+    gap: 20px 12px;
     min-height: 0;
     padding: 24px;
   }
-  .trackHeading {
-    min-height: 132px;
-    padding-right: 112px;
+  .trackContent {
+    display: contents;
   }
-  .trackBadge {
-    min-height: 26px;
-    padding: 3px 12px;
-    font-size: 11px;
+  .trackHeading {
+    grid-area: heading;
+    min-height: 0;
+    padding-right: 0;
   }
   .trackContent h2 {
     margin-top: 12px;
@@ -1108,35 +1255,43 @@
     line-height: 32px;
     letter-spacing: -0.7px;
   }
-  .trackSubtitle {
-    margin-top: 6px;
-    font-size: 14px;
+  .trackDetails {
+    gap: 12px;
+    padding: 2px 0;
+  }
+  .trackDetails > div + div {
+    padding-left: 12px;
+  }
+  .trackDetails dd {
+    font-size: 16px;
     line-height: 22px;
   }
   .trackArt {
-    top: 38px;
-    right: 8px;
-    width: 128px;
+    grid-area: art;
+    position: static;
+    align-self: center;
+    width: 104px;
   }
   .innovator .trackArt {
-    top: 44px;
-    right: 12px;
-    width: 118px;
+    width: 104px;
   }
   .trackDescription {
-    margin-top: 18px;
+    grid-area: description;
+    margin-top: 0;
     font-size: 14px;
     line-height: 23px;
   }
   .trackBenefits {
+    grid-area: benefits;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 0;
   }
   .trackBenefits li {
     font-size: 13px;
     line-height: 21px;
   }
   .trackButton {
+    grid-area: action;
     min-height: 46px;
     padding-inline: 21px;
     font-size: 13px;
@@ -1282,6 +1437,19 @@
     line-height: 20px;
   }
 }
+@media (max-width: 480px) {
+  .trackDetails {
+    grid-template-columns: repeat(2, minmax(0, max-content));
+  }
+  .trackDetails > div:last-child {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 8px 0 0;
+    border-top: 1px solid #aebfd566;
+    border-left: 0;
+  }
+}
 @media (max-width: 359px) {
   .container {
     width: calc(100% - 32px);
@@ -1299,18 +1467,15 @@
   .trackCard {
     padding: 22px;
   }
-  .trackHeading {
-    padding-right: 92px;
-  }
   .trackContent h2 {
     font-size: 23px;
     line-height: 30px;
   }
   .trackArt {
-    width: 108px;
+    width: 100%;
   }
   .innovator .trackArt {
-    width: 100px;
+    width: 100%;
   }
   .trackBenefits li {
     font-size: 12px;

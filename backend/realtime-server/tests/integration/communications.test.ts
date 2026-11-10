@@ -75,6 +75,8 @@ test("messages, notifications, announcements and analytics respect role and owne
 }, 30000);
 
 test("settings cannot open an unconfigured track or enable unavailable integrations", async () => {
+  await expect(communications.execute("settings.update", { patch: { compensationMode: "invalid" } }, staff, "settings-invalid-mode")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(communications.execute("settings.update", { patch: { compensationMode: null } }, staff, "settings-null-mode")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   await expect(communications.execute("settings.update", { patch: { explorerEnabled: true } }, staff, "settings-one")).rejects.toBeInstanceOf(DomainError);
   await expect(communications.execute("settings.update", { patch: { emailNotifications: true } }, staff, "settings-two")).rejects.toBeInstanceOf(DomainError);
   await expect(communications.execute("settings.update", { patch: { weeklyDigest: true } }, staff, "settings-digest")).rejects.toBeInstanceOf(DomainError);
@@ -84,6 +86,10 @@ test("settings cannot open an unconfigured track or enable unavailable integrati
   expect((await domain.collection("settings").findOne({ _id: "program" }))?.defaultBatch).toBe("Autumn");
   await communications.execute("settings.update", { patch: { defaultBatch: "" } }, staff, "settings-empty-batch");
   expect((await domain.collection("settings").findOne({ _id: "program" }))?.defaultBatch).toBe("");
+  for (const mode of ["free", "paid", "both"]) {
+    await communications.execute("settings.update", { patch: { compensationMode: mode } }, staff, `settings-mode-${mode}`);
+    expect((await domain.collection("settings").findOne({ _id: "program" }))?.compensationMode).toBe(mode);
+  }
   await expect(communications.execute("settings.update", { patch: { defaultBatch: "Winter" } }, first, "settings-four")).rejects.toBeInstanceOf(DomainError);
 }, 30000);
 

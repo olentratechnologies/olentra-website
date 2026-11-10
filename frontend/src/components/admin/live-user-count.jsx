@@ -15,11 +15,11 @@ export function LiveUserPill() {
   const { activeVisitors, isConnected, hasSnapshot } = presence;
   const status = statusLabel(presence);
   return <div
-    className={"ad-live-pill" + (isConnected ? "" : " is-offline")}
+    className={"workspace-live-pill" + (isConnected ? "" : " is-offline")}
     data-presence-status={status.toLowerCase()}
     title={isConnected ? "Each active browser counts once across its website tabs." : hasSnapshot ? "Connection interrupted. Showing the last received count while reconnecting." : "Connecting to the live user count…"}
   >
-    <span className="ad-live-dot" />
+    <span className="workspace-live-dot" />
     <span><b data-presence-count={hasSnapshot ? activeVisitors : ""}>{countValue(presence)}</b> {countLabel(activeVisitors)} {isConnected ? "live" : "· " + status.toLowerCase()}</span>
   </div>;
 }
@@ -31,8 +31,8 @@ export function LiveUsersStat() {
     label="Live website users"
     value={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }} data-presence-count={presence.hasSnapshot ? presence.activeVisitors : ""}>
       {countValue(presence)}
-      <span className={"ad-live-pill" + (presence.isConnected ? "" : " is-offline")} data-presence-status={statusLabel(presence).toLowerCase()} style={{ fontSize: 10, padding: "2px 7px" }} title="Each active browser counts once across its website tabs.">
-        <span className="ad-live-dot" />{statusLabel(presence)}
+      <span className={"workspace-live-pill" + (presence.isConnected ? "" : " is-offline")} data-presence-status={statusLabel(presence).toLowerCase()} style={{ fontSize: 10, padding: "2px 7px" }} title="Each active browser counts once across its website tabs.">
+        <span className="workspace-live-dot" />{statusLabel(presence)}
       </span>
     </span>}
     icon={Radio}

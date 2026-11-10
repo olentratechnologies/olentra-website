@@ -13,6 +13,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
+import { useInternQuery, useInternSearch } from "../useInternQuery";
+import QueryStatus from "./QueryStatus";
 import {
   Avatar,
   Button,
@@ -34,7 +36,7 @@ import common from "./pages.module.css";
 import styles from "./portfolio.module.css";
 
 export function CertificatesPage() {
-  const { data, query, notify, generateCertificates, commands, account } = useDashboard();
+  const { data, query, notify, generateCertificates, account } = useDashboard();
   const isAdmin = account?.staffRole === "admin";
   const [search, setSearch] = useState("");
   const [track, setTrack] = useState("all");
@@ -47,17 +49,31 @@ export function CertificatesPage() {
   const [generationError, setGenerationError] = useState("");
   const [generating, setGenerating] = useState(false);
   const pageSize = 8;
-  const [listing,setListing] = useState({items:[],total:0,counts:{statuses:{},programs:{}}});
-  const [summary,setSummary] = useState({total:0,counts:{statuses:{},programs:{}}});
-  const [eligibleListing,setEligibleListing] = useState({items:[],total:0});
-  const [eligiblePage,setEligiblePage] = useState(1);
-  const [eligibleTotal,setEligibleTotal] = useState(0);
-  const [listError,setListError] = useState("");
-  const [createdPreview,setCreatedPreview] = useState(null);
-  useEffect(()=>{setPage(1)},[search,query,track,status]);
-  useEffect(()=>{setEligiblePage(1)},[bulkSearch]);
-  useEffect(()=>{let live=true;const timer=setTimeout(async()=>{const [result,totals,eligibleCount]=await Promise.all([commands.listCertificates({search,query,programId:track,status,page,pageSize}),commands.listCertificates({page:1,pageSize:1}),isAdmin ? commands.listInterns({eligible:true,page:1,pageSize:1}) : Promise.resolve({ok:true,data:{total:0}})]);if(!live)return;if(!result.ok||!totals.ok||!eligibleCount.ok){setListError(result.error||totals.error||eligibleCount.error);return}setListError("");setListing(result.data);setSummary(totals.data);setEligibleTotal(eligibleCount.data.total);if(page>1&&page>Math.max(1,Math.ceil(result.data.total/pageSize)))setPage(Math.max(1,Math.ceil(result.data.total/pageSize)))},180);return()=>{live=false;clearTimeout(timer)}},[page,pageSize,search,query,track,status,commands,data.certificates,data.interns,data.tasks,isAdmin]);
-  useEffect(()=>{if(!bulkOpen)return;let live=true;const timer=setTimeout(async()=>{const result=await commands.listInterns({eligible:true,search:bulkSearch,page:eligiblePage,pageSize:20});if(!live)return;if(!result.ok){setGenerationError(result.error);return}setGenerationError("");setEligibleListing(result.data)},180);return()=>{live=false;clearTimeout(timer)}},[bulkOpen,bulkSearch,eligiblePage,commands,data.interns,data.certificates,data.tasks]);
+  const [eligiblePage, setEligiblePage] = useState(1);
+  const [createdPreview, setCreatedPreview] = useState(null);
+  const debouncedSearch = useInternSearch(search);
+  const debouncedQuery = useInternSearch(query);
+  const debouncedBulkSearch = useInternSearch(bulkSearch);
+  const listQuery = useInternQuery("certificate.list", { search: debouncedSearch, query: debouncedQuery, programId: track, status, page, pageSize });
+  const summaryQuery = useInternQuery("certificate.list", { page: 1, pageSize: 1 });
+  const eligibleCountQuery = useInternQuery("intern.list", { eligible: true, page: 1, pageSize: 1 }, { enabled: isAdmin });
+  const eligibleTotal = eligibleCountQuery.data?.total;
+  const bulkQuery = useInternQuery("intern.list", { eligible: true, search: debouncedBulkSearch, page: eligiblePage, pageSize: 20 }, { enabled: isAdmin && bulkOpen && eligibleTotal > 0 });
+  const listing = listQuery.data || { items: [], total: 0 };
+  const summary = summaryQuery.data;
+  const eligibleListing = bulkQuery.data || { items: [], total: 0 };
+  useEffect(() => { setPage(1); }, [search, query, track, status]);
+  useEffect(() => { setEligiblePage(1); }, [bulkSearch]);
+  useEffect(() => {
+    if (!listQuery.data || page <= 1) return;
+    const lastPage = Math.max(1, Math.ceil(listQuery.data.total / pageSize));
+    if (page > lastPage) setPage(lastPage);
+  }, [listQuery.data, page, pageSize]);
+  useEffect(() => {
+    if (!bulkQuery.data || eligiblePage <= 1) return;
+    const lastPage = Math.max(1, Math.ceil(bulkQuery.data.total / 20));
+    if (eligiblePage > lastPage) setEligiblePage(lastPage);
+  }, [bulkQuery.data, eligiblePage]);
   const certificates=listing.items, eligible=eligibleListing.items.map(intern=>({...intern,person:intern.application})).filter(intern=>intern.person);
   const selectedEligible=selected;
   const matchingEligible=eligible;
@@ -132,44 +148,45 @@ export function CertificatesPage() {
         >
           <Download size={15} /> Export current page
         </Button>
-        {isAdmin && <Button onClick={openBulk}>
+        {isAdmin && <Button onClick={openBulk} disabled={!eligibleCountQuery.data}>
           <Plus size={16} /> Generate Certificates
         </Button>}
       </PageHeader>
-      {listError && <p role="alert">{listError}</p>}
+      <QueryStatus query={summaryQuery} label="certificate totals" compact/>
+      {isAdmin && <QueryStatus query={eligibleCountQuery} label="certificate eligibility" compact/>}
       <StatCards
         items={[
           {
             id: "issued",
             label: "Certificates Issued",
-            value: summary.total,
+            value: summary?.total ?? "—",
             icon: "trophy",
             tone: "blue",
           },
           ...(isAdmin ? [{
             id: "eligible",
             label: "Ready to Generate",
-            value: eligibleTotal,
+            value: eligibleTotal ?? "—",
             icon: "check",
             tone: "green",
           }] : []),
           {
             id: "explorer",
             label: "Tech Explorer",
-            value: summary.counts?.programs?.explorer || 0,
+            value: summary ? summary.counts?.programs?.explorer || 0 : "—",
             icon: "users",
             tone: "purple",
           },
           {
             id: "innovator",
             label: "Tech Innovator",
-            value: summary.counts?.programs?.innovator || 0,
+            value: summary ? summary.counts?.programs?.innovator || 0 : "—",
             icon: "trophy",
             tone: "orange",
           },
         ]}
       />
-      <Panel className={styles.certificatesPanel}>
+      <Panel className={styles.certificatesPanel} aria-busy={listQuery.loading || listQuery.refreshing}>
         <div className={common.panelTitle}>
           <h2>
             <span className={styles.titleIcon}>
@@ -177,12 +194,12 @@ export function CertificatesPage() {
             </span>{" "}
             Issued Certificates
           </h2>
-          <span className={common.badge}>{listing.total} total</span>
+          <span className={common.badge}>{listQuery.data ? `${listing.total} total` : "—"}</span>
         </div>
         <div className={common.toolbar}>
           <SearchBox
             value={search}
-            onChange={setSearch}
+            onChange={value => { setSearch(value); setPage(1); }}
             placeholder="Search recipient or certificate ID..."
           />
           <div className={common.filters}>
@@ -191,7 +208,7 @@ export function CertificatesPage() {
                 Internship track
                 <select
                   value={track}
-                  onChange={(event) => setTrack(event.target.value)}
+                  onChange={(event) => { setTrack(event.target.value); setPage(1); }}
                 >
                   <option value="all">All tracks</option>
                   {data.programs.map((program) => (
@@ -205,7 +222,7 @@ export function CertificatesPage() {
                 Certificate status
                 <select
                   value={status}
-                  onChange={(event) => setStatus(event.target.value)}
+                  onChange={(event) => { setStatus(event.target.value); setPage(1); }}
                 >
                   <option value="all">All statuses</option>
                   <option value="Issued">Issued</option>
@@ -224,6 +241,7 @@ export function CertificatesPage() {
             </FilterMenu>
           </div>
         </div>
+        <QueryStatus query={listQuery} label="certificates"/>
         <div className={common.tableWrap}>
           <table className={common.table}>
             <thead>
@@ -297,19 +315,19 @@ export function CertificatesPage() {
               ))}
             </tbody>
           </table>
-          {!rows.length && (
+          {listQuery.data && !rows.length && (
             <EmptyState
               title="No certificates found"
               description="Try another recipient, certificate number, or track."
             />
           )}
         </div>
-        <Pagination
+        {listQuery.data && <Pagination
           page={currentPage}
           pageSize={pageSize}
           total={listing.total}
           onChange={setPage}
-        />
+        />}
       </Panel>
       <div className={styles.certificateNote}>
         <ShieldCheck size={17} />
@@ -317,7 +335,7 @@ export function CertificatesPage() {
           Certificates are issued to interns who have completed the program.
           Each certificate has a unique certificate ID.
         </p>
-        {isAdmin && <button onClick={openBulk}>
+        {isAdmin && <button onClick={openBulk} disabled={!eligibleCountQuery.data}>
           Manage certificates <ArrowRight size={13} />
         </button>}
       </div>
@@ -328,7 +346,8 @@ export function CertificatesPage() {
         description="Select completed interns who have not received a certificate yet."
         className={styles.bulkModal}
       >
-        {eligibleTotal ? (
+        <QueryStatus query={eligibleCountQuery} label="certificate eligibility"/>
+        {eligibleCountQuery.data ? eligibleTotal ? (
           <>
             <div className={styles.eligibilityBanner}>
               <ShieldCheck size={20} />
@@ -342,13 +361,14 @@ export function CertificatesPage() {
             </div>
             <SearchBox
               value={bulkSearch}
-              onChange={setBulkSearch}
+              onChange={value => { setBulkSearch(value); setEligiblePage(1); }}
               placeholder="Search eligible interns..."
             />
             <label className={styles.selectAll}>
               <input
                 type="checkbox"
                 checked={allMatchingSelected}
+                disabled={!bulkQuery.data || !matchingEligible.length}
                 onChange={(event) =>
                   setSelected(
                     event.target.checked
@@ -370,6 +390,7 @@ export function CertificatesPage() {
               Select all interns on this page{" "}
               <span>{selectedEligible.length} selected</span>
             </label>
+            <QueryStatus query={bulkQuery} label="eligible interns"/>
             <div className={styles.eligibleList}>
               {matchingEligible.map((intern) => (
                 <label key={intern.id} className={styles.pickerPerson}>
@@ -394,14 +415,14 @@ export function CertificatesPage() {
                   <StatusBadge status="Completed" />
                 </label>
               ))}
-              {!matchingEligible.length && (
+              {bulkQuery.data && !matchingEligible.length && (
                 <EmptyState
                   title="No matching interns"
                   description="Try a different name, batch, or program."
                 />
               )}
             </div>
-            <Pagination page={eligiblePage} pageSize={20} total={eligibleListing.total} onChange={setEligiblePage}/>
+            {bulkQuery.data && <Pagination page={eligiblePage} pageSize={20} total={eligibleListing.total} onChange={setEligiblePage}/>}
             {generationError && (
               <p role="alert" className={common.error}>
                 {generationError}
@@ -413,7 +434,7 @@ export function CertificatesPage() {
               </Button>
               <Button
                 onClick={generateSelected}
-                disabled={!selectedEligible.length || generating}
+                disabled={!bulkQuery.data || !selectedEligible.length || generating}
               >
                 <Award size={15} />{" "}
                 {generating
@@ -448,7 +469,7 @@ export function CertificatesPage() {
               </Button>
             </div>
           </>
-        )}
+        ) : null}
       </Modal>
       <Modal
         open={Boolean(preview)}

@@ -1,0 +1,101 @@
+import { expect, test } from "bun:test";
+import { createInternshipDomain, type Principal } from "./domain";
+import { acceptsCompensationMode, isCompensationMode, normalizeCompensationMode } from "../../src/modules/programs/compensation";
+
+const admin: Principal = { id: "admin", role: "company", staffRole: "admin", name: "Admin", email: "admin@example.test", applicationId: null, sessionVersion: 1 };
+
+function fixture(compensationMode?: unknown, stipend = 0) {
+  const config: Record<string, any> = { _id: "program", programEnabled: true, compensationMode };
+  const programs = [{ _id: "explorer", name: "Tech Explorer", fee: 500, stipend, enabled: true }];
+  const inserted: { collection: string; document: any }[] = [];
+  const db = {
+    collection(name: string) {
+      return {
+        async findOne(filter: Record<string, any>) {
+          if (name === "programs") return programs.find(row => row._id === filter._id) || null;
+          if (name === "settings") return config;
+          if (name === "files") return { _id: "resume", kind: "resume", status: "ready" };
+          return null;
+        },
+        find() { return { sort() { return this; }, async toArray() { return name === "programs" ? programs : []; } }; },
+        async updateOne(_filter: unknown, update: Record<string, any>) {
+          if (name === "settings") Object.assign(config, update.$set);
+          return { matchedCount: 1 };
+        },
+        async insertOne(document: any) { inserted.push({ collection: name, document }); },
+      };
+    },
+  };
+  const client = { startSession() { return { async withTransaction(action: () => Promise<void>) { await action(); }, async endSession() {} }; } };
+  return { domain: createInternshipDomain({ db: db as any, client: client as any, prefix: "" }), config, programs, inserted };
+}
+
+test("compensation modes keep legacy defaults and classify stipend rather than program fees", () => {
+  for (const value of [undefined, null, "", "other", {}, 0]) {
+    expect(isCompensationMode(value)).toBe(false);
+    expect(normalizeCompensationMode(value)).toBe("both");
+  }
+  for (const mode of ["free", "paid", "both"] as const) expect(normalizeCompensationMode(mode)).toBe(mode);
+  expect(acceptsCompensationMode(0, "free")).toBe(true);
+  expect(acceptsCompensationMode(1000, "free")).toBe(false);
+  expect(acceptsCompensationMode(0, "paid")).toBe(false);
+  expect(acceptsCompensationMode(1000, "paid")).toBe(true);
+  expect(acceptsCompensationMode(0, "both")).toBe(true);
+  expect(acceptsCompensationMode(1000, "both")).toBe(true);
+  for (const stipend of [null, undefined, -1, 1.5, "1000", Number.NaN]) {
+    expect(acceptsCompensationMode(stipend, "both")).toBe(false);
+  }
+});
+
+test("public settings normalize missing and invalid saved compensation modes", async () => {
+  for (const mode of [undefined, "invalid", "free", "paid", "both"]) {
+    const { domain } = fixture(mode);
+    expect((await domain.publicData()).settings.compensationMode).toBe(normalizeCompensationMode(mode));
+  }
+});
+
+test("admin settings save each compensation mode without changing track details and refresh cached public data", async () => {
+  const { domain, config, programs } = fixture();
+  const originalPrograms = structuredClone(programs);
+  expect((await domain.publicData()).settings.compensationMode).toBe("both");
+  for (const mode of ["free", "paid", "both"] as const) {
+    await domain.execute("settings.update", { patch: { compensationMode: mode } }, admin, `compensation-save-${mode}`);
+    expect(config.compensationMode).toBe(mode);
+    expect((await domain.publicData()).settings.compensationMode).toBe(mode);
+    expect(programs).toEqual(originalPrograms);
+  }
+});
+
+test("invalid modes and non-admin settings changes fail before writing", async () => {
+  const { domain, config, inserted } = fixture("both");
+  for (const mode of [null, "", "FREE", "salary", true, 1]) {
+    await expect(domain.execute("settings.update", { patch: { compensationMode: mode } }, admin, "invalid-mode-test")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  }
+  const mentor: Principal = { ...admin, id: "mentor", staffRole: "mentor", permissions: ["overview.read"] };
+  await expect(domain.execute("settings.update", { patch: { compensationMode: "paid" } }, mentor, "mentor-mode-test")).rejects.toMatchObject({ code: "FORBIDDEN" });
+  expect(config.compensationMode).toBe("both");
+  expect(inserted).toEqual([]);
+});
+
+test("application submission enforces free, paid and both against the current stipend settings", async () => {
+  const cases = [
+    { mode: "free", stipend: 0, accepts: true },
+    { mode: "free", stipend: 1000, accepts: false },
+    { mode: "paid", stipend: 0, accepts: false },
+    { mode: "paid", stipend: 1000, accepts: true },
+    { mode: "both", stipend: 0, accepts: true },
+    { mode: "both", stipend: 1000, accepts: true },
+    { mode: undefined, stipend: 1000, accepts: true },
+  ];
+  for (const { mode, stipend, accepts } of cases) {
+    const { domain, inserted } = fixture(mode, stipend);
+    const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", programId: "explorer", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
+    if (accepts) {
+      expect((await request).programId).toBe("explorer");
+      expect(inserted.filter(write => write.collection === "applications")).toHaveLength(1);
+    } else {
+      await expect(request).rejects.toMatchObject({ code: "CLOSED" });
+      expect(inserted).toEqual([]);
+    }
+  }
+});

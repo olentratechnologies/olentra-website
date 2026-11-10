@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { hasStaffPermission } from "./staffAccess";
+import { useInternQuery, useInternSearch } from "../useInternQuery";
+import QueryStatus from "./QueryStatus";
 import { ProjectWorkflow } from "./CompanyWorkflow";
 import {
   Avatar,
@@ -225,30 +227,27 @@ function GeometricArtwork({ kind }) {
   );
 }
 
-function TeamPicker({ selected, onChange, onPeople, revision, label = "Assign team members" }) {
-  const { commands } = useDashboard();
+function TeamPicker({ selected, onChange, onPeople, label = "Assign team members" }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [listing, setListing] = useState({items:[],total:0});
-  const [error,setError] = useState("");
+  const debouncedSearch = useInternSearch(search);
+  const peopleQuery = useInternQuery("intern.list", { status: "Active", search: debouncedSearch, page, pageSize: 20 });
+  const listing = peopleQuery.data || { items: [], total: 0 };
   useEffect(() => { setPage(1); }, [search]);
   useEffect(() => {
-    let live = true;
-    const timer = setTimeout(async () => {
-      const result = await commands.listInterns({status:"Active",search,page,pageSize:20});
-      if (!live) return;
-      if (!result.ok) { setError(result.error); return; }
-      setError(""); setListing(result.data);
-      onPeople(result.data.items.map(item => ({...item.application, internshipStatus:item.status})).filter(item=>item.id));
-    },180);
-    return () => { live = false; clearTimeout(timer); };
-  },[search,page,commands,onPeople,revision]);
-  const displayed = listing.items.map(item=>({...item.application,internshipStatus:item.status})).filter(item=>item.id);
-  return <fieldset className={styles.teamPicker}><legend>{label} <span>{selected.length} selected</span></legend><SearchBox value={search} onChange={setSearch} placeholder="Search active interns..."/><div className={styles.pickerList}>{displayed.map(person=><label className={styles.pickerPerson} key={person.id}><input type="checkbox" checked={selected.includes(person.id)} onChange={event=>onChange(event.target.checked ? [...new Set([...selected,person.id])] : selected.filter(id=>id!==person.id))}/><Avatar person={person} size={30}/><span><strong>{person.name}</strong><small>{person.program}</small></span><TrackBadge programId={person.programId}/></label>)}{!displayed.length && !error && <p className={styles.pickerEmpty}>No active interns match this search.</p>}</div>{error && <p role="alert">{error}</p>}<Pagination page={page} pageSize={20} total={listing.total} onChange={setPage}/></fieldset>;
+    if (peopleQuery.data) onPeople(peopleQuery.data.items.map(item => ({ ...item.application, internshipStatus: item.status })).filter(item => item.id));
+  }, [peopleQuery.data, onPeople]);
+  useEffect(() => {
+    if (!peopleQuery.data || page <= 1) return;
+    const lastPage = Math.max(1, Math.ceil(peopleQuery.data.total / 20));
+    if (page > lastPage) setPage(lastPage);
+  }, [peopleQuery.data, page]);
+  const displayed = listing.items.map(item => ({ ...item.application, internshipStatus: item.status })).filter(item => item.id);
+  return <fieldset className={styles.teamPicker} aria-busy={peopleQuery.loading || peopleQuery.refreshing}><legend>{label} <span>{selected.length} selected</span></legend><SearchBox value={search} onChange={value => { setSearch(value); setPage(1); }} placeholder="Search active interns..."/><QueryStatus query={peopleQuery} label="active interns"/><div className={styles.pickerList}>{displayed.map(person => <label className={styles.pickerPerson} key={person.id}><input type="checkbox" checked={selected.includes(person.id)} onChange={event => onChange(event.target.checked ? [...new Set([...selected, person.id])] : selected.filter(id => id !== person.id))}/><Avatar person={person} size={30}/><span><strong>{person.name}</strong><small>{person.program}</small></span><TrackBadge programId={person.programId}/></label>)}{peopleQuery.data && !displayed.length && <p className={styles.pickerEmpty}>No active interns match this search.</p>}</div>{peopleQuery.data && <Pagination page={page} pageSize={20} total={listing.total} onChange={setPage}/>}</fieldset>;
 }
 
 export function ProjectsPage() {
-  const { data, query, notify, createProject, updateProject, commands, account } = useDashboard();
+  const { data, query, notify, createProject, updateProject, account } = useDashboard();
   const canManage = hasStaffPermission(account, "projects.manage");
   const canReadTasks = hasStaffPermission(account, "tasks.read");
   const [tab, setTab] = useState("all");
@@ -270,13 +269,22 @@ export function ProjectsPage() {
   const [allContributions, setAllContributions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [page,setPage] = useState(1), pageSize = 9;
-  const [listing,setListing] = useState({items:[],total:0,counts:{statuses:{}}});
-  const [summary,setSummary] = useState({total:0,counts:{statuses:{}}});
-  const [listError,setListError] = useState("");
-  const [peopleCache,setPeopleCache] = useState({});
-  const rememberPeople = useCallback((records)=>setPeopleCache(previous=>{const next={...previous};for(const record of records)if(record?.id)next[record.id]=record;return next}),[]);
-  useEffect(()=>{setPage(1)},[tab,search,query,track]);
-  useEffect(()=>{let live=true;const timer=setTimeout(async()=>{const programId=data.programs.find(program=>program.name===track)?.id || "all";const params={search,query,programId};const [result,totals]=await Promise.all([commands.listProjects({...params,status:tab,page,pageSize}),commands.listProjects({...params,status:"all",page:1,pageSize:1})]);if(!live)return;if(!result.ok||!totals.ok){setListError(result.error||totals.error);return}setListError("");setListing(result.data);setSummary(totals.data);if(page>1&&page>Math.max(1,Math.ceil(result.data.total/pageSize)))setPage(Math.max(1,Math.ceil(result.data.total/pageSize)))},180);return()=>{live=false;clearTimeout(timer)}},[page,pageSize,tab,search,query,track,commands,data.projects,data.programs]);
+  const [peopleCache, setPeopleCache] = useState({});
+  const rememberPeople = useCallback((records) => setPeopleCache(previous => { const next = { ...previous }; for (const record of records) if (record?.id) next[record.id] = record; return next; }), []);
+  const debouncedSearch = useInternSearch(search);
+  const debouncedQuery = useInternSearch(query);
+  const programId = data.programs.find(program => program.name === track)?.id || "all";
+  const params = { search: debouncedSearch, query: debouncedQuery, programId };
+  const listQuery = useInternQuery("project.list", { ...params, status: tab, page, pageSize });
+  const summaryQuery = useInternQuery("project.list", { ...params, status: "all", page: 1, pageSize: 1 });
+  const listing = listQuery.data || { items: [], total: 0 };
+  const summary = summaryQuery.data;
+  useEffect(() => { setPage(1); }, [tab, search, query, track]);
+  useEffect(() => {
+    if (!listQuery.data || page <= 1) return;
+    const lastPage = Math.max(1, Math.ceil(listQuery.data.total / pageSize));
+    if (page > lastPage) setPage(lastPage);
+  }, [listQuery.data, page, pageSize]);
   const projects = listing.items;
   const people = useMemo(()=>{const map=new Map(data.applications.map(person=>[person.id,person]));Object.values(peopleCache).forEach(person=>map.set(person.id,person));for(const project of projects) for(const member of project.members || []) map.set(member.id,member);return map},[data.applications,peopleCache,projects]);
   const activeIds = useMemo(()=>{const ids=new Set(data.interns.filter(intern=>intern.status==="Active").map(intern=>intern.applicationId));Object.values(peopleCache).forEach(person=>{if(person.internshipStatus==="Active")ids.add(person.id)});for(const project of projects)for(const intern of project.teamInterns || [])if(intern.status==="Active")ids.add(intern.applicationId);return ids},[data.interns,peopleCache,projects]);
@@ -390,25 +398,25 @@ export function ProjectsPage() {
       <div className={styles.projectToolbar}>
         <Tabs
           items={[
-            { id: "all", label: "All Projects", count: summary.total },
+            { id: "all", label: "All Projects", count: summary?.total },
             {
               id: "In progress",
               label: "In Progress",
-              count: summary.counts?.statuses?.["In progress"] || 0,
+              count: summary ? summary.counts?.statuses?.["In progress"] || 0 : undefined,
             },
             {
               id: "Completed",
               label: "Completed",
-              count: summary.counts?.statuses?.Completed || 0,
+              count: summary ? summary.counts?.statuses?.Completed || 0 : undefined,
             },
           ]}
           value={tab}
-          onChange={setTab}
+          onChange={value => { setTab(value); setPage(1); }}
         />
         <div className={common.filters}>
           <SearchBox
             value={search}
-            onChange={setSearch}
+            onChange={value => { setSearch(value); setPage(1); }}
             placeholder="Search projects..."
           />
           <FilterMenu>
@@ -416,7 +424,7 @@ export function ProjectsPage() {
               Internship track
               <select
                 value={track}
-                onChange={(event) => setTrack(event.target.value)}
+                onChange={(event) => { setTrack(event.target.value); setPage(1); }}
               >
                 <option value="all">All tracks</option>
                 {data.programs.map((program) => (
@@ -439,9 +447,10 @@ export function ProjectsPage() {
           </FilterMenu>
         </div>
       </div>
-      {listError && <p role="alert">{listError}</p>}
+      <QueryStatus query={summaryQuery} label="project totals" compact/>
+      <QueryStatus query={listQuery} label="projects"/>
       {filtered.length ? (
-        <div className={styles.projectGrid}>
+        <div className={styles.projectGrid} aria-busy={listQuery.loading || listQuery.refreshing}>
           {filtered.map((project) => (
             <article className={styles.projectCard} key={project.id}>
               <button
@@ -527,15 +536,15 @@ export function ProjectsPage() {
             </article>
           ))}
         </div>
-      ) : (
+      ) : listQuery.data ? (
         <Panel>
           <EmptyState
             title="No projects found"
             description="Try another search or create a project for your interns."
           />
         </Panel>
-      )}
-      <Pagination page={page} pageSize={pageSize} total={listing.total} onChange={setPage}/>
+      ) : null}
+      {listQuery.data && <Pagination page={page} pageSize={pageSize} total={listing.total} onChange={setPage}/>}
       <Panel className={styles.contributionsPanel}>
         <div className={common.panelTitle}>
           <h2>
@@ -671,7 +680,6 @@ export function ProjectsPage() {
           </div>
           <TeamPicker
             onPeople={rememberPeople}
-            revision={data.interns}
             selected={form.team}
             onChange={(team) => setForm({ ...form, team })}
           />
@@ -784,8 +792,7 @@ export function ProjectsPage() {
               </div>
               {canManage && <TeamPicker
                 onPeople={rememberPeople}
-                revision={data.interns}
-                selected={detail.team}
+                    selected={detail.team}
                 onChange={(team) => setDetail({ ...detail, team })}
                 label="Add active interns"
               />}

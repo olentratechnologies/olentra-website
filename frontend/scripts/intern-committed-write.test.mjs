@@ -25,3 +25,12 @@ test("a response from an older account or session never changes the current work
   assert.equal(reconcileInternWrite(other, admin, "settings.update", { patch: { programEnabled: true } }, true), other);
   assert.equal(reconcileInternWrite(revoked, admin, "settings.update", { patch: { programEnabled: true } }, true), revoked);
 });
+
+test("a compensation-mode change preserves track terms and existing applications", () => {
+  const snapshot = { ...original, data: { ...original.data, applications: [{ id: "existing", programId: "explorer", status: "Joined" }] } };
+  const updated = reconcileInternWrite(snapshot, admin, "settings.update", { patch: { compensationMode: "paid" } }, true);
+  assert.equal(updated.data.settings.compensationMode, "paid");
+  assert.deepEqual(updated.data.programs, snapshot.data.programs);
+  assert.deepEqual(updated.data.applications, snapshot.data.applications);
+  assert.equal(snapshot.data.settings.compensationMode, undefined);
+});

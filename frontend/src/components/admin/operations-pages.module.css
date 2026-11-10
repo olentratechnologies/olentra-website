@@ -1,6 +1,6 @@
 .chartArea { height: 265px; padding-top: 14px; }
 .audienceChart { display: block; width: 100%; height: 100%; }
-.incidentStats :global(.ad-stat strong) { font-size: 18px; letter-spacing: -.3px; overflow-wrap: anywhere; }
+.incidentStats :global(.workspace-stat strong) { font-size: 18px; letter-spacing: -.3px; overflow-wrap: anywhere; }
 .chartLegend { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; color: var(--ad-muted); font-size: 12px; }
 .legendDot { width: 8px; height: 8px; display: inline-block; border-radius: 50%; margin-right: 7px; background: var(--ad-blue); }
 .splitWide { display: grid; grid-template-columns: minmax(0,1.65fr) minmax(300px,1fr); gap: 20px; align-items: start; }
@@ -82,4 +82,4 @@
 @media (max-width:1100px) { .splitWide { grid-template-columns: minmax(0,1fr); } .donutWrap { gap: 18px; } }
 @media (max-width:780px) { .splitEqual { grid-template-columns: minmax(0,1fr); } .donutWrap { flex-direction: column; } .regionList { width: 100%; } .chartArea { height: 220px; } .permissionRole { flex-direction: column; align-items: stretch; } .timelineItem { grid-template-columns: 68px 1fr; gap: 12px; } .performanceRow { grid-template-columns: 38px 80px 1fr; } }
 
-.metricSpark :global(.ad-spark) { width: 100%; max-width: 100%; height: 28px; display: block; margin-top: 4px; }
+.metricSpark :global(.workspace-spark) { width: 100%; max-width: 100%; height: 28px; display: block; margin-top: 4px; }

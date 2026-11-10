@@ -12,6 +12,7 @@ import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 import ScrollTriggerRouteManager from "@/components/ScrollTriggerRouteManager";
 import { SiteFeaturesProvider, SiteFeatureGate } from "@/components/site-features";
 import { readSiteFeatures, publicSiteFeatureState } from "@/lib/server/site-features.mjs";
+import { WORKSPACE_THEME_BOOTSTRAP } from "@/lib/workspace-theme-bootstrap.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -97,6 +98,9 @@ export default async function RootLayout({ children }) {
     >
       <head></head>
       <body className="relative min-h-screen bg-background">
+        <Script id="workspace-theme-bootstrap" strategy="beforeInteractive">
+          {WORKSPACE_THEME_BOOTSTRAP}
+        </Script>
         <Script id="performance-server-timing-fix" strategy="beforeInteractive">
           {`window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);`}
         </Script>

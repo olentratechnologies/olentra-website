@@ -1,5 +1,6 @@
 "use client";
 import { useInternHistory } from "@/components/intern/useInternHistory";
+import LoadingIndicator from "@/components/LoadingIndicator";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -506,6 +507,7 @@ export function ApplicantWorkflow({ applicationId }) {
       {canMessage && tab === "messages" && (
         <div className={styles.tabBody}>
           {history.error && <p role="alert">{history.error}</p>}
+          {history.loading && <LoadingIndicator label="Loading messages…" compact={messages.length > 0} />}
           {history.hasMore && <Button variant="secondary" onClick={history.loadMore} disabled={history.loading}>Load older messages</Button>}
           <div className={styles.messageList}>
             {messages.length ? (
@@ -533,14 +535,14 @@ export function ApplicantWorkflow({ applicationId }) {
                   </article>
                 );
               })
-            ) : (
+            ) : !history.loading && !history.error ? (
               <div className={styles.smallEmpty}>
                 <MessageSquare size={25} />
                 <p>
                   Start a conversation with {application.name.split(" ")[0]}.
                 </p>
               </div>
-            )}
+            ) : null}
           </div>
           <form className={styles.form} onSubmit={sendMessage}>
             <label>
@@ -773,6 +775,7 @@ function SubmissionReview({
           ))}
         </details>
       )}
+      {history?.loading && <LoadingIndicator label="Loading older submissions…" compact />}
       {history?.total > submissions.length && <Button variant="secondary" disabled={history.loading} onClick={loadMore}>Load older versions</Button>}
     </article>
   );
@@ -799,9 +802,38 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
   const [submissions,setSubmissions] = useState([]);
   const [histories,setHistories] = useState({});
   const [listError,setListError] = useState("");
+  const [loadedProjectId, setLoadedProjectId] = useState(null);
+  const [listRequest, setListRequest] = useState({ projectId, loading: true });
+  const listLoading = listRequest.projectId !== projectId || listRequest.loading;
+  const hasListing = loadedProjectId === projectId;
   useEffect(()=>{setPage(1)},[projectId]);
-  useEffect(()=>{let live=true;(async()=>{const result=await commands.listTasks({projectId,page,pageSize});if(!live)return;if(!result.ok){setListError(result.error);return}const histories=canReadSubmissions ? await Promise.all(result.data.items.map(task=>commands.listSubmissions({taskId:task.id,page:1,pageSize:100,sortField:"version",sortDirection:"desc"}))) : [];if(!live)return;const failure=histories.find(history=>!history.ok);if(failure){setListError(failure.error);return}setListError("");setListing(result.data);setSubmissions(histories.flatMap(history=>history.data.items));setHistories(Object.fromEntries(result.data.items.map((task,index)=>[task.id,{page:1,total:histories[index]?.data.total || 0,loading:false}])));if(page>1&&page>Math.max(1,Math.ceil(result.data.total/pageSize)))setPage(Math.max(1,Math.ceil(result.data.total/pageSize)))})();return()=>{live=false}},[projectId,page,pageSize,commands,data.tasks,data.submissions,canReadSubmissions]);
-  const tasks = listing.items;
+  useEffect(() => {
+    let live = true;
+    setListRequest({ projectId, loading: true });
+    setListError("");
+    (async () => {
+      try {
+        const result = await commands.listTasks({ projectId, page, pageSize });
+        if (!live) return;
+        if (!result.ok) { setListError(result.error); return; }
+        const histories = canReadSubmissions ? await Promise.all(result.data.items.map(task => commands.listSubmissions({ taskId: task.id, page: 1, pageSize: 100, sortField: "version", sortDirection: "desc" }))) : [];
+        if (!live) return;
+        const failure = histories.find(history => !history.ok);
+        if (failure) { setListError(failure.error); return; }
+        setListing(result.data);
+        setLoadedProjectId(projectId);
+        setSubmissions(histories.flatMap(history => history.data.items));
+        setHistories(Object.fromEntries(result.data.items.map((task, index) => [task.id, { page: 1, total: histories[index]?.data.total || 0, loading: false }])));
+        if (page > 1 && page > Math.max(1, Math.ceil(result.data.total / pageSize))) setPage(Math.max(1, Math.ceil(result.data.total / pageSize)));
+      } catch {
+        if (live) setListError("Unable to load project tasks. Please try again.");
+      } finally {
+        if (live) setListRequest({ projectId, loading: false });
+      }
+    })();
+    return () => { live = false; };
+  }, [projectId, page, pageSize, commands, data.tasks, data.submissions, canReadSubmissions]);
+  const tasks = hasListing ? listing.items : [];
   const people = new Map(data.applications.map(application=>[application.id,application]));
   if(directoryPeople) for(const [id,person] of directoryPeople) people.set(id,person);
   for(const task of tasks) if(task.application) people.set(task.application.id,task.application);
@@ -905,16 +937,16 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
       </div>
       <div className={styles.taskStats}>
         <span>
-          <strong>{listing.total}</strong> assigned
+          <strong>{hasListing ? listing.total : "—"}</strong> assigned
         </span>
         <span>
           <strong>
-            {listing.counts?.statuses?.Approved || 0}
+            {hasListing ? listing.counts?.statuses?.Approved || 0 : "—"}
           </strong>{" "}
           approved
         </span>
         <span>
-          <strong>{reviewCount}</strong> awaiting review
+          <strong>{hasListing ? reviewCount : "—"}</strong> awaiting review
         </span>
       </div>
       {!assignees.length && (
@@ -1006,14 +1038,15 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
       )}
       <Tabs
         items={[
-          { id: "tasks", label: "Assigned tasks", count: listing.total },
-          ...(canReadSubmissions ? [{ id: "reviews", label: "Submissions on this page", count: submittedTasks.length }] : []),
+          { id: "tasks", label: "Assigned tasks", count: hasListing ? listing.total : undefined },
+          ...(canReadSubmissions ? [{ id: "reviews", label: "Submissions on this page", count: hasListing ? submittedTasks.length : undefined }] : []),
         ]}
         value={tab}
         onChange={setTab}
         label="Project workflow"
       />
       {listError && <p role="alert">{listError}</p>}
+      {listLoading && <LoadingIndicator label={tab === "tasks" ? "Loading project tasks…" : "Loading submissions…"} compact={tasks.length > 0} />}
       <div className={styles.tabBody}>
         {tab === "tasks" ? (
           tasks.length ? (
@@ -1070,12 +1103,12 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
                 </article>
               ))}
             </div>
-          ) : (
+          ) : !listLoading && !listError ? (
             <EmptyState
               title="No tasks assigned yet"
               description="Create a task for an active project member to start the submission and review cycle."
             />
-          )
+          ) : null
         ) : submittedTasks.length ? (
           <div className={styles.taskList}>
             {submittedTasks.map((task) => (
@@ -1094,14 +1127,14 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
               />
             ))}
           </div>
-        ) : (
+        ) : !listLoading && !listError ? (
           <EmptyState
             title="No submissions yet"
             description="Work submitted by this project’s interns will appear here for review."
           />
-        )}
+        ) : null}
       </div>
-      <Pagination page={page} pageSize={pageSize} total={listing.total} onChange={setPage}/>
+      {hasListing && <Pagination page={page} pageSize={pageSize} total={listing.total} onChange={setPage}/>}
     </section>
   );
 }

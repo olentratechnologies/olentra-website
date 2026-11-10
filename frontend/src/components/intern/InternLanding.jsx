@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useLenis } from "lenis/react";
 import {
@@ -14,8 +14,10 @@ import {
 } from "lucide-react";
 import ApplicationLaunch from "./ApplicationLaunch";
 import LaunchAnimation from "./LaunchAnimation";
+import LoadingIndicator from "@/components/LoadingIndicator";
 import { useInternship } from "./InternshipProvider";
 import { makeSampleResume, saveAttachment } from "@/lib/intern-attachments.mjs";
+import { isProgramAvailable, matchesCompensationMode, resolveProgramSelection } from "@/lib/intern/program-availability.mjs";
 import styles from "./intern.module.css";
 import { useSiteFeatures } from "@/components/site-features";
 
@@ -40,35 +42,37 @@ const artwork = {
   bars: [65, 755, 27, 29],
 };
 
+const commonTrackBenefits = [
+  "Learn from industry experts",
+  "Work on real projects",
+  "Get mentor guidance and project feedback",
+  "Build practical technical skills",
+  "Create projects for your portfolio",
+];
+
+const paidTrackBenefits = [
+  "Earn a monthly stipend",
+  "Contribute to live company projects",
+  "Collaborate with the development team",
+  "Access premium AI and development tools",
+];
+
 const tracks = [
   {
     id: "explorer",
-    type: "Type A",
     name: "Tech Explorer",
     subtitle: "Internship program",
     description:
       "Explore the world of technology with structured learning, mentorship and hands-on projects.",
-    benefits: [
-      "Learn from industry experts",
-      "Work on real projects",
-      "Get an Internship Certificate",
-    ],
     art: "book",
     cta: "Apply for Explorer",
   },
   {
     id: "innovator",
-    type: "Type B",
     name: "Tech Innovator",
     subtitle: "Internship program",
     description:
       "Go beyond learning. Contribute, build and innovate alongside the team.",
-    benefits: [
-      "Hands-on project experience",
-      "Access to premium AI tools",
-      "Contribute to live projects",
-      "Exclusive perks & more",
-    ],
     art: "trophy",
     cta: "Apply for Innovator",
   },
@@ -168,10 +172,17 @@ function BackgroundWaves() {
 export default function InternLanding() {
   const { commands, ready, sessionReady, connected, data, requestMagicLink } = useInternship();
   const { features, ready: featuresReady } = useSiteFeatures();
-  const canApply = Boolean(featuresReady && features.internships && features.applications && connected && data.settings.programEnabled && data.programs.some((program) => program.enabled));
+  const visibleTracks = tracks.filter((track) => matchesCompensationMode(data.programs.find((program) => program.id === track.id), data.settings.compensationMode));
+  const availablePrograms = useMemo(() => data.programs.filter((program) => isProgramAvailable(program, data.settings)), [data.programs, data.settings]);
+  const availableTrackIds = useMemo(() => availablePrograms.map((program) => program.id), [availablePrograms]);
+  const soleAvailableProgram = availablePrograms.length === 1 ? availablePrograms[0] : null;
+  const availableTrackIdsRef = useRef(availableTrackIds);
+  availableTrackIdsRef.current = availableTrackIds;
+  const canApply = Boolean(featuresReady && features.internships && features.applications && connected && availablePrograms.length);
   const canApplyRef = useRef(canApply);
   canApplyRef.current = canApply;
-  const [selectedTrack, setSelectedTrack] = useState("");
+  const [trackChoice, setTrackChoice] = useState("");
+  const selectedTrack = resolveProgramSelection(trackChoice, availableTrackIds);
   const [previewComplete, setPreviewComplete] = useState(false);
   const [launchPhase, setLaunchPhase] = useState("idle");
   const [showValidation, setShowValidation] = useState(false);
@@ -201,6 +212,17 @@ export default function InternLanding() {
       setPreviewComplete(false);
     }
   }, [canApply]);
+
+  useEffect(() => {
+    const nextTrack = resolveProgramSelection(trackChoice, availableTrackIds);
+    if (nextTrack === trackChoice) return;
+    setTrackChoice(nextTrack);
+    if (trackChoice && !availableTrackIds.includes(trackChoice)) {
+      setLaunchPhase("idle");
+      setPreviewComplete(false);
+      setSubmitError(nextTrack ? "Available internships changed. Please review your selected track." : "That track is no longer accepting applications. Choose an available track.");
+    } else setSubmitError("");
+  }, [trackChoice, availableTrackIds]);
 
   useEffect(() => {
     if (launchPhase !== "launching") return;
@@ -245,8 +267,8 @@ export default function InternLanding() {
   }
 
   function applyForTrack(event, track) {
-    if (!canApplyRef.current) { event.preventDefault(); return; }
-    setSelectedTrack(track);
+    if (submissionLock.current || launchPhase === "launching" || !canApplyRef.current || !availableTrackIdsRef.current.includes(track)) { event.preventDefault(); return; }
+    setTrackChoice(track);
     setPreviewComplete(false);
     scrollToSection(event, "internship-application");
     // Focusing without a second scroll keeps the anchor below the shared navbar.
@@ -257,6 +279,10 @@ export default function InternLanding() {
     event.preventDefault();
     if (!canApplyRef.current) {
       setSubmitError("New internship applications are currently closed.");
+      return;
+    }
+    if (!availableTrackIdsRef.current.includes(selectedTrack)) {
+      setSubmitError("Choose an internship track that is accepting applications.");
       return;
     }
     if (
@@ -310,6 +336,10 @@ export default function InternLanding() {
     try {
       const attachment = uploadedResume.current || await saveAttachment(file, "resume");
       uploadedResume.current = attachment;
+      if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) {
+        setSubmitError("That track is no longer accepting applications. Choose an available track.");
+        return;
+      }
       const result = await commands.submitApplication({
         ...input,
         resumeAttachmentId: attachment.id,
@@ -324,7 +354,7 @@ export default function InternLanding() {
         return;
       }
       setSavedApplication(result.data);
-      if (!canApplyRef.current) return;
+      if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) return;
       setLaunchPhase("launching");
     } catch (error) {
       const msg = error?.message || "Unable to save your application. Please try again.";
@@ -496,8 +526,11 @@ export default function InternLanding() {
           data-theme="light"
           aria-label="Internship opportunities"
         >
-          <div className={styles.trackGrid}>
-            {tracks.map((track) => (
+          {visibleTracks.length ? <div className={styles.trackGrid}>
+            {visibleTracks.map((track) => {
+              const program = data.programs.find((item) => item.id === track.id);
+              const trackBenefits = program?.stipend > 0 ? [...commonTrackBenefits, ...paidTrackBenefits] : commonTrackBenefits;
+              return (
               <article
                 key={track.id}
                 className={`${styles.trackCard} ${track.id === "innovator" ? styles.innovator : styles.explorer}`}
@@ -505,13 +538,16 @@ export default function InternLanding() {
                 <ReferenceArt name={track.art} className={styles.trackArt} />
                 <div className={styles.trackContent}>
                   <div className={styles.trackHeading}>
-                    <span className={styles.trackBadge}>{track.type}</span>
                     <h2>{track.name}</h2>
-                    <p className={styles.trackSubtitle}>{(() => { const program = data.programs.find((p) => p.id === track.id); return program?.fee == null || program?.stipend == null ? "Details to be announced" : `Fee: ₹${program.fee} · Stipend: ₹${program.stipend}`; })()}</p>
+                    <dl className={styles.trackDetails}>
+                      <div><dt>Stipend</dt><dd>{program?.stipend == null ? "To be announced" : program.stipend === 0 ? "Unpaid" : <><span>₹{program.stipend.toLocaleString("en-IN")}</span><span className={styles.trackPeriod}> / month</span></>}</dd></div>
+                      <div><dt>Program fee</dt><dd>{program?.fee == null ? "To be announced" : program.fee === 0 ? "Free" : `₹${program.fee.toLocaleString("en-IN")}`}</dd></div>
+                      <div><dt>Certificate</dt><dd>Free</dd></div>
+                    </dl>
                   </div>
                   <p className={styles.trackDescription}>{track.description}</p>
-                  <ul className={styles.trackBenefits}>
-                    {track.benefits.map((benefit) => (
+                  <ul className={styles.trackBenefits} role="list">
+                    {trackBenefits.map((benefit) => (
                       <li key={benefit}>
                         <span>
                           <Check size={11} strokeWidth={3} aria-hidden="true" />
@@ -521,7 +557,7 @@ export default function InternLanding() {
                     ))}
                   </ul>
                 </div>
-                {canApply && data.programs.find((p) => p.id === track.id)?.enabled && <a
+                {canApply && availableTrackIds.includes(track.id) && <a
                   href="#internship-application"
                   className={`${styles.primaryButton} ${styles.trackButton}`}
                   onClick={(event) => applyForTrack(event, track.id)}
@@ -529,8 +565,9 @@ export default function InternLanding() {
                   {track.cta} <ArrowRight size={14} aria-hidden="true" />
                 </a>}
               </article>
-            ))}
-          </div>
+              );
+            })}
+          </div> : ready ? <p className={styles.tracksEmpty} role="status">Internship opportunities will be announced soon.</p> : <LoadingIndicator label="Loading internship opportunities…" />}
         </section>
 
         <section
@@ -651,25 +688,28 @@ export default function InternLanding() {
                       />
                     </label>
                     <label htmlFor="intern-track">
-                      Select Internship Track <span>*</span>
-                      <select
+                      {soleAvailableProgram ? "Internship track" : "Select Internship Track"} <span>*</span>
+                      {soleAvailableProgram ? <>
+                        <input id="intern-track" type="text" value={soleAvailableProgram.name} readOnly/>
+                        <input type="hidden" name="track" value={selectedTrack}/>
+                      </> : <select
                         id="intern-track"
                         name="track"
                         value={selectedTrack}
                         onChange={(event) =>
-                          setSelectedTrack(event.target.value)
+                          setTrackChoice(event.target.value)
                         }
                         required
                       >
                         <option value="" disabled>
                           Choose a track
                         </option>
-                        {tracks.filter((track) => data.programs.find((program) => program.id === track.id)?.enabled).map((track) => (
+                        {tracks.filter((track) => availableTrackIds.includes(track.id)).map((track) => (
                           <option key={track.id} value={track.id}>
                             {track.name}
                           </option>
                         ))}
-                      </select>
+                      </select>}
                     </label>
                     <div className={styles.profileField}>
                       <label htmlFor="intern-linkedin">

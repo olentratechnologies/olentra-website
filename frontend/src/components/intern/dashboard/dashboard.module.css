@@ -93,6 +93,12 @@
   text-decoration: none;
   flex-shrink: 0;
 }
+.dashboard .brand :global([data-company-brand]) {
+  --ad-brand-ink: var(--ad-text, #334155);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
 .navigation {
   display: grid;
   gap: 3px;
@@ -150,11 +156,11 @@
   min-height: 221px;
   padding: 123px 20px 18px;
   overflow: hidden;
-  border: 1px solid #4078d179;
+  border: 1px solid var(--ad-promo-border, #4078d179);
   border-radius: 16px;
-  background:
+  background: var(--ad-promo-bg,
     radial-gradient(ellipse at 60% 34%, #15397273, transparent 61%),
-    linear-gradient(145deg, #10234c80, #0d1730 60%, #142b5d);
+    linear-gradient(145deg, #10234c80, #0d1730 60%, #142b5d));
 }
 .sidebarPlanet {
   position: absolute;
@@ -182,13 +188,13 @@
   border-radius: 20px;
   font-size: 12px;
   font-weight: 500;
-  background: linear-gradient(110deg, #244ca6a1, #15327366);
+  background: var(--ad-promo-bg, linear-gradient(110deg, #244ca6a1, #15327366));
   text-decoration: none;
   box-shadow: inset 0 1px #7ea6ff12;
   transition: background 0.2s;
 }
 .sidebarPromo a:hover {
-  background: #285cbb;
+  background: var(--ad-promo-border, #285cbb);
 }
 .sidebarFooter {
   margin-top: auto;
@@ -350,11 +356,11 @@
   justify-content: center;
   width: 39px;
   height: 39px;
-  border: 1px solid #dbe6ff;
+  border: 1px solid var(--ad-promo-border, #dbe6ff);
   border-radius: 50%;
-  background: linear-gradient(145deg, #132047, #263e73);
-  box-shadow: 0 1px 5px #1f316233;
-  color: #fff;
+  background: var(--ad-avatar-bg, linear-gradient(145deg, #132047, #263e73));
+  box-shadow: var(--ad-primary-shadow, 0 1px 5px #1f316233);
+  color: var(--ad-avatar-text, #fff);
   font-size: 13px;
 }
 .profileText {
@@ -588,9 +594,9 @@
 .periodTabs .periodActive {
   background: var(--ad-primary-gradient, linear-gradient(140deg, #507aff, #3071ff));
   color: var(--ad-primary-text, white);
-  box-shadow:
+  box-shadow: var(--ad-period-shadow,
     0 2px 5px #4970ff55,
-    inset 0 1px #93bdff;
+    inset 0 1px #93bdff);
 }
 .chartLegend {
   display: flex;
@@ -925,13 +931,13 @@
   border: 1px solid color-mix(in srgb, var(--ad-blue, #4282d4) 37%, transparent);
   border-top-color: var(--ad-border-strong, #77cfff);
   border-radius: 18px;
-  background:
+  background: var(--ad-quick-actions-bg,
     radial-gradient(ellipse at 1% 0%, #0045f8, transparent 56%),
     radial-gradient(ellipse at 66% 86%, var(--ad-inverse, #162d62), transparent 74%),
-    linear-gradient(145deg, #0045f8, var(--ad-inverse, #173a79) 60%, var(--ad-inverse, #0c1c44));
-  box-shadow:
+    linear-gradient(145deg, #0045f8, var(--ad-inverse, #173a79) 60%, var(--ad-inverse, #0c1c44)));
+  box-shadow: var(--ad-period-shadow,
     0 3px 5px #4c71af20,
-    inset 0 1px #b4eaff44;
+    inset 0 1px #b4eaff44);
   color: white;
 }
 .quickActions h2 {
@@ -2197,10 +2203,10 @@
 :global(html[data-intern-theme]) .navItem:hover { color: var(--ad-text); background: var(--ad-panel-soft); }
 :global(html[data-intern-theme]) .navActive,
 :global(html[data-intern-theme]) .navActive:hover {
-  color: #fff;
+  color: var(--ad-nav-active-text, #fff);
   border-color: var(--ad-primary-border);
   background: var(--ad-primary-gradient);
-  box-shadow: 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80;
+  box-shadow: var(--ad-primary-shadow, 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80);
 }
 :global(html[data-intern-theme]) .navActive span { font-weight: 650; }
 :global(html[data-intern-theme]) .sidebarFooter { color: var(--ad-subtle); }
@@ -2240,11 +2246,11 @@
 :global(html[data-intern-theme]) .dialogOverlay,
 :global(html[data-intern-theme]) .sidebarBackdrop { background: var(--ad-backdrop); }
 :global(html[data-intern-theme]) .primaryButton {
-  border: 1px solid #6bb6ff88;
+  border: 1px solid var(--ad-primary-button-border, #6bb6ff88);
   border-radius: 999px;
-  color: #fff;
+  color: var(--ad-primary-text, #fff);
   background: var(--ad-primary-gradient);
-  box-shadow: 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80;
+  box-shadow: var(--ad-primary-shadow, 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80);
 }
 @media (min-width: 681px) {
   :global(html[data-intern-theme]) .sidebar { inset: 12px auto 12px 12px; border-radius: 24px; }

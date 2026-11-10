@@ -43,7 +43,7 @@ section[id], [id^="services-"] { scroll-margin-top: 7rem; }
     overflow-x: hidden;
   }
 
-  /* Prevent browser autofill from breaking dark mode aesthetics */
+  /* Match themed fields while preserving the public site's dark autofill. */
   input:-webkit-autofill,
   input:-webkit-autofill:hover, 
   input:-webkit-autofill:focus, 
@@ -56,10 +56,10 @@ section[id], [id^="services-"] { scroll-margin-top: 7rem; }
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus,
   select:-webkit-autofill:active {
-    -webkit-text-fill-color: #ffffff !important;
-    caret-color: #ffffff !important;
-    -webkit-box-shadow: 0 0 0 1000px #05070b inset !important;
-    box-shadow: 0 0 0 1000px #05070b inset !important;
+    -webkit-text-fill-color: var(--ad-text, #ffffff) !important;
+    caret-color: var(--ad-text, #ffffff) !important;
+    -webkit-box-shadow: 0 0 0 1000px var(--ad-field, #05070b) inset !important;
+    box-shadow: 0 0 0 1000px var(--ad-field, #05070b) inset !important;
     transition: background-color 50000s ease-in-out 0s !important;
     font-family: inherit !important;
   }
