@@ -253,6 +253,7 @@ test("public route invariants and normalized route segments are preserved", () =
     "/dashboard/content",
     "/dashboard/content/media",
     "/dashboard/content/pages/:param/edit",
+    "/dashboard/email-templates",
     "/dashboard/enquiries",
     "/dashboard/enquiries/:param",
     "/dashboard/integrations",
