@@ -148,20 +148,26 @@ backend/
 
 ---
 
-## Environment Variables (`apps/web/.env.local` and service-local `.env` files)
+## Environment Variables (`apps/*/.env.local` and service-local `.env` files)
 
 The website template is [`apps/web/.env.example`](../apps/web/.env.example); the company workspace template is [`apps/admin/.env.example`](../apps/admin/.env.example).
 Each Bun service keeps its own `.env.example` beside its local runtime `.env`.
 
 ```bash
-# backend/email-server  (port 3001)
+# apps/web: contact proxy to backend/email-server (port 3001)
 CONTACT_BACKEND_URL=http://127.0.0.1:3001
-CONTACT_BACKEND_TOKEN=<shared secret>
+CONTACT_BACKEND_TOKEN=<same shared secret as the email server>
 CONTACT_SITE_ORIGIN=http://localhost:3000
 
-# backend/realtime-server  (canonical port 3003)
+# apps/web: browser endpoints of backend/realtime-server (port 3003)
 NEXT_PUBLIC_REALTIME_WS_URL=ws://127.0.0.1:3003/ws
 NEXT_PUBLIC_INTERNSHIP_BACKEND_URL=http://localhost:3003
+
+# apps/admin (port 3002)
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_REALTIME_WS_URL=ws://127.0.0.1:3003/ws
+# Production only: OLENTRA_FEATURE_ADMIN_EMAIL, OLENTRA_FEATURE_ADMIN_PASSWORD (12+ chars),
+# OLENTRA_FEATURE_SESSION_SECRET, and OLENTRA_FEATURE_SITE_ORIGIN once the admin domain is attached.
 ```
 
 `NEXT_PUBLIC_INTERN_BACKEND_URL` remains the deprecated HTTP fallback. The
@@ -175,7 +181,7 @@ The internship service's canonical server and operations variables are:
 ```bash
 REALTIME_PORT=3003
 REALTIME_HOST=0.0.0.0
-REALTIME_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+REALTIME_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:3002,http://127.0.0.1:3002
 PRESENCE_BROADCAST_INTERVAL_MS=100
 PRESENCE_LOG=false
 INTERNSHIP_MONGODB_URI=<runtime database>
@@ -199,16 +205,25 @@ URI; they never fall back to the runtime database.
 
 ## Running All Servers (Local Development)
 
-Open four terminal tabs:
+Start everything in one terminal:
 
 ```sh
-# Tab 1 — Next.js Frontend
+npm run dev:all
+```
+
+Or run each service in its own terminal tab:
+
+```sh
+# Tab 1 — Website (port 3000)
 npm run dev
 
-# Tab 2 — Contact Form Backend
+# Tab 2 — Company workspace (port 3002)
+npm run dev:admin
+
+# Tab 3 — Contact Form Backend (port 3001)
 npm run email:dev
 
-# Tab 3 — Unified Realtime Backend
+# Tab 4 — Unified Realtime Backend (port 3003)
 npm run realtime:dev
 ```
 

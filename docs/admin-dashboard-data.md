@@ -71,6 +71,8 @@ Browser-local demo account data does not authorize server writes by itself. The 
 
 In development, an automatic local demo session is available on loopback URLs when no live-control password is configured. Production disables automatic demo authorization by default, including on a loopback hostname. A local production preview can explicitly set `OLENTRA_FEATURE_ALLOW_LOCAL_DEMO=true` while binding the server to a loopback address. Setting it to `false` disables the shortcut in every mode. Public deployed hosts require configured live-control credentials.
 
+Set these on the company workspace app (`apps/admin`). `OLENTRA_FEATURE_STORE_PATH` must point to the same file in both apps; `OLENTRA_FEATURE_SITE_ORIGIN` is also read by the website as its canonical origin for redirects.
+
 | Environment variable | Purpose |
 | --- | --- |
 | `OLENTRA_FEATURE_ADMIN_PASSWORD` | Required deployed control password, at least 12 characters. |
@@ -79,7 +81,7 @@ In development, an automatic local demo session is available on loopback URLs wh
 | `OLENTRA_FEATURE_SESSION_SECRET` | Stable secret used to sign control-session cookies. |
 | `OLENTRA_FEATURE_SITE_ORIGIN` | Optional canonical origin for same-origin checks, for example `https://company.example` without a path or trailing slash. |
 | `OLENTRA_FEATURE_ALLOW_LOCAL_DEMO` | Development permits loopback demo authorization by default. Production requires an explicit `true` for a local loopback preview; `false` disables the shortcut in every mode. |
-| `OLENTRA_FEATURE_STORE_PATH` | Optional path to the durable server-side state file. |
+| `OLENTRA_FEATURE_STORE_PATH` | Optional path to the durable server-side state file; defaults to `.data/site-features.json` at the repository root. |
 
 The current persistence targets a persistent Node deployment with one shared filesystem path. Mount a durable volume for the runtime JSON file. A container or host with ephemeral storage loses its runtime settings when that storage is replaced. Separate replicas with separate files do not provide a shared fleet-wide database; distributed database storage is not implemented here.
 
