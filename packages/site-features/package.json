@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Website feature switches: rules, server store, admin session auth and the React provider shared by the website and the company workspace.",
+  "description": "Website feature switches: rules, server store, request-origin checks and the React provider shared by the website and the company workspace.",
   "exports": {
     "./rules": "./src/rules.mjs",
     "./client": "./src/client.js",

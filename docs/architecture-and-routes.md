@@ -96,7 +96,7 @@ backend/
 /intern/dashboard/staff          Staff accounts & RBAC roles
 
 /dashboard                     ← COMPANY WORKSPACE / WEBSITE CONTROLS
-                                 NOTE: This is a separate system from /intern/dashboard.
+                                 Shares staff sign-in with /intern/dashboard.
                                  Data comes from local JSON fixtures (browser-side demo)
                                  for most sections, EXCEPT website-controls which
                                  write to a real server-side JSON file via Next.js API routes.
@@ -106,7 +106,7 @@ backend/
 /dashboard/website-controls    ← LIVE feature switches (writes to .data/site-features.json)
 /dashboard/approvals           Content approval workflow (fixture data)
 /dashboard/content             Website content management (fixture data)
-/dashboard/team                Team management (fixture data)
+/dashboard/team                Staff account links and workspace role matrices
 /dashboard/settings            Company settings (fixture data)
 /dashboard/monitoring          System monitoring (fixture data)
 /dashboard/account             Account settings
@@ -136,7 +136,7 @@ backend/
 /dashboard/settings/company    Company profile settings
 /dashboard/settings/security   Security settings
 /dashboard/team/roles/[roleId] Role editor
-/dashboard/verify              Company workspace verification
+/dashboard/reset-password      Company workspace password reset
 /dashboard/website-controls/features/[featureId] Feature detail
 /dashboard/website-controls/navigation Navigation controls
 ```
@@ -166,8 +166,9 @@ NEXT_PUBLIC_INTERNSHIP_BACKEND_URL=http://localhost:3003
 # apps/admin (port 3002)
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_REALTIME_WS_URL=ws://127.0.0.1:3003/ws
-# Production only: OLENTRA_FEATURE_ADMIN_EMAIL, OLENTRA_FEATURE_ADMIN_PASSWORD (12+ chars),
-# OLENTRA_FEATURE_SESSION_SECRET, and OLENTRA_FEATURE_SITE_ORIGIN once the admin domain is attached.
+NEXT_PUBLIC_INTERNSHIP_BACKEND_URL=http://localhost:3003
+# Optional private server address: INTERNSHIP_BACKEND_URL=http://127.0.0.1:3003
+# OLENTRA_FEATURE_SITE_ORIGIN once the admin domain is attached.
 ```
 
 `NEXT_PUBLIC_INTERN_BACKEND_URL` remains the deprecated HTTP fallback. The
@@ -188,6 +189,7 @@ INTERNSHIP_MONGODB_URI=<runtime database>
 INTERNSHIP_JWT_SECRET=<production secret>
 INTERNSHIP_SENDER_EMAIL=<verified sender>
 INTERNSHIP_SITE_ORIGIN=http://localhost:3000
+INTERNSHIP_WORKSPACE_ORIGIN=http://localhost:3002
 INTERNSHIP_TEST_MONGODB_URI=<isolated test database>
 INTERNSHIP_TEST_STAFF_EMAIL=staff@example.test
 INTERNSHIP_TEST_STAFF_PASSWORD=<test password>
@@ -248,7 +250,6 @@ presence HTTP routes are `/health` and `/stats`; its WebSocket endpoints are
 | :--- | :--- | :--- | :--- |
 | Next.js | `POST` | `/api/contact` | Authenticated proxy to the contact server |
 | Next.js | `GET`/`PUT` | `/api/site-features` | Read or update live website feature switches |
-| Next.js | `GET`/`POST`/`DELETE` | `/api/site-features/session` | Website-controls session lifecycle |
 | Next.js | `GET` | `/api/site-features/stream` | Server-sent feature updates |
 | Contact | `GET` | `/health` | Contact service liveness |
 | Contact | `POST` | `/api/contact` | Send a contact enquiry through Resend |
@@ -264,6 +265,8 @@ presence HTTP routes are `/health` and `/stats`; its WebSocket endpoints are
 | Realtime | `POST` | `/intern/auth/reset-password` | Apply password reset |
 | Realtime | `POST` | `/intern/auth/refresh` | Rotate refresh token |
 | Realtime | `POST` | `/intern/auth/logout` | Revoke session |
+| Realtime | `GET` | `/intern/auth/session` | Verify current bearer session against the database |
+| Realtime | `POST` | `/intern/auth/change-password` | Change password and revoke all sessions |
 | Realtime | `POST` | `/intern/files` | Upload a resume or work attachment |
 | Realtime | `GET` | `/intern/files/:id` | Download an authorized file |
 

@@ -29,17 +29,11 @@ export function connectSiteFeatures(initial) {
   return () => { consumers -= 1; if (!consumers) { source?.close(); source = null; if (fallback) clearInterval(fallback); fallback = null; window.removeEventListener("focus", handleFocus); } };
 }
 function handleFocus() { refreshSiteFeatures().catch(() => {}); }
-export async function establishFeatureSession(credentials) {
-  const response = await fetch("/api/site-features/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(credentials) });
-  const result = await response.json(); return { ...result, ok: response.ok, status: response.status };
-}
-export async function bootstrapFeatureSession() {
-  const response = await fetch("/api/site-features/session", { cache: "no-store" }); const session = await response.json();
-  if (!session.authenticated && session.localDemo) return establishFeatureSession({ localDemo: true });
-  return { ...session, ok: Boolean(session.authenticated) };
-}
-export async function updateSiteFeature(environment, feature, enabled) {
-  const response = await fetch("/api/site-features", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ environment, feature, enabled }) });
-  const value = await response.json(); if (response.ok) acceptSiteFeatureState(value);
-  return response.ok ? { ok: true, value } : { ok: false, error: value.error || "Could not change website visibility.", status: response.status };
+/** Changes one switch. The company workspace passes its staff access token, which the server verifies. */
+export async function updateSiteFeature(environment, feature, enabled, accessToken) {
+  const response = await fetch("/api/site-features", { method: "PUT", headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ environment, feature, enabled }) });
+  let value = {};
+  try { value = await response.json(); } catch {}
+  if (response.ok) acceptSiteFeatureState(value);
+  return response.ok ? { ok: true, value, status: response.status } : { ok: false, error: value.error || "Could not change website visibility.", status: response.status };
 }

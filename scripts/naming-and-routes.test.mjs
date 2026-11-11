@@ -158,8 +158,9 @@ test("canonical internship scripts and compatibility aliases are present", () =>
     "internship:bench:latency",
     "internship:bootstrap",
     "internship:promote-admin",
+    "internship:admin",
   ]) assert.equal(typeof scripts[name], "string", `${name} is missing`);
-  for (const suffix of ["dev", "start", "test", "bench", "bench:latency", "bootstrap", "promote-admin"]) {
+  for (const suffix of ["dev", "start", "test", "bench", "bench:latency", "bootstrap", "promote-admin", "admin"]) {
     assert.equal(scripts[`intern:${suffix}`], `npm run internship:${suffix}`);
   }
 });
@@ -223,7 +224,7 @@ test("public route invariants and normalized route segments are preserved", () =
   // The company workspace is its own app; the website keeps only the read-only feature endpoints.
   for (const route of adminRoutes) assert.ok(route.startsWith("/dashboard") || route.startsWith("/api/site-features"), `unexpected admin route: ${route}`);
   for (const route of webRoutes) assert.equal(route.startsWith("/dashboard"), false, `website must not serve ${route}`);
-  assert.equal(webRoutes.has("/api/site-features/session"), false, "website must not expose the website-controls session");
+  for (const removed of ["/api/site-features/session", "/dashboard/verify"]) assert.equal(routes.has(removed), false, `${removed} must stay removed`);
   for (const route of ["/api/site-features", "/api/site-features/stream"]) assert.ok(webRoutes.has(route) && adminRoutes.has(route), `${route} must be served by both apps`);
   const expectedRoutes = new Set([
     "/",
@@ -231,7 +232,6 @@ test("public route invariants and normalized route segments are preserved", () =
     "/accessibility",
     "/api/contact",
     "/api/site-features",
-    "/api/site-features/session",
     "/api/site-features/stream",
     "/blogs",
     "/blogs/:param",
@@ -264,6 +264,7 @@ test("public route invariants and normalized route segments are preserved", () =
     "/dashboard/localization",
     "/dashboard/localization/:param/:param",
     "/dashboard/login",
+    "/dashboard/reset-password",
     "/dashboard/monitoring",
     "/dashboard/monitoring/alert-rules",
     "/dashboard/monitoring/incidents/:param",
@@ -273,7 +274,6 @@ test("public route invariants and normalized route segments are preserved", () =
     "/dashboard/settings/security",
     "/dashboard/team",
     "/dashboard/team/roles/:param",
-    "/dashboard/verify",
     "/dashboard/website-controls",
     "/dashboard/website-controls/features/:param",
     "/dashboard/website-controls/navigation",

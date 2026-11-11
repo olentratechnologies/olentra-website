@@ -199,9 +199,9 @@ export const designRoutes = [
   },
   {
     "id": 33,
-    "title": "Sign-in verification",
+    "title": "Reset password",
     "module": "Authentication",
-    "href": "/dashboard/verify"
+    "href": "/dashboard/reset-password"
   },
   {
     "id": 34,

@@ -308,79 +308,11 @@
         }
       ]
     },
-    "auth-accounts": [
-      {
-        "id": "owner",
-        "email": "owner@example.com",
-        "name": "Company owner",
-        "role": "Owner",
-        "enabled": true,
-        "passwordDigest": "dcc826ab33c1c975fb3cc3a13914ed38ee2d3a0ab9cf131c8ebdca03f41e2fac",
-        "mfaCode": "123456",
-        "recoveryDigests": [
-          "788628056f8e823e64701408b6a557d20bed7b8f1661060b6d823e62818f7315"
-        ]
-      },
-      {
-        "id": "admin-01",
-        "email": "admin@example.com",
-        "name": "Admin 01",
-        "role": "Administrator",
-        "enabled": true,
-        "passwordDigest": "dcc826ab33c1c975fb3cc3a13914ed38ee2d3a0ab9cf131c8ebdca03f41e2fac",
-        "mfaCode": "123456",
-        "recoveryDigests": [
-          "2596636e64402aee2a3f2c6ee8cbea0f064b5eb25bef635506c5dbac4d3fc493"
-        ]
-      },
-      {
-        "id": "editor-02",
-        "email": "editor@example.com",
-        "name": "Editor 02",
-        "role": "Editor",
-        "enabled": true,
-        "passwordDigest": "dcc826ab33c1c975fb3cc3a13914ed38ee2d3a0ab9cf131c8ebdca03f41e2fac",
-        "mfaCode": "123456",
-        "recoveryDigests": [
-          "d08a368193debcf6d4c01933de338df9048e7a6996aa860675bd02e0f44bf5e7"
-        ]
-      },
-      {
-        "id": "recruiter-01",
-        "email": "recruiter@example.com",
-        "name": "Recruiter 01",
-        "role": "Recruiter",
-        "enabled": true,
-        "passwordDigest": "dcc826ab33c1c975fb3cc3a13914ed38ee2d3a0ab9cf131c8ebdca03f41e2fac",
-        "mfaCode": "123456",
-        "recoveryDigests": [
-          "20b0edf521e8784b1b4af13d01730bdae65441cee6e1f30dd3e4d9790893e9d7"
-        ]
-      },
-      {
-        "id": "analyst-01",
-        "email": "analyst@example.com",
-        "name": "Analyst 01",
-        "role": "Analyst",
-        "enabled": true,
-        "passwordDigest": "dcc826ab33c1c975fb3cc3a13914ed38ee2d3a0ab9cf131c8ebdca03f41e2fac",
-        "mfaCode": "123456",
-        "recoveryDigests": [
-          "aca0ed74e895cffe02f841af896e236e4561e2724d7f055f9a25622819bad313"
-        ]
-      }
-    ],
+    "auth-accounts": [],
     "auth-session": {
-      "status": "authenticated",
-      "userId": "owner",
-      "role": "Owner",
-      "expiresAt": null,
-      "verifiedAt": "2026-11-08T12:00:00.000Z"
-    },
-    "auth-pending": null,
-    "auth-reset": null,
-    "auth-trusted-devices": [],
-    "auth-remembered-email": ""
+      "status": "anonymous",
+      "userId": null
+    }
   },
   "templates": {
     "feature-rule-": {
@@ -443,13 +375,6 @@
         "label": "Existing intern portal"
       }
     ],
-    "authDemo": {
-      "password": "OlentraDemo2026!",
-      "mfaCode": "123456",
-      "recoveryFormat": "<UPPERCASE ACCOUNT ID>-RECOVERY-2026",
-      "defaultPasswordDigest": "dcc826ab33c1c975fb3cc3a13914ed38ee2d3a0ab9cf131c8ebdca03f41e2fac",
-      "resetCode": "654321"
-    },
     "pageHeader": {
       "description": "Your website, operations and pending work in one place."
     }

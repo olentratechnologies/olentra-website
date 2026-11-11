@@ -1,15 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createInitialState, executeCommand, updateDataset, validateSnapshot } from "../src/lib/admin/model.mjs";
 import { can, effectiveFeatures } from "../src/lib/admin/selectors.mjs";
 
 const parts = ["core", "content", "operations", "governance"].map((name) => JSON.parse(readFileSync(new URL(`../src/data/admin/${name}.json`, import.meta.url), "utf8")));
-const initial = () => createInitialState(parts);
-const digest = (text) => createHash("sha256").update(text).digest("hex");
-const passwordDigest = digest(parts[0].reference.authDemo.password);
-const account = (state, id = "owner") => state.datasets["auth-accounts"].find((row) => row.id === id);
+import { STAFF, signedIn } from "./support/staff-session.mjs";
+// Workspaces start signed in as the owner, as a verified staff session would.
+const initial = () => signedIn(createInitialState(parts));
+const LEVEL = { owner: "owner", "admin-01": "administrator", "editor-02": "editor", "recruiter-01": "recruiter", "analyst-01": "analyst" };
 const hoursAfter = (at, hours) => new Date(Date.parse(at) + hours * 3600000).toISOString();
 
 function run(state, type, payload = {}, options = {}) {
@@ -30,109 +29,9 @@ function reject(state, type, payload = {}, errorPattern, options = {}) {
   return result;
 }
 
-function beginSignIn(state, id = "owner", options = {}) {
-  return run(state, "auth.signIn", { email: account(state, id).email, passwordDigest }, options);
-}
-
 function signIn(state, id = "owner", options = {}) {
-  const begun = beginSignIn(state, id, options);
-  if (!begun.value.requiresMfa) return begun.state;
-  return run(begun.state, "auth.verify", { code: account(begun.state, id).mfaCode }, options).state;
+  return signedIn(state, LEVEL[id] || id, options);
 }
-
-test("wrong password leaves the signed-out workspace unchanged", () => {
-  const state = run(initial(), "auth.signOut").state;
-  reject(state, "auth.signIn", { email: account(state).email, passwordDigest: digest("WrongPassword2026!") }, /email or password/i);
-  assert.equal(state.datasets["auth-session"].status, "anonymous");
-  assert.equal(state.datasets["auth-pending"], null);
-});
-
-test("correct password requires MFA; a wrong code consumes an attempt before a valid code authenticates", () => {
-  let state = run(initial(), "auth.signOut").state;
-  const begun = beginSignIn(state);
-  state = begun.state;
-  assert.equal(begun.value.requiresMfa, true);
-  assert.equal(state.datasets["auth-session"].status, "pending");
-  assert.equal(state.datasets["auth-pending"].userId, "owner");
-  assert.equal(state.datasets["auth-pending"].attempts, 0);
-  const invalid = executeCommand(state, "auth.verify", { code: "999999" });
-  assert.equal(invalid.ok, false);
-  assert.match(invalid.error, /incorrect/i);
-  assert.equal(invalid.state.datasets["auth-pending"].attempts, 1);
-  assert.equal(invalid.state.datasets["auth-session"].status, "pending");
-  assert.equal(state.datasets["auth-pending"].attempts, 0, "The failed attempt still must not mutate its input");
-  state = run(invalid.state, "auth.verify", { code: account(invalid.state).mfaCode }).state;
-  assert.equal(state.datasets["auth-session"].status, "authenticated");
-  assert.equal(state.datasets["auth-session"].userId, "owner");
-  assert.equal(state.datasets["auth-pending"], null);
-  assert.ok(Date.parse(state.datasets["auth-session"].expiresAt) > Date.parse(state.meta.clock));
-});
-
-test("a recovery code authenticates once and cannot be reused", () => {
-  let state = run(initial(), "auth.signOut").state;
-  const recoveryDigest = digest("OWNER-RECOVERY-2026");
-  assert.ok(account(state).recoveryDigests.includes(recoveryDigest), "The example recovery code matches the JSON digest");
-  state = beginSignIn(state).state;
-  state = run(state, "auth.verify", { recoveryDigest }).state;
-  assert.equal(state.datasets["auth-session"].status, "authenticated");
-  assert.equal(account(state).recoveryDigests.includes(recoveryDigest), false);
-  state = run(state, "auth.signOut").state;
-  state = beginSignIn(state).state;
-  const reused = executeCommand(state, "auth.verify", { recoveryDigest });
-  assert.equal(reused.ok, false);
-  assert.equal(reused.state.datasets["auth-session"].status, "pending");
-  assert.equal(reused.state.datasets["auth-pending"].attempts, 1);
-  assert.equal(account(reused.state).recoveryDigests.includes(recoveryDigest), false);
-});
-
-test("a trusted device skips MFA for seven days and requires it again at expiry", () => {
-  let state = run(initial(), "auth.signOut").state;
-  state = beginSignIn(state).state;
-  const trustedAt = state.meta.clock;
-  state = run(state, "auth.verify", { code: account(state).mfaCode, trust: true }).state;
-  const trusted = state.datasets["auth-trusted-devices"].find((row) => row.userId === "owner");
-  assert.equal(Date.parse(trusted.expiresAt) - Date.parse(trustedAt), 7 * 86400000);
-  state = run(state, "auth.signOut").state;
-  const withinWindow = beginSignIn(state, "owner", { now: hoursAfter(trustedAt, 6 * 24) });
-  state = withinWindow.state;
-  assert.equal(withinWindow.value.requiresMfa, false);
-  assert.equal(state.datasets["auth-session"].status, "authenticated");
-  state = run(state, "auth.signOut").state;
-  const atExpiry = beginSignIn(state, "owner", { now: trusted.expiresAt });
-  assert.equal(atExpiry.value.requiresMfa, true);
-  assert.equal(atExpiry.state.datasets["auth-session"].status, "pending");
-});
-
-test("password change verifies the current digest and changes only the account digest", () => {
-  let state = initial();
-  const beforeAccounts = structuredClone(state.datasets["auth-accounts"]);
-  const nextPassword = "AChangedDemoPassword2026!";
-  const nextDigest = digest(nextPassword);
-  reject(state, "auth.password.change", { currentDigest: digest("incorrect"), nextDigest }, /current password/i);
-  reject(state, "auth.password.change", { currentDigest: passwordDigest, nextDigest: passwordDigest }, /different/i);
-  state = run(state, "auth.password.change", { currentDigest: passwordDigest, nextDigest }).state;
-  assert.deepEqual(account(state), { ...beforeAccounts.find((row) => row.id === "owner"), passwordDigest: nextDigest });
-  assert.deepEqual(state.datasets["auth-accounts"].filter((row) => row.id !== "owner"), beforeAccounts.filter((row) => row.id !== "owner"));
-  assert.equal(JSON.stringify(state).includes(nextPassword), false, "Plaintext password must not enter JSON state");
-  state = run(state, "auth.signOut").state;
-  reject(state, "auth.signIn", { email: account(state).email, passwordDigest }, /incorrect/i);
-  assert.equal(run(state, "auth.signIn", { email: account(state).email, passwordDigest: nextDigest }).value.requiresMfa, true);
-});
-
-test("password reset requires the JSON reset code and an unexpired request", () => {
-  let state = run(initial(), "auth.signOut").state;
-  state = run(state, "auth.reset.request", { email: account(state).email }).state;
-  const nextDigest = digest("ResetDemoPassword2026!");
-  const beforeDigest = account(state).passwordDigest;
-  reject(state, "auth.reset.confirm", { code: "000000", nextDigest }, /reset code/i);
-  assert.equal(account(state).passwordDigest, beforeDigest);
-  reject(state, "auth.reset.confirm", { code: state.reference.core.authDemo.resetCode, nextDigest }, /new reset code|request/i, { now: state.datasets["auth-reset"].expiresAt });
-  state = run(state, "auth.reset.confirm", { code: state.reference.core.authDemo.resetCode, nextDigest }).state;
-  assert.equal(account(state).passwordDigest, nextDigest);
-  assert.equal(state.datasets["auth-reset"], null);
-  assert.equal(state.datasets["auth-session"].status, "anonymous");
-  reject(state, "auth.reset.confirm", { code: state.reference.core.authDemo.resetCode, nextDigest: digest("AnotherPassword!") }, /request/i);
-});
 
 test("roles enforce read-only analytics access and reject unauthorized feature/content changes", () => {
   let state = signIn(run(initial(), "auth.signOut").state, "analyst-01");
@@ -230,7 +129,8 @@ test("snapshot validation rejects duplicate IDs, unsafe properties, orphan refer
     ["unsafe properties", (state) => Object.defineProperty(state.datasets, "__proto__", { value: { polluted: true }, enumerable: true }), /unsafe/i],
     ["unknown program", (state) => { state.datasets["olentra-admin-applications-v1"][0].programId = "missing-program"; }, /unknown program/i],
     ["unknown task assignee", (state) => { state.datasets["olentra-admin-project-tasks-website-refresh"][0].internId = "missing-intern"; }, /invalid assignee|unknown intern/i],
-    ["last owner disabled", (state) => { for (const row of state.datasets["auth-accounts"]) if (row.role === "Owner") row.enabled = false; }, /active owner/i],
+    ["second stored account", (state) => { state.datasets["auth-accounts"].push({ ...STAFF.editor, enabled: true }); }, /only the signed-in account/i],
+    ["stored demo credentials", (state) => { state.datasets["auth-accounts"][0].passwordDigest = "a".repeat(64); }, /credentials/i],
   ];
   for (const [name, mutate, pattern] of cases) await t.test(name, () => {
     const candidate = structuredClone(baseline);
@@ -239,18 +139,6 @@ test("snapshot validation rejects duplicate IDs, unsafe properties, orphan refer
     assert.equal(validateSnapshot(baseline, initial()), true, "Rejecting a candidate must not alter the baseline");
   });
 });
-
-test("a clock tick expires an authenticated session at its timeout boundary", () => {
-  let state = signIn(run(initial(), "auth.signOut").state);
-  const expiresAt = state.datasets["auth-session"].expiresAt;
-  assert.equal(can(state, "Content & Media", "edit"), true);
-  state = run(state, "clock.tick", {}, { now: expiresAt }).state;
-  assert.equal(state.datasets["auth-session"].status, "anonymous");
-  assert.equal(can(state, "Content & Media", "edit"), false);
-  assert.ok(state.datasets["olentra-admin-notifications-v1"].some((row) => row.title === "Demo session expired"));
-  reject(state, "features.publish", { environment: "Production", values: { services: false } }, /role|cannot/i);
-});
-
 
 test("an expired session cannot perform a mutation before the next clock tick", () => {
   let state = initial();
@@ -270,19 +158,17 @@ test("generic JSON collection edits enforce role permissions and foreign keys", 
   assert.throws(() => updateDataset(state, "olentra-admin-applications-v1", [...applications, { ...applications[0], id: "bad-program", programId: "missing" }]), /unknown program/i);
   state = signIn(run(state, "auth.signOut").state, "analyst-01");
   assert.throws(() => updateDataset(state, "olentra-admin-content-v1", []), /role|cannot/i);
-  assert.throws(() => updateDataset(state, "admin-team-members", []), /role|cannot/i);
 });
 
 
-test("backup recovery preserves current authenticated account identities", () => {
+test("backup recovery preserves the current signed-in staff identity", () => {
   let state = initial();
   const backup = run(state, "backup.create", { label: "Identity preservation" });
-  state = backup.state;
-  state = run(state, "settings.save", { section: "account", values: { ...state.datasets["olentra-admin-account-v1"], name: "Current owner", email: "current-owner@example.com" } }).state;
-  const id = state.datasets["olentra-admin-backups-v1"][0].id;
+  const id = backup.state.datasets["olentra-admin-backups-v1"][0].id;
+  state = signIn(backup.state, "admin-01");
   const result = run(state, "backup.restore", { id, scope: "Content and configuration", confirmation: "RESTORE" });
-  assert.equal(result.state.datasets["auth-accounts"].find(row => row.id === "owner").email, "current-owner@example.com");
-  assert.equal(result.state.datasets["admin-team-members"].find(row => row.id === "owner").name, "Current owner");
+  assert.equal(result.state.datasets["auth-session"].userId, STAFF.administrator.id);
+  assert.deepEqual(result.state.datasets["auth-accounts"].map(row => row.email), [STAFF.administrator.email]);
 });
 
 

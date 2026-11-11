@@ -15,7 +15,8 @@
     "bench:latency": "bun scripts/latency-bench.ts",
     "bootstrap": "bun scripts/bootstrap.ts",
     "promote-admin": "bun scripts/promote-admin.ts",
-    "healthcheck": "bun scripts/healthcheck.ts"
+    "healthcheck": "bun scripts/healthcheck.ts",
+    "admin-access": "bun scripts/admin-access.ts"
   },
   "devDependencies": {
     "bun-types": "latest",

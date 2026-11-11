@@ -18,6 +18,14 @@ export const getServerStatus=()=>serverStatus;
 export const getDataset=(key,fallback)=>resolveDataset(database,key,fallback);
 export const getServerDataset=(key,fallback)=>resolveDataset(initialDatabase,key,fallback);
 const actionNow=()=>new Date(Date.parse(database.meta.clock)+Math.max(0,Date.now()-anchor)).toISOString();
+// Staff sessions belong to this tab. Shared browser content, imported snapshots,
+// and resets must never replace the identity verified by this tab's provider.
+function withTabIdentity(next,current=database,keepProfile=true){
+  const datasets={...next.datasets};
+  for(const key of ["auth-session","auth-accounts",...(keepProfile?["olentra-admin-account-v1"]:[])])datasets[key]=current.datasets[key];
+  return{...next,datasets};
+}
+function storedDatasets(next){return{...next.datasets,"auth-session":{status:"anonymous",userId:null},"auth-accounts":[]};}
 
 function shareUnchanged(previous,next){
   for(const [key,value]of Object.entries(next.datasets)){const before=previous.datasets[key];if(before===value||before!==undefined&&JSON.stringify(before)===JSON.stringify(value))next.datasets[key]=before;}
@@ -25,7 +33,7 @@ function shareUnchanged(previous,next){
 }
 function persist(next){
   if(typeof window==="undefined")return;
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify({meta:{...next.meta,wallSavedAt:Date.now()},datasets:next.datasets}));status={ready:true,error:null,persisted:true};}
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify({meta:{...next.meta,wallSavedAt:Date.now()},datasets:storedDatasets(next)}));status={ready:true,error:null,persisted:true};}
   catch{status={ready:true,persisted:false,error:"Browser storage is unavailable or full. Changes remain in memory; export the JSON snapshot to keep them."};}
 }
 function overlayLiveFeatures(next){
@@ -53,7 +61,7 @@ export function syncSiteFeatureState(state){
 }
 export function hydrateDatabase(){
   if(hydrated||typeof window==="undefined")return;hydrated=true;
-  try{const text=localStorage.getItem(STORAGE_KEY);if(text){const parsed=migrateSnapshot(JSON.parse(text));validateSnapshot(parsed,initialDatabase);database={...initialDatabase,meta:parsed.meta,datasets:parsed.datasets};if(Number.isFinite(parsed.meta.wallSavedAt)){const elapsed=Math.max(0,Date.now()-parsed.meta.wallSavedAt);database.meta={...database.meta,clock:new Date(Date.parse(parsed.meta.clock)+elapsed).toISOString()};}}status={ready:true,error:null,persisted:true};}
+  try{const text=localStorage.getItem(STORAGE_KEY);if(text){const parsed=migrateSnapshot(JSON.parse(text));validateSnapshot(parsed,initialDatabase);database=withTabIdentity({...initialDatabase,meta:parsed.meta,datasets:parsed.datasets},initialDatabase,false);if(Number.isFinite(parsed.meta.wallSavedAt)){const elapsed=Math.max(0,Date.now()-parsed.meta.wallSavedAt);database.meta={...database.meta,clock:new Date(Date.parse(parsed.meta.clock)+elapsed).toISOString()};}}status={ready:true,error:null,persisted:true};}
   catch{database=initialDatabase;status={ready:true,persisted:false,error:"Saved dashboard data could not be loaded. The JSON fixtures are available; export or reset your local scenario in Company settings."};}
   database=overlayLiveFeatures(database);anchor=Date.now();emit();
 }
@@ -69,20 +77,17 @@ export function command(type,payload={}){
 }
 export function exportData(){
   hydrateDatabase();if(!can({...database,meta:{...database.meta,clock:actionNow()}},"Settings & Backups","manage"))return{error:"Sign in with a role that can export the workspace database."};
-  return clone({format:"olentra-admin-database",meta:{...database.meta,schemaVersion:2},datasets:database.datasets});
+  return clone({format:"olentra-admin-database",meta:{...database.meta,schemaVersion:2},datasets:storedDatasets(database)});
 }
 export function importData(value){
-  hydrateDatabase();try{if(!can({...database,meta:{...database.meta,clock:actionNow()}},"Settings & Backups","manage"))throw new Error("Sign in with a role that can import workspace data.");const migrated=migrateSnapshot(value);validateSnapshot(migrated,initialDatabase);const next={...initialDatabase,meta:{...migrated.meta,revision:database.meta.revision+1,lastAction:"data.import"},datasets:clone(migrated.datasets)};commit(next);return{ok:true,persisted:status.persisted};}catch(error){return{ok:false,error:error.message};}
+  hydrateDatabase();try{if(!can({...database,meta:{...database.meta,clock:actionNow()}},"Settings & Backups","manage"))throw new Error("Sign in with a role that can import workspace data.");const migrated=migrateSnapshot(value);validateSnapshot(migrated,initialDatabase);const next=withTabIdentity({...initialDatabase,meta:{...migrated.meta,revision:database.meta.revision+1,lastAction:"data.import"},datasets:clone(migrated.datasets)});commit(next);return{ok:true,persisted:status.persisted};}catch(error){return{ok:false,error:error.message};}
 }
 export function resetData(){
-  hydrateDatabase();if(!can({...database,meta:{...database.meta,clock:actionNow()}},"Settings & Backups","manage"))return{ok:false,error:"Sign in with a role that can reset the workspace data."};const next=clone(initialDatabase);next.meta.revision=database.meta.revision+1;next.meta.lastAction="data.reset";commit(next);return{ok:true};
+  hydrateDatabase();if(!can({...database,meta:{...database.meta,clock:actionNow()}},"Settings & Backups","manage"))return{ok:false,error:"Sign in with a role that can reset the workspace data."};const next=withTabIdentity(clone(initialDatabase));next.meta.revision=database.meta.revision+1;next.meta.lastAction="data.reset";commit(next);return{ok:true};
 }
 export function startDataClock(){
   if(typeof window==="undefined")return()=>{};hydrateDatabase();
   const timer=setInterval(()=>command("clock.tick",{}),30000);
-  const sync=event=>{if(event.key!==STORAGE_KEY||!event.newValue)return;try{const next=migrateSnapshot(JSON.parse(event.newValue));validateSnapshot(next,initialDatabase);database=shareUnchanged(database,{...initialDatabase,meta:next.meta,datasets:next.datasets});anchor=Date.now();status={ready:true,error:null,persisted:true};emit();}catch{status={...status,error:"A different tab supplied invalid dashboard data; it was ignored."};emit();}};
+  const sync=event=>{if(event.key!==STORAGE_KEY||!event.newValue)return;try{const next=migrateSnapshot(JSON.parse(event.newValue));validateSnapshot(next,initialDatabase);database=shareUnchanged(database,withTabIdentity({...initialDatabase,meta:next.meta,datasets:next.datasets}));anchor=Date.now();status={ready:true,error:null,persisted:true};emit();}catch{status={...status,error:"A different tab supplied invalid dashboard data; it was ignored."};emit();}};
   window.addEventListener("storage",sync);return()=>{clearInterval(timer);window.removeEventListener("storage",sync);};
-}
-export async function hashDemoSecret(value){
-  if(!globalThis.crypto?.subtle)throw new Error("Use localhost or HTTPS to verify demo credentials.");const bytes=new TextEncoder().encode(value);const digest=await crypto.subtle.digest("SHA-256",bytes);return Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
 }

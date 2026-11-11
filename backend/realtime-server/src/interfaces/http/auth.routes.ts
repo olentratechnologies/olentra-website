@@ -3,6 +3,7 @@ import type { createInternshipAuth } from "../../modules/auth/auth.service";
 import type { createInternshipMailer } from "../../infrastructure/email/mailer";
 import { DomainError } from "../../shared/errors";
 import { bearerToken } from "./middleware";
+import { clientAddress } from "../../modules/auth/login-throttle";
 import { cookieName } from "./router";
 import { parseCookies, refreshCookie, safeContext } from "./cookies";
 
@@ -14,6 +15,8 @@ export const AUTH_PATHS = {
   resetPassword: "/intern/auth/reset-password",
   refresh: "/intern/auth/refresh",
   logout: "/intern/auth/logout",
+  session: "/intern/auth/session",
+  changePassword: "/intern/auth/change-password",
 } as const;
 
 export const isAuthPath = (pathname: string) => pathname.startsWith("/intern/auth/");
@@ -24,13 +27,20 @@ type Mailer = ReturnType<typeof createInternshipMailer>;
 type SendJson = (body: unknown, origin: string | null, status?: number, extra?: Record<string, string>) => Response;
 
 /** HTTP authentication adapter. Domain authorization and token claims stay in their modules. */
-export function createAuthRoutes({ auth, domain, mailer, siteOrigin, sendJson }: {
+export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin = "http://localhost:3002", sendJson }: {
   auth: Auth;
   domain: Domain;
   mailer: Mailer;
   siteOrigin: string;
+  /** Company workspace origin; staff who reset from the workspace return there. */
+  workspaceOrigin?: string;
   sendJson: SendJson;
 }) {
+  const requireBearer = async (request: Request) => {
+    const token = bearerToken(request);
+    if (!token) throw new DomainError("UNAUTHENTICATED", "Sign in to continue.");
+    return auth.verify(token);
+  };
   const refresh = async (request: Request, origin: string | null) => {
     const context = safeContext(request.headers.get("x-intern-context"));
     if (!context) throw new DomainError("INVALID_REQUEST", "A browser session is required.");
@@ -43,11 +53,11 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, sendJson }:
   };
 
   return {
-    async login(request: Request, origin: string | null) {
+    async login(request: Request, origin: string | null, peerAddress = "direct") {
       const context = safeContext(request.headers.get("x-intern-context"));
       if (!context) throw new DomainError("INVALID_REQUEST", "A browser session is required.");
       const input = await request.json() as { email?: string; password?: string };
-      const result = await auth.login(String(input.email || ""), String(input.password || ""));
+      const result = await auth.login(String(input.email || ""), String(input.password || ""), clientAddress(request, peerAddress, /^(true|1)$/i.test(process.env.REALTIME_TRUST_PROXY || "")));
       return sendJson({ ok: true, data: { account: result.account, token: result.token, expiresAt: result.expiresAt } }, origin, 200, { "Set-Cookie": refreshCookie(request, context, result.refreshToken, 604800) });
     },
 
@@ -76,7 +86,7 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, sendJson }:
     },
 
     async requestPasswordReset(request: Request, origin: string | null) {
-      const input = await request.json() as { email?: string };
+      const input = await request.json() as { email?: string; app?: string };
       const email = String(input.email || "").trim().toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Please enter a valid email address.");
       let user = await domain.findUserByEmail(email);
@@ -88,8 +98,10 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, sendJson }:
         }
       }
       if (user) {
-        const token = await auth.generatePasswordResetToken(user.email, user._id);
-        await mailer.sendPasswordResetLink({ to: user.email, name: user.name, resetUrl: `${siteOrigin}/intern/reset-password?token=${token}` });
+        const token = await auth.generatePasswordResetToken(user.email, user._id, Number(user.sessionVersion) || 1);
+        const workspace = input.app === "workspace" && user.role === "company";
+        const resetUrl = workspace ? `${workspaceOrigin}/dashboard/reset-password?token=${token}` : `${siteOrigin}/intern/reset-password?token=${token}`;
+        await mailer.sendPasswordResetLink({ to: user.email, name: user.name, resetUrl });
       }
       return sendJson({ ok: true, data: { message: "If an account exists with this email, password reset instructions have been sent to your inbox." } }, origin);
     },
@@ -100,12 +112,26 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, sendJson }:
       const password = String(input.password || "");
       if (!rawToken) throw new DomainError("INVALID_REQUEST", "A reset token is required.");
       if (password.length < 8 || password.length > 256) throw new DomainError("INVALID_REQUEST", "Password must be at least 8 characters.");
-      const { userId } = await auth.verifyPasswordResetToken(rawToken);
-      await domain.selfResetPassword(userId, password);
+      const { userId, version } = await auth.verifyPasswordResetToken(rawToken);
+      await domain.selfResetPassword(userId, password, version);
       return sendJson({ ok: true, data: { message: "Your password has been successfully reset. Sign in to continue." } }, origin);
     },
 
     refresh,
+
+    /** Current principal for a bearer access token, checked against the database. */
+    async session(request: Request, origin: string | null) {
+      const { account } = await requireBearer(request);
+      return sendJson({ ok: true, data: { account } }, origin);
+    },
+
+    /** Changes the signed-in account's password and signs it out everywhere. */
+    async changePassword(request: Request, origin: string | null) {
+      const { account } = await requireBearer(request);
+      const input = await request.json() as { currentPassword?: string; newPassword?: string };
+      await domain.changePassword(account.id, String(input.currentPassword || ""), String(input.newPassword || ""));
+      return sendJson({ ok: true, data: { message: "Your password was changed. Sign in again on every device." } }, origin);
+    },
 
     async logout(request: Request, origin: string | null) {
       const context = safeContext(request.headers.get("x-intern-context"));

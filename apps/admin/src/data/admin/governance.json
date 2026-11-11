@@ -206,44 +206,6 @@
       "dateFormat": "DD MMM YYYY",
       "logo": ""
     },
-    "olentra-admin-security-policy-v1": {
-      "mfa": true,
-      "sso": false,
-      "timeout": "30 minutes",
-      "reauth": true,
-      "allowlist": false
-    },
-    "olentra-admin-security-sessions-v1": [
-      {
-        "id": "session-current",
-        "account": "Company owner",
-        "device": "Current browser",
-        "region": "India",
-        "active": "Now",
-        "current": true,
-        "userId": "owner"
-      },
-      {
-        "id": "session-admin",
-        "account": "Admin 01",
-        "device": "Browser",
-        "region": "Europe",
-        "active": "18 min ago",
-        "userId": "admin-01"
-      },
-      {
-        "id": "session-editor",
-        "account": "Editor 02",
-        "device": "Browser",
-        "region": "Asia Pacific",
-        "active": "1 hour ago",
-        "userId": "editor-02"
-      }
-    ],
-    "olentra-admin-sso-preview-v1": {
-      "name": "",
-      "domain": ""
-    },
     "olentra-admin-backups-v1": [
       {
         "id": "BKP-008",
@@ -355,10 +317,10 @@
       "to": "07:00"
     },
     "olentra-admin-account-v1": {
-      "name": "Company owner",
-      "email": "owner@example.com",
-      "role": "Owner",
-      "jobTitle": "Founder",
+      "name": "",
+      "email": "",
+      "role": "",
+      "jobTitle": "",
       "timezone": "Asia/Kolkata",
       "language": "English",
       "dateFormat": "DD MMM YYYY",

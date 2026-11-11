@@ -4,25 +4,40 @@ The company dashboard under `/dashboard` combines two data systems. Website visi
 
 ## Run the dashboard
 
-The dashboard provides neutral framed styling in light and dark modes, with rounded double borders, quiet surfaces, and a restrained serif page heading. Use the sun/moon control in the header (also available on sign-in and verification screens). Light is the initial default; an explicit choice is saved under `olentra.admin.theme.v1` independently of workspace data, restored before paint, and synchronized between tabs. Leaving `/dashboard` removes the dashboard theme attribute from the document, preserving public-page styling.
+The dashboard provides neutral framed styling in light and dark modes, with rounded double borders, quiet surfaces, and a restrained serif page heading. Use the sun/moon control in the header (also available on sign-in and password-reset screens). Light is the initial default; an explicit choice is saved under `olentra.admin.theme.v1` independently of workspace data, restored before paint, and synchronized between tabs. Leaving `/dashboard` removes the dashboard theme attribute from the document, preserving public-page styling.
 
 ```sh
-npm run dev
+npm run dev:all
 ```
 
-Open `/dashboard`. The initial fixture starts with an authenticated owner session. Use **Sign out** or open `/dashboard/login` to exercise the demo sign-in flow.
+Open `http://localhost:3002/dashboard`. Sign in with a real staff account from the realtime service; the same email and password work at the website's `/intern/dashboard`. Passwords are hashed with Argon2id in MongoDB. Browser snapshots contain no passwords or access tokens and cannot establish a server session.
 
-| Role | Demo email |
+Staff admins receive **Owner** workspace access. Other staff roles need one of these permissions, assigned in **Internship dashboard → Staff & roles**. The highest granted level wins:
+
+| Staff permission | Workspace level |
 | --- | --- |
-| Owner | `owner@example.com` |
-| Administrator | `admin@example.com` |
-| Editor | `editor@example.com` |
-| Recruiter | `recruiter@example.com` |
-| Analyst | `analyst@example.com` |
+| `workspace.administrator` | Administrator |
+| `workspace.editor` | Editor |
+| `workspace.recruiter` | Recruiter |
+| `workspace.analyst` | Analyst |
 
-All seeded accounts use `OlentraDemo2026!`. The verification code is `123456`; the password reset code is `654321`. A recovery code follows `<UPPERCASE ACCOUNT ID>-RECOVERY-2026`, for example `OWNER-RECOVERY-2026`.
+A staff account without a workspace level sees **No workspace access**. The existing workspace module matrices control browser-local workflows. Server effects independently verify the staff identity and permissions.
 
-These are public demo credentials. Account verification, trusted-device handling, session timeout and password changes run against local JSON. Password inputs are hashed with Web Crypto before command dispatch; the JSON contains demo digests. This is a frontend demonstration, not production authentication.
+## Locked out? Recovery
+
+1. Use **Forgot password?** at `/dashboard/login`. The email links to `/dashboard/reset-password`; it expires after one hour and works once. Staff passwords require at least 12 characters. Resetting or changing a password signs out all existing sessions.
+2. Ask a second admin to reset your password in **Internship dashboard → Staff & roles**. Keep two separately owned admin accounts for this path.
+3. An operator with server/database access can recover an account without knowing its password:
+
+```sh
+npm run internship:admin -- create --email admin@olentratechnologies.com --name "Olentra Admin"
+npm run internship:admin -- reset --email admin@olentratechnologies.com
+npm run internship:admin -- list
+```
+
+`create` creates staff admin access and emails a set-password link. `reset` re-enables an existing staff account, restores admin access, revokes sessions and emails a fresh link. Append `--print-link` if email is unavailable, and treat the printed link as a secret. The CLI must use the running service's database, JWT secret and workspace origin. `delete --email old@company.com --yes` permanently removes a staff account, its password and sessions; it refuses to remove the last active admin.
+
+Login is throttled after 8 failures for an email/IP pair or 30 for an IP within 15 minutes. Authenticator-app 2FA and recovery codes are a separate future change.
 
 ## Immediate website controls
 
@@ -53,9 +68,9 @@ Relevant implementation:
 | Source | Purpose |
 | --- | --- |
 | `packages/site-features/src/server/store.mjs` | Validates, reads and atomically updates the persistent server JSON state. |
-| `packages/site-features/src/server/auth.mjs` | Authorizes live-control sessions and signs their cookie. |
+| `packages/site-features/src/server/auth.mjs` | Enforces same-origin writes. |
+| `apps/admin/src/lib/server/staff-session.js` | Verifies staff access tokens against the realtime service. |
 | `apps/admin/src/app/api/site-features/route.js` | `GET` reads shared state; authenticated same-origin `PUT` changes one switch. |
-| `apps/admin/src/app/api/site-features/session/route.js` | Establishes and clears a live-control session. |
 | `apps/admin/src/app/api/site-features/stream/route.js` | Streams revision updates through SSE with a filesystem polling check. |
 | `packages/site-features/src/client.js` | Shares the live snapshot between client components, reconnects SSE and refreshes through a polling fallback. |
 | `packages/site-features/src/react.jsx` | Supplies `useSiteFeatures()`, `<Feature>` and the open-page route gate. |
@@ -67,21 +82,16 @@ Already open pages receive SSE updates and remove disabled sections and links. N
 
 ### Live-control authentication and deployment
 
-Browser-local demo account data does not authorize server writes by itself. The live-control API requires a signed, HTTP-only `olentra_site_controls` cookie established through `/api/site-features/session`; writes also require the same origin.
+The live-control API accepts a staff bearer access token, verifies it through `GET /intern/auth/session`, and requires staff admin or `workspace.administrator` access. Writes also require the same origin. There is no separate controls password or automatic local demo authorization.
 
-In development, an automatic local demo session is available on loopback URLs when no live-control password is configured. Production disables automatic demo authorization by default, including on a loopback hostname. A local production preview can explicitly set `OLENTRA_FEATURE_ALLOW_LOCAL_DEMO=true` while binding the server to a loopback address. Setting it to `false` disables the shortcut in every mode. Public deployed hosts require configured live-control credentials.
-
-Set these on the company workspace app (`apps/admin`). `OLENTRA_FEATURE_STORE_PATH` must point to the same file in both apps; `OLENTRA_FEATURE_SITE_ORIGIN` is also read by the website as its canonical origin for redirects.
+Set the following on the company workspace app (`apps/admin`). Also add its browser origin to `REALTIME_ALLOWED_ORIGINS` on the realtime service and set `INTERNSHIP_WORKSPACE_ORIGIN` there to the workspace origin used in staff reset emails.
 
 | Environment variable | Purpose |
 | --- | --- |
-| `OLENTRA_FEATURE_ADMIN_PASSWORD` | Required deployed control password, at least 12 characters. |
-| `OLENTRA_FEATURE_ADMIN_EMAIL` | Authorized email; defaults to `owner@example.com`. |
-| `OLENTRA_FEATURE_ADMIN_MFA_CODE` | Optional additional verification code for live controls. |
-| `OLENTRA_FEATURE_SESSION_SECRET` | Stable secret used to sign control-session cookies. |
-| `OLENTRA_FEATURE_SITE_ORIGIN` | Optional canonical origin for same-origin checks, for example `https://company.example` without a path or trailing slash. |
-| `OLENTRA_FEATURE_ALLOW_LOCAL_DEMO` | Development permits loopback demo authorization by default. Production requires an explicit `true` for a local loopback preview; `false` disables the shortcut in every mode. |
-| `OLENTRA_FEATURE_STORE_PATH` | Optional path to the durable server-side state file; defaults to `.data/site-features.json` at the repository root. |
+| `NEXT_PUBLIC_INTERNSHIP_BACKEND_URL` | Browser-facing realtime account-service origin. |
+| `INTERNSHIP_BACKEND_URL` | Optional private account-service origin used for server-side staff checks; defaults to the public URL. |
+| `OLENTRA_FEATURE_SITE_ORIGIN` | Optional canonical origin for same-origin checks, for example `https://admin.company.example`. Also used by the website for its canonical redirect origin when set there. |
+| `OLENTRA_FEATURE_STORE_PATH` | Optional durable state-file path, shared by both apps; defaults to `.data/site-features.json` at the repository root. |
 
 The current persistence targets a persistent Node deployment with one shared filesystem path. Mount a durable volume for the runtime JSON file. A container or host with ephemeral storage loses its runtime settings when that storage is replaced. Separate replicas with separate files do not provide a shared fleet-wide database; distributed database storage is not implemented here.
 
@@ -91,10 +101,10 @@ The [Email Templates catalog](email-templates.md) adds 49 email types with three
 
 | File | Contents |
 | --- | --- |
-| `apps/admin/src/data/admin/core.json` | Environment-specific feature flags, navigation, feature rules and schedules, demo accounts and authentication defaults. |
+| `apps/admin/src/data/admin/core.json` | Environment-specific feature flags, navigation, feature rules and schedules, and empty session defaults. |
 | `apps/admin/src/data/admin/content.json` | Website content and revisions, media, programs, applications, interns, projects, tasks, certificates and enquiries. |
-| `apps/admin/src/data/admin/operations.json` | Visit events, performance probes, incidents, alert rules, SEO, locales, translations, team members and role permissions. |
-| `apps/admin/src/data/admin/governance.json` | Approvals, audit history, integrations, shared security policy and sessions, company/account preferences, backups and notifications. |
+| `apps/admin/src/data/admin/operations.json` | Visit events, performance probes, incidents, alert rules, SEO, locales, translations and workspace role permissions. |
+| `apps/admin/src/data/admin/governance.json` | Approvals, audit history, integrations, company/account preferences, backups and notifications. |
 
 Each domain file has this structure:
 
@@ -133,7 +143,7 @@ The implementation is split across:
 - `apps/admin/src/lib/admin/content-commands.mjs`, `operations-commands.mjs` and `governance-commands.mjs`: domain validation and workflow transitions.
 - `apps/admin/src/lib/admin/selectors.mjs`: derived traffic, availability, progress, permissions, effective feature states and overview counts.
 
-Records and counters use canonical datasets. For example, `olentra-admin-governance-approvals-v1` drives both the approval queue and pending count; `olentra-admin-notifications-v1` drives the inbox and unread badge. Security and team pages share `olentra-admin-security-policy-v1` and `olentra-admin-security-sessions-v1`.
+Records and counters use canonical datasets. For example, `olentra-admin-governance-approvals-v1` drives both the approval queue and pending count; `olentra-admin-notifications-v1` drives the inbox and unread badge. Staff identities and role assignments are managed by the realtime service; Security reports the real account protections.
 
 ## Workflow commands
 
@@ -150,7 +160,7 @@ if (!result.ok) {
 }
 ```
 
-The model validates permissions and payloads, applies nested commands within one transaction, reconciles related records, and returns `{ ok, error, value, state }`. The browser API returns the command outcome and persistence status. A thrown validation error discards the transaction. Handled authentication failures can intentionally update verification attempts or expire a session.
+The model validates permissions and payloads, applies nested commands within one transaction, reconciles related records, and returns `{ ok, error, value, state }`. The browser API returns the command outcome and persistence status. A thrown validation error discards the transaction. The provider establishes the browser-local permission identity only after the server has verified a session.
 
 | Workflow | Commands and effects |
 | --- | --- |
@@ -162,12 +172,12 @@ The model validates permissions and payloads, applies nested commands within one
 | Internship delivery | `task.create/submit` validates project membership and records sample submissions; `task.review` records feedback and submission history. `intern.transition` checks onboarding or completion requirements. `certificate.issue/revoke/publish` maintains eligibility and verification state. |
 | Enquiries | `enquiry.update/note/reply` manages ownership, status, follow-up, internal notes and local conversation records. |
 | Operations | `incident.update`, `alert.save/delete`, SEO metadata/redirect/link commands, `locale.save/recalculate`, `regional.save` and translation commands update the shared operational records. |
-| Access | Team invitation/member commands and `role.save` update team and role data. Security settings affect the local authentication policy; `session.revoke` protects the current session. |
+| Access | `role.save` updates browser-local workspace module matrices. Staff accounts and access-level assignments are managed in the internship dashboard. |
 | Integrations | `integration.save/connect/test` validates saved local configuration. Missing credential configuration and malformed fields fail validation. Typed service credentials are not retained. |
-| Settings | `settings.save` supports company, security, account, backup, notification preferences, SSO and approval policy sections. Account updates synchronize the profile, team member and demo account. |
+| Settings | `settings.save` supports company, account preferences, backup, notification preferences and approval policy sections. Account identity fields are read-only; password changes use the server. |
 | History and recovery | `audit.restore` applies an event's saved configuration snapshot. `backup.create/restore` captures and restores local JSON; restoration requires the literal confirmation `RESTORE`. |
 | Notifications | `notification.read/readAll/delete` changes the shared inbox and derived unread count. |
-| Clock and authentication | `clock.set/tick` evaluates local time-dependent behavior. `auth.*` commands operate the demo sign-in, verification, sign-out, recovery and password flows. |
+| Clock and authentication | `clock.set/tick` evaluates local time-dependent behavior. `auth.session.establish` maps a verified staff identity into local workspace permissions; `auth.signOut` clears it. Server authentication uses `/intern/auth/*`. |
 
 Approval policies apply to the local dashboard workflows. Live website switch changes take effect immediately and are not delayed, overwritten or activated by these browser approval records or simulation schedules.
 
@@ -185,7 +195,7 @@ If browser storage is unavailable or full, the dashboard retains the current in-
 
 Use **Settings & Backups → Company → Data management** with a role that has Settings management permission.
 
-- **Download JSON** exports the complete local database, including metadata, datasets, audit history and demo authentication data.
+- **Download JSON** exports the complete local database, including metadata, datasets, audit history and current workspace metadata; passwords and bearer tokens are never exported.
 - **Upload JSON** previews a selected file and requires confirmation before replacement. Validation checks the schema version, required dataset and object shapes, safe JSON properties, unique record IDs and account emails, valid account/session references, feature booleans, and core program/intern/project/certificate relationships. Invalid snapshots leave the current scenario unchanged.
 - **Reset fixtures** requires typing `RESET`. It replaces local changes with the original fixture scenario across all modules.
 
@@ -201,8 +211,8 @@ Run the actual-model integration suites with Node:
 node --test apps/admin/scripts/admin-core.test.mjs apps/admin/scripts/admin-content.test.mjs apps/admin/scripts/admin-operations.test.mjs apps/admin/scripts/admin-governance.test.mjs
 ```
 
-The suites use the real fixtures, model and selectors. They cover transitions and derived data, approval publication and rollback, duplicate requests, permissions and demo authentication, configuration validation, backup recovery, notification counts and snapshot validation.
+The suites use the real fixtures, model and selectors. They cover transitions and derived data, approval publication and rollback, duplicate requests, workspace access mapping and migration of old demo snapshots, configuration validation, backup recovery, notification counts and snapshot validation.
 
 ## Frontend boundary
 
-Website feature visibility is server-shared and enforced on this website through the API, SSE, proxy and client gates described above. Other dashboard records and workflow effects remain browser-local. Integration tests validate local configuration without contacting providers. Email delivery, production identity-provider integration, real infrastructure monitoring, content deployment and multi-user business data storage still require connected services. The live-control endpoint updates visibility settings; it does not deploy content, send email or alter an external account.
+Website feature visibility is server-shared and enforced on this website through the API, SSE, proxy and client gates described above. Other dashboard records and workflow effects remain browser-local. Integration tests validate local configuration without contacting providers. Account email delivery uses the realtime service and its configured Resend sender. Real infrastructure monitoring, content deployment and multi-user business data storage still require connected services. The live-control endpoint updates visibility settings; it does not deploy content, send email or alter an external account.

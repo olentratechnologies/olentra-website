@@ -387,44 +387,60 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   async function findUserByEmail(email: string): Promise<Row | null> {
     return users.findOne({ email: emailOf(email), disabled: { $ne: true } });
   }
-  async function selfResetPassword(userId: string, newPassword: string): Promise<{ id: string }> {
+  // Staff accounts guard both dashboards, so they need longer passwords than interns.
+  const minimumPassword = (role: unknown) => role === "company" ? 12 : 8;
+  const versionFilter = (version: number) => version === 1 ? { $or: [{ sessionVersion: 1 }, { sessionVersion: { $exists: false } }] } : { sessionVersion: version };
+  async function savePassword(user: Row, passwordHash: string, version: number, type: string) {
+    const session = client.startSession();
+    try {
+      await session.withTransaction(async () => {
+        // The version claim and credential write commit together. Concurrent
+        // resets cannot reuse a link or issue sessions against the old password.
+        const claimed = await users.updateOne(
+          { _id: user._id, disabled: { $ne: true }, ...versionFilter(version) },
+          { $set: { sessionVersion: version + 1 } },
+          { session }
+        );
+        if (!claimed.modifiedCount) throw new DomainError("UNAUTHENTICATED", "Your account changed or this password reset link has already been used. Request a new link or sign in again.");
+        await credentials.updateOne(
+          { userId: user._id },
+          { $set: { userId: user._id, passwordHash, updatedAt: new Date() } },
+          { upsert: true, session }
+        );
+        await events.insertOne({ _id: id("EVT"), type, applicationIds: user.applicationId ? [user.applicationId] : [], createdAt: new Date() }, { session });
+        if (user.role === "company") await events.insertOne({ _id: id("EVT"), type: "staff.changed", staffAccountIds: [user._id], createdAt: new Date() }, { session });
+      });
+    } finally { await session.endSession(); }
+    return { id: user._id };
+  }
+  async function selfResetPassword(userId: string, newPassword: string, expectedVersion?: number): Promise<{ id: string }> {
     const password = str(newPassword);
-    if (password.length < 8 || password.length > 256) {
-      throw new DomainError("INVALID_REQUEST", "Password must be at least 8 characters.");
-    }
     const user = await users.findOne({ _id: userId, disabled: { $ne: true } });
     if (!user) throw new DomainError("NOT_FOUND", "Account not found.");
+    const version = user.sessionVersion ?? 1;
+    if (expectedVersion !== undefined && expectedVersion !== version) throw new DomainError("UNAUTHENTICATED", "This password reset link has already been used or has expired. Request a new one.");
+    const minimum = minimumPassword(user.role);
+    if (password.length < minimum || password.length > 256) {
+      throw new DomainError("INVALID_REQUEST", `Password must be at least ${minimum} characters.`);
+    }
     const passwordHash = await Bun.password.hash(password, { algorithm: "argon2id" });
-    await credentials.updateOne(
-      { userId },
-      { $set: { userId, passwordHash, updatedAt: new Date() } },
-      { upsert: true }
-    );
-    await users.updateOne({ _id: userId }, { $inc: { sessionVersion: 1 } });
-    await events.insertOne({ _id: id("EVT"), type: "account.selfResetPassword", applicationIds: user.applicationId ? [user.applicationId] : [], createdAt: new Date() });
-    return { id: user._id };
+    return savePassword(user, passwordHash, version, "account.selfResetPassword");
   }
   async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{ id: string }> {
     const nextPassword = str(newPassword);
-    if (nextPassword.length < 8 || nextPassword.length > 256) {
-      throw new DomainError("INVALID_REQUEST", "New password must be at least 8 characters.");
-    }
     const user = await users.findOne({ _id: userId, disabled: { $ne: true } });
     if (!user) throw new DomainError("NOT_FOUND", "Account not found.");
+    const minimum = minimumPassword(user.role);
+    if (nextPassword.length < minimum || nextPassword.length > 256) {
+      throw new DomainError("INVALID_REQUEST", `New password must be at least ${minimum} characters.`);
+    }
     const cred = await credentials.findOne({ userId });
     if (cred) {
       const valid = await Bun.password.verify(str(currentPassword), cred.passwordHash);
       if (!valid) throw new DomainError("UNAUTHENTICATED", "Your current password is incorrect.");
     }
     const passwordHash = await Bun.password.hash(nextPassword, { algorithm: "argon2id" });
-    await credentials.updateOne(
-      { userId },
-      { $set: { userId, passwordHash, updatedAt: new Date() } },
-      { upsert: true }
-    );
-    await users.updateOne({ _id: userId }, { $inc: { sessionVersion: 1 } });
-    await events.insertOne({ _id: id("EVT"), type: "account.passwordChanged", applicationIds: user.applicationId ? [user.applicationId] : [], createdAt: new Date() });
-    return { id: user._id };
+    return savePassword(user, passwordHash, user.sessionVersion ?? 1, "account.passwordChanged");
   }
   return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
 }

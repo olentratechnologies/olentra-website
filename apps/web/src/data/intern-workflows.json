@@ -8,7 +8,6 @@
       "applicationId": null,
       "name": "Manideep Bethi",
       "email": "manideep@olentra.com",
-      "password": "OlentraDemo123!",
       "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
       "sessionVersion": 1
     },
@@ -19,18 +18,16 @@
       "applicationId": "OL-2026-0003",
       "name": "Rahul Verma",
       "email": "rahul-verma.0003@example.com",
-      "password": "OlentraDemo123!",
       "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
       "sessionVersion": 1
     },
     {
       "id": "intern-selected",
       "role": "intern",
-      "label": "Selected · offer ready",
+      "label": "Selected \u00b7 offer ready",
       "applicationId": "OL-2026-0001",
       "name": "Arjun Sharma",
       "email": "arjun-sharma.0001@example.com",
-      "password": "OlentraDemo123!",
       "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
       "sessionVersion": 1
     },
@@ -41,18 +38,16 @@
       "applicationId": "OL-2026-0006",
       "name": "Ananya Singh",
       "email": "ananya-singh.0006@example.com",
-      "password": "OlentraDemo123!",
       "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
       "sessionVersion": 1
     },
     {
       "id": "intern-completed",
       "role": "intern",
-      "label": "Completed · certificate ready",
+      "label": "Completed \u00b7 certificate ready",
       "applicationId": "OL-2026-1741",
       "name": "Mira Hegde",
       "email": "mira-hegde.1741@example.com",
-      "password": "OlentraDemo123!",
       "passwordHash": "e7dfb4035bad4d06acd64d3e6d3dbd5c01b235987883af45bbd94f598cda2393",
       "sessionVersion": 1
     }

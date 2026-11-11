@@ -1,21 +1,8 @@
-import { randomBytes } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { connectInternDatabase, createInternshipDomain } from "./app/command-dispatcher";
 import { createRealtimeServer } from "./app/create-service";
 import { readRealtimeEnvironment } from "./config/env";
+import { loadJwtSecret } from "./config/jwt-secret";
 import { logger } from "./infrastructure/observability/logger";
-
-async function jwtSecret(configured?: string) {
-  if (configured) return configured;
-  if (process.env.NODE_ENV === "production") throw new Error("Set INTERNSHIP_JWT_SECRET to at least 32 random bytes in production.");
-  const directory = path.resolve(".data");
-  const file = path.join(directory, "intern-jwt-secret");
-  await mkdir(directory, { recursive: true, mode: 0o700 });
-  try { await writeFile(file, randomBytes(48).toString("base64url"), { flag: "wx", mode: 0o600 }); }
-  catch (error: any) { if (error.code !== "EEXIST") throw error; }
-  return (await readFile(file, "utf8")).trim();
-}
 
 const environment = readRealtimeEnvironment();
 const realtime = createRealtimeServer({
@@ -65,7 +52,7 @@ async function initializeInternship() {
         return response.ok && state.features?.internships === true && state.features?.applications === true;
       } catch { return false; }
     } });
-    await realtime.attachInternship({ domain, secret: await jwtSecret(environment.jwtSecret), siteOrigin: site });
+    await realtime.attachInternship({ domain, secret: await loadJwtSecret(environment.jwtSecret), siteOrigin: site });
     retryDelay = 1000;
     logger.info("Internship modules attached", { mongodb: "connected" });
   } catch (error) {

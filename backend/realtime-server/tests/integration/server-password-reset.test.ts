@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { internshipTestMongoUri } from "./config";
 import { connectInternDatabase, createInternshipDomain } from "./domain";
 import { createInternshipServer } from "./server";
+import { createInternshipAuth } from "../../src/modules/auth/auth.service";
+import { createAdminAccess } from "../../src/modules/staff/admin-access";
 
 const uri = internshipTestMongoUri();
 if (!uri) throw new Error("Set INTERNSHIP_TEST_MONGODB_URI (or deprecated INTERN_TEST_MONGODB_URI) for isolated internship integration tests.");
@@ -128,6 +130,13 @@ test("request-password-reset validates email and dispatches email with reset tok
   const resetJson = (await resetRes.json()) as any;
   expect(resetJson.ok).toBe(true);
 
+  const replayRes = await fetch(`${base}/intern/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: origin },
+    body: JSON.stringify({ token, password: "ReplacementPassword2026!" }),
+  });
+  expect(replayRes.status).toBe(401);
+
   // 9. Login with old password fails
   const oldLoginRes = await fetch(`${base}/intern/auth/login`, {
     method: "POST",
@@ -146,4 +155,49 @@ test("request-password-reset validates email and dispatches email with reset tok
   const newLoginJson = (await newLoginRes.json()) as any;
   expect(newLoginJson.ok).toBe(true);
   expect(newLoginJson.data.account.email).toBe(testEmail);
+});
+
+
+test("staff reset is single-use under concurrency, handles legacy v1 and enforces the staff password policy", async () => {
+  const email = `legacy-${randomUUID()}@example.test`, userId = `ACC-${randomUUID()}`;
+  // Legacy accounts authenticate as v1 even when the field was never stored.
+  await domain.collection("accounts").insertOne({ _id: userId, email, name: "Legacy Staff", role: "company", staffRole: "admin", createdAt: new Date() });
+  const auth = createInternshipAuth(domain, "testing-secret-with-at-least-32-bytes-long");
+  const token = await auth.generatePasswordResetToken(email, userId, 1);
+  const reset = (password: string) => fetch(`${base}/intern/auth/reset-password`, {
+    method: "POST", headers: { "Content-Type": "application/json", Origin: origin }, body: JSON.stringify({ token, password }),
+  });
+  expect((await reset("Eight123")).status).toBe(400);
+  const results = await Promise.all([reset("FirstStaffPassword2026!"), reset("OtherStaffPassword2026!")]);
+  expect(results.map(response => response.status).sort()).toEqual([200, 401]);
+  expect((await domain.collection("accounts").findOne({ _id: userId }))?.sessionVersion).toBe(2);
+  expect((await reset("ThirdStaffPassword2026!")).status).toBe(401);
+  const row = await domain.collection("test_credentials").findOne({ userId });
+  const successes = await Promise.all(["FirstStaffPassword2026!", "OtherStaffPassword2026!"].map(password => Bun.password.verify(password, row!.passwordHash)));
+  expect(successes.filter(Boolean)).toHaveLength(1);
+});
+
+test("session and change-password verify the bearer, reject wrong current passwords and revoke all sessions", async () => {
+  const access = createAdminAccess(domain);
+  const email = `change-${randomUUID()}@example.test`, password = "CurrentStaffPassword2026!";
+  const user = await access.create(email, "Changing Admin");
+  await domain.selfResetPassword(user._id, password, 1);
+  const login = () => fetch(`${base}/intern/auth/login`, {
+    method: "POST", headers: { "Content-Type": "application/json", Origin: origin, "X-Intern-Context": context }, body: JSON.stringify({ email, password }),
+  }).then(response => response.json()) as Promise<any>;
+  const first = await login(), second = await login();
+  const session = (token?: string) => fetch(`${base}/intern/auth/session`, { headers: { Origin: origin, ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+  expect((await session()).status).toBe(401);
+  expect((await session(first.data.token)).status).toBe(200);
+  const change = (currentPassword: string, newPassword: string) => fetch(`${base}/intern/auth/change-password`, {
+    method: "POST", headers: { "Content-Type": "application/json", Origin: origin, Authorization: `Bearer ${first.data.token}` }, body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  expect((await change("WrongPassword2026!", "NextStaffPassword2026!")).status).toBe(401);
+  expect((await session(first.data.token)).status).toBe(200);
+  expect((await change(password, "Eight123")).status).toBe(400);
+  expect((await change(password, "NextStaffPassword2026!")).status).toBe(200);
+  expect((await session(first.data.token)).status).toBe(401);
+  expect((await session(second.data.token)).status).toBe(401);
+  expect(await domain.login(email, password)).toBeNull();
+  expect((await domain.login(email, "NextStaffPassword2026!"))?.id).toBe(user._id);
 });

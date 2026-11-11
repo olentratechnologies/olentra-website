@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createInitialState, createSnapshot, executeCommand, migrateSnapshot, updateDataset, validateSnapshot } from "../src/lib/admin/model.mjs";
 import { can } from "../src/lib/admin/selectors.mjs";
+import { signedIn } from "./support/staff-session.mjs";
 import { EMAIL_TEMPLATE_CATALOG, EMAIL_TEMPLATE_SELECTION_KEY as KEY, getEmailTemplateVariant } from "../src/lib/admin/email-template-catalog.mjs";
 
 const parts = ["core", "content", "operations", "governance"].map(name => JSON.parse(readFileSync(new URL(`../src/data/admin/${name}.json`, import.meta.url), "utf8")));
-const fresh = () => createInitialState(parts);
+const fresh = () => signedIn(createInitialState(parts));
 const auditKey = "olentra-admin-governance-audit-v1";
 const backupKey = "olentra-admin-backups-v1";
 const backupSettingsKey = "olentra-admin-backup-settings-v1";
@@ -31,10 +32,7 @@ function rejected(state, type, payload, pattern) {
 }
 
 function signIn(state, email) {
-  const account = state.datasets["auth-accounts"].find(row => row.email === email);
-  assert.ok(account);
-  const first = run(state, "auth.signIn", { email, passwordDigest: account.passwordDigest });
-  return first.value.requiresMfa ? run(first.state, "auth.verify", { code: account.mfaCode }).state : first.state;
+  return signedIn(state, email);
 }
 
 function legacySnapshot(state = fresh()) {

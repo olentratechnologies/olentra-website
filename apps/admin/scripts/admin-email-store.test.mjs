@@ -4,17 +4,18 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import * as model from "../src/lib/admin/model.mjs";
 import { can } from "../src/lib/admin/selectors.mjs";
+import { signedIn, STAFF } from "./support/staff-session.mjs";
 import { EMAIL_TEMPLATE_SELECTION_KEY as SELECTIONS, getEmailTemplateVariant } from "../src/lib/admin/email-template-catalog.mjs";
 
 const STORAGE_KEY = "olentra.admin.database.v2";
 const parts = ["core", "content", "operations", "governance"].map(name => JSON.parse(readFileSync(new URL(`../src/data/admin/${name}.json`, import.meta.url), "utf8")));
-const fresh = () => model.createInitialState(parts);
+const fresh = () => signedIn(model.createInitialState(parts));
 const json = value => JSON.parse(JSON.stringify(value));
 const storeSource = readFileSync(new URL("../src/lib/admin/data-store.js", import.meta.url), "utf8");
 
 // Run the actual browser store against real model functions in an isolated tab.
 // Only module bindings are supplied by the harness; persistence code is unchanged.
-function tab(storage = new Map(), { failWrites = false } = {}) {
+function tab(storage = new Map(), { failWrites = false, initialState = fresh() } = {}) {
   const listeners = new Map();
   let networkRequests = 0;
   const localStorage = {
@@ -28,7 +29,7 @@ function tab(storage = new Map(), { failWrites = false } = {}) {
   const api = runInNewContext(`${source}\n({ hydrateDatabase, command, getDatabase, getStatus, exportData, importData, resetData, startDataClock });`, {
     ...model,
     can,
-    initialDatabase: fresh(),
+    initialDatabase: initialState,
     localStorage,
     window: {
       addEventListener: (name, callback) => listeners.set(name, callback),
@@ -136,4 +137,45 @@ test("storage failure reports an unsaved choice while preserving exportable in-m
   assert.match(current.getStatus().error, /unavailable or full/i);
   assert.equal(current.exportData().datasets[SELECTIONS]["enquiry.received"], "enquiry.received.warm");
   assert.equal(current.storage.has(STORAGE_KEY), false);
+});
+
+test("browser persistence and exports carry content without restoring a saved staff session", () => {
+  const first = tab();
+  first.command("emailTemplate.select", { typeId: "enquiry.received", variantId: "enquiry.received.warm" });
+  for (const snapshot of [JSON.parse(first.storage.get(STORAGE_KEY)), first.exportData()]) {
+    assert.equal(snapshot.datasets["auth-session"].status, "anonymous");
+    assert.deepEqual(json(snapshot.datasets["auth-accounts"]), []);
+  }
+  const signedOut = model.createInitialState(parts);
+  const reload = tab(new Map([[STORAGE_KEY, JSON.stringify(legacySnapshot())]]), { initialState: signedOut });
+  reload.hydrateDatabase();
+  assert.equal(reload.getDatabase().datasets["auth-session"].status, "anonymous");
+  assert.deepEqual(json(reload.getDatabase().datasets["auth-accounts"]), []);
+});
+
+test("a shared-storage event cannot replace this tab's staff role, profile or sign-out state", () => {
+  const analyst = tab(new Map(), { initialState: signedIn(model.createInitialState(parts), "analyst") });
+  const stop = analyst.startDataClock();
+  const ownerSnapshot = legacySnapshot();
+  analyst.sync(ownerSnapshot);
+  assert.equal(analyst.getDatabase().datasets["auth-session"].role, "Analyst");
+  assert.equal(analyst.getDatabase().datasets["auth-accounts"][0].id, STAFF.analyst.id);
+  assert.equal(analyst.getDatabase().datasets["olentra-admin-account-v1"].email, STAFF.analyst.email);
+  assert.equal(analyst.command("emailTemplate.select", { typeId: "enquiry.received", variantId: "enquiry.received.warm" }).ok, false);
+  analyst.command("auth.signOut");
+  analyst.sync(ownerSnapshot);
+  assert.equal(analyst.getDatabase().datasets["auth-session"].status, "anonymous");
+  stop();
+});
+
+test("JSON import and resetting browser content preserve the current verified staff identity", () => {
+  const administrator = tab(new Map(), { initialState: signedIn(model.createInitialState(parts), "administrator") });
+  administrator.hydrateDatabase();
+  const identity = json(administrator.getDatabase().datasets["auth-accounts"]);
+  assert.equal(administrator.importData(legacySnapshot()).ok, true);
+  assert.deepEqual(json(administrator.getDatabase().datasets["auth-accounts"]), identity);
+  assert.equal(administrator.getDatabase().datasets["auth-session"].role, "Administrator");
+  assert.equal(administrator.resetData().ok, true);
+  assert.deepEqual(json(administrator.getDatabase().datasets["auth-accounts"]), identity);
+  assert.equal(administrator.getDatabase().datasets["auth-session"].role, "Administrator");
 });

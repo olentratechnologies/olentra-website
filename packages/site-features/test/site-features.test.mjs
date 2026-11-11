@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { createHmac, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { NextRequest } from "next/server.js";
 import { readSiteFeatures, setSiteFeature, publicSiteFeatureState, validateSiteFeatureState, watchSiteFeatures } from "@olentra/site-features/server/store";
 import { effectiveSiteFeatures, featureForPath, siteRouteStatus, isFeatureHrefVisible } from "@olentra/site-features/rules";
-import { FEATURE_SESSION_COOKIE, localFeatureDemo, featureRequestOrigin, requireSameOrigin, issueFeatureSession, readFeatureSession, verifyFeatureCredentials } from "@olentra/site-features/server/auth";
+import { featureRequestOrigin, requireSameOrigin } from "@olentra/site-features/server/auth";
 
 function environment(t, values) {
   const previous = Object.fromEntries(Object.keys(values).map((key) => [key, process.env[key]]));
@@ -31,11 +31,10 @@ async function temporaryStore(t) {
   return { directory, file };
 }
 
-function request(url = "http://localhost:3000/api/site-features", { token, origin = new URL(url).origin, fetchSite, headers = {} } = {}) {
+function request(url = "http://localhost:3000/api/site-features", { origin = new URL(url).origin, fetchSite, headers = {} } = {}) {
   const values = new Headers(headers);
   if (origin !== null) values.set("origin", origin);
   if (fetchSite) values.set("sec-fetch-site", fetchSite);
-  if (token) values.set("cookie", `${FEATURE_SESSION_COOKIE}=${token}`);
   return new NextRequest(url, { headers: values });
 }
 
@@ -233,9 +232,9 @@ test("same-origin enforcement uses the real Host and forwarded protocol rather t
   })), /dashboard|website/i);
 });
 
-test("the control origin respects HTTPS forwarding and a configured canonical origin for secure cookie decisions", (t) => {
+test("the control origin respects HTTPS forwarding and a configured canonical origin", (t) => {
   environment(t, { OLENTRA_FEATURE_SITE_ORIGIN: undefined });
-  const internalUrl = "http://localhost:3000/api/site-features/session";
+  const internalUrl = "http://localhost:3000/api/site-features";
   const forwarded = request(internalUrl, {
     origin: "https://127.0.0.1:3000",
     headers: { host: "127.0.0.1:3000", "x-forwarded-proto": "https, http" },
@@ -255,98 +254,4 @@ test("the control origin respects HTTPS forwarding and a configured canonical or
     origin: "http://internal-service:3000",
     headers: { host: "internal-service:3000", "x-forwarded-proto": "http" },
   })), /dashboard|website/i);
-});
-
-test("local-demo bootstrap is restricted to local hosts and disabled when configured credentials exist", (t) => {
-  environment(t, { NODE_ENV: "development", OLENTRA_FEATURE_ADMIN_PASSWORD: undefined, OLENTRA_FEATURE_ALLOW_LOCAL_DEMO: undefined });
-  for (const host of ["localhost", "127.0.0.1", "[::1]"]) assert.equal(localFeatureDemo(request(`http://${host}:3000/api/site-features`)), true);
-  assert.equal(localFeatureDemo(request("https://company.example/api/site-features")), false);
-  assert.equal(localFeatureDemo(request("https://localhost.attacker.example/api/site-features")), false);
-  process.env.OLENTRA_FEATURE_ALLOW_LOCAL_DEMO = "false";
-  assert.equal(localFeatureDemo(request()), false);
-  delete process.env.OLENTRA_FEATURE_ALLOW_LOCAL_DEMO;
-  process.env.OLENTRA_FEATURE_ADMIN_PASSWORD = "AConfiguredTestPassword!";
-  assert.equal(localFeatureDemo(request()), false);
-});
-
-test("production rejects implicit local-demo bootstrap even when Host is localhost", (t) => {
-  environment(t, { NODE_ENV: "production", OLENTRA_FEATURE_ADMIN_PASSWORD: undefined, OLENTRA_FEATURE_ALLOW_LOCAL_DEMO: undefined });
-  assert.equal(localFeatureDemo(request(undefined, { headers: { host: "localhost:3000" } })), false);
-});
-
-test("production permits an explicitly opted-in local demo on localhost", (t) => {
-  environment(t, { NODE_ENV: "production", OLENTRA_FEATURE_ADMIN_PASSWORD: undefined, OLENTRA_FEATURE_ALLOW_LOCAL_DEMO: "true" });
-  assert.equal(localFeatureDemo(request(undefined, { headers: { host: "localhost:3000" } })), true);
-});
-
-test("explicit local-demo opt-in never permits a remote Host", (t) => {
-  environment(t, { NODE_ENV: "production", OLENTRA_FEATURE_ADMIN_PASSWORD: undefined, OLENTRA_FEATURE_ALLOW_LOCAL_DEMO: "true" });
-  assert.equal(localFeatureDemo(request(undefined, { headers: { host: "company.example" } })), false);
-});
-
-test("explicit local-demo disablement also applies in development", (t) => {
-  environment(t, { NODE_ENV: "development", OLENTRA_FEATURE_ADMIN_PASSWORD: undefined, OLENTRA_FEATURE_ALLOW_LOCAL_DEMO: "false" });
-  assert.equal(localFeatureDemo(request(undefined, { headers: { host: "localhost:3000" } })), false);
-});
-
-test("configured credentials require matching email, password and configured MFA; localDemo input cannot forge them", (t) => {
-  const password = randomBytes(24).toString("hex");
-  environment(t, { OLENTRA_FEATURE_ADMIN_EMAIL: "admin@company.example", OLENTRA_FEATURE_ADMIN_PASSWORD: password, OLENTRA_FEATURE_ADMIN_MFA_CODE: "713204" });
-  assert.equal(verifyFeatureCredentials({ email: "ADMIN@COMPANY.EXAMPLE", password, code: "713204" }), true);
-  assert.equal(verifyFeatureCredentials({ email: "attacker@company.example", password, code: "713204" }), false);
-  assert.equal(verifyFeatureCredentials({ email: "admin@company.example", password: "wrong", code: "713204", localDemo: true }), false);
-  assert.equal(verifyFeatureCredentials({ email: "admin@company.example", password, code: "000000" }), false);
-  assert.equal(verifyFeatureCredentials({ email: "admin@company.example", password }), false);
-  process.env.OLENTRA_FEATURE_ADMIN_PASSWORD = "short";
-  assert.equal(verifyFeatureCredentials({ email: "admin@company.example", password: "short", code: "713204" }), false);
-});
-
-test("signed feature cookies reject tampered payloads, bad signatures, expired credentials and remote local-demo reuse", (t) => {
-  const secret = randomBytes(48).toString("hex");
-  environment(t, { NODE_ENV: "development", OLENTRA_FEATURE_SESSION_SECRET: secret, OLENTRA_FEATURE_ADMIN_EMAIL: "admin@company.example", OLENTRA_FEATURE_ADMIN_PASSWORD: randomBytes(24).toString("hex"), OLENTRA_FEATURE_ADMIN_MFA_CODE: "719283", OLENTRA_FEATURE_ALLOW_LOCAL_DEMO: undefined });
-  const token = issueFeatureSession("admin@company.example");
-  assert.equal(readFeatureSession(request(undefined, { token })).email, "admin@company.example");
-  assert.equal(readFeatureSession(request()), null);
-  const [payload, signature] = token.split(".");
-  const decoded = JSON.parse(Buffer.from(payload, "base64url"));
-  const altered = Buffer.from(JSON.stringify({ ...decoded, email: "attacker@company.example" })).toString("base64url");
-  assert.equal(readFeatureSession(request(undefined, { token: `${altered}.${signature}` })), null);
-  assert.equal(readFeatureSession(request(undefined, { token: `${payload}.${signature[0] === "a" ? "b" : "a"}${signature.slice(1)}` })), null);
-  const expiredPayload = Buffer.from(JSON.stringify({ ...decoded, expiresAt: Date.now() - 1 })).toString("base64url");
-  const expiredSignature = createHmac("sha256", secret).update(expiredPayload).digest("base64url");
-  assert.equal(readFeatureSession(request(undefined, { token: `${expiredPayload}.${expiredSignature}` })), null);
-  const unknownMode = Buffer.from(JSON.stringify({ ...decoded, mode: "unrecognized" })).toString("base64url");
-  const unknownModeSignature = createHmac("sha256", secret).update(unknownMode).digest("base64url");
-  assert.equal(readFeatureSession(request(undefined, { token: `${unknownMode}.${unknownModeSignature}` })), null);
-  delete process.env.OLENTRA_FEATURE_ADMIN_PASSWORD;
-  const localToken = issueFeatureSession("Local owner", "local-demo");
-  assert.ok(readFeatureSession(request(undefined, { token: localToken })));
-  assert.equal(readFeatureSession(request("https://company.example/api/site-features", { token: localToken })), null);
-  process.env.OLENTRA_FEATURE_ADMIN_PASSWORD = randomBytes(24).toString("hex");
-  assert.equal(readFeatureSession(request(undefined, { token: localToken })), null);
-});
-
-test("configured cookies are revoked when credentials are removed, shortened, rotated or changed", (t) => {
-  const baseline = {
-    OLENTRA_FEATURE_SESSION_SECRET: randomBytes(48).toString("hex"),
-    OLENTRA_FEATURE_ADMIN_EMAIL: "admin@company.example",
-    OLENTRA_FEATURE_ADMIN_PASSWORD: randomBytes(24).toString("hex"),
-    OLENTRA_FEATURE_ADMIN_MFA_CODE: "718204",
-  };
-  environment(t, baseline);
-  const changes = [
-    ["password removed", "OLENTRA_FEATURE_ADMIN_PASSWORD", undefined],
-    ["password shortened", "OLENTRA_FEATURE_ADMIN_PASSWORD", "short"],
-    ["password rotated", "OLENTRA_FEATURE_ADMIN_PASSWORD", randomBytes(24).toString("hex")],
-    ["email changed", "OLENTRA_FEATURE_ADMIN_EMAIL", "other-admin@company.example"],
-    ["MFA changed", "OLENTRA_FEATURE_ADMIN_MFA_CODE", "604812"],
-  ];
-  for (const [label, key, value] of changes) {
-    for (const [name, original] of Object.entries(baseline)) process.env[name] = original;
-    const token = issueFeatureSession(baseline.OLENTRA_FEATURE_ADMIN_EMAIL);
-    assert.ok(readFeatureSession(request(undefined, { token })), "The configured cookie starts valid");
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
-    assert.equal(readFeatureSession(request(undefined, { token })), null, label);
-  }
 });

@@ -30,16 +30,6 @@ function coverage(ctx) {
   ctx.set("admin-locales", locales);
   return locales;
 }
-function syncMemberAccount(ctx, member) {
-  const accounts = ctx.get("auth-accounts", []);
-  ctx.set("auth-accounts", accounts.map(account => account.id === member.id || account.email === member.email ? { ...account, role: member.role, name: member.name, email: member.email || account.email, enabled: member.status !== "Removed" } : account));
-  const currentSession = ctx.get("auth-session", null);
-  if (member.status !== "Removed" && currentSession?.userId === member.id) ctx.set("auth-session", { ...currentSession, role: member.role });
-  if (member.status === "Removed") {
-    ctx.set("olentra-admin-security-sessions-v1", ctx.get("olentra-admin-security-sessions-v1", []).filter(session => session.userId !== member.id));
-    if (ctx.get("auth-session", null)?.userId === member.id) ctx.set("auth-session", null);
-  }
-}
 function validateTranslation(ctx, locale, contentId, fields) {
   ctx.assert(getRows(ctx, "admin-locales").some(row => row.id === locale), "This locale is not configured.");
   ctx.assert(contentIds(ctx).includes(contentId), "This content page could not be found.");
@@ -200,64 +190,6 @@ export function handleOperationsCommand(type, payload = {}, ctx) {
       log(ctx, status === "Published" ? "Translation published" : "Translation saved", "Localization", { locale, contentId, description: `${locale} · ${contentId} · ${status}`, before: current, after: next }, `/dashboard/localization/${locale}/${contentId}`);
       return { value: next };
     }
-    case "team.invite": {
-      const email = clean(payload.email).toLowerCase();
-      ctx.assert(isEmail(email), "Enter a valid email address.");
-      ctx.assert(ref.roles.includes(payload.role), "Choose a valid team role.");
-      ctx.assert(!getRows(ctx, "admin-team-members").some(row => row.email?.toLowerCase() === email && row.status !== "Removed"), "This person is already a team member.");
-      const invitations = getRows(ctx, "admin-team-invitations");
-      ctx.assert(!invitations.some(row => row.email?.toLowerCase() === email && pending(row)), "An invitation is already pending for this email.");
-      const next = { id: ctx.id("invite"), email, name: clean(payload.name) || email, role: payload.role, status: "Pending", createdAt: ctx.now, expiresAt: new Date(Date.parse(ctx.now) + 7 * 86400000).toISOString() };
-      ctx.set("admin-team-invitations", [...invitations, next]);
-      log(ctx, "Team invitation created", "Team", { id: next.id, description: `${next.name} · ${next.role}` }, "/dashboard/team");
-      return { value: next };
-    }
-    case "team.invitation.accept":
-    case "team.invitation.revoke":
-    case "team.invitation.resend": {
-      const invitation = record(ctx, "admin-team-invitations", payload.id);
-      ctx.assert(pending(invitation), "Only pending invitations can be changed.");
-      if (type === "team.invitation.accept") {
-        ctx.assert(Date.parse(invitation.expiresAt) > Date.parse(ctx.now), "This invitation has expired. Refresh it first.");
-        ctx.assert(!getRows(ctx, "admin-team-members").some(row => row.email === invitation.email && row.status !== "Removed"), "This person is already a team member.");
-        const member = { id: ctx.id("member"), name: invitation.name, email: invitation.email, initials: invitation.name.split(/[\s@._-]+/).slice(0, 2).map(word => word[0]?.toUpperCase()).join(""), role: invitation.role, access: ref.accessForRole[invitation.role], mfa: false, active: "Not signed in", status: "Active", joinedAt: ctx.now, updatedAt: ctx.now };
-        const demoAuth = ctx.reference?.core?.authDemo;
-        ctx.assert(demoAuth?.defaultPasswordDigest && demoAuth?.mfaCode, "Frontend authentication settings are unavailable.");
-        ctx.set("auth-accounts", [...ctx.get("auth-accounts", []), { id: member.id, name: member.name, email: member.email, role: member.role, enabled: true, passwordDigest: demoAuth.defaultPasswordDigest, mfaCode: demoAuth.mfaCode, recoveryDigests: [] }]);
-        ctx.set("admin-team-members", [...getRows(ctx, "admin-team-members"), member]);
-        replace(ctx, "admin-team-invitations", invitation.id, { ...invitation, status: "Accepted", acceptedAt: ctx.now });
-        log(ctx, "Team invitation accepted", "Team", { id: invitation.id, description: member.name }, "/dashboard/team");
-        return { value: member };
-      }
-      const next = type === "team.invitation.revoke" ? { ...invitation, status: "Revoked" } : { ...invitation, expiresAt: new Date(Date.parse(ctx.now) + 7 * 86400000).toISOString(), refreshedAt: ctx.now };
-      replace(ctx, "admin-team-invitations", invitation.id, next);
-      log(ctx, type === "team.invitation.revoke" ? "Team invitation revoked" : "Team invitation refreshed", "Team", { id: invitation.id, description: invitation.name }, "/dashboard/team");
-      return { value: next };
-    }
-    case "team.member.update":
-    case "team.member.delete": {
-      const member = record(ctx, "admin-team-members", payload.id);
-      ctx.assert(member.status !== "Removed", "This team member has already been removed.");
-      ctx.assert(member.role !== "Owner", "The owner account cannot be changed from team management.");
-      if (type === "team.member.delete") {
-        const removed = { ...member, status: "Removed", updatedAt: ctx.now };
-        replace(ctx, "admin-team-members", member.id, removed);
-        syncMemberAccount(ctx, removed);
-        log(ctx, "Team member removed", "Team", { id: member.id, description: member.name }, "/dashboard/team");
-        return { value: member.id };
-      }
-      const patch = clone(payload.patch || {});
-      if (patch.role !== undefined) ctx.assert(ref.roles.includes(patch.role), "Choose a valid team role.");
-      if (patch.name !== undefined) ctx.assert(clean(patch.name), "Enter a member name.");
-      if (patch.email !== undefined) { ctx.assert(isEmail(patch.email), "Enter a valid email address."); ctx.assert(!getRows(ctx, "admin-team-members").some(row => row.id !== member.id && row.email?.toLowerCase() === patch.email.toLowerCase() && row.status !== "Removed"), "Another member already uses this email address."); }
-      if (patch.mfa !== undefined) ctx.assert(typeof patch.mfa === "boolean", "Choose a valid MFA enrollment value.");
-      const allowed = Object.fromEntries(Object.entries(patch).filter(([key]) => ["role", "name", "email", "mfa"].includes(key)));
-      const next = { ...member, ...allowed, access: ref.accessForRole[patch.role || member.role], updatedAt: ctx.now };
-      replace(ctx, "admin-team-members", member.id, next);
-      syncMemberAccount(ctx, next);
-      log(ctx, "Team member updated", "Team", { id: member.id, description: next.name, before: member, after: next }, "/dashboard/team");
-      return { value: next };
-    }
     case "role.save": {
       const id = roleId(payload.roleId);
       ctx.assert(ref.roles.some(name => roleId(name) === id), "This role could not be found.");
@@ -268,7 +200,6 @@ export function handleOperationsCommand(type, payload = {}, ctx) {
       ctx.set("admin-role-permissions-" + id, permissions);
       ctx.set("admin-role-reviews", { ...ctx.get("admin-role-reviews", {}), [id]: { reviewedBy: ctx.actor || "System", reviewedAt: ctx.now } });
       const count = permissions.filter(row => row.view).length;
-      ctx.set("admin-team-members", getRows(ctx, "admin-team-members").map(member => roleId(member.role) === id ? { ...member, access: count === permissions.length ? "All modules" : `${count} modules`, updatedAt: ctx.now } : member));
       log(ctx, "Role permissions saved", "Team", { id, description: `${id} · ${count} accessible modules`, before: previous, after: permissions }, `/dashboard/team/roles/${id}`);
       return { value: permissions };
     }

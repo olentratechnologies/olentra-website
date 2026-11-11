@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createInitialState, executeCommand } from "../src/lib/admin/model.mjs";
 import { selectAnalytics, selectMonitoring, can } from "../src/lib/admin/selectors.mjs";
+import { STAFF, signedIn } from "./support/staff-session.mjs";
 
 const parts = ["core", "content", "operations", "governance"].map(domain =>
   JSON.parse(readFileSync(new URL(`../src/data/admin/${domain}.json`, import.meta.url), "utf8"))
@@ -10,7 +11,7 @@ const parts = ["core", "content", "operations", "governance"].map(domain =>
 const operations = parts[2];
 const clone = value => structuredClone(value);
 function workspace() {
-  let state = createInitialState(parts);
+  let state = signedIn(createInitialState(parts));
   return {
     get state() { return state; },
     run(type, payload) {
@@ -35,11 +36,8 @@ function assertRejectedWithoutChanges(app, type, payload, pattern) {
   assert.deepEqual(app.state, before, "a rejected transaction must not leave partial dataset, audit or notification changes");
 }
 function signIn(app, email) {
-  const account = app.state.datasets["auth-accounts"].find(row => row.email === email);
-  assert.ok(account, "a fixture account is required");
-  const next = app.run("auth.signIn", { email, passwordDigest: account.passwordDigest });
-  if (next.requiresMfa) app.run("auth.verify", { code: account.mfaCode });
-  assert.equal(app.state.datasets["auth-session"].userId, account.id);
+  app.run("auth.session.establish", Object.values(STAFF).find(row => row.email === email));
+  assert.equal(app.state.datasets["auth-session"].status, "authenticated");
 }
 
 test("analytics filters actual dated events and counts distinct visitors", () => {
@@ -173,41 +171,16 @@ test("editing reviewed metadata invalidates the earlier approval without partial
   assert.equal(app.state.datasets["olentra-admin-governance-approvals-v1"].find(row => row.id === request.id).status, "pending");
 });
 
-test("accepted invitations create exactly one member and matching demo auth account", () => {
+test("workspace role permissions reject invalid dependencies and record the review", () => {
   const app = workspace();
-  const beforeMembers = app.state.datasets["admin-team-members"].length;
-  const beforeAccounts = app.state.datasets["auth-accounts"].length;
-  const invitation = app.run("team.invite", { email: "new.operations@example.com", name: "Operations Member", role: "Editor" });
-  const member = app.run("team.invitation.accept", { id: invitation.id });
-  assert.equal(app.state.datasets["admin-team-members"].length, beforeMembers + 1);
-  assert.equal(app.state.datasets["auth-accounts"].length, beforeAccounts + 1);
-  const account = app.state.datasets["auth-accounts"].find(row => row.id === member.id);
-  assert.equal(account.email, member.email);
-  assert.equal(account.role, member.role);
-  assert.equal(account.enabled, true);
-  assert.equal(account.passwordDigest, app.state.reference.core.authDemo.defaultPasswordDigest);
-  assert.equal(Object.hasOwn(account, "password"), false);
-  assertRejectedWithoutChanges(app, "team.invitation.accept", { id: invitation.id }, /pending/i);
-  assertRejectedWithoutChanges(app, "team.invite", { email: invitation.email.toUpperCase(), role: "Editor" }, /already a team member/i);
-  signIn(app, member.email);
-  assert.equal(app.state.datasets["admin-team-members"].find(row => row.id === member.id).mfa, true);
-  assert.equal(app.state.datasets["admin-team-members"].find(row => row.id === member.id).lastActiveAt, app.state.meta.clock);
-});
-
-test("role changes propagate to auth accounts and invalid permission dependencies are rejected", () => {
-  const app = workspace();
-  app.run("team.member.update", { id: "editor-02", patch: { role: "Analyst" } });
-  assert.equal(app.state.datasets["auth-accounts"].find(row => row.id === "editor-02").role, "Analyst");
   const permissions = clone(app.state.datasets["admin-role-permissions-recruiter"]);
   permissions.find(row => row.name === "Website Controls").edit = true;
   assertRejectedWithoutChanges(app, "role.save", { roleId: "recruiter", permissions }, /view access/i);
   permissions.find(row => row.name === "Website Controls").view = true;
   app.run("role.save", { roleId: "recruiter", permissions });
   assert.equal(app.state.datasets["admin-role-permissions-recruiter"].find(row => row.name === "Website Controls").edit, true);
-  assert.ok(app.state.datasets["admin-team-members"].filter(row => row.role === "Recruiter").every(row => row.access.includes("modules")));
   assert.equal(app.state.datasets["admin-role-reviews"].recruiter.reviewedAt, app.state.meta.clock);
 });
-
 test("a limited role cannot publish the website or bypass SEO publication permission", () => {
   const app = workspace();
   signIn(app, "analyst@example.com");

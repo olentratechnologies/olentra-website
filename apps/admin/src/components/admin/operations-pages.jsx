@@ -14,9 +14,9 @@ import {
   DataTable, SearchInput, Progress, Stat, Sparkline, MiniMap, Modal, useLocalState,
 } from "@/components/admin/ui";
 import { useAdmin } from "@/components/admin/store";
+import { siteUrl } from "@/lib/site-url";
 import styles from "./operations-pages.module.css";
 import fixtures from "@/data/admin/operations.json";
-import governanceFixtures from "@/data/admin/governance.json";
 import { selectAnalytics, selectMonitoring } from "@/lib/admin/selectors.mjs";
 
 const toneFor = (value = "") => /operational|enabled|good|resolved|published|complete/i.test(value) ? "success" : /degraded|review|warning|pending|missing|investigating/i.test(value) ? "warning" : /critical|error|failed/i.test(value) ? "danger" : "muted";
@@ -335,58 +335,34 @@ export function TranslationEditorPage({ locale = "de", contentId = "services" })
   </div>;
 }
 
-const teamSeed = fixtures.datasets["admin-team-members"];
 const roles = reference.roles;
-const accessForRole = reference.accessForRole;
 const roleSlug = role => role.toLowerCase().replaceAll(" ", "-");
-function memberAccess(db, member) {
-  if (member.role === "Owner") return "All modules";
-  const permissions = db.datasets["admin-role-permissions-" + roleSlug(member.role)] || fixtures.datasets["admin-role-permissions-" + roleSlug(member.role)] || [];
-  const accessible = permissions.filter(row => row.view).length;
-  return !permissions.length ? "No access" : accessible === permissions.length ? "All modules" : accessible + " modules";
-}
 
 export function TeamPage() {
-  const { notify, command, db } = useAdmin();
-  const [memberRecords] = useLocalState("admin-team-members", teamSeed);
-  const members = memberRecords.filter(row => row.status !== "Removed");
-  const [invitationRecords] = useLocalState("admin-team-invitations", fixtures.datasets["admin-team-invitations"]);
-  const invitations = invitationRecords.filter(row => !row.status || row.status === "Pending");
-  const [policies] = useLocalState("olentra-admin-security-policy-v1", governanceFixtures.datasets["olentra-admin-security-policy-v1"]);
-  const [sessions] = useLocalState("olentra-admin-security-sessions-v1", governanceFixtures.datasets["olentra-admin-security-sessions-v1"]);
-  const [tab, setTab] = useState("Members");
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(0);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState(reference.defaultInvitationRole);
-  const [editing, setEditing] = useState(null);
-  const filtered = members.filter((row) => textMatch(row, query));
-  const totalPages = Math.max(1, Math.ceil(filtered.length / 5));
-  const visibleMembers = filtered.slice(Math.min(page, totalPages - 1) * 5, Math.min(page, totalPages - 1) * 5 + 5);
-  function invite(event) {
-    event.preventDefault();
-    const result = commit(command, notify, "team.invite", { email: inviteEmail, role: inviteRole }, "Invitation created in frontend data. No email was sent.");
-    if (!result) return;
-    setInviteOpen(false);
-    setInviteEmail("");
-  }
-  const invitationColumns = [
-    { key: "name", label: "Invitation" },
-    { key: "role", label: "Role", render: value => <Badge tone="muted">{value}</Badge> },
-    { key: "expiresAt", label: "Expires", render: value => Date.parse(value) <= Date.parse(db.meta.clock) ? <Badge tone="warning">Expired</Badge> : when(value) },
-    { key: "id", label: "Actions", render: (id, row) => <div className={styles.inlineActions}><Button variant="ghost" icon={RefreshCw} onClick={() => commit(command, notify, "team.invitation.resend", { id }, "Invitation refreshed. No email was sent.")}>Refresh</Button><Button disabled={Date.parse(row.expiresAt) <= Date.parse(db.meta.clock)} onClick={() => commit(command, notify, "team.invitation.accept", { id }, "Invitation accepted. Team membership updated.")}>Accept invitation</Button><Button icon={Trash2} onClick={() => commit(command, notify, "team.invitation.revoke", { id }, "Invitation revoked.")}>Revoke</Button></div> },
+  const { db, staffAccount } = useAdmin();
+  const staffPage = siteUrl("/intern/dashboard/staff");
+  const grants = { Administrator: "workspace.administrator", Editor: "workspace.editor", Recruiter: "workspace.recruiter", Analyst: "workspace.analyst" };
+  const moduleCount = (role) => (db.datasets["admin-role-permissions-" + roleSlug(role)] || permissionsFor(roleSlug(role))).filter((row) => row.view).length;
+  const levels = [
+    { level: "Owner", grant: "Staff role: Admin", modules: "All modules", href: null },
+    ...roles.map((role) => ({ level: role, grant: "Permission: " + grants[role], modules: moduleCount(role) + " modules", href: "/dashboard/team/roles/" + roleSlug(role) })),
   ];
   return <div className="workspace-stack">
-    <PageHeader title="Team & access" description="Manage workspace members and administrator access." actions={<Button variant="primary" icon={Plus} onClick={() => setInviteOpen(true)}>Invite member</Button>} />
-    <Tabs items={["Members", "Roles", "Invitations", "Sessions"]} value={tab} onChange={setTab} />
-    <div className="workspace-grid workspace-grid-4"><Stat label="Members" value={members.length} icon={Users} /><Stat label="Pending invitations" value={invitations.length} icon={Mail} color="#a78bfa" /><Stat label="Roles" value={roles.length + 1} icon={ShieldCheck} /><Stat label="MFA enabled" value={members.filter((row) => row.mfa).length + " of " + members.length} icon={ShieldCheck} color="#34d399" /></div>
-    {tab === "Members" && <><div className={styles.splitWide}><Panel title="Workspace members" actions={<SearchInput value={query} onChange={(value) => { setQuery(value); setPage(0); }} placeholder="Search members..." />}><DataTable columns={[{ key: "name", label: "Member", render: (value, row) => <div className={styles.person}><span className={styles.personAvatar}>{row.initials}</span><strong className="workspace-small">{value}</strong></div> }, { key: "role", label: "Role", render: (value) => <Badge tone={value === "Owner" ? "blue" : "muted"}>{value}</Badge> }, { key: "access", label: "Access", render: (_, row) => memberAccess(db, row) }, { key: "mfa", label: "MFA", render: (value) => <Badge tone={value ? "success" : "warning"}>{value ? "Enabled" : "Not enabled"}</Badge> }, { key: "active", label: "Last active", render: (value, row) => row.lastActiveAt ? when(row.lastActiveAt) : value }, { key: "id", label: "Actions", render: (_, row) => <Button variant="ghost" disabled={row.role === "Owner"} onClick={() => setEditing(row)}>Manage</Button> }]} rows={visibleMembers} /><div className="workspace-between" style={{ paddingTop: 18 }}><span className="workspace-small workspace-muted">Page {Math.min(page, totalPages - 1) + 1} of {totalPages} · {filtered.length} members</span><div className="workspace-row"><Button disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</Button><Button disabled={page + 1 >= totalPages} onClick={() => setPage(page + 1)}>Next</Button></div></div></Panel><Panel title="Access policies"><div className={styles.formStack}><Switch label="Require multi-factor authentication" checked={policies.mfa} onChange={(value) => commit(command, notify, "settings.save", { section: "security", values: { ...policies, mfa: value } }, "MFA policy saved.")} /><Field label="Session timeout"><Select options={[...new Set([policies.timeout, "15 minutes", "30 minutes", "1 hour", "4 hours", "8 hours"])]} value={policies.timeout} onChange={(e) => commit(command, notify, "settings.save", { section: "security", values: { ...policies, timeout: e.target.value } }, "Session policy saved.")} /></Field><div><p className={styles.subheading}>Owner actions restricted <Badge tone="success">Enabled</Badge></p><p className="workspace-small workspace-muted">Sensitive workspace actions are reserved for the owner role.</p></div><Button href="/dashboard/team/roles/recruiter" variant="ghost" icon={Settings2}>Manage role permissions</Button></div></Panel></div><Panel title="Pending invitations"><DataTable columns={invitationColumns} rows={invitations} /></Panel></>}
-    {tab === "Roles" && <div className="workspace-grid workspace-grid-3">{["Owner", ...roles].map((role) => <Panel key={role} title={role} actions={<Badge tone="blue">{members.filter((member) => member.role === role).length} members</Badge>}><div className={styles.formStack}><p className="workspace-small workspace-muted">{role === "Owner" ? "Full workspace ownership and protected company settings." : ((db.datasets["admin-role-permissions-" + roleSlug(role)] || []).filter(row => row.view).length + " accessible modules.")}</p>{role === "Owner" ? <Badge tone="muted">System role · cannot be changed</Badge> : <Button href={"/dashboard/team/roles/" + roleSlug(role)}>Edit permissions</Button>}</div></Panel>)}</div>}
-    {tab === "Invitations" && <Panel title="Pending invitations" description="Invitation acceptance updates the shared team records in this frontend workspace."><DataTable columns={invitationColumns} rows={invitations} /></Panel>}
-    {tab === "Sessions" && <Panel title="Active sessions" description="Manage illustrative administrator sessions in this preview."><DataTable columns={[{ key: "account", label: "Member" }, { key: "device", label: "Device" }, { key: "region", label: "Region" }, { key: "active", label: "Last active" }, { key: "id", label: "Actions", render: (id, row) => row.current ? <Badge tone="blue">Current session</Badge> : <Button onClick={() => commit(command, notify, "session.revoke", { id }, "Session revoked.")}>Revoke session</Button> }]} rows={sessions} /></Panel>}
-    <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invite team member"><form className={styles.formStack} onSubmit={invite}><Field label="Email address"><Input type="email" placeholder="colleague@example.com" required value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} /></Field><Field label="Role"><Select options={roles} value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} /></Field><div className={styles.notice}><Info /><span>This creates a local preview invitation. No email will be sent.</span></div><Button type="submit" variant="primary">Create invitation</Button></form></Modal>
-    <Modal open={Boolean(editing)} onClose={() => setEditing(null)} title={"Manage " + (editing?.name || "member")}>{editing && <div className={styles.formStack}><Field label="Role"><Select options={roles} value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value, access: accessForRole[e.target.value] })} /></Field><Switch label="MFA enrolled" checked={editing.mfa} onChange={value => setEditing({ ...editing, mfa: value })} /><span className="workspace-small workspace-muted">Last active {editing.active}</span><div className="workspace-between"><Button variant="danger" onClick={() => { const result = commit(command, notify, "team.member.delete", { id: editing.id }, "Member removed."); if (result) setEditing(null); }}>Remove member</Button><Button variant="primary" onClick={() => { const result = commit(command, notify, "team.member.update", { id: editing.id, patch: { role: editing.role, mfa: editing.mfa } }, "Member access updated."); if (result) setEditing(null); }}>Save changes</Button></div></div>}</Modal>
+    <PageHeader title="Team & access" description="People, passwords and access levels use Olentra staff accounts, shared with the internship dashboard." actions={<Button href={staffPage} target="_blank" rel="noopener noreferrer" variant="primary" icon={Users}>Manage staff &amp; roles</Button>} />
+    <div className="workspace-grid workspace-grid-3">
+      <Panel title="1. Add people" description="An internship admin creates staff accounts in Internship dashboard → Staff & roles."><p className="workspace-small workspace-muted">Each person signs in with their own email and password. There are no shared or demo accounts.</p></Panel>
+      <Panel title="2. Grant workspace access" description="Admins always have full access."><p className="workspace-small workspace-muted">For other staff, give their role one workspace access level below. Roles without one cannot open this workspace.</p></Panel>
+      <Panel title="3. Recover access" description="Forgot password, another admin, or the break-glass command."><p className="workspace-small workspace-muted">See Settings → Security for the recovery steps. Keep at least two admins.</p></Panel>
+    </div>
+    <Panel title="Workspace access levels" description="The highest level a staff role grants applies. Module permissions for each level are set here.">
+      <DataTable columns={[
+        { key: "level", label: "Access level", render: (value) => <strong>{value}</strong> },
+        { key: "grant", label: "Granted by", render: (value) => <code>{value}</code> },
+        { key: "modules", label: "Can view" },
+        { key: "href", label: "Module permissions", render: (href) => href ? <Button href={href} variant="ghost" icon={ArrowRight}>Edit</Button> : <Badge tone="muted">Fixed</Badge> },
+      ]} rows={levels.map((row) => ({ ...row, id: row.level }))} />
+    </Panel>
+    {staffAccount && <Panel title="Your access"><p className="workspace-small">Signed in as <strong>{staffAccount.email}</strong> with staff role <code>{staffAccount.staffRole}</code>.</p></Panel>}
   </div>;
 }
 
@@ -401,8 +377,6 @@ export function RolePermissionsPage({ roleId = "recruiter" }) {
   const [saved] = useLocalState("admin-role-permissions-" + roleId, permissionsFor(roleId));
   const [draft, setDraft] = useState(saved);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [memberRecords] = useLocalState("admin-team-members", teamSeed);
-  const members = memberRecords.filter(row => row.status !== "Removed");
   useEffect(() => { setDraft(saved); }, [saved]);
   function toggle(name, key) {
     setDraft((current) => current.map((row) => {
@@ -424,7 +398,7 @@ export function RolePermissionsPage({ roleId = "recruiter" }) {
     <div className={styles.permissionRole}><span>Role</span><div><Select options={roles.map((value) => ({ value: roleSlug(value), label: value }))} value={roleSlug(role)} onChange={(e) => router.push("/dashboard/team/roles/" + e.target.value)} aria-label="Administrator role" /></div><span>{role === "Recruiter" ? "Manage recruitment without website administration access." : "Set permissions that match this role’s responsibilities."}</span></div>
     <div className={styles.splitWide}>
       <Panel title="Module permissions" description="Set access for each product module. Changes apply to all members in this role."><div className="workspace-table-wrap"><table className={styles.permissionTable}><thead><tr><th>Module</th><th>View</th><th>Create/Edit</th><th>Publish</th><th>Manage</th></tr></thead><tbody>{draft.map((row) => <tr key={row.id}><td>{row.name}</td>{["view", "edit", "publish", "manage"].map((key) => <td key={key}>{row.name === "Applications" && key === "publish" ? "—" : <><input type="checkbox" checked={Boolean(row[key])} onChange={() => toggle(row.name, key)} aria-label={key + " " + row.name} />{row.name === "Approvals & Audit Log" && key === "view" && row.view && role !== "Administrator" && <small>(only own actions)</small>}</>}</td>)}</tr>)}</tbody></table></div></Panel>
-      <Panel title={role + " access"} description="What members with this role can and cannot do."><div className={styles.formStack}><div><h3 className={styles.subheading} style={{ color: "#34d399" }}>Can access</h3><ul className={styles.accessList}>{allowed.length ? allowed.map((row) => <li key={row.name}>{row.name}{row.edit ? " · edit" : " · view only"}</li>) : <li>Overview and permitted activity only</li>}</ul></div><div><h3 className={styles.subheading} style={{ color: "#fb7185" }}>Restricted</h3><ul className={styles.accessList}>{restricted.slice(0, 5).map((row) => <li key={row.name}>{row.name}</li>)}{restricted.length > 5 && <li>{restricted.length - 5} other modules</li>}</ul></div><div className={styles.notice}><Info /><span>Changes apply to <strong>{members.filter((member) => member.role === role).length} members</strong>.</span></div><p className="workspace-small workspace-muted">Last reviewed · {(db.datasets["admin-role-reviews"] || fixtures.datasets["admin-role-reviews"])[roleId]?.reviewedBy || "Not reviewed"}<br />{when((db.datasets["admin-role-reviews"] || fixtures.datasets["admin-role-reviews"])[roleId]?.reviewedAt)}</p></div></Panel>
+      <Panel title={role + " access"} description="What members with this role can and cannot do."><div className={styles.formStack}><div><h3 className={styles.subheading} style={{ color: "#34d399" }}>Can access</h3><ul className={styles.accessList}>{allowed.length ? allowed.map((row) => <li key={row.name}>{row.name}{row.edit ? " · edit" : " · view only"}</li>) : <li>Overview and permitted activity only</li>}</ul></div><div><h3 className={styles.subheading} style={{ color: "#fb7185" }}>Restricted</h3><ul className={styles.accessList}>{restricted.slice(0, 5).map((row) => <li key={row.name}>{row.name}</li>)}{restricted.length > 5 && <li>{restricted.length - 5} other modules</li>}</ul></div><div className={styles.notice}><Info /><span>Changes apply to <strong>every staff account with this access level</strong>.</span></div><p className="workspace-small workspace-muted">Last reviewed · {(db.datasets["admin-role-reviews"] || fixtures.datasets["admin-role-reviews"])[roleId]?.reviewedBy || "Not reviewed"}<br />{when((db.datasets["admin-role-reviews"] || fixtures.datasets["admin-role-reviews"])[roleId]?.reviewedAt)}</p></div></Panel>
     </div>
     <Modal open={reviewOpen} onClose={() => setReviewOpen(false)} title="Review role changes"><div className={styles.formStack}><p className="workspace-small">Update permissions for <strong>{role}</strong>?</p><p className="workspace-muted workspace-small">{draft.filter((row) => row.view).length} modules can be viewed and {draft.filter((row) => row.edit).length} modules can be edited. Saving updates access for all members assigned to this role.</p><Button variant="primary" onClick={() => { const result = commit(command, notify, "role.save", { roleId, permissions: draft }, role + " permissions saved."); if (result) setReviewOpen(false); }}>Save permissions</Button></div></Modal>
   </div>;

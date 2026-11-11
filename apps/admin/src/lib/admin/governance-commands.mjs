@@ -3,9 +3,6 @@ const KEYS = {
   audit: "olentra-admin-governance-audit-v1",
   connections: "olentra-admin-integrations-v1",
   company: "olentra-admin-company-settings-v1",
-  security: "olentra-admin-security-policy-v1",
-  sessions: "olentra-admin-security-sessions-v1",
-  sso: "olentra-admin-sso-preview-v1",
   backups: "olentra-admin-backups-v1",
   backup: "olentra-admin-backup-settings-v1",
   restore: "olentra-admin-restore-preview-v1",
@@ -17,8 +14,6 @@ const KEYS = {
 
 const SETTINGS_FIELDS = {
   company: ["company", "website", "email", "phone", "description", "language", "timezone", "scope", "dateFormat", "logo"],
-  security: ["mfa", "sso", "timeout", "reauth", "allowlist"],
-  sso: ["name", "domain"],
   backup: ["retention", "target", "scope", "selected", "review"],
   notificationPreferences: ["inApp", "email", "digest", "critical", "approvals", "content", "system", "quiet", "timezone", "from", "to"],
   account: ["name", "email", "role", "jobTitle", "timezone", "language", "dateFormat", "emailUpdates", "approvalDigest", "reduceMotion"],
@@ -182,19 +177,8 @@ export function handleGovernanceCommand(type, payload = {}, ctx) {
       ctx.assert(!next.logo || next.logo.length < 3 * 1024 * 1024, "Logo is too large for local storage.");
     }
     if (section === "account") {
-      ctx.assert(typeof next.name === "string" && next.name.trim(), "Display name is required.");
-      ctx.assert(emailValid(next.email), "Enter a valid account email.");
-      ctx.assert(next.role === previous.role, "Account role changes must be made in Team & Access.");
-      const accounts = ctx.get("auth-accounts", []), session = ctx.get("auth-session", {}), current = accounts.find((item) => item.id === session?.userId);
-      ctx.assert(!accounts.some((item) => item.id !== current?.id && item.email?.toLowerCase() === next.email.toLowerCase()), "That email already belongs to another local account.");
-      if (current) ctx.set("auth-accounts", accounts.map((item) => item.id === current.id ? { ...item, name: next.name, email: next.email } : item));
-      const members = ctx.get("admin-team-members", []);
-      if (members.length) ctx.set("admin-team-members", members.map((item) => item.id === current?.id || item.email === previous.email || current && item.email === current.email ? { ...item, name: next.name, email: next.email, initials: next.name.trim().split(/\s+/).map((part) => part[0]).slice(0,2).join("").toUpperCase() } : item));
-      if (current) ctx.set(KEYS.sessions, ctx.get(KEYS.sessions, []).map((item) => item.userId === current.id || item.current ? { ...item, account: next.name } : item));
-    }
-    if (section === "security") {
-      ctx.assert(["15 minutes", "30 minutes", "1 hour", "4 hours"].includes(next.timeout), "Choose a valid session timeout.");
-      for (const field of ["mfa", "sso", "reauth", "allowlist"]) ctx.assert(typeof next[field] === "boolean", `Security setting ${field} must be a boolean.`);
+      // Name, email and access level come from the staff account on the server.
+      ctx.assert(next.name === previous.name && next.email === previous.email && next.role === previous.role, "Change your name, email or access level in Internship dashboard → Staff & roles.");
     }
     if (section === "backup") {
       ctx.assert(["7 days", "30 days", "90 days"].includes(next.retention), "Choose a supported backup retention period.");
@@ -202,29 +186,20 @@ export function handleGovernanceCommand(type, payload = {}, ctx) {
       ctx.assert(["Content and configuration", "Content only", "Configuration only"].includes(next.scope), "Choose a valid restore scope.");
       ctx.assert(ctx.get(KEYS.backups, []).some((item) => item.id === next.selected), "Choose an existing backup.");
     }
-    if (section === "sso") { ctx.assert(typeof next.name === "string" && next.name.trim(), "Identity provider name is required."); ctx.assert(typeof next.domain === "string" && /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(next.domain), "Enter a valid organization domain."); }
     if (section === "notificationPreferences") {
       for (const field of ["inApp", "email", "digest", "critical", "approvals", "content", "system", "quiet"]) ctx.assert(typeof next[field] === "boolean", `Notification setting ${field} must be a boolean.`);
       ctx.assert(/^([01]\d|2[0-3]):[0-5]\d$/.test(next.from) && /^([01]\d|2[0-3]):[0-5]\d$/.test(next.to), "Quiet hours must use valid 24-hour times.");
     }
     if (section === "approvalPolicy") for (const value of Object.values(next)) ctx.assert(typeof value === "boolean", "Review policy values must be booleans.");
     ctx.set(key, next);
-    ctx.audit("Updated settings", section === "security" || section === "account" || section === "sso" ? "Team & Access" : "Settings & Backups", { resource: section, before: previous, after: next, restore: { key, before: previous, after: next } });
+    if (section === "account") ctx.set("account-profile-" + ctx.get("auth-session", {}).userId, next);
+    ctx.audit("Updated settings", section === "account" ? "Team & Access" : "Settings & Backups", { resource: section, before: previous, after: next, restore: { key, before: previous, after: next } });
     return { value: next };
-  }
-
-  if (type === "session.revoke") {
-    const sessions = ctx.get(KEYS.sessions, []), session = sessions.find((item) => item.id === payload.id);
-    ctx.assert(session, "Session not found.");
-    ctx.assert(!session.current, "Use sign out to end your current session.");
-    ctx.set(KEYS.sessions, sessions.filter((item) => item.id !== payload.id));
-    ctx.audit("Revoked administrator session", "Team & Access", { resource: session.account, sessionId: session.id, before: "Active", after: "Revoked" });
-    return { value: session };
   }
 
   if (type === "backup.create") {
     const snapshot = ctx.snapshot();
-    for (const key of [KEYS.backups, KEYS.audit, "auth-accounts", "auth-session", "auth-pending"]) delete snapshot.datasets[key];
+    for (const key of [KEYS.backups, KEYS.audit, "auth-accounts", "auth-session"]) delete snapshot.datasets[key];
     const backup = { id: ctx.id("BKP"), title: `Manual backup · ${displayDate(ctx.now)}`, date: displayDate(ctx.now), time: `${relativeTime(ctx.now)} UTC`, createdAt: ctx.now, scope: "Content + configuration", size: `${Math.max(1, Math.ceil(JSON.stringify(snapshot).length / 1024))} KB`, status: "Verified", snapshot };
     const retentionDays = parseInt(ctx.get(KEYS.backup, {}).retention || "30", 10);
     const cutoff = new Date(ctx.now).getTime() - retentionDays * 86400000;

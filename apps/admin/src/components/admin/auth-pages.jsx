@@ -1,35 +1,93 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, Layers, Users, ChartNoAxesCombined, ShieldCheck, LockKeyhole, ArrowLeft, KeyRound } from "lucide-react";
+import { Eye, EyeOff, Layers, Users, ChartNoAxesCombined, ShieldCheck, ArrowLeft } from "lucide-react";
 import { Button, Field, Input, Modal } from "./ui";
 import { useAdmin } from "./store";
 import { CompanyLogo } from "./company-logo";
-import { hashDemoSecret } from "@/lib/admin/data-store";
+import { requestWorkspacePasswordReset, resetWorkspacePassword } from "@/lib/workspace-auth.mjs";
+
+const STAFF_PASSWORD_MINIMUM = 12;
 
 function AuthFrame({ children }) { return <main className="workspace-auth"><section className="workspace-auth-left"><Link className="workspace-auth-brand" href="/dashboard"><CompanyLogo /></Link><h1>Your company.<br />One workspace.</h1><p>Manage your website, content, people, and operations in a unified workspace.</p><div className="workspace-auth-benefits">{[[Layers,"Control & publish","Keep your website, content, and applications up to date."],[Users,"Collaborate securely","Manage access, approvals, and team workflows."],[ChartNoAxesCombined,"Monitor & improve","Track performance, enquiries, and website health."]].map(([Icon,title,detail])=><div key={title}><Icon size={24}/><div><strong>{title}</strong><p>{detail}</p></div></div>)}</div></section><section className="workspace-auth-card">{children}</section></main>; }
-export function SignInPage(){
-  const router=useRouter(),{db,command}=useAdmin();
-  const accounts=db.datasets["auth-accounts"],demo=db.reference.core.authDemo,provider=db.datasets["olentra-admin-sso-preview-v1"];
-  const [email,setEmail]=useState(""),[password,setPassword]=useState(""),[show,setShow]=useState(false),[remember,setRemember]=useState(false),[forgot,setForgot]=useState(false),[sso,setSso]=useState(false),[demoOpen,setDemoOpen]=useState(false),[resetStage,setResetStage]=useState("request"),[resetCode,setResetCode]=useState(""),[newPassword,setNewPassword]=useState(""),[confirmPassword,setConfirmPassword]=useState(""),[error,setError]=useState(""),[busy,setBusy]=useState(false);
-  const remembered=db.datasets["auth-remembered-email"];
-  useEffect(()=>{if(remembered){setEmail(remembered);setRemember(true);}},[remembered]);
-  const signIn=async event=>{event.preventDefault();setError("");setBusy(true);try{const result=command("auth.signIn",{email,passwordDigest:await hashDemoSecret(password),remember});if(!result.ok)setError(result.error);else{setPassword("");router.push(result.value.requiresMfa?"/dashboard/verify":"/dashboard");}}catch(reason){setError(reason.message);}finally{setBusy(false);}};
-  const reset=async event=>{event.preventDefault();setError("");if(resetStage==="request"){const result=command("auth.reset.request",{email});if(result.ok)setResetStage("confirm");else setError(result.error);return;}if(newPassword.length<10||newPassword!==confirmPassword){setError("Use at least 10 characters and matching new passwords.");return;}try{const result=command("auth.reset.confirm",{email,code:resetCode,nextDigest:await hashDemoSecret(newPassword)});if(!result.ok)setError(result.error);else{setResetStage("done");setNewPassword("");setConfirmPassword("");}}catch(reason){setError(reason.message);}};
-  return <AuthFrame><span className="workspace-concept">JSON DEMO · LOCAL WORKSPACE</span><h2>Sign in to your workspace</h2><p>Administrator access</p>{error&&!forgot&&!sso&&<div role="alert" className="workspace-auth-error">{error}</div>}<form onSubmit={signIn}><Field label="Work email"><Input type="email" autoComplete="username" placeholder="you@example.com" required value={email} onChange={event=>setEmail(event.target.value)}/></Field><Field label="Password"><div className="workspace-password"><Input type={show?"text":"password"} aria-label="Password" autoComplete="current-password" required value={password} placeholder="Enter your password" onChange={event=>setPassword(event.target.value)}/><button type="button" className="workspace-icon-button" aria-label={show?"Hide password":"Show password"} onClick={()=>setShow(value=>!value)}>{show?<EyeOff size={18}/>:<Eye size={18}/>}</button></div></Field><div className="workspace-auth-options"><label><input type="checkbox" checked={remember} onChange={event=>setRemember(event.target.checked)}/>Remember this device</label><button className="workspace-link" style={{background:"none",border:0,padding:0,cursor:"pointer"}} type="button" onClick={()=>{setError("");setResetStage("request");setForgot(true);}}>Forgot password?</button></div><Button type="submit" disabled={busy} variant="primary">{busy?"Checking account…":"Sign in"}</Button></form><div className="workspace-auth-rule">or</div><Button icon={LockKeyhole} onClick={()=>{setError("");setSso(true);}}>Continue with SSO</Button><div className="workspace-auth-footer"><div className="workspace-row" style={{justifyContent:"center"}}><ShieldCheck size={16}/>Multi-factor verification</div><hr className="workspace-divider"/><Button variant="ghost" onClick={()=>setDemoOpen(true)}>Choose a demo account</Button><p style={{marginTop:10,fontSize:10}}>Accounts and recovery codes belong to this local JSON demo.</p></div>
-    <Modal title="Demo accounts" open={demoOpen} onClose={()=>setDemoOpen(false)}><div className="workspace-stack"><div className="workspace-note">Fixture password: <strong>{demo.password}</strong><br/>Authenticator code: <strong>{demo.mfaCode}</strong></div>{accounts.filter(account=>account.enabled).map(account=><Button key={account.id} onClick={()=>{setEmail(account.email);setPassword(demo.password);setDemoOpen(false);setError("");}}><span>{account.name} · {account.email}</span></Button>)}</div></Modal>
-    <Modal title="Reset demo password" open={forgot} onClose={()=>{setForgot(false);setError("");}}>{resetStage==="done"?<div className="workspace-stack"><p>The local account password was updated. Sign in with your new password.</p><Button onClick={()=>setForgot(false)}>Back to sign in</Button></div>:<form className="workspace-stack" onSubmit={reset}>{error&&<p role="alert" className="workspace-auth-error">{error}</p>}<Field label="Work email"><Input required type="email" readOnly={resetStage!=="request"} value={email} onChange={event=>setEmail(event.target.value)}/></Field>{resetStage==="confirm"&&<><div className="workspace-note">Demo recovery code: {demo.resetCode}</div><Field label="Reset code"><Input inputMode="numeric" required value={resetCode} onChange={event=>setResetCode(event.target.value)}/></Field><Field label="New password"><Input required type="password" minLength={10} value={newPassword} onChange={event=>setNewPassword(event.target.value)}/></Field><Field label="Confirm password"><Input required type="password" minLength={10} value={confirmPassword} onChange={event=>setConfirmPassword(event.target.value)}/></Field></>}<Button type="submit" variant="primary">{resetStage==="request"?"Request demo recovery code":"Update demo password"}</Button></form>}</Modal>
-    <Modal title="Single sign-on demo" open={sso} onClose={()=>setSso(false)}><form className="workspace-stack" onSubmit={event=>{event.preventDefault();const result=command("auth.sso",{email,domain:provider.domain});if(!result.ok)setError(result.error);else{setSso(false);router.push(result.value.requiresMfa?"/dashboard/verify":"/dashboard");}}}><p className="workspace-muted">Uses the identity-provider configuration saved in Security settings.</p>{error&&<p role="alert" className="workspace-auth-error">{error}</p>}<Field label="Work email"><Input required type="email" value={email} onChange={event=>setEmail(event.target.value)}/></Field><Field label="Organization domain"><Input readOnly value={provider.domain||"Not configured"}/></Field><Button type="submit" variant="primary">Continue with configured SSO demo</Button></form></Modal>
+
+function PasswordInput({ value, onChange, autoComplete, label = "Password", placeholder = "Enter your password", minLength }) {
+  const [show, setShow] = useState(false);
+  return <div className="workspace-password"><Input type={show ? "text" : "password"} aria-label={label} autoComplete={autoComplete} required minLength={minLength} value={value} placeholder={placeholder} onChange={event => onChange(event.target.value)} /><button type="button" className="workspace-icon-button" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow(current => !current)}>{show ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>;
+}
+
+export function SignInPage() {
+  const { signIn } = useAdmin();
+  const [email, setEmail] = useState(""), [password, setPassword] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false);
+  const [forgot, setForgot] = useState(false), [resetEmail, setResetEmail] = useState(""), [resetState, setResetState] = useState({ busy: false, message: "", error: "" });
+  const [notice, setNotice] = useState(null);
+  useEffect(() => { setNotice(new URLSearchParams(window.location.search).get("notice")); }, []);
+  const submit = async event => {
+    event.preventDefault(); setError(""); setBusy(true);
+    try {
+      const role = await signIn(email.trim(), password);
+      setPassword("");
+      if (!role) setError("This staff account has no company workspace access. Ask an internship admin to grant a workspace access level.");
+      // The shell redirects to the workspace once the session is established.
+    } catch (reason) { setError(reason.message); }
+    finally { setBusy(false); }
+  };
+  const requestReset = async event => {
+    event.preventDefault(); setResetState({ busy: true, message: "", error: "" });
+    try { const result = await requestWorkspacePasswordReset(resetEmail.trim()); setResetState({ busy: false, message: result.message, error: "" }); }
+    catch (reason) { setResetState({ busy: false, message: "", error: reason.message }); }
+  };
+  return <AuthFrame>
+    <h2>Sign in to your workspace</h2><p>Use your Olentra staff account.</p>
+    {notice === "password-reset" && <div role="status" className="workspace-note">Your password was updated. Sign in with your new password.</div>}
+    {notice === "password-changed" && <div role="status" className="workspace-note">Your password was changed and all sessions were signed out. Sign in again.</div>}
+    {error && <div role="alert" className="workspace-auth-error">{error}</div>}
+    <form onSubmit={submit}>
+      <Field label="Work email"><Input type="email" autoComplete="username" placeholder="you@company.com" required value={email} onChange={event => setEmail(event.target.value)} /></Field>
+      <Field label="Password"><PasswordInput value={password} onChange={setPassword} autoComplete="current-password" /></Field>
+      <div className="workspace-auth-options"><span /><button className="workspace-link" style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }} type="button" onClick={() => { setResetEmail(email); setResetState({ busy: false, message: "", error: "" }); setForgot(true); }}>Forgot password?</button></div>
+      <Button type="submit" disabled={busy} variant="primary">{busy ? "Signing in…" : "Sign in"}</Button>
+    </form>
+    <div className="workspace-auth-footer"><div className="workspace-row" style={{ justifyContent: "center" }}><ShieldCheck size={16} />Staff accounts are shared with the internship dashboard.</div></div>
+    <Modal title="Reset your password" open={forgot} onClose={() => setForgot(false)}>
+      {resetState.message ? <div className="workspace-stack"><p role="status">{resetState.message}</p><p className="workspace-muted">The link works once and expires in 1 hour.</p><Button onClick={() => setForgot(false)}>Back to sign in</Button></div>
+        : <form className="workspace-stack" onSubmit={requestReset}>
+          <p>Enter your staff email and we'll send you a link to set a new password.</p>
+          {resetState.error && <p role="alert" className="workspace-auth-error">{resetState.error}</p>}
+          <Field label="Work email"><Input required type="email" autoComplete="username" value={resetEmail} onChange={event => setResetEmail(event.target.value)} /></Field>
+          <Button type="submit" variant="primary" disabled={resetState.busy}>{resetState.busy ? "Sending…" : "Send reset link"}</Button>
+        </form>}
+    </Modal>
   </AuthFrame>;
 }
-export function VerificationPage(){
-  const router=useRouter(),{db,command}=useAdmin();
-  const [digits,setDigits]=useState(["","","","","",""]),[trust,setTrust]=useState(false),[recovery,setRecovery]=useState(false),[code,setCode]=useState(""),[error,setError]=useState(""),[busy,setBusy]=useState(false);const inputs=useRef([]);
-  // Autofill and fast input can deliver several digits to one box; spread them
-  // across the following boxes instead of keeping only the last character.
-  const fillFrom=(index,code)=>{const chars=code.slice(0,6-index);setDigits(current=>current.map((item,i)=>i>=index&&i<index+chars.length?chars[i-index]:item));setError("");inputs.current[Math.min(index+chars.length,5)]?.focus();};
-  const setDigit=(index,value)=>{const typed=value.replace(/\D/g,"");if(typed.length>1&&!(typed.length===2&&digits[index])){fillFrom(index,typed);return;}const digit=typed.slice(-1);setDigits(current=>current.map((item,i)=>index===i?digit:item));setError("");if(digit&&index<5)inputs.current[index+1]?.focus();};
-  const verify=async event=>{event.preventDefault();setError("");if(!recovery&&!digits.every(Boolean)){setError("Enter all six digits to continue.");return;}setBusy(true);try{const payload=recovery?{recoveryDigest:await hashDemoSecret(code.trim()),trust}:{code:digits.join(""),trust};const result=command("auth.verify",payload);if(result.ok)router.push("/dashboard");else setError(result.error);}catch(reason){setError(reason.message);}finally{setBusy(false);}};
-  return <AuthFrame><span className="workspace-concept">JSON DEMO · LOCAL WORKSPACE</span><div style={{marginTop:30,color:"var(--ad-blue)"}}><ShieldCheck size={39}/></div><h2>{recovery?"Use a recovery code":"Verify it’s you"}</h2><p>{recovery?"Enter one of your unused recovery codes.":"Enter the 6-digit code from your authenticator app."}</p><form onSubmit={verify}>{recovery?<Field label="Recovery code"><Input autoComplete="off" required minLength={8} value={code} onChange={event=>setCode(event.target.value)} placeholder="ACCOUNT-RECOVERY-2026"/></Field>:<div className="workspace-otp" onPaste={event=>{const pasted=event.clipboardData.getData("text").replace(/\D/g,"").slice(0,6);if(pasted.length){event.preventDefault();setDigits(Array.from({length:6},(_,i)=>pasted[i]||""));inputs.current[Math.min(pasted.length,5)]?.focus();}}}>{digits.map((digit,index)=><Input key={index} ref={node=>{inputs.current[index]=node;}} aria-label={"Verification digit "+(index+1)} inputMode="numeric" autoComplete={index===0?"one-time-code":"off"} pattern="[0-9]" value={digit} onChange={event=>setDigit(index,event.target.value)} onKeyDown={event=>{if(event.key==="Backspace"&&!digit&&index>0)inputs.current[index-1]?.focus();if(event.key==="ArrowLeft"&&index>0)inputs.current[index-1]?.focus();if(event.key==="ArrowRight"&&index<5)inputs.current[index+1]?.focus();}}/>)}</div>}{error&&<div role="alert" className="workspace-auth-error">{error}</div>}<div className="workspace-auth-options"><label><input type="checkbox" checked={trust} onChange={event=>setTrust(event.target.checked)}/>Trust this device for 7 days</label></div><Button variant="primary" type="submit" disabled={busy}>{busy?"Verifying…":"Verify & continue"}</Button></form><div className="workspace-auth-footer"><button type="button" className="workspace-button workspace-button-ghost" onClick={()=>{setRecovery(value=>!value);setError("");}}><KeyRound size={16}/>{recovery?"Use authenticator code":"Use a recovery code"}</button><Link href="/dashboard/login" className="workspace-row" style={{justifyContent:"center",marginTop:12}}><ArrowLeft size={14}/>Back to sign in</Link><hr className="workspace-divider"/><p>Fixture authenticator code: {db.reference.core.authDemo.mfaCode}</p></div></AuthFrame>;
+
+export function ResetPasswordPage() {
+  const router = useRouter();
+  const { signOut } = useAdmin();
+  const [password, setPassword] = useState(""), [confirm, setConfirm] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false);
+  const [token, setToken] = useState(null);
+  useEffect(() => { setToken(new URLSearchParams(window.location.search).get("token") || ""); }, []);
+  const submit = async event => {
+    event.preventDefault(); setError("");
+    if (password.length < STAFF_PASSWORD_MINIMUM) { setError(`Use at least ${STAFF_PASSWORD_MINIMUM} characters.`); return; }
+    if (password !== confirm) { setError("The passwords do not match."); return; }
+    setBusy(true);
+    try { await resetWorkspacePassword(token, password); await signOut(); router.replace("/dashboard/login?notice=password-reset"); }
+    catch (reason) { setError(reason.message); }
+    finally { setBusy(false); }
+  };
+  return <AuthFrame>
+    <div style={{ marginTop: 30, color: "var(--ad-blue)" }}><ShieldCheck size={39} /></div>
+    <h2>Set a new password</h2>
+    {token === null ? <p role="status">Opening your reset link…</p> : !token ? <><div role="alert" className="workspace-auth-error">This reset link is incomplete. Request a new one from the sign-in page.</div><Link href="/dashboard/login" className="workspace-row" style={{ justifyContent: "center", marginTop: 12 }}><ArrowLeft size={14} />Back to sign in</Link></>
+      : <form onSubmit={submit}>
+        <p>Choose a password with at least {STAFF_PASSWORD_MINIMUM} characters. Signing in again is required on every device.</p>
+        {error && <div role="alert" className="workspace-auth-error">{error}</div>}
+        <Field label="New password"><PasswordInput label="New password" value={password} onChange={setPassword} autoComplete="new-password" placeholder="New password" minLength={STAFF_PASSWORD_MINIMUM} /></Field>
+        <Field label="Confirm new password"><PasswordInput label="Confirm new password" value={confirm} onChange={setConfirm} autoComplete="new-password" placeholder="Repeat the new password" minLength={STAFF_PASSWORD_MINIMUM} /></Field>
+        <Button variant="primary" type="submit" disabled={busy}>{busy ? "Saving…" : "Save new password"}</Button>
+        <Link href="/dashboard/login" className="workspace-row" style={{ justifyContent: "center", marginTop: 12 }}><ArrowLeft size={14} />Back to sign in</Link>
+      </form>}
+  </AuthFrame>;
 }

@@ -3,14 +3,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createInitialState, executeCommand, resolveDataset, validateSnapshot } from "../src/lib/admin/model.mjs";
 import { selectOverview } from "../src/lib/admin/selectors.mjs";
+import { STAFF, signedIn } from "./support/staff-session.mjs";
 
 const fixture = (name) => JSON.parse(readFileSync(new URL(`../src/data/admin/${name}.json`, import.meta.url), "utf8"));
-const initial = createInitialState([fixture("core"), fixture("content"), fixture("operations"), fixture("governance")]);
+const seed = createInitialState([fixture("core"), fixture("content"), fixture("operations"), fixture("governance")]);
+// Workspaces start signed in as the owner, as a verified staff session would.
+const initial = signedIn(seed);
 const fresh = () => structuredClone(initial);
 const K = {
   approvals: "olentra-admin-governance-approvals-v1", audit: "olentra-admin-governance-audit-v1",
-  company: "olentra-admin-company-settings-v1", security: "olentra-admin-security-policy-v1",
-  sessions: "olentra-admin-security-sessions-v1", backups: "olentra-admin-backups-v1",
+  company: "olentra-admin-company-settings-v1", backups: "olentra-admin-backups-v1",
   notifications: "olentra-admin-notifications-v1", account: "olentra-admin-account-v1",
 };
 function dispatch(state, type, payload = {}) { return executeCommand(state, type, payload, { initial }); }
@@ -75,19 +77,17 @@ test("a failed nested publication rolls back the approval, audit history and not
   assert.equal(state.datasets[K.approvals].find((item) => item.id === id).status, "pending");
 });
 
-test("audit restoration restores the real typed security configuration", () => {
+test("audit restoration restores the real typed company configuration", () => {
   let state = fresh();
-  const before = structuredClone(state.datasets[K.security]);
-  state = success(state, "settings.save", { section: "security", values: { ...before, mfa: false, timeout: "1 hour" } }).state;
-  assert.equal(state.datasets[K.security].mfa, false);
-  const event = state.datasets[K.audit].find((item) => item.restore?.key === K.security);
+  const before = structuredClone(state.datasets[K.company]);
+  state = success(state, "settings.save", { section: "company", values: { ...before, company: "Renamed company" } }).state;
+  assert.equal(state.datasets[K.company].company, "Renamed company");
+  const event = state.datasets[K.audit].find((item) => item.restore?.key === K.company);
   assert.ok(event);
   state = success(state, "audit.restore", { id: event.id }).state;
-  assert.deepEqual(state.datasets[K.security], before);
-  assert.equal(typeof state.datasets[K.security].mfa, "boolean");
+  assert.deepEqual(state.datasets[K.company], before);
   assert.equal(state.datasets[K.audit][0].action, "Restored previous configuration");
 });
-
 test("integration tests require saved configuration and never retain typed credentials", () => {
   let state = fresh();
   failure(state, "integration.test", { id: "recruitment" }, /credential/i);
@@ -104,22 +104,18 @@ test("integration tests require saved configuration and never retain typed crede
   assert.equal(state.datasets["olentra-admin-integrations-v1"].recruitment, "connected");
 });
 
-test("security policy is shared with authentication and the current session is protected", () => {
+test("account identity comes from the staff account while preferences stay editable", () => {
   let state = fresh();
-  const current = state.datasets[K.sessions].find((item) => item.current);
-  failure(state, "session.revoke", { id: current.id }, /current session/i);
-  const other = state.datasets[K.sessions].find((item) => !item.current);
-  state = success(state, "session.revoke", { id: other.id }).state;
-  assert.equal(state.datasets[K.sessions].some((item) => item.id === other.id), false);
-  state = success(state, "settings.save", { section: "security", values: { ...state.datasets[K.security], mfa: false } }).state;
-  assert.equal(resolveDataset(state, K.security).mfa, false);
-  const owner = state.datasets["auth-accounts"].find((item) => item.id === "owner");
-  state = success(state, "auth.signOut").state;
-  const signedIn = success(state, "auth.signIn", { email: owner.email, passwordDigest: owner.passwordDigest });
-  assert.equal(signedIn.value.requiresMfa, false);
-  assert.equal(signedIn.state.datasets["auth-session"].status, "authenticated");
+  const profile = state.datasets[K.account];
+  assert.equal(profile.email, STAFF.owner.email);
+  assert.equal(profile.role, "Owner");
+  failure(state, "settings.save", { section: "account", values: { ...profile, name: "Someone else" } }, /Staff & roles/);
+  failure(state, "settings.save", { section: "account", values: { ...profile, email: "other@example.com" } }, /Staff & roles/);
+  failure(state, "settings.save", { section: "account", values: { ...profile, role: "Editor" } }, /Staff & roles/);
+  state = success(state, "settings.save", { section: "account", values: { ...profile, jobTitle: "Founder", timezone: "UTC" } }).state;
+  assert.equal(state.datasets[K.account].jobTitle, "Founder");
+  assert.equal(state.datasets[K.account].timezone, "UTC");
 });
-
 test("JSON backups capture state, require confirmation and preserve authentication and audit history", () => {
   let state = fresh();
   const savedName = state.datasets[K.company].company;
@@ -130,8 +126,6 @@ test("JSON backups capture state, require confirmation and preserve authenticati
   assert.equal(backup.snapshot.datasets[K.backups], undefined);
   assert.equal(backup.snapshot.datasets["auth-accounts"], undefined);
   state = success(state, "settings.save", { section: "company", values: { company: "Changed after backup" } }).state;
-  const owner = state.datasets["auth-accounts"].find((item) => item.id === "owner");
-  state = success(state, "auth.password.change", { currentDigest: owner.passwordDigest, nextDigest: "a".repeat(64) }).state;
   const accountsBeforeRestore = structuredClone(state.datasets["auth-accounts"]);
   const sessionBeforeRestore = structuredClone(state.datasets["auth-session"]);
   const auditBeforeRestore = state.datasets[K.audit].map((item) => item.id);
@@ -158,22 +152,6 @@ test("notification read, read-all and delete update the shared overview unread c
   state = success(state, "notification.delete", { id: first.id }).state;
   assert.equal(selectOverview(state).unreadNotifications, 0);
   assert.equal(state.datasets[K.notifications].some((item) => item.id === first.id), false);
-});
-
-test("account settings synchronize profile, team membership, authentication and session labels", () => {
-  let state = fresh();
-  state = success(state, "settings.save", { section: "account", values: { name: "Workspace founder", email: "founder@example.com" } }).state;
-  const account = state.datasets["auth-accounts"].find((item) => item.id === "owner");
-  const member = state.datasets["admin-team-members"].find((item) => item.id === "owner");
-  assert.equal(state.datasets[K.account].name, "Workspace founder");
-  assert.equal(account.name, "Workspace founder");
-  assert.equal(account.email, "founder@example.com");
-  assert.equal(member.name, "Workspace founder");
-  assert.equal(member.email, "founder@example.com");
-  assert.equal(member.initials, "WF");
-  assert.equal(state.datasets[K.sessions].find((item) => item.current).account, "Workspace founder");
-  const duplicateEmail = state.datasets["auth-accounts"].find((item) => item.id !== "owner").email;
-  failure(state, "settings.save", { section: "account", values: { email: duplicateEmail } }, /already belongs/i);
 });
 
 test("SEO review approval publishes the reviewed metadata snapshot", () => {
@@ -249,18 +227,18 @@ test("snapshot validation rejects null objects, missing required fields and inva
   const wrongNameType = fresh();
   wrongNameType.datasets[K.company].company = { unexpected: "object" };
   assert.throws(() => validateSnapshot(wrongNameType, initial), /Invalid field type/i);
-  const wrongPolicyType = fresh();
-  wrongPolicyType.datasets[K.security].mfa = "true";
-  assert.throws(() => validateSnapshot(wrongPolicyType, initial), /Invalid field type/i);
   const nullTranslationFields = fresh();
   nullTranslationFields.datasets["admin-translation-en-products"].fields = null;
   assert.throws(() => validateSnapshot(nullTranslationFields, initial), /Invalid field type/i);
 });
 
-test("snapshot validation rejects duplicate account emails and sessions referencing missing accounts", () => {
-  const duplicateEmail = fresh();
-  duplicateEmail.datasets["auth-accounts"][1].email = duplicateEmail.datasets["auth-accounts"][0].email.toUpperCase();
-  assert.throws(() => validateSnapshot(duplicateEmail, initial), /Duplicate demo account email/i);
+test("snapshot validation rejects extra accounts, stored credentials and sessions referencing missing accounts", () => {
+  const extraAccount = fresh();
+  extraAccount.datasets["auth-accounts"].push({ ...STAFF.editor, enabled: true });
+  assert.throws(() => validateSnapshot(extraAccount, initial), /only the signed-in account/i);
+  const storedSecret = fresh();
+  storedSecret.datasets["auth-accounts"][0].passwordDigest = "a".repeat(64);
+  assert.throws(() => validateSnapshot(storedSecret, initial), /credentials/i);
   const danglingSession = fresh();
   danglingSession.datasets["auth-session"] = { status: "authenticated", userId: "missing-account", role: "Owner" };
   assert.throws(() => validateSnapshot(danglingSession, initial), /missing account/i);
@@ -268,13 +246,10 @@ test("snapshot validation rejects duplicate account emails and sessions referenc
   mismatchedRole.datasets["auth-session"].role = "Editor";
   assert.throws(() => validateSnapshot(mismatchedRole, initial), /role does not match/i);
 });
-
-test("snapshot validation accepts complete JSON state and valid anonymous or pending MFA sessions", () => {
+test("snapshot validation accepts signed-in and signed-out workspace state", () => {
   assert.equal(validateSnapshot(fresh(), initial), true);
   const anonymous = success(fresh(), "auth.signOut").state;
+  assert.equal(anonymous.datasets["auth-session"].status, "anonymous");
+  assert.deepEqual(anonymous.datasets["auth-accounts"], []);
   assert.equal(validateSnapshot(anonymous, initial), true);
-  const owner = anonymous.datasets["auth-accounts"].find((item) => item.id === "owner");
-  const pending = success(anonymous, "auth.signIn", { email: owner.email, passwordDigest: owner.passwordDigest }).state;
-  assert.equal(pending.datasets["auth-session"].status, "pending");
-  assert.equal(validateSnapshot(pending, initial), true);
 });

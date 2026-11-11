@@ -24,6 +24,12 @@ export const STAFF_PERMISSIONS = [
   { id: "messages.interns", label: "Read and send active-intern messages" },
   { id: "notifications.read", label: "View relevant notifications" },
   { id: "certificates.read", label: "View issued certificates" },
+  // Company workspace (/dashboard) access levels. Admins always have full access;
+  // other roles get the highest level they are granted, or none.
+  { id: "workspace.administrator", label: "Company workspace: administrator (all modules and live website switches)" },
+  { id: "workspace.editor", label: "Company workspace: editor (content and media)" },
+  { id: "workspace.recruiter", label: "Company workspace: recruiter (careers and applications)" },
+  { id: "workspace.analyst", label: "Company workspace: analyst (read-only reporting)" },
 ] as const;
 export type StaffPermission = typeof STAFF_PERMISSIONS[number]["id"];
 const allowed = new Set<string>(STAFF_PERMISSIONS.map(p => p.id));
@@ -151,7 +157,7 @@ export function createStaffManagement({ collection, transact, client }: Options)
         if (!updated) throw new DomainError("CONFLICT", "The role changed or no longer exists. Refresh and try again.");
         rolesCache.set(roleId, safeRole(updated));
         const members = await accounts.find({ role: "company", staffRole: roleId }, { session }).project({ _id: 1 }).toArray();
-        await accounts.updateMany({ role: "company", staffRole: roleId }, { $inc: { sessionVersion: 1 } }, { session });
+        await accounts.updateMany({ role: "company", staffRole: roleId }, [{ $set: { sessionVersion: { $add: [{ $ifNull: ["$sessionVersion", 1] }, 1] } } }], { session });
         await record(session, admin, "role.updated", roleId, { name, permissions }, members.map(row => row._id));
         return safeRole(updated);
       });
@@ -185,7 +191,7 @@ export function createStaffManagement({ collection, transact, client }: Options)
         if (user.staffRole === "admin" && user.disabled !== true && (nextRole !== "admin" || nextDisabled)) {
           if (await accounts.countDocuments({ role: "company", staffRole: "admin", disabled: { $ne: true } }, { session }) <= 1) throw new DomainError("CONFLICT", "At least one active internship admin is required.");
         }
-        const changed = await accounts.findOneAndUpdate({ _id: accountId, role: "company" }, { $set: { staffRole: nextRole, disabled: nextDisabled, updatedAt: new Date() }, $inc: { sessionVersion: 1 } }, { session, returnDocument: "after" });
+        const changed = await accounts.findOneAndUpdate({ _id: accountId, role: "company" }, [{ $set: { staffRole: nextRole, disabled: nextDisabled, updatedAt: new Date(), sessionVersion: { $add: [{ $ifNull: ["$sessionVersion", 1] }, 1] } } }], { session, returnDocument: "after" });
         await record(session, admin, "staff.updated", accountId, { staffRole: nextRole, disabled: nextDisabled }, [accountId]);
         return safeAccount(changed!);
       });
@@ -197,10 +203,9 @@ export function createStaffManagement({ collection, transact, client }: Options)
       return transact(key, admin, { method, accountId, passwordDigest: digest(password) }, async session => {
         await adminLock(session);
         await currentAdmin(admin, session);
-        const user = await accounts.findOneAndUpdate({ _id: accountId, role: "company" }, { $inc: { sessionVersion: 1 } }, { session, returnDocument: "after" });
+        const user = await accounts.findOneAndUpdate({ _id: accountId, role: "company" }, [{ $set: { sessionVersion: { $add: [{ $ifNull: ["$sessionVersion", 1] }, 1] } } }], { session, returnDocument: "after" });
         if (!user) throw new DomainError("NOT_FOUND", "Staff account not found.");
-        const secret = await credentials.updateOne({ userId: accountId }, { $set: { passwordHash, updatedAt: new Date() } }, { session });
-        if (!secret.matchedCount) throw new DomainError("NOT_FOUND", "Staff credentials not found.");
+        await credentials.updateOne({ userId: accountId }, { $set: { passwordHash, updatedAt: new Date() } }, { session, upsert: true });
         await record(session, admin, "staff.passwordReset", accountId, {}, [accountId]);
         return { id: accountId };
       });

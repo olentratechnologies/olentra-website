@@ -14,7 +14,7 @@ configuration, and tests.
 | --- | --- | --- | --- |
 | `apps/web` | `@olentra/web` | Public website and internship portal | 3000 |
 | `apps/admin` | `@olentra/admin` | Company workspace (admin panel), deployed separately | 3002 |
-| `packages/site-features` | `@olentra/site-features` | Feature-switch rules, server store, controls auth, React provider | — |
+| `packages/site-features` | `@olentra/site-features` | Feature-switch rules, server store, origin checks, React provider | — |
 | `packages/ui` | `@olentra/ui` | Global styles, theme tokens/presets, Tailwind preset, loading indicator | — |
 | `packages/realtime` | `@olentra/realtime` | Realtime presence client and visitor tracker | — |
 

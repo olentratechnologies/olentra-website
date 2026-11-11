@@ -4,6 +4,7 @@ import type { Document } from "mongodb";
 import { DomainError } from "../../shared/errors";
 import type { Principal } from "../../shared/principal";
 import type { createInternshipDomain } from "../../app/command-dispatcher";
+import { createLoginThrottle, mongoAttemptStore } from "./login-throttle";
 
 const ACCESS_SECONDS = 15 * 60;
 const REFRESH_SECONDS = 7 * 24 * 60 * 60;
@@ -17,6 +18,8 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
   const key = new TextEncoder().encode(secret);
   const refreshKey = createHash("sha256").update("olentra-intern-refresh-retry-v1\0").update(secret).digest();
   const sessions = domain.collection("sessions");
+  const attempts = mongoAttemptStore(domain.collection("auth_attempts"));
+  const throttle = createLoginThrottle({ store: attempts });
   const verifiedTokenCache = new Map<string, { payload: Awaited<ReturnType<typeof jwtVerify>>["payload"]; expiresAt: number }>();
 
   async function initialize() {
@@ -24,6 +27,7 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
       sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       sessions.createIndex({ _id: 1, userId: 1, revoked: 1, expiresAt: 1 }),
       sessions.createIndex({ _id: 1, refreshHash: 1, revoked: 1 }),
+      attempts.initialize(),
     ]);
   }
   async function resolveSession(match: Document): Promise<{ row: Document; account: Principal | null } | null> {
@@ -53,9 +57,16 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
     await sessions.insertOne({ _id: sid, userId: account.id, version: account.sessionVersion, refreshHash: digest(refresh), expiresAt: new Date(Date.now() + REFRESH_SECONDS * 1000), revoked: false });
     return { account, ...(await access(account, sid)), refreshToken: `${sid}.${refresh}` };
   }
-  async function login(email: string, password: string) {
-    const account = await domain.login(email, password);
-    if (!account) throw new DomainError("UNAUTHENTICATED", "Email or password is incorrect.");
+  async function login(email: string, password: string, clientAddress = "direct") {
+    const attempt = await throttle.reserve(email, clientAddress);
+    let account: Principal | null;
+    try { account = await domain.login(email, password); }
+    catch (error) { await throttle.release(attempt); throw error; }
+    if (!account) {
+      await throttle.recordFailure(attempt);
+      throw new DomainError("UNAUTHENTICATED", "Email or password is incorrect.");
+    }
+    await throttle.recordSuccess(attempt);
     return createSessionForAccount(account);
   }
   async function generateMagicLinkToken(email: string, applicationId: string): Promise<string> {
@@ -86,9 +97,11 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
       throw new DomainError("UNAUTHENTICATED", "This sign-in link is invalid or has expired.");
     }
   }
-  async function generatePasswordResetToken(email: string, userId: string): Promise<string> {
+  // Reset links are bound to the account's session version. Using a link bumps
+  // that version, so each link works once and older links stop working.
+  async function generatePasswordResetToken(email: string, userId: string, version: number): Promise<string> {
     const now = Math.floor(Date.now() / 1000);
-    return new SignJWT({ uid: userId })
+    return new SignJWT({ uid: userId, ver: version })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setIssuer("olentra-intern-reset")
       .setAudience("olentra-intern-portal")
@@ -98,17 +111,17 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
       .setJti(randomUUID())
       .sign(key);
   }
-  async function verifyPasswordResetToken(token: string): Promise<{ email: string; userId: string }> {
+  async function verifyPasswordResetToken(token: string): Promise<{ email: string; userId: string; version: number }> {
     try {
       const { payload } = await jwtVerify(token, key, {
         algorithms: ["HS256"],
         issuer: "olentra-intern-reset",
         audience: "olentra-intern-portal",
       });
-      if (typeof payload.sub !== "string" || typeof payload.uid !== "string") {
+      if (typeof payload.sub !== "string" || typeof payload.uid !== "string" || (!Number.isSafeInteger(payload.ver) || (payload.ver as number) < 1)) {
         throw new DomainError("UNAUTHENTICATED", "This password reset link is invalid or has expired.");
       }
-      return { email: payload.sub, userId: payload.uid };
+      return { email: payload.sub, userId: payload.uid, version: payload.ver as number };
     } catch (err: any) {
       if (err instanceof DomainError) throw err;
       throw new DomainError("UNAUTHENTICATED", "This password reset link is invalid or has expired.");

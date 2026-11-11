@@ -24,12 +24,19 @@ const navigation = [
 function Workspace({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { db, ready, error, account, session, can, command, unreadNotifications } = useAdmin();
+  const { db, ready, error, account, auth, signOut: endSession, can, unreadNotifications } = useAdmin();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const authPage = pathname === "/dashboard/login" || pathname === "/dashboard/verify";
-  useEffect(() => { if (ready && !authPage && session?.status !== "authenticated") router.replace(session?.status === "pending" ? "/dashboard/verify" : "/dashboard/login"); }, [ready, authPage, session?.status, router]);
+  const authPage = pathname === "/dashboard/login" || pathname === "/dashboard/reset-password";
+  useEffect(() => {
+    if (!ready || auth.status === "loading") return;
+    if (!authPage && auth.status === "anonymous") router.replace("/dashboard/login?returnTo=" + encodeURIComponent(pathname));
+    if (pathname === "/dashboard/login" && auth.status === "authenticated") {
+      const target = new URLSearchParams(window.location.search).get("returnTo");
+      router.replace(target && target.startsWith("/dashboard") && !target.startsWith("//") ? target : "/dashboard");
+    }
+  }, [ready, authPage, auth.status, pathname, router]);
   const profile = db.datasets["olentra-admin-account-v1"] || {};
   useEffect(() => { document.documentElement.dataset.adminReducedMotion = String(Boolean(profile.reduceMotion)); }, [profile.reduceMotion]);
   useEffect(() => { setMenuOpen(false); setSearchOpen(false); }, [pathname]);
@@ -41,10 +48,12 @@ function Workspace({ children }) {
   const allowed = path => ["/dashboard/account", "/dashboard/notifications"].includes(path) || can(routeModule(path), "view");
   const results = designRoutes.filter(route => route.module !== "Authentication" && allowed(route.href) && (route.title + " " + route.module).toLowerCase().includes(query.toLowerCase()));
   const visibleNavigation = navigation.filter(([label]) => can(label, "view") || label === "Careers & Internships" && can("Applications", "view")).map(row => row[0] === "Careers & Internships" && !can(row[0], "view") ? [row[0], "/dashboard/careers/applications", row[2]] : row);
-  const signOut = () => { command("auth.signOut"); router.push("/dashboard/login"); };
-  if (!ready) return <div className="workspace-root workspace-session-loading"><LoadingIndicator label="Loading company workspace…" /></div>;
+  const signOut = async () => { await endSession(); router.push("/dashboard/login"); };
+  if (!ready || (auth.status === "loading" && !authPage)) return <div className="workspace-root workspace-session-loading"><LoadingIndicator label="Restoring your session…" /></div>;
   if (authPage) return <div className="workspace-root"><div className="workspace-auth-theme"><DashboardThemeToggle /></div>{children}</div>;
-  if (session?.status !== "authenticated") return <div className="workspace-root workspace-session-loading"><LoadingIndicator label={session?.status === "pending" ? "Opening verification…" : "Opening sign in…"} /></div>;
+  if (auth.status === "no-access") return <div className="workspace-root workspace-session-loading"><div className="workspace-empty"><h1>No company workspace access</h1><p>{auth.account?.email} is signed in, but its staff role has no company workspace access. An internship admin can grant a workspace access level in Internship dashboard → Staff &amp; roles.</p><Button variant="primary" onClick={signOut}>Sign out</Button></div></div>;
+  if (auth.status === "unavailable") return <div className="workspace-root workspace-session-loading"><div className="workspace-empty"><h1>Sign-in service unavailable</h1><p>{auth.error || "The account service could not be reached."} Retrying automatically…</p></div></div>;
+  if (auth.status !== "authenticated") return <div className="workspace-root workspace-session-loading"><LoadingIndicator label="Opening sign in…" /></div>;
   return <div className="workspace-root">
     {menuOpen && <button className="workspace-menu-scrim" aria-label="Close navigation" onClick={() => setMenuOpen(false)} />}
     <aside className={"workspace-sidebar " + (menuOpen ? "is-open" : "")} aria-label="Company navigation">

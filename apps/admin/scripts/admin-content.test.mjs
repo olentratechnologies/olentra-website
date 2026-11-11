@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createInitialState, executeCommand, updateDataset, validateSnapshot, AUDIT_KEY, NOTICE_KEY } from "../src/lib/admin/model.mjs";
 import { selectInternProgress, selectProjectProgress, selectOverview } from "../src/lib/admin/selectors.mjs";
+import { signedIn } from "./support/staff-session.mjs";
 
 const fixtureNames = ["core", "content", "operations", "governance"];
 const fixtures = fixtureNames.map((name) => JSON.parse(readFileSync(new URL(`../src/data/admin/${name}.json`, import.meta.url), "utf8")));
@@ -16,7 +17,7 @@ const K = {
   approvals: "olentra-admin-governance-approvals-v1",
   enquiries: "olentra-admin-enquiries-v1",
 };
-const initial = () => createInitialState(fixtures);
+const initial = () => signedIn(createInitialState(fixtures));
 const find = (state, key, id) => state.datasets[key].find((row) => row.id === id);
 const clone = (value) => structuredClone(value);
 

@@ -193,7 +193,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       }
     })();
 
-    const authRoutes = createAuthRoutes({ auth, domain, mailer, siteOrigin, sendJson });
+    const workspaceOrigin = (process.env.INTERNSHIP_WORKSPACE_ORIGIN || "http://localhost:3002").replace(/\/$/, "");
+    const authRoutes = createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin, sendJson });
     const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson });
     const nextRuntime: InternshipRuntime = {
       auth,
@@ -233,13 +234,15 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         // Await route adapters inside this boundary so rejected asynchronous
         // DomainError/MongoDB operations are converted to the API contract
         // rather than escaping Bun as a raw 500 error page.
-        if (url.pathname === AUTH_PATHS.login && request.method === "POST") return await runtime.authRoutes.login(request, origin);
+        if (url.pathname === AUTH_PATHS.login && request.method === "POST") return await runtime.authRoutes.login(request, origin, instance.requestIP(request)?.address);
         if (url.pathname === AUTH_PATHS.magicLink && request.method === "POST") return await runtime.authRoutes.magicLink(request, origin);
         if (url.pathname === AUTH_PATHS.verifyMagicLink && request.method === "POST") return await runtime.authRoutes.verifyMagicLink(request, origin);
         if (url.pathname === AUTH_PATHS.requestPasswordReset && request.method === "POST") return await runtime.authRoutes.requestPasswordReset(request, origin);
         if (url.pathname === AUTH_PATHS.resetPassword && request.method === "POST") return await runtime.authRoutes.resetPassword(request, origin);
         if (url.pathname === AUTH_PATHS.refresh && request.method === "POST") return await runtime.authRoutes.refresh(request, origin);
         if (url.pathname === AUTH_PATHS.logout && request.method === "POST") return await runtime.authRoutes.logout(request, origin);
+        if (url.pathname === AUTH_PATHS.session && request.method === "GET") return await runtime.authRoutes.session(request, origin);
+        if (url.pathname === AUTH_PATHS.changePassword && request.method === "POST") return await runtime.authRoutes.changePassword(request, origin);
         if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin);
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);
         throw new DomainError("NOT_FOUND", "Endpoint not found.");

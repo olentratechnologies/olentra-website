@@ -11,8 +11,11 @@ const clone=value=>value===undefined?undefined:JSON.parse(JSON.stringify(value))
 const own=(object,key)=>Object.prototype.hasOwnProperty.call(object,key);
 const safeKey=key=>typeof key==="string"&&!["__proto__","constructor","prototype"].includes(key);
 const assert=(condition,message)=>{if(!condition)throw new Error(message);};
-const TIMEOUTS={"15 minutes":15,"30 minutes":30,"1 hour":60,"4 hours":240,"8 hours":480};
-const PRIVATE_KEYS=new Set([AUDIT_KEY,NOTICE_KEY,"olentra-admin-backups-v1","auth-accounts","auth-session","auth-pending"]);
+const PRIVATE_KEYS=new Set([AUDIT_KEY,NOTICE_KEY,"olentra-admin-backups-v1","auth-accounts","auth-session"]);
+// Datasets from the retired browser-only demo login and team directory. Saved
+// browser data is scrubbed of them so no demo credentials survive the upgrade.
+const RETIRED_DEMO_KEYS=["auth-pending","auth-reset","auth-trusted-devices","auth-remembered-email","admin-team-members","admin-team-invitations","olentra-admin-security-sessions-v1","olentra-admin-sso-preview-v1","olentra-admin-security-policy-v1"];
+const hasDemoSecrets=account=>account&&typeof account==="object"&&["passwordDigest","mfaCode","recoveryDigests"].some(field=>field in account);
 const TELEMETRY=new Set(["admin-visit-events","admin-performance-probes"]);
 export function resolveDataset(state,key,fallback=null){if(own(state.datasets,key))return state.datasets[key];const prefix=Object.keys(state.templates||{}).sort((a,b)=>b.length-a.length).find(item=>key.startsWith(item));return prefix?state.templates[prefix]:fallback;}
 export function createInitialState(parts){
@@ -31,6 +34,8 @@ export function migrateSnapshot(value){
   const next=clone(value);
   if(!next||typeof next!=="object"||Array.isArray(next)||next.meta?.schemaVersion!==SCHEMA_VERSION||!next.datasets||typeof next.datasets!=="object"||Array.isArray(next.datasets))return next;
   if(!own(next.datasets,EMAIL_TEMPLATE_SELECTION_KEY))next.datasets[EMAIL_TEMPLATE_SELECTION_KEY]={};
+  for(const key of RETIRED_DEMO_KEYS)delete next.datasets[key];
+  if(Array.isArray(next.datasets["auth-accounts"])&&next.datasets["auth-accounts"].some(hasDemoSecrets)){next.datasets["auth-accounts"]=[];next.datasets["auth-session"]={status:"anonymous",userId:null};}
   for(const [key,rows]of Object.entries(next.datasets)){
     if(!key.startsWith("admin-role-permissions-")||!Array.isArray(rows)||rows.some(row=>row?.id==="Email Templates"||row?.name==="Email Templates"))continue;
     const administrator=key==="admin-role-permissions-administrator";
@@ -85,22 +90,24 @@ export function validateSnapshot(value,initial){
   for(const environment of ["Production","Staging"]){for(const key of ["features:","published-features:"]){const flags=data[key+environment];assert(flags&&Object.keys(initial.datasets[key+environment]).every(id=>typeof flags[id]==="boolean"),"Feature switches must be booleans.");}}
   const accounts=data["auth-accounts"],emails=new Set();
   for(const account of accounts){
-    assert(isRecord(account)&&typeof account.id==="string"&&account.id.trim(),"A demo account has an invalid ID.");
-    assert(typeof account.email==="string"&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account.email)&&/^[a-f0-9]{64}$/i.test(account.passwordDigest||""),"A demo account has invalid credential data.");
-    const email=account.email.trim().toLowerCase();assert(!emails.has(email),"Duplicate demo account email: "+email);emails.add(email);
-    assert(typeof account.role==="string"&&account.role.trim()&&typeof account.enabled==="boolean","A demo account has invalid role or enabled state.");
+    assert(isRecord(account)&&typeof account.id==="string"&&account.id.trim(),"A workspace account has an invalid ID.");
+    assert(typeof account.email==="string"&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account.email),"A workspace account has an invalid email.");
+    assert(!hasDemoSecrets(account),"Workspace data must not contain credentials.");
+    const email=account.email.trim().toLowerCase();assert(!emails.has(email),"Duplicate workspace account email: "+email);emails.add(email);
+    assert(typeof account.role==="string"&&account.role.trim()&&typeof account.enabled==="boolean","A workspace account has an invalid role or enabled state.");
   }
-  assert(accounts.some(item=>item.role==="Owner"&&item.enabled),"At least one active owner account is required.");
+  // Only the signed-in staff identity is kept locally; ownership is managed on the server.
+  assert(accounts.length<=1,"Workspace data may hold only the signed-in account.");
   const session=data["auth-session"];
-  assert(isRecord(session)&&["authenticated","anonymous","pending"].includes(session.status),"The demo session is invalid.");
-  assert(session.userId===null||typeof session.userId==="string","The demo session user ID is invalid.");
-  if(typeof session.userId==="string")assert(accounts.some(item=>item.id===session.userId),"The demo session refers to a missing account.");
+  assert(isRecord(session)&&["authenticated","anonymous"].includes(session.status),"The workspace session is invalid.");
+  assert(session.userId===null||typeof session.userId==="string","The workspace session user ID is invalid.");
+  if(typeof session.userId==="string")assert(accounts.some(item=>item.id===session.userId),"The workspace session refers to a missing account.");
   if(session.status==="authenticated"){
     const account=accounts.find(item=>item.id===session.userId);
-    assert(account?.enabled,"The authenticated demo session requires an active account.");
-    assert(session.role===account.role,"The demo session role does not match its account.");
+    assert(account?.enabled,"The authenticated workspace session requires an active account.");
+    assert(session.role===account.role,"The workspace session role does not match its account.");
   }
-  if(session.expiresAt!==undefined&&session.expiresAt!==null)assert(typeof session.expiresAt==="string"&&Number.isFinite(Date.parse(session.expiresAt)),"The demo session expiry is invalid.");
+  if(session.expiresAt!==undefined&&session.expiresAt!==null)assert(typeof session.expiresAt==="string"&&Number.isFinite(Date.parse(session.expiresAt)),"The workspace session expiry is invalid.");
   const programs=new Set(data["olentra-admin-opportunities"].map(row=>row.id));const applications=new Set(data["olentra-admin-applications-v1"].map(row=>row.id));const interns=new Map(data["olentra-admin-interns"].map(row=>[row.id,row]));const projects=new Map(data["olentra-admin-projects"].map(row=>[row.id,row]));
   for(const row of data["olentra-admin-applications-v1"])assert(programs.has(row.programId),"An application refers to an unknown program.");
   for(const row of interns.values()){assert(programs.has(row.programId),"An intern refers to an unknown program.");assert(applications.has(row.applicationId),"An intern refers to an unknown application.");for(const id of row.projectIds||[])assert(projects.has(id)&&projects.get(id).internIds.includes(row.id),"Project memberships are inconsistent.");}
@@ -115,17 +122,13 @@ function restore(state,value,scope="Content and configuration"){
   for(const [key,val]of Object.entries(value.datasets)){if(PRIVATE_KEYS.has(key)||TELEMETRY.has(key)||key.startsWith("auth-")||key.startsWith("account-profile-"))continue;
     const isContent=key.startsWith("olentra-admin-content")||key.startsWith("olentra-admin-page-")||key.startsWith("olentra-admin-published-page-")||key.startsWith("olentra-admin-media")||key.startsWith("admin-translation-");
     if(scope==="Content only"&&!isContent||scope==="Configuration only"&&isContent)continue;
-    if(key==="admin-team-members"){
-      const accounts=state.datasets["auth-accounts"]||[],protectedIds=new Set(accounts.map(row=>row.id));const members=clone(val).map(member=>{const account=accounts.find(row=>row.id===member.id);return account?{...member,name:account.name,email:account.email,role:account.role,status:account.enabled?"Active":"Removed"}:member;});
-      for(const member of state.datasets[key]||[])if(protectedIds.has(member.id)&&!members.some(row=>row.id===member.id))members.push(clone(member));state.datasets[key]=members;
-    }else state.datasets[key]=clone(val);
+    state.datasets[key]=clone(val);
   }
 }
 function reconcile(state){
   const data=state.datasets;
   if(data["olentra-admin-interns"])data["olentra-admin-interns"]=data["olentra-admin-interns"].map(intern=>({...intern,progress:selectInternProgress(state,intern.id).progress}));
   if(data["olentra-admin-opportunities"])data["olentra-admin-opportunities"]=data["olentra-admin-opportunities"].map(program=>({...program,applications:(data["olentra-admin-applications-v1"]||[]).filter(row=>row.programId===program.id).length,interns:(data["olentra-admin-interns"]||[]).filter(row=>row.programId===program.id&&["Active","Onboarding"].includes(row.status)).length}));
-  if(data["auth-accounts"]&&data["admin-team-members"]){const members=data["admin-team-members"];data["auth-accounts"]=data["auth-accounts"].map(account=>{const member=members.find(row=>row.id===account.id);return member?{...account,name:member.name,email:member.email||account.email,role:member.role,enabled:member.status!=="Removed"}:account;});}
   const session=data["auth-session"],account=data["auth-accounts"]?.find(row=>row.id===session?.userId);
   if(session?.status==="authenticated"&&account){data["auth-session"]={...session,role:account.role};const profile=data["olentra-admin-account-v1"];if(profile)data["olentra-admin-account-v1"]={...profile,name:account.name,email:account.email,role:account.role};}
 }
@@ -186,35 +189,27 @@ function coreCommand(type,payload,ctx){
   if(type==="clock.set"||type==="clock.tick"){const now=type==="clock.set"?payload.now:ctx.now;ctx.assert(Number.isFinite(Date.parse(now)),"Enter a valid simulation date and time.");ctx.setClock(new Date(now).toISOString());if(type==="clock.set")ctx.audit("Changed simulation clock","System",{resource:"Fixture clock",after:now});return{value:now};}
   return false;
 }
+// Accounts and passwords live on the realtime server. After a real sign-in or
+// session refresh, the workspace provider records the verified identity here so
+// the local permission matrix and audit history know who is acting.
+export const WORKSPACE_ROLES=["Owner","Administrator","Editor","Recruiter","Analyst"];
 function authCommand(type,payload,ctx){
-  const accounts=ctx.get("auth-accounts",[]),session=ctx.get("auth-session",{}),policy=ctx.get("olentra-admin-security-policy-v1",{});
-  const finish=account=>{const previousProfile=ctx.get("olentra-admin-account-v1",{});if(session?.userId)ctx.set("account-profile-"+session.userId,previousProfile);const profile=ctx.get("account-profile-"+account.id,{...previousProfile,jobTitle:""});ctx.set("olentra-admin-account-v1",{...profile,name:account.name,email:account.email,role:account.role});ctx.update("admin-team-members",members=>members.map(member=>member.id===account.id?{...member,active:"Now",lastActiveAt:ctx.now}:member));ctx.set("auth-session",{status:"authenticated",userId:account.id,role:account.role,authenticatedAt:ctx.now,verifiedAt:ctx.now,expiresAt:new Date(Date.parse(ctx.now)+(TIMEOUTS[policy.timeout]||30)*60000).toISOString()});ctx.set("auth-pending",null);ctx.audit("Signed in to demo workspace","Access",{resource:account.email});return{value:{userId:account.id,requiresMfa:false}};};
-  if(type==="auth.signIn"||type==="auth.sso"){
-    const account=accounts.find(row=>row.email.toLowerCase()===String(payload.email||"").trim().toLowerCase());
-    if(type==="auth.sso"){const provider=ctx.get("olentra-admin-sso-preview-v1",{});ctx.assert(policy.sso&&provider.domain&&payload.domain===provider.domain&&String(payload.email).toLowerCase().endsWith("@"+provider.domain.toLowerCase()),"SSO is not configured for this local account domain.");ctx.assert(account?.enabled,"This local account is not available.");}
-    else ctx.assert(account?.enabled&&account.passwordDigest===payload.passwordDigest,"The email or password is incorrect.");
-    ctx.set("auth-remembered-email",payload.remember?account.email:"");
-    const trusted=ctx.get("auth-trusted-devices",[]).some(item=>item.userId===account.id&&Date.parse(item.expiresAt)>Date.parse(ctx.now));
-    if(policy.mfa&&!trusted){ctx.set("auth-pending",{userId:account.id,expiresAt:new Date(Date.parse(ctx.now)+5*60000).toISOString(),attempts:0});ctx.set("auth-session",{status:"pending",userId:null});return{value:{requiresMfa:true}};}return finish(account);
+  const session=ctx.get("auth-session",{});
+  if(type==="auth.session.establish"){
+    const id=String(payload.id||"").trim(),email=String(payload.email||"").trim().toLowerCase(),name=String(payload.name||"").trim()||email,role=payload.role;
+    ctx.assert(id&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)&&WORKSPACE_ROLES.includes(role),"A verified staff account is required.");
+    const account={id,email,name,role,enabled:true};
+    const changed=session?.status!=="authenticated"||session.userId!==id||session.role!==role;
+    ctx.set("auth-accounts",[account]);
+    const previousProfile=ctx.get("olentra-admin-account-v1",{});
+    if(session?.userId&&session.userId!==id)ctx.set("account-profile-"+session.userId,previousProfile);
+    const profile=session?.userId===id?previousProfile:ctx.get("account-profile-"+id,{...previousProfile,jobTitle:""});
+    ctx.set("olentra-admin-account-v1",{...profile,name,email,role});
+    ctx.set("auth-session",{status:"authenticated",userId:id,role,authenticatedAt:changed?ctx.now:session.authenticatedAt||ctx.now,expiresAt:null});
+    if(changed)ctx.audit("Signed in to company workspace","Access",{resource:email});
+    return{value:{userId:id,role}};
   }
-  if(type==="auth.verify"){
-    const pending=ctx.get("auth-pending",null),account=accounts.find(row=>row.id===pending?.userId);ctx.assert(account?.enabled&&pending&&Date.parse(pending.expiresAt)>Date.parse(ctx.now),"Sign in again before verifying your account.");
-    const valid=payload.recoveryDigest?account.recoveryDigests.includes(payload.recoveryDigest):String(payload.code)===account.mfaCode;
-    if(!valid){ctx.set("auth-pending",pending.attempts>=4?null:{...pending,attempts:pending.attempts+1});if(pending.attempts>=4)ctx.set("auth-session",{status:"anonymous",userId:null});return{ok:false,error:pending.attempts>=4?"Too many attempts. Sign in again.":"The verification code is incorrect."};}
-    if(payload.trust)ctx.set("auth-trusted-devices",[...ctx.get("auth-trusted-devices",[]).filter(item=>item.userId!==account.id),{userId:account.id,expiresAt:new Date(Date.parse(ctx.now)+7*86400000).toISOString()}]);
-    ctx.update("admin-team-members",members=>members.map(member=>member.id===account.id?{...member,mfa:true}:member));
-    if(payload.recoveryDigest)ctx.set("auth-accounts",accounts.map(row=>row.id===account.id?{...row,recoveryDigests:row.recoveryDigests.filter(code=>code!==payload.recoveryDigest)}:row));return finish(account);
-  }
-  if(type==="auth.signOut"){ctx.set("auth-session",{status:"anonymous",userId:null});ctx.set("auth-pending",null);ctx.audit("Signed out of demo workspace","Access",{resource:session.userId||"demo"});return{value:true};}
-  if(type==="auth.reset.request"){
-    const account=accounts.find(row=>row.email.toLowerCase()===String(payload.email||"").trim().toLowerCase());ctx.assert(account?.enabled,"Choose a configured demo account.");ctx.set("auth-reset",{userId:account.id,expiresAt:new Date(Date.parse(ctx.now)+10*60000).toISOString(),attempts:0});return{value:{requested:true}};
-  }
-  if(type==="auth.reset.confirm"){
-    const request=ctx.get("auth-reset",null),account=accounts.find(row=>row.id===request?.userId);ctx.assert(account&&request&&Date.parse(request.expiresAt)>Date.parse(ctx.now),"Request a new reset code.");ctx.assert(String(payload.code)===ctx.reference.core.authDemo.resetCode,"The reset code is incorrect.");ctx.assert(/^[a-f0-9]{64}$/i.test(payload.nextDigest||""),"Choose a valid new password.");ctx.set("auth-accounts",accounts.map(row=>row.id===account.id?{...row,passwordDigest:payload.nextDigest}:row));ctx.set("auth-reset",null);if(session.userId===account.id)ctx.set("auth-session",{status:"anonymous",userId:null});ctx.audit("Reset demo account password","Access",{resource:account.email});return{value:true};
-  }
-  if(type==="auth.password.change"){
-    const account=accounts.find(row=>row.id===session?.userId);ctx.assert(account&&session.status==="authenticated","Sign in before changing the demo password.");ctx.assert(account.passwordDigest===payload.currentDigest,"The current password is incorrect.");ctx.assert(/^[a-f0-9]{64}$/i.test(payload.nextDigest||"")&&payload.nextDigest!==payload.currentDigest,"Choose a different valid password.");ctx.set("auth-accounts",accounts.map(row=>row.id===account.id?{...row,passwordDigest:payload.nextDigest}:row));ctx.set("auth-trusted-devices",ctx.get("auth-trusted-devices",[]).filter(item=>item.userId!==account.id));ctx.audit("Changed demo account password","Access",{resource:account.email});return{value:true};
-  }
+  if(type==="auth.signOut"){if(session?.userId)ctx.set("account-profile-"+session.userId,ctx.get("olentra-admin-account-v1",{}));ctx.set("auth-session",{status:"anonymous",userId:null});ctx.set("auth-accounts",[]);if(session?.userId)ctx.audit("Signed out of company workspace","Access",{resource:session.userId});return{value:true};}
   return false;
 }
 export function executeCommand(state,type,payload={},options={}){
@@ -229,12 +224,12 @@ export function executeCommand(state,type,payload={},options={}){
     assert(Number.isFinite(Date.parse(now)),"The simulation clock is invalid.");
     const activeSession=next.datasets["auth-session"];
     if(!type.startsWith("auth.")&&!type.startsWith("clock.")&&activeSession?.status==="authenticated"&&activeSession.expiresAt&&Date.parse(activeSession.expiresAt)<=Date.parse(now)){
-      next.datasets["auth-session"]={status:"anonymous",userId:null};ctx.notify({title:"Demo session expired",body:"Sign in to continue.",category:"System",href:"/dashboard/login"});next.meta.revision=state.meta.revision+1;next.meta.lastAction="auth.expired";return{ok:false,error:"Your session expired. Sign in to continue.",state:next};
+      next.datasets["auth-session"]={status:"anonymous",userId:null};ctx.notify({title:"Session expired",body:"Sign in to continue.",category:"System",href:"/dashboard/login"});next.meta.revision=state.meta.revision+1;next.meta.lastAction="auth.expired";return{ok:false,error:"Your session expired. Sign in to continue.",state:next};
     }
     const permission=commandPermission(type,payload);if(permission)assert(can(next,...permission),"Your role cannot perform this action.");
     else if(!type.startsWith("auth.")&&!type.startsWith("clock."))assert(next.datasets["auth-session"]?.status==="authenticated","Sign in before changing workspace data.");
     const result=dispatch(type,payload)||{};
-    const session=next.datasets["auth-session"];if(session?.status==="authenticated"&&session.expiresAt&&Date.parse(session.expiresAt)<=Date.parse(next.meta.clock)){next.datasets["auth-session"]={status:"anonymous",userId:null};ctx.notify({title:"Demo session expired",body:"Sign in to continue.",category:"System",href:"/dashboard/login"});}
+    const session=next.datasets["auth-session"];if(session?.status==="authenticated"&&session.expiresAt&&Date.parse(session.expiresAt)<=Date.parse(next.meta.clock)){next.datasets["auth-session"]={status:"anonymous",userId:null};ctx.notify({title:"Session expired",body:"Sign in to continue.",category:"System",href:"/dashboard/login"});}
     reconcile(next);validateEmailTemplateSelections(next.datasets[EMAIL_TEMPLATE_SELECTION_KEY]);if(type==="backup.restore")validateSnapshot(next,options.initial||state);next.meta.revision=state.meta.revision+1;next.meta.lastAction=type;
     return {ok:result.ok!==false,error:result.error,value:result.value,state:next};
   }catch(error){return{ok:false,error:error.message||"The action could not be completed.",state};}

@@ -2,14 +2,18 @@ import { readFile, mkdir, writeFile, access } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { FEATURE_IDS, ENVIRONMENTS } from "@olentra/site-features/rules";
-import { FEATURE_SESSION_COOKIE } from "@olentra/site-features/server/auth";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const workspaceRoot = path.resolve(root, "..");
-const base = new URL(process.env.OLENTRA_SMOKE_BASE_URL || "http://127.0.0.1:3000");
+const workspaceRoot = path.resolve(root, "../..");
+const webRoot = path.resolve(root, "../web");
+const base = new URL(process.env.OLENTRA_SMOKE_BASE_URL || "http://127.0.0.1:3002");
+const publicBase = new URL(process.env.OLENTRA_SMOKE_PUBLIC_BASE_URL || "http://127.0.0.1:3000");
+// Obtain a short-lived staff token with the normal login flow; never use a real
+// owner password or store the token in the generated smoke report.
+const accessToken = process.env.OLENTRA_SMOKE_ACCESS_TOKEN || "";
 const timeoutMs = 30000;
 const checks = [];
-let cookie = "", original = null, current = null, stream = null, verifiedFlags = 0, sessionAttempts = 0;
+let original = null, current = null, stream = null, verifiedFlags = 0;
 function record(name, status, expected, extra = {}) {
   const row = { name, status, expected, ok: status === expected, ...extra };
   checks.push(row);
@@ -20,8 +24,9 @@ async function request(route, { method = "GET", body, authorized = false, origin
   const headers = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (origin !== undefined) headers.Origin = origin;
-  if (authorized && cookie) headers.Cookie = cookie;
-  const response = await fetch(new URL(route, base), { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(timeout), redirect: "manual" });
+  if (authorized && accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const target = route.startsWith("/api/site-features") || route.startsWith("/dashboard") ? base : publicBase;
+  const response = await fetch(new URL(route, target), { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(timeout), redirect: "manual" });
   const text = await response.text();
   let value = null;
   try { value = JSON.parse(text); } catch {}
@@ -34,20 +39,15 @@ async function snapshot() {
   return result.value;
 }
 async function authenticate() {
-  const result = await request("/api/site-features/session", { method: "POST", origin: base.origin, body: { localDemo: true } });
-  record("local-session-" + (++sessionAttempts), result.status, 200);
-  if (result.status !== 200) throw new Error("Local feature-control session could not be established.");
-  const cookies = result.response.headers.getSetCookie?.() || [result.response.headers.get("set-cookie") || ""];
-  const header = cookies.find(value => value.startsWith(FEATURE_SESSION_COOKIE + "="));
-  if (!header) throw new Error("The feature-control session cookie is missing.");
-  cookie = header.split(";", 1)[0];
+  if (!accessToken) throw new Error("Set OLENTRA_SMOKE_ACCESS_TOKEN to a short-lived admin or workspace administrator access token.");
+  const result = await request("/api/site-features", { method: "PUT", origin: base.origin, authorized: true, body: { environment: "Production", feature: "services", enabled: current.environments.Production.services } });
+  record("staff-token-authorization", result.status, 200);
+  if (result.status !== 200) throw new Error("The staff access token could not authorize website controls.");
 }
 async function setFlag(environment, feature, enabled, { force = false, restoring = false } = {}) {
   if (!FEATURE_IDS.includes(feature) || !ENVIRONMENTS.includes(environment)) throw new Error("Unknown feature mutation was refused.");
   if (!force && current?.environments?.[environment]?.[feature] === enabled) return current;
-  if (!cookie) await authenticate();
-  let result = await request("/api/site-features", { method: "PUT", origin: base.origin, authorized: true, body: { environment, feature, enabled } });
-  if (result.status === 401) { await authenticate(); result = await request("/api/site-features", { method: "PUT", origin: base.origin, authorized: true, body: { environment, feature, enabled } }); }
+  const result = await request("/api/site-features", { method: "PUT", origin: base.origin, authorized: true, body: { environment, feature, enabled } });
   record((restoring ? "restore" : "authorized-put") + ":" + environment + ":" + feature, result.status, 200);
   if (result.status !== 200 || result.value?.environments?.[environment]?.[feature] !== enabled) throw new Error("An authorized feature update did not complete.");
   current = result.value;
@@ -62,16 +62,16 @@ async function checkRoutes(routes, expected, phase) {
   await Promise.all(Array.from({ length: Math.min(3, routes.length) }, async () => { while (index < routes.length) await expectRoute(routes[index++], expected, phase); }));
 }
 async function knownRoutes() {
-  const services = await readFile(path.join(root, "src/data/service-pages.js"), "utf8");
-  const blogs = await readFile(path.join(root, "src/data/blogs.js"), "utf8");
-  const products = await readFile(path.join(root, "src/data/products-data.js"), "utf8");
+  const services = await readFile(path.join(webRoot, "src/data/service-pages.js"), "utf8");
+  const blogs = await readFile(path.join(webRoot, "src/data/blogs.js"), "utf8");
+  const products = await readFile(path.join(webRoot, "src/data/products-data.js"), "utf8");
   const serviceSlug = services.match(/\bslug:\s*["']([^"']+)["']/)?.[1];
   const blogSlug = blogs.match(/\bslug:\s*["']([^"']+)["']/)?.[1];
   const productPaths = [...products.matchAll(/\bhref:\s*["'](\/products\/[^"']+)["']/g)].map(match => match[1]);
   const product = productPaths.find(route => route.endsWith("/olenbot")) || productPaths[0];
   if (!serviceSlug || !blogSlug || !product) throw new Error("A source route registry could not be read.");
-  await access(path.join(root, "src/app", product, "page.jsx"));
-  await access(path.join(root, "src/app/careers/intern/page.jsx"));
+  await access(path.join(webRoot, "src/app", product, "page.jsx"));
+  await access(path.join(webRoot, "src/app/careers/intern/page.jsx"));
   return { service: "/services/" + serviceSlug, product, blog: "/blogs/" + blogSlug, internship: "/careers/intern" };
 }
 async function expectLegacyRedirect(destination) {
@@ -79,10 +79,10 @@ async function expectLegacyRedirect(destination) {
     const result = await request("/intern" + query);
     record(query ? "legacy-query-redirect" : "legacy-redirect", result.status, 308);
     let target;
-    try { target = new URL(result.response.headers.get("location"), base); } catch {}
+    try { target = new URL(result.response.headers.get("location"), publicBase); } catch {}
     const expectedEntries = [...new URLSearchParams(query).entries()].map(entry => JSON.stringify(entry)).sort();
     const actualEntries = target ? [...target.searchParams.entries()].map(entry => JSON.stringify(entry)).sort() : null;
-    const preserved = target?.origin === base.origin && target?.pathname === destination && JSON.stringify(actualEntries) === JSON.stringify(expectedEntries);
+    const preserved = target?.origin === publicBase.origin && target?.pathname === destination && JSON.stringify(actualEntries) === JSON.stringify(expectedEntries);
     record(query ? "legacy-query-destination-preserved" : "legacy-destination", preserved ? 200 : 0, 200);
   }
 }
@@ -185,7 +185,8 @@ try {
   await setFlag("Production", "maintenance", true);
   await checkRoutes(["/", "/about", routes.service, routes.internship], 503, "maintenance-public");
   await checkRoutes(["/dashboard", "/dashboard/website-controls", "/intern/login", "/intern/dashboard"], 200, "maintenance-admin");
-  await checkRoutes(["/api/site-features", "/api/site-features/session"], 200, "maintenance-api");
+  await checkRoutes(["/api/site-features"], 200, "maintenance-api");
+  await expectRoute("/api/site-features/session", 404, "removed-controls-session");
 } catch {
   record("smoke-execution", 0, 200);
 } finally {
