@@ -241,24 +241,30 @@ test("service-local dotenv files and legacy realtime configuration are respected
   await writeFile(path.join(directory, "backend/realtime-server/.env"), "INTERNSHIP_PORT=32103\nINTERNSHIP_HOST=127.0.0.1\n");
   const services = await resolveServices("dev", { root: directory, env: cleanEnvironment() });
   assert.equal(services[0].address.port, 3000);
-  assert.deepEqual(services[1].address, { host: "127.0.0.1", port: 32102 });
-  assert.deepEqual(services[2].address, { host: "127.0.0.1", port: 32103 });
+  assert.equal(services[1].name, "admin");
+  assert.equal(services[1].address.port, 3002);
+  assert.deepEqual(services[2].address, { host: "127.0.0.1", port: 32102 });
+  assert.deepEqual(services[3].address, { host: "127.0.0.1", port: 32103 });
   assert.deepEqual(services[0].args.slice(-3), ["--", "--port", "3000"]);
+  assert.deepEqual(services[1].args.slice(-3), ["--", "--port", "3002"]);
 });
 
 test("exported ports override dotenv and frontend stays explicit in dev and start modes", { skip: !bunAvailable, timeout: 10000 }, async t => {
   const directory = await configWorkspace(t);
   await writeFile(path.join(directory, "backend/email-server/.env"), "PORT=32101\n");
   await writeFile(path.join(directory, "backend/realtime-server/.env"), "REALTIME_PORT=32103\n");
-  const env = { ...cleanEnvironment(), PORT: "32500", HOST: "127.0.0.1", REALTIME_PORT: "32503" };
+  const env = { ...cleanEnvironment(), PORT: "32500", ADMIN_PORT: "32502", HOST: "127.0.0.1", REALTIME_PORT: "32503" };
   for (const mode of ["dev", "start"]) {
     const services = await resolveServices(mode, { root: directory, env });
     assert.equal(services[0].address.port, 32500);
-    assert.equal(services[1].address.port, 32500);
-    assert.equal(services[2].address.port, 32503);
+    assert.equal(services[1].address.port, 32502);
+    assert.equal(services[2].address.port, 32500);
+    assert.equal(services[3].address.port, 32503);
     assert.deepEqual(services[0].args.slice(-3), ["--", "--port", "32500"]);
-    assert.ok(services[0].args.includes(mode));
-    assert.ok(services[1].args.includes(mode === "dev" ? "dev" : "start:built"));
+    assert.deepEqual(services[1].args.slice(-3), ["--", "--port", "32502"]);
+    assert.ok(services[0].args.includes(mode) && services[0].args.includes("@olentra/web"));
+    assert.ok(services[1].args.includes(mode) && services[1].args.includes("@olentra/admin"));
+    assert.ok(services[2].args.includes(mode === "dev" ? "dev" : "start:built"));
   }
 });
 

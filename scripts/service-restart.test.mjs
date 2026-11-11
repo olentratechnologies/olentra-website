@@ -17,7 +17,8 @@ const lockFixture = fileURLToPath(new URL("./fixtures/startup-lock-process.mjs",
 async function workspace(t, { cleanup = true } = {}) {
   const root = await mkdtemp(path.join(os.tmpdir(), "olentra-restart-"));
   if (cleanup) t.after(() => rm(root, { recursive: true, force: true }));
-  await mkdir(path.join(root, "frontend/node_modules/.bin"), { recursive: true });
+  await mkdir(path.join(root, "node_modules/.bin"), { recursive: true });
+  await mkdir(path.join(root, "apps/web"), { recursive: true });
   await mkdir(path.join(root, "backend/email-server/src"), { recursive: true });
   await mkdir(path.join(root, "scripts"), { recursive: true });
   return root;
@@ -68,7 +69,7 @@ function childProcess(t, command, args, { cwd, detached = false, env = process.e
 }
 
 async function nodeListener(t, root, { detached = false, stubborn = false, port = 0, server = true } = {}) {
-  const executable = path.join(root, server ? "frontend/node_modules/.bin/next" : "frontend/unrelated.cjs");
+  const executable = path.join(root, server ? "node_modules/.bin/next" : "apps/web/unrelated.cjs");
   await writeFile(executable, `
     const net = require("node:net");
     const listener = net.createServer(socket => { socket.on("error", () => {}); socket.end("alive"); });
@@ -78,7 +79,7 @@ async function nodeListener(t, root, { detached = false, stubborn = false, port 
     });
   `);
   const args = server ? [executable, "dev", "--port", String(port)] : [executable];
-  const run = childProcess(t, process.execPath, args, { cwd: path.join(root, "frontend"), detached });
+  const run = childProcess(t, process.execPath, args, { cwd: path.join(root, "apps/web"), detached });
   run.port = await run.ready();
   return run;
 }
@@ -142,7 +143,7 @@ test("restart discovery preserves its own ancestor even when that ancestor looks
     process.send("preserved");
     process.disconnect();
   `);
-  const executable = path.join(root, "frontend/node_modules/.bin/next");
+  const executable = path.join(root, "node_modules/.bin/next");
   await writeFile(executable, `
     const { spawn } = require("node:child_process");
     const net = require("node:net");
@@ -154,7 +155,7 @@ test("restart discovery preserves its own ancestor even when that ancestor looks
     });
     process.on("SIGTERM", () => listener.close(() => process.exit(0)));
   `);
-  const own = childProcess(t, process.execPath, [executable, "dev"], { cwd: path.join(root, "frontend"), detached: true });
+  const own = childProcess(t, process.execPath, [executable, "dev"], { cwd: path.join(root, "apps/web"), detached: true });
   const port = await own.ready();
   await waitFor(() => /ANCESTOR_PRESERVED/.test(own.output()), "ancestor exclusion", own.output);
   assert.equal(await readListener(port), "alive");
@@ -188,7 +189,7 @@ test("an old supervisor and its recognized service descendants are stopped toget
   const setup = await nodeListener(t, root);
   setup.child.kill("SIGTERM");
   await setup.finished();
-  await writeFile(path.join(root, "frontend/node_modules/.bin/next"), `
+  await writeFile(path.join(root, "node_modules/.bin/next"), `
     const net = require("node:net");
     const server = net.createServer(socket => socket.destroy());
     server.listen({ host: "127.0.0.1", port: 0 }, () => console.log("READY", process.pid, server.address().port));
@@ -198,8 +199,8 @@ test("an old supervisor and its recognized service descendants are stopped toget
   await writeFile(supervisorFile, `
     import { spawn } from "node:child_process";
     import path from "node:path";
-    const cwd = path.resolve("frontend");
-    const child = spawn(process.execPath, [path.join(cwd, "node_modules/.bin/next"), "dev"], { cwd, stdio: "inherit" });
+    const cwd = path.resolve("apps/web");
+    const child = spawn(process.execPath, [path.resolve("node_modules/.bin/next"), "dev"], { cwd, stdio: "inherit" });
     child.once("exit", (code, signal) => {
       console.log("CHILD_EXIT", code, signal);
       process.exit(code ?? 1);
@@ -238,17 +239,21 @@ test("dev CLI replaces its own running stack using the same ports", { skip: !pos
   }
   const old = await nodeListener(t, root, { detached: true });
   const reservations = [];
-  for (let index = 0; index < 2; index++) {
+  for (let index = 0; index < 3; index++) {
     const server = net.createServer();
     server.listen({ host: "127.0.0.1", port: 0 });
     await once(server, "listening");
     reservations.push(server);
   }
-  const [emailPort, realtimePort] = reservations.map(server => server.address().port);
+  const [emailPort, realtimePort, adminPort] = reservations.map(server => server.address().port);
   for (const server of reservations) await new Promise(resolve => server.close(resolve));
-  const env = { ...process.env, NODE_ENV: "development", PORT: String(old.port), EMAIL_PORT: String(emailPort), REALTIME_PORT: String(realtimePort) };
-  await writeFile(path.join(root, "frontend/package.json"), JSON.stringify({ scripts: { dev: "node node_modules/.bin/next dev" } }));
-  await writeFile(path.join(root, "frontend/node_modules/.bin/next"), `
+  const env = { ...process.env, NODE_ENV: "development", PORT: String(old.port), ADMIN_PORT: String(adminPort), EMAIL_PORT: String(emailPort), REALTIME_PORT: String(realtimePort) };
+  await writeFile(path.join(root, "package.json"), JSON.stringify({ name: "fixture", private: true, workspaces: ["apps/*"] }));
+  for (const app of ["web", "admin"]) {
+    await mkdir(path.join(root, "apps", app), { recursive: true });
+    await writeFile(path.join(root, "apps", app, "package.json"), JSON.stringify({ name: "@olentra/" + app, scripts: { dev: "node ../../node_modules/.bin/next dev" } }));
+  }
+  await writeFile(path.join(root, "node_modules/.bin/next"), `
     const net = require("node:net");
     const port = Number(process.argv[process.argv.lastIndexOf("--port") + 1]);
     const server = net.createServer(socket => { socket.on("error", () => {}); socket.end("alive"); });
@@ -272,7 +277,7 @@ test("dev CLI replaces its own running stack using the same ports", { skip: !pos
   const ready = async run => {
     await waitFor(() => {
       assert.equal(run.exited, false, `Temporary stack exited during startup:\n${run.output()}`);
-      return [old.port, emailPort, realtimePort].every(port => new RegExp(`READY \\d+ ${port}(?:\\r?\\n|$)`).test(run.output()));
+      return [old.port, adminPort, emailPort, realtimePort].every(port => new RegExp(`READY \\d+ ${port}(?:\\r?\\n|$)`).test(run.output()));
     }, "full temporary stack", run.output);
   };
   const first = childProcess(t, process.execPath, [path.join(root, "scripts/run-services.mjs"), "dev"], { cwd: root, detached: true, env });

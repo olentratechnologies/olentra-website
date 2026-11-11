@@ -52,17 +52,23 @@ async function readWorkingDirectories(pids, signal) {
 }
 
 function commandKind(record, root, requestedRoot = root) {
-  const frontend = path.join(root, "frontend");
   const roots = [...new Set([root, requestedRoot])];
   const executable = "(?:\\S*/)?";
+  // Next.js apps live in apps/<name> and run the hoisted workspace binary. The
+  // pre-workspace frontend/ paths stay recognized so an older running stack can
+  // still be stopped after the move.
   const nextPaths = [
-    ...roots.flatMap(directory => [path.join(directory, "frontend/node_modules/.bin/next"), path.join(directory, "frontend/node_modules/next/dist/bin/next")]),
+    ...roots.flatMap(directory => ["node_modules", "frontend/node_modules", "apps/web/node_modules", "apps/admin/node_modules"]
+      .flatMap(modules => [path.join(directory, modules, ".bin/next"), path.join(directory, modules, "next/dist/bin/next")])),
     "node_modules/.bin/next", "node_modules/next/dist/bin/next", "./node_modules/.bin/next",
+    "../../node_modules/.bin/next", "../../node_modules/next/dist/bin/next",
   ].map(escape).join("|");
-  if (record.cwd === frontend && (
-    /^next-server(?:\s|$)/.test(record.command)
-    || new RegExp(`^${executable}node (?:${nextPaths}) (?:dev|start)(?:\\s|$)`).test(record.command)
-  )) return "frontend";
+  for (const [kind, directory] of [["frontend", path.join(root, "apps/web")], ["frontend", path.join(root, "frontend")], ["admin", path.join(root, "apps/admin")]]) {
+    if (record.cwd === directory && (
+      /^next-server(?:\s|$)/.test(record.command)
+      || new RegExp(`^${executable}node (?:${nextPaths}) (?:dev|start)(?:\\s|$)`).test(record.command)
+    )) return kind;
+  }
 
   for (const name of ["email-server", "realtime-server"]) {
     const directory = path.join(root, "backend", name);
@@ -75,7 +81,8 @@ function commandKind(record, root, requestedRoot = root) {
     if (record.cwd === directory && new RegExp(`^${executable}bun run (?:dev|start|start:built)$`).test(record.command)) return name;
   }
 
-  if ((record.cwd === root || record.cwd === frontend)
+  const appDirectories = ["apps/web", "apps/admin", "frontend"].map(relative => path.join(root, relative));
+  if ((record.cwd === root || appDirectories.includes(record.cwd))
     && /^(?:\S*\/)?npm (?:--prefix frontend )?run (?:dev|start)(?:\s|$)/.test(record.command)) return "wrapper";
   const scripts = [...roots.map(base => path.join(base, "scripts/run-services.mjs")), "scripts/run-services.mjs", "./scripts/run-services.mjs"].map(escape).join("|");
   if (record.cwd === root && new RegExp(`^${executable}node (?:${scripts}) (?:dev|start)$`).test(record.command)) return "supervisor";
@@ -89,7 +96,7 @@ async function canonicalCommand(command, root) {
   // entrypoints, and keep the original command for later identity checks.
   const executable = "(?:\\S*/)?";
   const patterns = [
-    new RegExp(`^(${executable}node )(/.*)(/frontend/node_modules/(?:\\.bin/next|next/dist/bin/next) (?:dev|start)(?:\\s.*)?)$`),
+    new RegExp(`^(${executable}node )(/.*)((?:/frontend|/apps/(?:web|admin))?/node_modules/(?:\\.bin/next|next/dist/bin/next) (?:dev|start)(?:\\s.*)?)$`),
     new RegExp(`^(${executable}node )(/.*)(/scripts/run-services\\.mjs (?:dev|start))$`),
     new RegExp(`^(${executable}bun (?:(?:run|--watch|--smol) )*)(/.*)(/backend/(?:email-server|realtime-server)/(?:src/index\\.ts|dist/(?:email-server|realtime-server)\\.js)(?:\\s.*)?)$`),
     new RegExp(`^(${executable}bun run --cwd )(/.*)(/backend/(?:email-server|realtime-server) (?:dev|start|start:built))$`),

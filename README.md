@@ -1,26 +1,39 @@
 # Olentra Website
 
-The Olentra website is a Next.js App Router application with two dedicated Bun
-backends. Public URLs and the internship protocol namespace use `intern`;
+The Olentra repository is an npm-workspaces monorepo: two separately deployable
+Next.js App Router applications, shared packages, and two dedicated Bun backends. Public URLs and the internship protocol namespace use `intern`;
 the internal service, environment, and script naming uses `internship`.
 
 See [the architecture and route reference](docs/architecture-and-routes.md) for
 the canonical service boundaries, complete route tree, health endpoints, and
 configuration names.
-See [the frontend workspace guide](frontend/README.md) for the Next.js source,
-asset, configuration, and frontend test layout.
+See [the website guide](apps/web/README.md) for the public site source, assets,
+configuration, and tests.
+
+| Path | Package | What it is | Dev port |
+| --- | --- | --- | --- |
+| `apps/web` | `@olentra/web` | Public website and internship portal | 3000 |
+| `apps/admin` | `@olentra/admin` | Company workspace (admin panel), deployed separately | 3002 |
+| `packages/site-features` | `@olentra/site-features` | Feature-switch rules, server store, controls auth, React provider | — |
+| `packages/ui` | `@olentra/ui` | Global styles, theme tokens/presets, Tailwind preset, loading indicator | — |
+| `packages/realtime` | `@olentra/realtime` | Realtime presence client and visitor tracker | — |
+
+The admin app writes and the website reads one shared feature-switch file,
+`.data/site-features.json` at the repository root (`OLENTRA_FEATURE_STORE_PATH`
+overrides it for both apps). Website links to `/dashboard` redirect to the admin
+app (`OLENTRA_ADMIN_URL`, default `http://localhost:3002`).
 See [the backend architecture guide](backend/README.md) for service-local
 layers, ownership boundaries, Docker baselines, and operational commands.
 
 ## Local development
 
-Install the frontend dependencies once:
+Install every app and package from the repository root once:
 
 ```sh
-npm install --prefix frontend
+npm install
 ```
 
-Run the frontend and backends together in one terminal:
+Run the website, admin app and backends together in one terminal:
 
 ```sh
 npm run dev:all
@@ -37,8 +50,9 @@ conflict-recovery behavior.
 
 `start:all` checks the configured addresses without automatically replacing
 running servers. Both commands reject conflicting service addresses. The
-frontend uses an explicit port: `3000` by default, or the exported `PORT` value.
-It will not move automatically onto the email port.
+website uses an explicit port: `3000` by default, or the exported `PORT` value;
+the admin app uses `3002`, or the exported `ADMIN_PORT`. Neither moves
+automatically onto another service port.
 
 You can still stop the stack with **Ctrl+C** and wait for the shell prompt to
 return. On macOS/Linux the runner stops each service's whole process group,
@@ -51,14 +65,16 @@ The individual commands remain available when a service needs to be isolated:
 
 ```sh
 npm run dev
+npm run dev:admin
 npm run email:dev
 npm run realtime:dev
 ```
 
 The dedicated services listen on port `3001` (email/contact) and port `3003`
-(unified realtime). Configure the Next.js application in `frontend/.env.local` and each
+(unified realtime). Configure the website in `apps/web/.env.local`, the admin app in
+`apps/admin/.env.local`, and each
 Bun service in its service-local `.env` file, using the canonical variable
-names from `frontend/.env.example` and the service-local `.env.example` files.
+names from `apps/web/.env.example`, `apps/admin/.env.example` and the service-local `.env.example` files.
 Deprecated aliases remain supported for one compatibility cycle and emit a
 warning when used.
 
@@ -95,7 +111,7 @@ lsof -a -g PGID -d cwd
 ```
 
 Only continue if the group is dedicated to this checkout's Olentra service.
-Frontend wrappers may use the repository root; Next uses `frontend`, and Bun
+npm wrappers use the repository root; Next uses `apps/web` or `apps/admin`, and Bun
 backends use their respective service directories. A group containing your
 shell or unrelated commands must not be terminated as a group.
 
@@ -131,9 +147,9 @@ npm run build:all
 npm run start:all
 ```
 
-`build:all` creates the Next.js production output and Bun server bundles under
+`build:all` creates both Next.js production outputs and Bun server bundles under
 the ignored `backend/*/dist/` directories. Run it before `start:all`; the latter
-starts the compiled frontend and both compiled Bun services. `compile:all` is a
+starts both compiled Next.js apps and both compiled Bun services. `compile:all` is a
 convenience alias for `build:all`.
 
 Internship integration tests and benchmarks require an explicitly isolated

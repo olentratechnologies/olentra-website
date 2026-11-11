@@ -57,12 +57,20 @@ export async function resolveServices(mode, { root = projectRoot, env = process.
   }
   signal?.throwIfAborted();
   const frontendAddress = validateAddress({ port: Number(env.PORT || 3000) }, "frontend");
+  const adminAddress = validateAddress({ port: Number(env.ADMIN_PORT || 3002) }, "admin");
+  // "frontend" is the public website (apps/web); "admin" is the company workspace (apps/admin).
   const services = [{
     name: "frontend",
     command: npm,
-    args: ["--prefix", "frontend", "run", mode, "--", "--port", String(frontendAddress.port)],
+    args: ["run", mode, "--workspace", "@olentra/web", "--", "--port", String(frontendAddress.port)],
     cwd: root,
     address: frontendAddress,
+  }, {
+    name: "admin",
+    command: npm,
+    args: ["run", mode, "--workspace", "@olentra/admin", "--", "--port", String(adminAddress.port)],
+    cwd: root,
+    address: adminAddress,
   }];
   for (const [name, reader] of [
     ["email-server", "readContactEnvironment"],

@@ -24,8 +24,8 @@ function readText(filename) {
   return readFileSync(filename, "utf8");
 }
 
-function appRoutes() {
-  const appRoot = path.join(root, "frontend", "src", "app");
+function appRoutes(app) {
+  const appRoot = path.join(root, "apps", app, "src", "app");
   return new Set(
     filesUnder(appRoot)
       .filter((filename) => /(?:^|\/)(?:page|route)\.[^.]+$/.test(filename))
@@ -76,33 +76,30 @@ test("layered backend structure and operational files are present", () => {
   }
 });
 
-test("frontend workspace owns the Next.js application and root source directories are empty", () => {
-  for (const relative of [
-    "README.md",
-    "src/app",
-    "src/components",
-    "src/data",
-    "src/lib",
-    "public",
-    "scripts",
-    "package.json",
-    "package-lock.json",
-    ".npmrc",
-    ".env.example",
-    "next.config.js",
-    "postcss.config.js",
-    "tailwind.config.js",
-    "jsconfig.json",
-    "components.json",
-  ]) assert.ok(existsSync(path.join(root, "frontend", relative)), `frontend/${relative} is missing`);
-  for (const relative of ["src", "public", "next.config.js", "postcss.config.js", "tailwind.config.js", "jsconfig.json", "components.json", ".env.example"]) {
-    assert.equal(existsSync(path.join(root, relative)), false, `${relative} must stay inside frontend/`);
+test("workspace apps own their Next.js applications and shared code lives in packages", () => {
+  for (const app of ["web", "admin"]) {
+    for (const relative of ["src/app", "package.json", "next.config.js", "postcss.config.js", "tailwind.config.js", "jsconfig.json", ".env.example", "eslint.config.mjs"]) {
+      assert.ok(existsSync(path.join(root, "apps", app, relative)), `apps/${app}/${relative} is missing`);
+    }
+  }
+  for (const relative of ["apps/web/src/components", "apps/web/src/data", "apps/web/src/lib", "apps/web/public", "apps/web/components.json"]) {
+    assert.ok(existsSync(path.join(root, relative)), `${relative} is missing`);
+  }
+  for (const name of ["site-features", "ui", "realtime"]) {
+    assert.ok(existsSync(path.join(root, "packages", name, "package.json")), `packages/${name} is missing`);
+  }
+  for (const relative of ["frontend", "src", "public", "next.config.js", "postcss.config.js", "tailwind.config.js", "jsconfig.json", "components.json", ".env.example"]) {
+    assert.equal(existsSync(path.join(root, relative)), false, `${relative} must not exist at the repository root`);
   }
   const rootPackage = JSON.parse(readText(path.join(root, "package.json")));
-  const frontendPackage = JSON.parse(readText(path.join(root, "frontend/package.json")));
-  assert.equal(Object.keys(rootPackage.dependencies || {}).length, 0, "root package must not own frontend dependencies");
-  assert.equal(Object.keys(rootPackage.devDependencies || {}).length, 0, "root package must not own frontend dev dependencies");
-  assert.equal(frontendPackage.dependencies.next, "^16.4.5", "frontend package must own the patched Next.js version");
+  assert.deepEqual(rootPackage.workspaces, ["apps/*", "packages/*"]);
+  assert.equal(Object.keys(rootPackage.dependencies || {}).length, 0, "root package must not own app dependencies");
+  assert.equal(Object.keys(rootPackage.devDependencies || {}).length, 0, "root package must not own app dev dependencies");
+  for (const app of ["web", "admin"]) {
+    const appPackage = JSON.parse(readText(path.join(root, "apps", app, "package.json")));
+    assert.equal(appPackage.name, `@olentra/${app}`);
+    assert.equal(appPackage.dependencies.next, "^16.4.5", `apps/${app} must own the patched Next.js version`);
+  }
 });
 
 test("service documentation only names commands implemented by its package", () => {
@@ -117,7 +114,7 @@ test("service documentation only names commands implemented by its package", () 
 });
 
 test("backend executable code uses canonical locations and environment names", () => {
-  const executableFiles = ["backend/email-server", "backend/realtime-server", "scripts", "frontend/scripts"]
+  const executableFiles = ["backend/email-server", "backend/realtime-server", "scripts", "apps/web/scripts", "apps/admin/scripts", "packages"]
     .flatMap(relative => filesUnder(path.join(root, relative)))
     .filter(filename => /\.(?:ts|tsx|js|jsx|mjs|cjs)$/.test(filename))
     .filter(filename => !filename.endsWith("scripts/naming-and-routes.test.mjs"));
@@ -134,16 +131,16 @@ test("backend executable code uses canonical locations and environment names", (
 
 test("internal data modules and dynamic route parameters use canonical names", () => {
   for (const filename of ["olentra-ai-studio.js", "products-data.js", "service-pages.js"]) {
-    assert.ok(existsSync(path.join(root, "frontend", "src", "data", filename)), `${filename} is missing`);
+    assert.ok(existsSync(path.join(root, "apps", "web", "src", "data", filename)), `${filename} is missing`);
   }
   for (const deleted of ["olentra_ai_studio.js", "products_data.js", "service_pages.js"]) {
-    assert.equal(existsSync(path.join(root, "frontend", "src", "data", deleted)), false, `${deleted} must stay deleted`);
+    assert.equal(existsSync(path.join(root, "apps", "web", "src", "data", deleted)), false, `${deleted} must stay deleted`);
   }
 
-  assert.ok(existsSync(path.join(root, "frontend/src/app/intern/dashboard/applications/[applicationId]")));
-  assert.ok(existsSync(path.join(root, "frontend/src/app/intern/portal/projects/[projectId]")));
-  assert.equal(existsSync(path.join(root, "frontend/src/app/intern/dashboard/applications/[id]")), false);
-  assert.equal(existsSync(path.join(root, "frontend/src/app/intern/portal/projects/[id]")), false);
+  assert.ok(existsSync(path.join(root, "apps/web/src/app/intern/dashboard/applications/[applicationId]")));
+  assert.ok(existsSync(path.join(root, "apps/web/src/app/intern/portal/projects/[projectId]")));
+  assert.equal(existsSync(path.join(root, "apps/web/src/app/intern/dashboard/applications/[id]")), false);
+  assert.equal(existsSync(path.join(root, "apps/web/src/app/intern/portal/projects/[id]")), false);
 });
 
 test("canonical internship scripts and compatibility aliases are present", () => {
@@ -191,7 +188,7 @@ test("every documented npm run command exists", () => {
 });
 
 test("deleted service paths and old internal filenames are not referenced", () => {
-  const scanRoots = ["frontend", "backend", "scripts", "docs", ".github", "README.md", "package.json"];
+  const scanRoots = ["apps", "packages", "backend", "scripts", "docs", ".github", "README.md", "package.json"];
   const files = scanRoots.flatMap((relative) => {
     const filename = path.join(root, relative);
     return statSync(filename).isDirectory() ? filesUnder(filename) : [filename];
@@ -221,7 +218,13 @@ test("deleted service paths and old internal filenames are not referenced", () =
 });
 
 test("public route invariants and normalized route segments are preserved", () => {
-  const routes = appRoutes();
+  const webRoutes = appRoutes("web"), adminRoutes = appRoutes("admin");
+  const routes = new Set([...webRoutes, ...adminRoutes]);
+  // The company workspace is its own app; the website keeps only the read-only feature endpoints.
+  for (const route of adminRoutes) assert.ok(route.startsWith("/dashboard") || route.startsWith("/api/site-features"), `unexpected admin route: ${route}`);
+  for (const route of webRoutes) assert.equal(route.startsWith("/dashboard"), false, `website must not serve ${route}`);
+  assert.equal(webRoutes.has("/api/site-features/session"), false, "website must not expose the website-controls session");
+  for (const route of ["/api/site-features", "/api/site-features/stream"]) assert.ok(webRoutes.has(route) && adminRoutes.has(route), `${route} must be served by both apps`);
   const expectedRoutes = new Set([
     "/",
     "/about",
@@ -333,14 +336,14 @@ test("public route invariants and normalized route segments are preserved", () =
 });
 
 test("canonical frontend environment names and compatibility fallbacks are wired", () => {
-  const realtime = readText(path.join(root, "frontend/src/lib/realtime.js"));
-  const internshipClient = readText(path.join(root, "frontend/src/lib/intern-client.mjs"));
+  const realtime = readText(path.join(root, "packages/realtime/src/realtime.js"));
+  const internshipClient = readText(path.join(root, "apps/web/src/lib/intern-client.mjs"));
   assert.match(realtime, /NEXT_PUBLIC_REALTIME_WS_URL/);
   assert.doesNotMatch(realtime, /NEXT_PUBLIC_PRESENCE_WS_URL|NEXT_PUBLIC_WS_URL/);
   assert.match(internshipClient, /NEXT_PUBLIC_INTERNSHIP_BACKEND_URL/);
   assert.match(internshipClient, /NEXT_PUBLIC_INTERN_BACKEND_URL/);
   assert.match(internshipClient, /NEXT_PUBLIC_REALTIME_WS_URL/);
   assert.match(internshipClient, /\/ws\/intern/);
-  const visitorTracker = readText(path.join(root, "frontend/src/components/realtime/VisitorTracker.jsx"));
+  const visitorTracker = readText(path.join(root, "packages/realtime/src/VisitorTracker.jsx"));
   assert.doesNotMatch(visitorTracker, /usePathname|startsWith\("\/dashboard"\)/);
 });

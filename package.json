@@ -2,17 +2,23 @@
   "name": "olentra",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "frontend:install": "npm install --prefix frontend",
-    "dev": "npm --prefix frontend run dev",
+    "dev": "npm run dev --workspace @olentra/web",
+    "dev:admin": "npm run dev --workspace @olentra/admin -- --port 3002",
     "dev:all": "node scripts/run-services.mjs dev",
-    "build": "npm --prefix frontend run build",
+    "build": "npm run build --workspace @olentra/web && npm run build --workspace @olentra/admin",
+    "build:web": "npm run build --workspace @olentra/web",
+    "build:admin": "npm run build --workspace @olentra/admin",
     "build:all": "node scripts/build-all.mjs",
     "compile:all": "npm run build:all",
-    "start": "npm --prefix frontend run start",
+    "start": "npm run start --workspace @olentra/web",
+    "start:admin": "npm run start --workspace @olentra/admin -- --port 3002",
     "start:all": "node scripts/run-services.mjs start",
-    "lint": "npm --prefix frontend run lint",
-
+    "lint": "npm run lint --workspace @olentra/web && npm run lint --workspace @olentra/admin",
     "email:dev": "bun run --cwd backend/email-server dev",
     "email:start": "bun run --cwd backend/email-server start",
     "email:test": "bun run --cwd backend/email-server test",
@@ -20,7 +26,6 @@
     "contact:dev": "npm run email:dev",
     "contact:start": "npm run email:start",
     "contact:test": "npm run email:test",
-
     "realtime:dev": "bun run --cwd backend/realtime-server dev",
     "realtime:start": "bun run --cwd backend/realtime-server start",
     "realtime:test": "bun run --cwd backend/realtime-server test",
@@ -28,9 +33,8 @@
     "realtime:bench": "bun run --cwd backend/realtime-server bench",
     "presence:dev": "npm run realtime:dev",
     "presence:start": "npm run realtime:start",
-    "presence:test": "npm --prefix frontend run test:presence && npm run realtime:test",
+    "presence:test": "npm run test:presence --workspace @olentra/web && npm run realtime:test",
     "presence:bench": "bun run --cwd backend/realtime-server bench:presence",
-
     "internship:dev": "npm run realtime:dev",
     "internship:start": "npm run realtime:start",
     "internship:test": "node scripts/run-internship-tests.mjs",
@@ -38,7 +42,6 @@
     "internship:bench:latency": "bun run --cwd backend/realtime-server bench:latency",
     "internship:bootstrap": "bun run --cwd backend/realtime-server bootstrap",
     "internship:promote-admin": "bun run --cwd backend/realtime-server promote-admin",
-
     "intern:dev": "npm run internship:dev",
     "intern:start": "npm run internship:start",
     "intern:test": "npm run internship:test",
@@ -46,8 +49,7 @@
     "intern:bench:latency": "npm run internship:bench:latency",
     "intern:bootstrap": "npm run internship:bootstrap",
     "intern:promote-admin": "npm run internship:promote-admin",
-
-    "test:admin": "npm --prefix frontend run test:admin",
+    "test:admin": "npm run test --workspace @olentra/admin && npm run test --workspace @olentra/site-features",
     "test:naming": "node --test scripts/naming-and-routes.test.mjs",
     "test:services": "node --test scripts/run-services.test.mjs scripts/service-restart.test.mjs",
     "test:all": "npm run email:test && npm run presence:test && npm run internship:test && npm run test:admin && npm run test:naming && npm run test:services"

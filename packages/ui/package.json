@@ -1,0 +1,22 @@
+{
+  "name": "@olentra/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared UI: global styles, theme tokens and presets, workspace theme bootstrap and the loading indicator.",
+  "exports": {
+    "./LoadingIndicator": "./src/LoadingIndicator.jsx",
+    "./document-scripts": "./src/document-scripts.mjs",
+    "./theme/*": "./src/theme/*",
+    "./styles/*": "./src/styles/*",
+    "./tailwind-preset": "./tailwind-preset.cjs",
+    "./build/*": "./build/*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "next": "^16.4.5"
+  },
+  "dependencies": {
+    "tailwindcss-animate": "^1.0.7"
+  }
+}

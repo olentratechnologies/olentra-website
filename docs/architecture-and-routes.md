@@ -36,9 +36,9 @@ backend/
   transactions and GridFS. MongoDB initialization is asynchronous and does not
   prevent presence from binding.
 - **Frontend consumers**:
-  - [`VisitorTracker`](../frontend/src/components/realtime/VisitorTracker.jsx)
+  - [`VisitorTracker`](../packages/realtime/src/VisitorTracker.jsx)
     opens the anonymous presence socket globally.
-  - [`LiveUserPill` / `LiveUsersStat`](../frontend/src/components/admin/live-user-count.jsx)
+  - [`LiveUserPill` / `LiveUsersStat`](../apps/admin/src/components/admin/live-user-count.jsx)
     subscribes to dashboard snapshots.
   - Candidate pages use `/intern/portal/*`; staff uses `/intern/dashboard/*`.
 
@@ -148,9 +148,9 @@ backend/
 
 ---
 
-## Environment Variables (`frontend/.env.local` and service-local `.env` files)
+## Environment Variables (`apps/web/.env.local` and service-local `.env` files)
 
-The frontend template is [`frontend/.env.example`](../frontend/.env.example).
+The website template is [`apps/web/.env.example`](../apps/web/.env.example); the company workspace template is [`apps/admin/.env.example`](../apps/admin/.env.example).
 Each Bun service keeps its own `.env.example` beside its local runtime `.env`.
 
 ```bash

@@ -7,7 +7,8 @@ const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const bun = process.platform === "win32" ? "bun.exe" : "bun";
 
 const steps = [
-  { name: "frontend", command: npm, args: ["--prefix", "frontend", "run", "build"] },
+  { name: "web", command: npm, args: ["run", "build", "--workspace", "@olentra/web"] },
+  { name: "admin", command: npm, args: ["run", "build", "--workspace", "@olentra/admin"] },
   { name: "email-server", command: bun, args: ["run", "--cwd", "backend/email-server", "build"] },
   { name: "realtime-server", command: bun, args: ["run", "--cwd", "backend/realtime-server", "build"] },
 ];
@@ -30,4 +31,4 @@ for (const step of steps) {
   }
 }
 
-console.log("[all] frontend and backend production builds completed");
+console.log("[all] web, admin and backend production builds completed");

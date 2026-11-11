@@ -1,0 +1,22 @@
+{
+  "name": "@olentra/site-features",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Website feature switches: rules, server store, admin session auth and the React provider shared by the website and the company workspace.",
+  "exports": {
+    "./rules": "./src/rules.mjs",
+    "./client": "./src/client.js",
+    "./react": "./src/react.jsx",
+    "./server/store": "./src/server/store.mjs",
+    "./server/auth": "./src/server/auth.mjs",
+    "./seed.json": "./src/seed.json"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "next": "^16.4.5"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}

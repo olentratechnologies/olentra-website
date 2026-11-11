@@ -1,0 +1,17 @@
+{
+  "name": "@olentra/realtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser client for the realtime presence service and the visitor tracker.",
+  "exports": {
+    "./realtime": "./src/realtime.js",
+    "./presence-connection": "./src/presence-connection.mjs",
+    "./presence-store": "./src/presence-store.mjs",
+    "./visitor-identity": "./src/visitor-identity.mjs",
+    "./VisitorTracker": "./src/VisitorTracker.jsx"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

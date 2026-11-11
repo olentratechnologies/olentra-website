@@ -17,7 +17,7 @@ transactions, open change streams and store GridFS files. Do not commit this fil
 The sample settings are in `backend/realtime-server/.env.example`.
 
 ```sh
-npm install --prefix frontend
+npm install
 cd backend/realtime-server && bun install && cd ../..
 npm run dev
 # In another terminal:
