@@ -35,7 +35,9 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, sendJson }:
     const context = safeContext(request.headers.get("x-intern-context"));
     if (!context) throw new DomainError("INVALID_REQUEST", "A browser session is required.");
     const value = parseCookies(request)[cookieName(context)];
-    if (!value) throw new DomainError("UNAUTHENTICATED", "Sign in to continue.");
+    // No cookie is the normal signed-out state (new tab, after logout, expired),
+    // so answer 401 directly instead of raising it as a request failure.
+    if (!value) return sendJson({ ok: false, error: { code: "UNAUTHENTICATED", message: "Sign in to continue." } }, origin, 401);
     const result = await auth.refresh(value, request.headers.get("x-intern-refresh-request"));
     return sendJson({ ok: true, data: { account: result.account, token: result.token, expiresAt: result.expiresAt } }, origin, 200, { "Set-Cookie": refreshCookie(request, context, result.refreshToken, 604800) });
   };

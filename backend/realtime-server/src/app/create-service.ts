@@ -244,8 +244,13 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);
         throw new DomainError("NOT_FOUND", "Endpoint not found.");
       } catch (error) {
-        logger.error("HTTP request failed", { requestId: requestId(request), method: request.method, path: url.pathname, error });
-        return sendJson({ ok: false, error: errorResult(error) }, origin, statusFor(error));
+        const status = statusFor(error);
+        const fields = { requestId: requestId(request), method: request.method, path: url.pathname, status, error };
+        // 4xx answers (signed out, bad input, forbidden) are the API working as
+        // designed; only requests the service could not handle are errors.
+        if (status >= 500) logger.error("HTTP request failed", fields);
+        else logger.info("HTTP request rejected", fields);
+        return sendJson({ ok: false, error: errorResult(error) }, origin, status);
       }
     },
     websocket: {
