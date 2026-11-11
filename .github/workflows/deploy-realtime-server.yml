@@ -11,6 +11,11 @@ on:
       - 'backend/realtime-server/**'
       - '.github/workflows/deploy-realtime-server.yml'
   workflow_dispatch:
+    inputs:
+      configure_admin_domain:
+        description: Add the company admin domain to backend origins and reset links
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -47,11 +52,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           OLENTRA_REPOSITORY: ${{ github.repository }}
+          CONFIGURE_ADMIN_DOMAIN: ${{ inputs.configure_admin_domain && 'true' || 'false' }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GITHUB_TOKEN,OLENTRA_REPOSITORY
+          envs: GITHUB_TOKEN,OLENTRA_REPOSITORY,CONFIGURE_ADMIN_DOMAIN
           script: |
             set -Eeuo pipefail
 
@@ -112,6 +118,53 @@ jobs:
 
             deploy_user="$(id -un)"
             bun_path="$(command -v bun)"
+            if [ "${CONFIGURE_ADMIN_DOMAIN:-false}" = "true" ]; then
+              # Read and edit the secret-bearing file only on the host. Preserve
+              # other settings, ownership and mode; retain a private backup.
+              sudo "$bun_path" -e '
+                const fs = require("node:fs");
+                const { randomUUID } = require("node:crypto");
+                const file = fs.realpathSync(process.argv[1]);
+                const source = fs.readFileSync(file, "utf8");
+                const lines = source.split(/\r?\n/);
+                const decode = raw => {
+                  const value = raw.trim().replace(/[ \t]+#.*$/, "").trim(), quote = value.charCodeAt(0);
+                  return (quote === 34 || quote === 39) && value.at(-1) === value[0] ? value.slice(1, -1) : value;
+                };
+                const values = Object.fromEntries(lines.flatMap(line => {
+                  const match = line.match(/^[ \t]*(?:export[ \t]+)?([A-Z_]+)[ \t]*=[ \t]*(.*)$/);
+                  return match ? [[match[1], decode(match[2])]] : [];
+                }));
+                const origin = "https://admin.olentratechnologies.com";
+                const existing = values.REALTIME_ALLOWED_ORIGINS || values.INTERNSHIP_ALLOWED_ORIGINS || values.INTERN_ALLOWED_ORIGINS || values.ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000";
+                const origins = existing.split(",").map(value => value.trim()).filter(Boolean);
+                if (!origins.some(value => value.toLowerCase() === origin)) origins.push(origin);
+                const replacements = { REALTIME_ALLOWED_ORIGINS: origins.join(","), INTERNSHIP_WORKSPACE_ORIGIN: origin };
+                const seen = new Set();
+                const updatedLines = lines.map(line => {
+                  const match = line.match(/^[ \t]*(?:export[ \t]+)?(REALTIME_ALLOWED_ORIGINS|INTERNSHIP_WORKSPACE_ORIGIN)[ \t]*=/);
+                  if (!match) return line;
+                  seen.add(match[1]);
+                  return match[1] + "=" + replacements[match[1]];
+                });
+                for (const [key, value] of Object.entries(replacements)) if (!seen.has(key)) {
+                  if (updatedLines.at(-1) === "") updatedLines.pop();
+                  updatedLines.push(key + "=" + value, "");
+                }
+                const updated = updatedLines.join(source.includes("\r\n") ? "\r\n" : "\n");
+                if (updated === source) { console.info("Admin domain configuration already matches."); process.exit(0); }
+                const stat = fs.statSync(file), tag = Date.now() + "." + randomUUID();
+                const backup = file + ".before-admin-domain." + tag + ".bak", temp = file + ".admin-domain." + tag + ".tmp";
+                try {
+                  fs.copyFileSync(file, backup, fs.constants.COPYFILE_EXCL);
+                  fs.chownSync(backup, stat.uid, stat.gid); fs.chmodSync(backup, stat.mode & 0o777);
+                  fs.writeFileSync(temp, updated, { flag: "wx", mode: stat.mode & 0o777 });
+                  fs.chownSync(temp, stat.uid, stat.gid); fs.chmodSync(temp, stat.mode & 0o777);
+                  fs.renameSync(temp, file);
+                } finally { fs.rmSync(temp, { force: true }); }
+                console.info("Configured the admin domain; environment backup: " + backup);
+              ' "$ENV_FILE"
+            fi
             sudo tee "/etc/systemd/system/${SERVICE_NAME}.service" >/dev/null <<UNIT
             [Unit]
             Description=Olentra unified realtime server
