@@ -18,7 +18,9 @@ export function selectAnalytics(db, { range = "Last 30 days", source = "All sour
   const previousVisitors = new Set(previous.map(event => event.visitorId || event.id)).size;
   const enquiries = events.filter(event => event.enquiry).length;
   const bins = days === 1 ? 6 : days === 7 ? 7 : days <= 30 ? 6 : 9;
-  const size = (end - start + 1) / bins;
+  // Multi-day windows start at a UTC midnight, so split whole days (through the
+  // end of today) to keep every bucket, and its label, on a day boundary.
+  const size = days > 1 ? (new Date(end).setUTCHours(24, 0, 0, 0) - start) / bins : (end - start + 1) / bins;
   const buckets = Array.from({length:bins}, () => []);
   for (const event of events) buckets[Math.min(bins - 1, Math.floor((Date.parse(event.at) - start) / size))].push(event);
   const chart = {

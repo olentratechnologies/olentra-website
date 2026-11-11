@@ -63,6 +63,20 @@ test("analytics filters actual dated events and counts distinct visitors", () =>
   assert.ok(regional.events.length && regional.events.every(event => event.region === "Europe"));
 });
 
+test("weekly visitor chart has one bucket per day ending today", () => {
+  const app = workspace();
+  const clock = new Date(app.state.meta.clock);
+  const result = selectAnalytics(app.state, { range: "Last 7 days" });
+  const format = date => new Intl.DateTimeFormat("en-GB", { month: "short", day: "numeric", timeZone: "UTC" }).format(date);
+  const expected = Array.from({ length: 7 }, (_, i) => format(new Date(clock.getTime() - (6 - i) * 86400000)));
+  assert.deepEqual(result.chart.labels, expected);
+  assert.equal(result.chart.enquiryValues.reduce((sum, count) => sum + count, 0), result.enquiries);
+  for (const range of ["Last 30 days", "Last 90 days"]) {
+    const { chart } = selectAnalytics(app.state, { range });
+    assert.equal(new Set(chart.labels).size, chart.labels.length, range + " labels must be distinct");
+  }
+});
+
 test("incident recovery changes only its incident and preserves historical failures", () => {
   const app = workspace();
   app.run("incident.update", { id: "page-errors", status: "Investigating" });
