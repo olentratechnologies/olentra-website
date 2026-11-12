@@ -236,6 +236,7 @@ test("public route invariants and normalized route segments are preserved", () =
     "/blogs",
     "/blogs/:param",
     "/careers/intern",
+    "/certificates/verify/:param",
     "/contact-preview",
     "/cookie-policy",
     "/dashboard",
