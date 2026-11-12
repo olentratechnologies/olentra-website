@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { useInternship } from "@/components/intern/InternshipProvider";
-import { bulkActionsFor, canBulkUpdate, runBulk } from "@/lib/intern/bulk.mjs";
+import { bulkActionsFor, canBulkUpdate, runBulkRequests } from "@/lib/intern/bulk.mjs";
 import { burstFrom } from "@/lib/confetti.mjs";
 import {
   APPLICATION_EXPORT_COLUMNS,
@@ -215,7 +215,8 @@ export default function ApplicationsPage() {
     const unchanged = selectedRows.length - rows.length;
     setBulkBusy(true);
     try {
-      const { succeeded, failed } = await runBulk(rows, (application) => commands.setApplicationStatus(application.id, action.status, application.version));
+      // One request per 25 rows; the server applies each row with the normal single-update rules.
+      const { succeeded, failed } = await runBulkRequests(rows, (chunk) => commands.bulkSetApplicationStatus(chunk.map((application) => ({ id: application.id, expectedVersion: application.version })), action.status));
       const verb = { "Under Review": "moved to under review", Shortlisted: "shortlisted", Rejected: "rejected" }[action.status];
       const parts = [`${succeeded.length} ${succeeded.length === 1 ? "applicant" : "applicants"} ${verb}`];
       if (unchanged) parts.push(`${unchanged} already ${action.status.toLowerCase()}`);

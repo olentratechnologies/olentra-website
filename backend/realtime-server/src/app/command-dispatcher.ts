@@ -347,6 +347,31 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         return received;
       });
     }
+    if (method === "application.bulkUpdate") {
+      // One request for many rows. Each row goes through application.update,
+      // so permissions, history, emails and version checks are identical;
+      // rows succeed or fail independently and report back individually.
+      company(actor);
+      const status = str(params.status), items = Array.isArray(params.items) ? params.items : [];
+      if (!status || !items.length || items.length > 100 || key.length > 120) throw new DomainError("INVALID_REQUEST", "Choose up to 100 applications and a status.");
+      const results: { id: string; ok: boolean; version?: number; error?: string }[] = new Array(items.length);
+      let next = 0;
+      const worker = async () => {
+        while (next < items.length) {
+          const index = next++, item = items[index], applicationId = str(item?.id);
+          try {
+            const updated = await execute("application.update", { id: applicationId, status, expectedVersion: item?.expectedVersion }, actor, `${key}-${index}`) as { version?: number };
+            results[index] = { id: applicationId, ok: true, version: updated?.version };
+          } catch (error) {
+            if (!(error instanceof DomainError)) throw error;
+            results[index] = { id: applicationId, ok: false, error: error.message };
+          }
+        }
+      };
+      // A few rows at a time keeps a large batch well inside the client's request timeout.
+      await Promise.all(Array.from({ length: Math.min(4, items.length) }, worker));
+      return results;
+    }
     if (method === "application.update") {
       company(actor); const applicationId = str(params.id), patch = params.patch || {}, status = str(params.status || patch.status), expectedVersion = Number(params.expectedVersion);
       if ((!status && !Array.isArray(patch.notes)) || (status && !["Applied", "Under Review", "Shortlisted", "Selected", "Rejected", "Declined"].includes(status)) || !Number.isSafeInteger(expectedVersion)) throw new DomainError("INVALID_REQUEST", "Choose a valid change and the current application version.");

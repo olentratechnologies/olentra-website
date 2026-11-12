@@ -38,3 +38,27 @@ export function canBulkUpdate(application, { isAdmin }) {
   if (!application || application.status === "Joined") return false;
   return isAdmin || ["Applied", "Under Review", "Shortlisted"].includes(application.status);
 }
+
+/**
+ * Sends rows to a bulk endpoint in chunks (one request per chunk instead of
+ * one per row). `send(chunk)` resolves to `{ ok, data: [{ id, ok, error }] }`.
+ * A failed request marks its whole chunk as failed. Same result shape as runBulk.
+ */
+export async function runBulkRequests(items, send, chunkSize = 25) {
+  const outcome = new Map();
+  for (let start = 0; start < items.length; start += chunkSize) {
+    const chunk = items.slice(start, start + chunkSize);
+    let response;
+    try { response = await send(chunk); } catch (error) { response = { ok: false, error }; }
+    const rows = response?.ok && Array.isArray(response.data) ? response.data : null;
+    const requestError = typeof response?.error === "string" ? response.error : response?.error?.message || "Not updated.";
+    for (const item of chunk) {
+      const row = rows?.find((result) => result.id === item.id);
+      outcome.set(item.id, row ? (row.ok ? { ok: true } : { ok: false, error: row.error || "Not updated." }) : { ok: false, error: requestError });
+    }
+  }
+  return {
+    succeeded: items.filter((item) => outcome.get(item.id)?.ok),
+    failed: items.flatMap((item) => (outcome.get(item.id)?.ok ? [] : [{ item, error: outcome.get(item.id)?.error }])),
+  };
+}

@@ -35,3 +35,23 @@ test("reject is admin-only and final decisions are protected", () => {
   assert.equal(canBulkUpdate({ status: "Selected" }, { isAdmin: true }), true);
   assert.equal(canBulkUpdate({ status: "Joined" }, { isAdmin: true }), false);
 });
+
+test("bulk requests send one request per chunk and map each row's result", async () => {
+  const { runBulkRequests } = await import("../src/lib/intern/bulk.mjs");
+  const items = Array.from({ length: 30 }, (_, index) => ({ id: `A${index}` }));
+  const calls = [];
+  const result = await runBulkRequests(items, async (chunk) => {
+    calls.push(chunk.length);
+    return { ok: true, data: chunk.map((item) => ({ id: item.id, ok: item.id !== "A3", error: item.id === "A3" ? "Changed by someone else" : undefined })) };
+  }, 25);
+  assert.deepEqual(calls, [25, 5]);
+  assert.equal(result.succeeded.length, 29);
+  assert.deepEqual(result.failed, [{ item: { id: "A3" }, error: "Changed by someone else" }]);
+});
+
+test("a failed bulk request marks its whole chunk as failed", async () => {
+  const { runBulkRequests } = await import("../src/lib/intern/bulk.mjs");
+  const items = [{ id: "A" }, { id: "B" }];
+  const result = await runBulkRequests(items, async () => ({ ok: false, error: { message: "Offline" } }));
+  assert.deepEqual(result.failed.map((row) => [row.item.id, row.error]), [["A", "Offline"], ["B", "Offline"]]);
+});
