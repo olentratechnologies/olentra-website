@@ -76,12 +76,20 @@ test("application claim, registration, status and idempotency persist in Atlas",
   const fileId = "file-test", fileToken = "temporary-file-token";
   await domain.collection("files").insertOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
   const payload = { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-applicant", programId: "explorer", resumeAttachmentId: fileId, resumeAccessToken: fileToken };
-  const application = await domain.execute("application.submit", payload, null, "application-test-0001");
+  const response = await domain.execute("application.submit", payload, null, "application-test-0001");
   const retry = await domain.execute("application.submit", payload, null, "application-test-0001");
-  expect(retry.id).toBe(application.id);
-  expect(retry.claimToken).toBe(application.claimToken);
+  expect(retry).toEqual(response);
   expect(await domain.collection("applications").countDocuments()).toBe(1);
-  const registered = await domain.execute("account.register", { applicationId: application.id, claimToken: application.claimToken, password: "ExamplePassword2026!" }, null, "registration-test-0001");
+  // A repeat application with a new request gets the same answer and creates nothing.
+  const repeat = await domain.execute("application.submit", payload, null, "application-test-0002");
+  expect(repeat).toEqual(response);
+  expect(Object.keys(response).sort()).toEqual(["message", "received"]);
+  expect(await domain.collection("applications").countDocuments()).toBe(1);
+  expect(await domain.collection("outbox").countDocuments({ type: "magicLink", "payload.to": "applicant@example.test" })).toBe(1);
+  const application = { id: String((await domain.collection("applications").findOne({ email: "applicant@example.test" }))!._id) };
+  const linked = await domain.autoProvisionAccount(application.id, "applicant@example.test");
+  await domain.changePassword(linked.id, "", "ExamplePassword2026!");
+  const registered = (await domain.account(linked.id))!;
   expect(registered.role).toBe("intern");
   expect(await domain.login("applicant@example.test", "ExamplePassword2026!")).toMatchObject({ id: registered.id, role: "intern" });
   expect(await domain.login("applicant@example.test", "incorrect")).toBeNull();
@@ -117,7 +125,6 @@ test("staff can securely create an account for an unclaimed application", async 
   expect((await domain.login("assisted@example.test", payload.password))?.id).toBe(created.id);
   expect((await domain.collection("test_credentials").findOne({ userId: created.id }))?.passwordHash).not.toContain(payload.password);
   expect((await domain.collection("applications").findOne({ _id: app.id }))?.claimHash).toBeUndefined();
-  await expect(domain.execute("account.register", { applicationId: app.id, claimToken: app.claimToken, password: "ExamplePassword2026!" }, null, "registration-assisted-0001")).rejects.toBeInstanceOf(DomainError);
   await expect(domain.execute("account.createForApplication", payload, staff, "create-staff-assisted-0003")).rejects.toBeInstanceOf(DomainError);
 }, 30000);
 

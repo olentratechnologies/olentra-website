@@ -78,8 +78,11 @@ test("login, streaming resume, application, registration, live status and refres
   const file = await fetch(base + "/intern/files", { method: "POST", headers: { origin, "content-type": "application/pdf", "x-file-name": "resume.pdf", "x-file-kind": "resume" }, body: "%PDF-1.4 test resume" });
   expect(file.status).toBe(200); const uploaded = (await file.json() as any).data;
   const applicant = await socket();
-  const application = await applicant.request("application.submit", { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "submit-application-test-01");
-  const registered = await applicant.request("account.register", { applicationId: application.id, claimToken: application.claimToken, password: "ApplicantPassword2026!" }, "register-applicant-test-01");
+  await applicant.request("application.submit", { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "submit-application-test-01");
+  const application = { id: String((await domain.collection("applications").findOne({ email: "applicant@example.test" }))!._id) };
+  const linked = await domain.autoProvisionAccount(application.id, "applicant@example.test");
+  await domain.changePassword(linked.id, "", "ApplicantPassword2026!");
+  const registered = (await domain.account(linked.id))!;
   expect(registered.role).toBe("intern");
   const intern = await login("applicant@example.test", "ApplicantPassword2026!"); expect(intern.response.status).toBe(200);
   await applicant.request("auth.authenticate", { token: intern.body.data.token });

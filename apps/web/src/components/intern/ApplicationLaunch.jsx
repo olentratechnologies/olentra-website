@@ -203,7 +203,7 @@ export default function ApplicationLaunch({
         </h2>
         <p id={descriptionId}>
           {complete
-            ? "Your application is saved. Create your account to follow your internship journey."
+            ? "Thanks for applying. Check your email for a link to your candidate portal."
             : "Launching your next chapter with Olentra…"}
         </p>
         {complete && applicationId && (
@@ -215,7 +215,7 @@ export default function ApplicationLaunch({
       {complete ? (
         <div className={styles.savedActions}>
           <Link className={styles.backButton} href={accountHref}>
-            Create Account <ArrowRight size={15} aria-hidden="true" />
+            Next steps <ArrowRight size={15} aria-hidden="true" />
           </Link>
           <button
             ref={backRef}

@@ -48,7 +48,9 @@ function PasswordInput({ id, label, value, onChange, autoComplete = "current-pas
 }
 
 function ChangePasswordForm() {
-  const { commands, notify } = useInternship();
+  const { commands, notify, my } = useInternship();
+  // Accounts opened from the emailed link have no password yet, so there is nothing to confirm.
+  const hasPassword = my?.hasPassword !== false;
   const action = useAction();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -75,7 +77,7 @@ function ChangePasswordForm() {
         setCurrent("");
         setNext("");
         setConfirmNext("");
-        notify("Your password has been updated.");
+        notify(hasPassword ? "Your password has been updated." : "Your password is set. Sign in with your email and password from now on.");
       },
     );
   }
@@ -88,18 +90,22 @@ function ChangePasswordForm() {
           <LockKeyhole size={19} />
         </div>
         <p className={styles.panelDescription}>
-          Update your password to keep your account secure.
+          {hasPassword
+            ? "Update your password to keep your account secure."
+            : "You signed in with an email link. Set a password to sign in without one next time."}
         </p>
         <ErrorMessage>{localError || action.error}</ErrorMessage>
         <fieldset className={styles.fieldset} disabled={action.busy}>
           <div className={styles.formGrid}>
-            <PasswordInput
-              id="current-password"
-              label="Current password"
-              autoComplete="current-password"
-              value={current}
-              onChange={(e) => { setCurrent(e.target.value); setSaved(false); }}
-            />
+            {hasPassword && (
+              <PasswordInput
+                id="current-password"
+                label="Current password"
+                autoComplete="current-password"
+                value={current}
+                onChange={(e) => { setCurrent(e.target.value); setSaved(false); }}
+              />
+            )}
             <PasswordInput
               id="new-password"
               label="New password"
@@ -120,7 +126,7 @@ function ChangePasswordForm() {
         <div className={styles.formActions}>
           <Button type="submit" disabled={action.busy} busy={action.busy}>
             {saved ? <Check size={15} /> : <Save size={15} />}
-            {saved ? "Password saved" : "Update password"}
+            {saved ? "Password saved" : hasPassword ? "Update password" : "Set password"}
           </Button>
         </div>
       </Panel>

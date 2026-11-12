@@ -268,6 +268,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       // These reads have no ordering dependency. Running them together avoids
       // serial Atlas network round trips during login and every workspace reload.
       const ownApplicationPromise = actor?.role === "intern" && actor.applicationId ? applications.findOne({ _id: actor.applicationId }) : Promise.resolve(null);
+      const hasPasswordPromise = actor ? credentials.countDocuments({ userId: actor.id }, { limit: 1 }).then(count => count > 0) : Promise.resolve(false);
       const [info, lifecycleData, communicationData, applicationItems, ownApplication, basicInternApplications] = await Promise.all([
         actor?.role === "company" ? publicData() : anonymousData(),
         lifecycle.snapshot(actor),
@@ -297,7 +298,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!can(actor, "overview.read")) data.analytics = null;
       }
       if (ownApplication) data.applications = [publicApplication(ownApplication, false)];
-      return { data, my: { application: actor?.role === "intern" ? data.applications[0] || null : null, intern: data.interns[0] || null, offer: data.offers[0] || null, interview: actor?.role === "intern" ? data.interviews[0] || null : null, onboarding: data.onboarding[0] || { applicationId: actor?.applicationId, status: "Not started", acknowledged: false }, projects: data.projects, tasks: data.tasks, submissions: data.submissions, certificates: data.certificates, messages: data.messages, notifications: data.notifications, resources: [] }, account: actor };
+      return { data, my: { application: actor?.role === "intern" ? data.applications[0] || null : null, intern: data.interns[0] || null, offer: data.offers[0] || null, interview: actor?.role === "intern" ? data.interviews[0] || null : null, onboarding: data.onboarding[0] || { applicationId: actor?.applicationId, status: "Not started", acknowledged: false }, projects: data.projects, tasks: data.tasks, submissions: data.submissions, certificates: data.certificates, messages: data.messages, notifications: data.notifications, resources: [], hasPassword: await hasPasswordPromise }, account: actor };
     }
     if (method === "application.submit") {
       if (actor) throw new DomainError("FORBIDDEN", "Sign out before submitting an application.");
@@ -308,22 +309,24 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const httpUrl = (v: string) => { try { return ["http:", "https:"].includes(new URL(v).protocol); } catch { return false; } };
       if (linkedin.length > 500 || !httpUrl(linkedin) || !/(^|\.)linkedin\.com$/i.test(new URL(linkedin).hostname)) throw new DomainError("INVALID_REQUEST", "Enter your LinkedIn profile URL.");
       if (videoUrl && (videoUrl.length > 500 || !httpUrl(videoUrl))) throw new DomainError("INVALID_REQUEST", "Enter a valid http or https video link.");
-      let duplicate: Row | null = null;
-      try {
-      return await transact(key, null, { method, params }, async session => {
+      // New and repeat applications get the same answer, so the form never
+      // reveals whether an email has applied. Either way, the next step is a
+      // sign-in link in the applicant's inbox.
+      const received = { received: true, message: "Thanks for applying. Check your email for a link to your candidate portal." };
+      return transact(key, null, { method, params }, async session => {
         if (!(await intakeOpen())) throw new DomainError("CLOSED", "Internship applications are currently closed.");
         const existing = await applications.findOne({ email }, { session });
         if (existing) {
-          duplicate = existing;
-          throw new DomainError("ALREADY_APPLIED", "An application with this email already exists. We have sent a secure sign-in link to your email.");
+          await outbox.enqueue("magicLink", { to: String(existing.email), name: String(existing.name || ""), applicationId: String(existing._id) }, session);
+          return received;
         }
         const program = await programs.findOne({ _id: programId }, { session });
         const config = await settings.findOne({ _id: "program" }, { session });
         const file = await files.findOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken), applicationId: { $exists: false } }, { session });
         if (!program?.enabled || !config?.programEnabled || program.fee == null || !acceptsCompensationMode(program.stipend, config.compensationMode)) throw new DomainError("CLOSED", "This internship track is not accepting applications.");
         if (!file) throw new DomainError("INVALID_REQUEST", "Upload your resume before applying.");
-        const applicationId = id("OL"), claimToken = token(), now = new Date();
-        const row: Row = { _id: applicationId, name, email, programId, program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: [], linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github: "", bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1, claimHash: digest(claimToken), claimExpiresAt: new Date(now.getTime() + 86400000) };
+        const applicationId = id("OL"), now = new Date();
+        const row: Row = { _id: applicationId, name, email, programId, program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: [], linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github: "", bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
         await applications.insertOne(row, { session });
         await files.updateOne({ _id: fileId, applicationId: { $exists: false } }, { $set: { applicationId } }, { session });
         if (config?.applicationAlerts !== false) await collection("notifications").insertOne({ _id: id("NTF"), recipientRole: "company", applicationId, title: "New internship application", body: `${name} applied to ${program.name}.`, href: `/intern/dashboard/applications/${applicationId}`, createdOn: now.toISOString() }, { session });
@@ -331,32 +334,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         await events.insertOne({ _id: id("EVT"), type: "application.created", applicationIds: [applicationId], createdAt: now }, { session });
         // Queued inside the transaction: it is sent only if the application commits.
         await outbox.enqueue("applicationConfirmation", { to: email, name, programName: program.name, applicationId }, session);
-        return { ...publicApplication(row, false), claimToken };
-      });
-      } catch (error) {
-        // The duplicate path rolls the transaction back, so its sign-in link is
-        // queued afterwards, once. Rate limits on applying bound how often.
-        const existing = duplicate as Row | null;
-        if (error instanceof DomainError && error.code === "ALREADY_APPLIED" && existing) {
-          await outbox.enqueue("magicLink", { to: String(existing.email), name: String(existing.name || ""), applicationId: String(existing._id) });
-        }
-        throw error;
-      }
-    }
-    if (method === "account.register") {
-      const applicationId = str(params.applicationId), claimToken = str(params.claimToken), password = str(params.password);
-      if (password.length < 8 || password.length > 256) throw new DomainError("INVALID_REQUEST", "Use a password between 8 and 256 characters.");
-      const hash = await Bun.password.hash(password, { algorithm: "argon2id" });
-      return transact(key, null, { method, params: { applicationId, claimToken, passwordDigest: digest(password) } }, async session => {
-        if (!(await intakeOpen())) throw new DomainError("CLOSED", "Internship account registration is currently closed.");
-        const app = await applications.findOne({ _id: applicationId, claimHash: digest(claimToken), claimExpiresAt: { $gt: new Date() } }, { session });
-        if (!app) throw new DomainError("INVALID_CLAIM", "The application claim is invalid or expired.");
-        const user: Row = { _id: id("ACC"), role: "intern", name: app.name, email: app.email, applicationId, sessionVersion: 1, createdAt: new Date() };
-        await users.insertOne(user, { session });
-        await credentials.insertOne({ _id: user._id, userId: user._id, passwordHash: hash, createdAt: new Date() }, { session });
-        await applications.updateOne({ _id: applicationId, claimHash: digest(claimToken) }, { $unset: { claimHash: "", claimExpiresAt: "" }, $set: { accountId: user._id } }, { session });
-        await events.insertOne({ _id: id("EVT"), type: "account.register", applicationIds: [applicationId], createdAt: new Date() }, { session });
-        return publicAccount(user);
+        return received;
       });
     }
     if (method === "application.update") {

@@ -91,8 +91,10 @@ test("application submission enforces free, paid and both against the current st
     const { domain, inserted } = fixture(mode, stipend);
     const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
     if (accepts) {
-      expect((await request).programId).toBe("explorer");
-      expect(inserted.filter(write => write.collection === "applications")).toHaveLength(1);
+      expect(await request).toMatchObject({ received: true });
+      const applications = inserted.filter(write => write.collection === "applications");
+      expect(applications).toHaveLength(1);
+      expect(applications[0]!.document.programId).toBe("explorer");
     } else {
       await expect(request).rejects.toMatchObject({ code: "CLOSED" });
       expect(inserted).toEqual([]);

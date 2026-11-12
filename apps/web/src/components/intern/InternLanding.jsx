@@ -365,7 +365,8 @@ export default function InternLanding() {
         }
         return;
       }
-      setSavedApplication(result.data);
+      // The response is the same for new and repeat emails, so remember what was sent.
+      setSavedApplication({ ...input, message: result.data?.message });
       if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) return;
       setLaunchPhase("launching");
     } catch (error) {
@@ -1033,19 +1034,10 @@ export default function InternLanding() {
                     <span className={styles.previewReady}>
                       <Check size={17} aria-hidden="true" />
                       <span>
-                        Your application is saved.
-                        <strong className={styles.savedApplicationId}>
-                          Application ID: {savedApplication.id}
-                        </strong>
+                        Thanks for applying.
                         <span style={{ display: "block", fontSize: "12px", color: "#94a3b8", margin: "4px 0 8px" }}>
-                          A copy of your 1-click candidate portal link has been sent to your email.
+                          Check {savedApplication.email} for a link to your candidate portal. You can set a password there.
                         </span>
-                        <Link
-                          className={styles.createAccountLink}
-                          href="/intern/register"
-                        >
-                          Create your password now <ArrowRight size={12} />
-                        </Link>
                       </span>
                     </span>
                   )}
@@ -1068,7 +1060,6 @@ export default function InternLanding() {
       {canApply && launchPhase !== "idle" && (
         <ApplicationLaunch
           phase={launchPhase}
-          applicationId={savedApplication?.id}
           accountHref="/intern/register"
           onDismiss={() => setLaunchPhase("idle")}
         />

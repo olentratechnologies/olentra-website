@@ -30,7 +30,6 @@ import styles from "./auth.module.css";
 import FuturisticLogin from "./FuturisticLogin";
 import { InternThemeProvider, InternThemeToggle } from "../InternTheme";
 import { useSiteFeatures } from "@olentra/site-features/react";
-import { WELCOME_FLAG } from "@/lib/intern/milestones.mjs";
 
 const destinationFor = (account) =>
   account?.role === "company" ? "/intern/dashboard" : "/intern/portal";
@@ -318,173 +317,31 @@ export function LoginPage() {
   );
 }
 
+/**
+ * Accounts are set up from the emailed link: applying sends a sign-in link,
+ * and a password can then be set in the portal (Profile → Security).
+ */
 export function RegisterPage() {
-  const { ready, sessionReady, pendingApplication, account, register } =
-    useInternship();
-  const { features, ready: featuresReady } = useSiteFeatures();
-  const registrationOpen = Boolean(featuresReady && features.internships && features.applications);
-  const router = useRouter();
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const submitting = useRef(false);
-  const submit = async (event) => {
-    event.preventDefault();
-    if (!registrationOpen) { setError("Internship account registration is currently closed."); return; }
-    if (submitting.current || !pendingApplication) return;
-    if (password.length < 8)
-      return setError("Choose a password with at least 8 characters.");
-    if (password !== confirmPassword)
-      return setError("Your passwords do not match.");
-    submitting.current = true;
-    setBusy(true);
-    setError("");
-    try {
-      const result = await register({
-        applicationId: pendingApplication.id,
-        password,
-        name: pendingApplication.name,
-      });
-      if (!result.ok) return setError(errorText(result.error));
-      // The portal greets brand-new accounts with a one-time welcome celebration.
-      try { sessionStorage.setItem(WELCOME_FLAG, "1"); } catch { /* celebration is optional */ }
-      router.replace(safeDestination(result.redirect, "/intern/portal"));
-    } catch {
-      setError("Unable to create your account. Please try again.");
-    } finally {
-      submitting.current = false;
-      setBusy(false);
-    }
-  };
-  if (!featuresReady) return <AuthShell><div className={styles.inlineLoading}><LoadingIndicator label="Checking registration availability…" /></div></AuthShell>;
-  if (!registrationOpen) return <AuthShell eyebrow="INTERNSHIP ACCOUNT ACCESS"><div className={styles.panelHeading}><span className={styles.headingIcon}><LockKeyhole size={23} /></span><h2>Registration is currently closed.</h2><p>New internship applications and account registration are unavailable at the moment.</p></div>{(features.portal || account?.role === "company") && <Link href={account ? destinationFor(account) : "/intern/login?role=intern"} className={styles.primaryButton}>{account ? "Go to my workspace" : "Existing account? Sign in"}<ArrowRight size={16} /></Link>}<Link href="/" className={styles.textLink}>Return to Olentra</Link></AuthShell>;
+  const { account } = useInternship();
   return (
     <AuthShell eyebrow="YOUR APPLICATION IS JUST THE BEGINNING">
       <div className={styles.panelHeading}>
         <span className={styles.headingIcon}>
-          <Users size={23} />
+          <Mail size={23} />
         </span>
-        <h2>Create your account.</h2>
+        <h2>Your account starts in your inbox.</h2>
         <p>
-          Keep your internship journey close, from application to achievement.
+          After you apply, we email you a secure link to your candidate portal.
+          Open it to sign in, then set a password from your profile whenever you like.
         </p>
       </div>
-      {!ready || !sessionReady ? (
-        <div className={styles.inlineLoading}>
-          <LoadingIndicator label="Loading your application…" />
-        </div>
-      ) : !pendingApplication ? (
-        <div className={styles.emptyApplication}>
-          <span>
-            <FileIcon />
-          </span>
-          <h3>Start with your application</h3>
-          <p>
-            Apply to the internship program first. Your account will connect
-            directly to your application so you can follow its progress.
-          </p>
-          <Link
-            href="/careers/intern#internship-application"
-            className={styles.primaryButton}
-          >
-            Apply Now <ArrowRight size={15} />
-          </Link>
-          <Link
-            href={
-              account ? destinationFor(account) : "/intern/login?role=intern"
-            }
-            className={styles.textLink}
-          >
-            {account
-              ? "Go to my workspace"
-              : "Already have an account? Sign in"}
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className={styles.applicationLinked}>
-            <CheckCircle2 size={19} />
-            <div>
-              <strong>Your application is saved</strong>
-              <span>Application ID: {pendingApplication.id}</span>
-            </div>
-          </div>
-          <form className={styles.authForm} onSubmit={submit}>
-            <fieldset disabled={busy}>
-              <label className={styles.field} htmlFor="register-name">
-                <span>Full name</span>
-                <div className={styles.inputControl}>
-                  <Users size={16} />
-                  <input
-                    id="register-name"
-                    value={pendingApplication.name || ""}
-                    readOnly
-                    autoComplete="name"
-                  />
-                </div>
-              </label>
-              <label className={styles.field} htmlFor="register-email">
-                <span>Email address</span>
-                <div className={styles.inputControl}>
-                  <Mail size={16} />
-                  <input
-                    id="register-email"
-                    value={pendingApplication.email || ""}
-                    readOnly
-                    type="email"
-                    autoComplete="username"
-                  />
-                </div>
-                <small>Linked to your internship application.</small>
-              </label>
-              <PasswordField
-                id="register-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Create a password"
-                autoComplete="new-password"
-                minLength={8}
-                required
-                hint="Use at least 8 characters."
-              />
-              <PasswordField
-                id="register-confirm"
-                label="Confirm password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Enter your password again"
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-              <ErrorMessage>{error}</ErrorMessage>
-              <button className={styles.primaryButton} type="submit">
-                {busy ? (
-                  <>
-                    <LoaderCircle size={16} className={styles.spin} /> Creating
-                    account...
-                  </>
-                ) : (
-                  <>
-                    Create Account <ArrowRight size={16} />
-                  </>
-                )}
-              </button>
-            </fieldset>
-          </form>
-          <p className={styles.inlinePrompt}>
-            Already registered?{" "}
-            <Link href="/intern/login?role=intern">Sign in</Link>
-          </p>
-        </>
-      )}
+      <Link href={account ? destinationFor(account) : "/intern/login?role=intern"} className={styles.primaryButton}>
+        {account ? "Go to my workspace" : "Sign in or get a new link"}
+        <ArrowRight size={16} />
+      </Link>
+      <Link href="/careers/intern#internship-application" className={styles.textLink}>Haven&apos;t applied yet? Apply now</Link>
     </AuthShell>
   );
-}
-
-function FileIcon() {
-  return <BriefcaseBusiness size={29} />;
 }
 
 export function ResetPasswordPage() {
