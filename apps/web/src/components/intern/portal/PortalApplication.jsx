@@ -38,6 +38,7 @@ export default function PortalApplication() {
   const { features, ready: featuresReady } = useSiteFeatures();
   const { ready, my, commands, notify } = useInternship();
   const [declining, setDeclining] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const router = useRouter();
   const action = useAction();
@@ -83,6 +84,19 @@ export default function PortalApplication() {
       },
     );
   }
+  // Applicants can step back at any point before they join.
+  const canWithdraw = ["Applied", "Under Review", "Shortlisted", "Selected"].includes(application.status);
+  async function withdraw(event) {
+    event.preventDefault();
+    const reason = new FormData(event.currentTarget).get("reason");
+    await action.run(
+      () => commands.withdrawApplication(application.id, String(reason || "").trim()),
+      () => {
+        setWithdrawing(false);
+        notify("Your application has been withdrawn.");
+      },
+    );
+  }
   async function downloadResume() {
     await action.run(async () => {
       const attachments = await import("@/lib/intern-attachments.mjs");
@@ -122,6 +136,11 @@ export default function PortalApplication() {
           <Download size={15} />
           My resume
         </Button>
+        {canWithdraw && (
+          <Button variant="ghost" onClick={() => setWithdrawing(true)} disabled={action.busy}>
+            Withdraw application
+          </Button>
+        )}
       </Heading>
       <ErrorMessage>{action.error}</ErrorMessage>
       <Panel className={styles.applicantHero}>
@@ -345,6 +364,28 @@ export default function PortalApplication() {
               disabled={action.busy}
             >
               Decline offer
+            </Button>
+          </div>
+        </form>
+      </Modal>
+      <Modal
+        open={withdrawing}
+        onOpenChange={setWithdrawing}
+        title="Withdraw your application"
+        description="This tells the Olentra team you no longer want to be considered. It can't be undone; to be considered again, you'd need to contact the team."
+      >
+        <form className={styles.form} onSubmit={withdraw}>
+          <ErrorMessage>{action.error}</ErrorMessage>
+          <label className={styles.field}>
+            Reason (optional)
+            <textarea name="reason" rows={3} maxLength={1000} placeholder="Anything you'd like the team to know…" />
+          </label>
+          <div className={styles.formActions}>
+            <Button variant="ghost" onClick={() => setWithdrawing(false)} disabled={action.busy}>
+              Keep my application
+            </Button>
+            <Button type="submit" variant="danger" busy={action.busy} disabled={action.busy}>
+              Withdraw application
             </Button>
           </div>
         </form>

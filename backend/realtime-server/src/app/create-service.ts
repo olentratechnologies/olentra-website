@@ -271,6 +271,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const workspaceOrigin = (process.env.INTERNSHIP_WORKSPACE_ORIGIN || "http://localhost:3002").replace(/\/$/, "");
     const jobLeases = domain.collection("job_leases") as any;
     const stopUploadCleanup = runLeasedJob(jobLeases, "orphaned-upload-cleanup", 60 * 60_000, () => removeOrphanedUploads(files as any, bucket), error => logger.error("Orphaned upload cleanup failed", { error }));
+    const stopRetention = runLeasedJob(jobLeases, "applicant-retention", 6 * 60 * 60_000, () => domain.runRetention(), error => logger.error("Applicant retention run failed", { error }));
     const stopOutbox = runLeasedJob(jobLeases, "email-outbox", 2000, () => domain.processOutbox(), error => logger.error("Email outbox run failed", { error }));
     const limiter = createRateLimiter(mongoAttemptStore(domain.collection("rate_limits")));
     await domain.collection("rate_limits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
@@ -289,7 +290,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       broadcastViewers,
       async close() {
         localStopped = true;
-        stopOutbox(); stopUploadCleanup();
+        stopOutbox(); stopUploadCleanup(); stopRetention();
         broadcastInsights.cancel(); broadcastViewers.cancel();
         await changes.close().catch(() => {});
         if (runtime === nextRuntime) runtime = null;

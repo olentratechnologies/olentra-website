@@ -53,6 +53,7 @@ const STATUSES = [
   "Joined",
   "Rejected",
   "Declined",
+  "Withdrawn",
 ];
 
 function applicationMetric(data, id, label, value, tone, icon) {

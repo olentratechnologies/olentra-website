@@ -19,6 +19,7 @@ import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "
 import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
 import { normalizeSkills } from "../modules/applications/skills";
 import { auditDecision } from "../modules/audit/decision-audit";
+import { FINAL_STATUSES, eraseApplicant, expiredApplicationIds } from "../modules/privacy/erase";
 
 type Row = InternshipRow;
 const SNAPSHOT_APPLICATIONS = 100;
@@ -64,6 +65,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       settings.updateOne({ _id: "program" }, { $setOnInsert: { programEnabled: false, compensationMode: "both", defaultBatch: "", maxStipend: null } }, { upsert: true }),
       applications.updateMany(HAS_VIDEO_BACKFILL.filter, HAS_VIDEO_BACKFILL.update),
       applications.createIndex({ hasVideo: -1, appliedOn: -1 }),
+      // Retention counts from when a final decision was made; older rows start counting today.
+      applications.updateMany({ status: { $in: FINAL_STATUSES }, statusChangedOn: { $exists: false } }, { $set: { statusChangedOn: new Date().toISOString() } }),
     ]);
   }
   async function login(email: string, password: string): Promise<Principal | null> {
@@ -102,13 +105,13 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   type PublicData = {
     organization: { name: string; legalName: string; website: string };
     programs: { id: string; name: string; fee: number | null; stipend: number | null; enabled: boolean }[];
-    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; emailNotifications: boolean; integrations: Record<string, unknown> };
+    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; emailNotifications: boolean; integrations: Record<string, unknown> };
   };
   let cachedPublicData: PublicData | null = null;
   function invalidatePublicData() { cachedPublicData = null; }
   async function fetchPublicData(): Promise<PublicData> {
     const [rows, config] = await Promise.all([programs.find({}).sort({ _id: 1 }).toArray(), settings.findOne({ _id: "program" })]);
-    return { organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, emailNotifications: false, integrations: {} } };
+    return { organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, emailNotifications: false, integrations: {} } };
   }
   /**
    * What anonymous visitors and interns may see: tracks and whether they are
@@ -351,6 +354,19 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         return received;
       });
     }
+    if (method === "applicant.erase") {
+      // Admin only (not in the staff permission map). The applicant's email
+      // must be typed back as confirmation, because this can't be undone.
+      company(actor);
+      const applicationId = str(params.applicationId), confirmEmail = emailOf(params.confirmEmail);
+      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1 } });
+      if (!application) throw new DomainError("NOT_FOUND", "Application not found.");
+      if (!confirmEmail || confirmEmail !== emailOf(application.email)) throw new DomainError("INVALID_REQUEST", "Type the applicant's email address to confirm.");
+      const removed = await eraseApplicant({ db, client, prefix, applicationId, beforeCommit: (session) => auditDecision(collection("staff_audit"), session, actor, "applicant.erased", applicationId) });
+      invalidatePublicData(); communications.invalidateAnalytics();
+      await events.insertOne({ _id: id("EVT"), type: "application.updated", applicationIds: [], createdAt: new Date() });
+      return { erased: true, removed };
+    }
     if (method === "application.bulkUpdate") {
       // One request for many rows. Each row goes through application.update,
       // so permissions, history, emails and version checks are identical;
@@ -386,7 +402,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!existing || (status && existing.status === "Joined")) throw new DomainError("CONFLICT", "The application changed or is unavailable. Refresh and try again.");
         if (!isAdmin(actor) && status && !["Applied", "Under Review", "Shortlisted"].includes(existing.status)) throw new DomainError("FORBIDDEN", "Only an admin can change a final application decision.");
         const update: Document = { $inc: { version: 1 } }, values: Document = {};
-        if (status) { values.status = status; update.$push = { history: { id: id("HST"), title: status, detail: `Application moved to ${status.toLowerCase()}.`, date: now.toISOString() } }; }
+        if (status) { values.status = status; if (existing.status !== status) values.statusChangedOn = now.toISOString(); update.$push = { history: { id: id("HST"), title: status, detail: `Application moved to ${status.toLowerCase()}.`, date: now.toISOString() } }; }
         if (Array.isArray(patch.notes)) {
           const old = Array.isArray(existing.notes) ? existing.notes : [], proposed = patch.notes;
           if (proposed.length > 200 || proposed.length < old.length || old.some((note: any, i: number) => JSON.stringify(note) !== JSON.stringify(proposed[i]))) throw new DomainError("CONFLICT", "Notes changed. Refresh and try again.");
@@ -540,6 +556,27 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     await events.insertOne({ _id: id("EVT"), type: "account.register", applicationIds: [applicationId], createdAt: new Date() });
     return publicAccount(user);
   }
+  /**
+   * Erases applicants whose final decision is older than the admin's
+   * retention setting. Does nothing while the setting is off (the default).
+   */
+  async function runRetention(limit = 50) {
+    const config = await settings.findOne({ _id: "program" }, { projection: { retentionDays: 1 } });
+    const days = typeof config?.retentionDays === "number" ? config.retentionDays : null;
+    if (!days) return 0;
+    const system = { id: "retention-policy", role: "company", staffRole: "admin", name: "Retention policy", email: "", applicationId: null, sessionVersion: 1 } as Principal;
+    let erased = 0;
+    for (const applicationId of await expiredApplicationIds(applications as any, days, Date.now(), limit)) {
+      try {
+        await eraseApplicant({ db, client, prefix, applicationId, beforeCommit: session => auditDecision(collection("staff_audit"), session, system, "applicant.erased", applicationId, { reason: "retention", days }) });
+        erased++;
+      } catch (error) {
+        if (!(error instanceof DomainError)) throw error; // e.g. it changed since the query; try again next run
+      }
+    }
+    if (erased) { invalidatePublicData(); communications.invalidateAnalytics(); }
+    return erased;
+  }
   /** Sends queued emails through the hooks; a hook that throws is retried later. */
   async function processOutbox(limit = 20) {
     return outbox.process(async row => {
@@ -616,5 +653,5 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     const passwordHash = await Bun.password.hash(nextPassword, { algorithm: "argon2id" });
     return savePassword(user, passwordHash, user.sessionVersion ?? 1, "account.passwordChanged");
   }
-  return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
+  return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runRetention, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
 }

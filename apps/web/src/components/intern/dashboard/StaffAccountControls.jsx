@@ -27,7 +27,7 @@ export default function StaffAccountControls({ application, commands, notify }) 
   }
   return <Panel>
     <h2 className={styles.panelHeading}>Help an applicant access their account</h2>
-    <p>Verify the applicant’s identity before creating their account. This replaces any unclaimed registration link.</p>
+    <p>Verify the applicant’s identity before creating their account.</p>
     <form className={styles.recoveryForm} onSubmit={createAccount}>
       <label className={common.field}>Password<input type="password" minLength={12} maxLength={256} required value={password} onChange={event => setPassword(event.target.value)} autoComplete="new-password"/></label>
       {error && <p role="alert">{error}</p>}

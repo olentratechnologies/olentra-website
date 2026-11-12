@@ -150,7 +150,7 @@ export default function AnalyticsPage() {
   const stats = data.analytics || {}, counts = stats.statusCounts || {};
   const total = stats.totalApplications || 0;
   const months = (stats.months || []).slice(-({ "3m": 3, "6m": 6, "1y": 12 }[range]));
-  const statuses = ["Applied", "Under Review", "Shortlisted", "Selected", "Joined", "Rejected", "Declined"];
+  const statuses = ["Applied", "Under Review", "Shortlisted", "Selected", "Joined", "Rejected", "Declined", "Withdrawn"];
   const skills = useMemo(() => (stats.skills || []).filter(skill => skill.name.toLowerCase().includes(skillQuery.trim().toLowerCase())), [stats.skills, skillQuery]);
   const highestSkill = Math.max(1, ...(stats.skills || []).map(skill => skill.count));
   const items = [

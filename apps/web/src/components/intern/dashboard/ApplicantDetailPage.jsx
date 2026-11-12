@@ -34,6 +34,7 @@ import {
 } from "@/lib/intern-attachments.mjs";
 import { ApplicantNextAction, ApplicantWorkflow } from "./CompanyWorkflow";
 import StaffAccountControls from "./StaffAccountControls";
+import EraseApplicantPanel from "./EraseApplicantPanel";
 import { toEmbed } from "@/lib/intern/video-embed.mjs";
 import {
   Avatar,
@@ -58,6 +59,7 @@ const STATUSES = [
   "Joined",
   "Rejected",
   "Declined",
+  "Withdrawn",
 ];
 const PROFILE_TABS = [
   { id: "overview", label: "Overview" },
@@ -499,6 +501,7 @@ export default function ApplicantDetailPage({ applicationId }) {
 
       {tab === "overview" && isAdmin && <StaffAccountControls application={application} commands={commands} notify={notify}/>}
       {tab === "overview" && isAdmin && application.accountId && <Panel><h2 className={styles.panelHeading}>Staff-assisted password recovery</h2><p>Verify the applicant’s identity before setting a new password. Existing sessions will be signed out.</p><form className={styles.recoveryForm} onSubmit={async (event) => { event.preventDefault(); setRecoveryBusy(true); const result = await commands.resetPassword(application.accountId, recoveryPassword); setRecoveryBusy(false); if (!result.ok) { notify(result.error); return; } setRecoveryPassword(""); notify("Password reset. Share the new password securely with the applicant."); }}><label className={common.field}>New password<input type="password" minLength={12} maxLength={256} required value={recoveryPassword} onChange={event => setRecoveryPassword(event.target.value)} autoComplete="new-password" /></label><Button type="submit" disabled={recoveryBusy}>{recoveryBusy ? "Saving…" : "Reset password"}</Button></form></Panel>}
+      {tab === "overview" && isAdmin && <EraseApplicantPanel application={application} commands={commands} notify={notify}/>}
 
       {tab === "application" && (
         <div className={styles.applicationGrid}>

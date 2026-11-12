@@ -21,7 +21,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
-  const names = new Set(["offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["application.withdraw", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       offers.createIndex({ applicationId: 1 }, { unique: true }),
@@ -71,12 +71,27 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
         const offer: Row = { _id: old?._id || newId("OFFER"), applicationId, status: "Sent", startOn: p.startOn, endOn: p.endOn, stipend, message: text(p.message).slice(0, 2000), sentOn: now };
         await offers.replaceOne({ applicationId }, offer, { ...opts, upsert: true }); await applications.updateOne({ _id: applicationId, status: "Selected" }, { $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: "Offer sent", detail: "Your offer is ready for review.", date: now } } as any }, opts); return plain(offer);
       }
+      if (method === "application.withdraw") {
+        // Applicants can step back at any point before they join. An open
+        // offer is closed with it; staff are notified through the label below.
+        const applicationId = required(p.applicationId, "application"); own(actor, applicationId);
+        const withdrawable = ["Applied", "Under Review", "Shortlisted", "Selected"];
+        const reason = text(p.reason).slice(0, 1000);
+        const updated = await applications.findOneAndUpdate(
+          { _id: applicationId, status: { $in: withdrawable } },
+          { $set: { status: "Withdrawn", withdrawnOn: now, statusChangedOn: now, ...(reason ? { withdrawalReason: reason } : {}) }, $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: "Application withdrawn", detail: "You withdrew your application.", date: now } } as any },
+          { ...opts, returnDocument: "after" },
+        );
+        if (!updated) throw new DomainError("CONFLICT", "This application can no longer be withdrawn.");
+        await offers.updateOne({ applicationId, status: "Sent" }, { $set: { status: "Withdrawn", decidedOn: now } }, opts);
+        return { id: applicationId, applicationId, status: "Withdrawn" };
+      }
       if (method === "offer.accept" || method === "offer.decline") {
         const applicationId = required(p.applicationId, "application"); own(actor, applicationId);
         const app = await applications.findOne({ _id: applicationId, status: "Selected" }, opts); if (!app) throw new DomainError("CONFLICT", "This offer is no longer awaiting a decision.");
         const offer = await offers.findOneAndUpdate({ applicationId, status: "Sent" }, { $set: { status: method === "offer.accept" ? "Accepted" : "Declined", decidedOn: now, reason: text(p.reason).slice(0, 2000) } }, { ...opts, returnDocument: "after" });
         if (!offer) throw new DomainError("CONFLICT", "This offer is no longer awaiting a decision.");
-        await applications.updateOne({ _id: applicationId, status: "Selected" }, { ...(method === "offer.decline" ? { $set: { status: "Declined" } } : {}), $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: method === "offer.accept" ? "Offer accepted" : "Offer declined", detail: method === "offer.accept" ? "Onboarding is now available." : "Offer declined.", date: now } } as any }, opts);
+        await applications.updateOne({ _id: applicationId, status: "Selected" }, { ...(method === "offer.decline" ? { $set: { status: "Declined", statusChangedOn: now } } : {}), $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: method === "offer.accept" ? "Offer accepted" : "Offer declined", detail: method === "offer.accept" ? "Onboarding is now available." : "Offer declined.", date: now } } as any }, opts);
         return plain(offer);
       }
       if (method === "onboarding.save" || method === "onboarding.submit") {
@@ -224,7 +239,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);
-      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
+      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
       const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
       const label = labels[method];
       if (label && actor) {
@@ -237,6 +252,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
           const program = text(application.program) || "the internship program";
           if (method === "offer.accept") return `${name} accepted the ${program} offer.`;
           if (method === "offer.decline") return `${name} declined the ${program} offer.`;
+          if (method === "application.withdraw") return `${name} withdrew from ${program}.`;
           return `${name} · ${program}`;
         });
         const detail = activityDetails.length === 1
