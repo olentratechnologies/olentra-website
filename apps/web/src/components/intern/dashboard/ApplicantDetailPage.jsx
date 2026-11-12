@@ -493,7 +493,7 @@ export default function ApplicantDetailPage({ applicationId }) {
             {applicationFlow}
           </div>
           <IntroVideoPanel url={application.videoUrl} name={application.name} />
-          <ApplicantScorePanel applicationId={application.id} canReview={canReview} commands={commands} notify={notify} />
+          <ApplicantScorePanel applicationId={application.id} assignedTo={application.assignedTo} canReview={canReview} commands={commands} notify={notify} onAssigned={() => void commands.getApplication(application.id)} />
           {isAdmin && <ApplicantNextAction
             applicationId={applicationId}
             onOpenWorkflow={() => setTab("application")}

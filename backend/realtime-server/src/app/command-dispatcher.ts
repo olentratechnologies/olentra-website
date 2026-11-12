@@ -67,6 +67,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       settings.updateOne({ _id: "program" }, { $setOnInsert: { programEnabled: false, compensationMode: "both", defaultBatch: "", maxStipend: null } }, { upsert: true }),
       applications.updateMany(HAS_VIDEO_BACKFILL.filter, HAS_VIDEO_BACKFILL.update),
       applications.createIndex({ hasVideo: -1, appliedOn: -1 }),
+      applications.createIndex({ assignedTo: 1, appliedOn: -1 }),
       // Retention counts from when a final decision was made; older rows start counting today.
       applications.updateMany({ status: { $in: FINAL_STATUSES }, statusChangedOn: { $exists: false } }, { $set: { statusChangedOn: new Date().toISOString() } }),
     ]);
@@ -230,6 +231,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       if (params.status && params.status !== "all") filter.status = str(params.status);
       if (params.programId && params.programId !== "all") filter.programId = str(params.programId);
       Object.assign(filter, videoFilter(params.video));
+      if (params.assignee === "me") filter.assignedTo = actor!.id;
+      else if (params.assignee === "unassigned") filter.assignedTo = { $exists: false };
       const queries = [str(params.search), str(params.query)].filter(Boolean);
       if (queries.length) filter.$and = queries.map(value => { const q = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 120); return { $or: ["name", "email", "college", "program", "status", "_id", "skills"].map(field => ({ [field]: { $regex: q, $options: "i" } })) }; });
       if (params.skill && params.skill !== "all") {
@@ -355,6 +358,37 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         // Queued inside the transaction: it is sent only if the application commits.
         await outbox.enqueue("applicationConfirmation", { to: email, name, programName: program.name, applicationId }, session);
         return received;
+      });
+    }
+    if (method === "staff.reviewers") {
+      // Who an application can be assigned to: active staff who can read applications.
+      company(actor);
+      const rows = await users.find({ role: "company", disabled: { $ne: true } }, { projection: { name: 1, staffRole: 1 } }).sort({ name: 1 }).limit(500).toArray();
+      const reviewers: { id: string; name: string }[] = [];
+      for (const row of rows) {
+        const role = typeof row.staffRole === "string" ? await staffManagement.resolveRole(row.staffRole) : null;
+        if (row.staffRole === "admin" || role?.permissions?.includes("applications.read")) reviewers.push({ id: String(row._id), name: String(row.name || "Staff member") });
+      }
+      return reviewers;
+    }
+    if (method === "application.assign") {
+      // Assign (or unassign, with null) a reviewer to up to 100 applications.
+      company(actor);
+      const ids = (Array.isArray(params.applicationIds) ? params.applicationIds : [params.applicationId]).map(str).filter(Boolean);
+      const assigneeId = params.assigneeId === null ? null : str(params.assigneeId);
+      if (!ids.length || ids.length > 100 || [...new Set(ids)].length !== ids.length) throw new DomainError("INVALID_REQUEST", "Choose up to 100 applications.");
+      return transact(key, actor, { method, params }, async session => {
+        let assignee: Row | null = null;
+        if (assigneeId) {
+          assignee = await users.findOne({ _id: assigneeId, role: "company", disabled: { $ne: true } }, { session, projection: { name: 1, staffRole: 1 } });
+          const role = assignee && typeof assignee.staffRole === "string" ? await staffManagement.resolveRole(assignee.staffRole) : null;
+          if (!assignee || !(assignee.staffRole === "admin" || role?.permissions?.includes("applications.read"))) throw new DomainError("INVALID_REQUEST", "Choose a staff member who can review applications.");
+        }
+        const result = await applications.updateMany({ _id: { $in: ids } }, assignee
+          ? { $set: { assignedTo: assigneeId, assignedToName: String(assignee.name || ""), assignedOn: new Date().toISOString() } }
+          : { $unset: { assignedTo: "", assignedToName: "", assignedOn: "" } }, { session });
+        await events.insertOne({ _id: id("EVT"), type: "application.assigned", applicationIds: ids, ...(assigneeId ? { assigneeId, assignedBy: actor!.id } : {}), createdAt: new Date() }, { session });
+        return { updated: result.modifiedCount, assigneeId, assigneeName: assignee ? String(assignee.name || "") : null };
       });
     }
     if (method === "applicant.erase") {

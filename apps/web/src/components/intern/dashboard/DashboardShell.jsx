@@ -154,7 +154,7 @@ export default function DashboardShell({ children }) {
   useEffect(() => {
     if (!connected || !staffEvents) return undefined;
     return staffEvents.listen((event) => {
-      if (sectionRef.current !== "applications") setNewApplications((count) => count + 1);
+      if (event.event !== "intern.assigned" && sectionRef.current !== "applications") setNewApplications((count) => count + 1);
       setLiveAlert({ ...event, key: `${event.applicationId}-${Date.now()}` });
     });
   }, [connected, staffEvents]);
@@ -514,15 +514,18 @@ export default function DashboardShell({ children }) {
       {liveAlert && (
         <div key={liveAlert.key} className={styles.liveAlert} role="status" aria-live="polite">
           <span className={styles.liveAlertIcon}><UserPlusIcon size={18} /></span>
-          <div>
+          {liveAlert.event === "intern.assigned" ? <div>
+            <strong>Assigned to you</strong>
+            <p>{liveAlert.count === 1 ? "An application needs your review." : `${liveAlert.count} applications need your review.`}</p>
+          </div> : <div>
             <strong>New application</strong>
             <p>
               {liveAlert.name || "An applicant"} · {data.programs.find((program) => program.id === liveAlert.programId)?.name || "Internship"}
               {liveAlert.hasVideo && <span className={styles.liveAlertVideo}><VideoIcon size={11} /> video</span>}
             </p>
-          </div>
-          <Link href={`/intern/dashboard/applications/${liveAlert.applicationId}`} onClick={() => setLiveAlert(null)}>View</Link>
-          <button onClick={() => setLiveAlert(null)} aria-label="Dismiss new application alert"><X size={15} /></button>
+          </div>}
+          <Link href={liveAlert.applicationId ? `/intern/dashboard/applications/${liveAlert.applicationId}` : "/intern/dashboard/applications?assignee=me"} onClick={() => setLiveAlert(null)}>View</Link>
+          <button onClick={() => setLiveAlert(null)} aria-label="Dismiss alert"><X size={15} /></button>
         </div>
       )}
       {toast && (

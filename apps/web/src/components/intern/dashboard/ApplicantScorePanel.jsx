@@ -13,8 +13,9 @@ const SCALE = [0, 1, 2, 3, 4, 5];
  * Structured review: each reviewer scores the admin's criteria 0–5 and can
  * leave a note. Shows the average and everyone's sheets.
  */
-export default function ApplicantScorePanel({ applicationId, canReview, commands, notify }) {
+export default function ApplicantScorePanel({ applicationId, assignedTo, canReview, commands, notify, onAssigned }) {
   const query = useInternQuery("review.list", { applicationId });
+  const reviewersQuery = useInternQuery("staff.reviewers", {}, { enabled: canReview });
   const data = query.data;
   const [scores, setScores] = useState({});
   const [comment, setComment] = useState("");
@@ -25,6 +26,12 @@ export default function ApplicantScorePanel({ applicationId, canReview, commands
   }, [data?.mine?.updatedOn, data?.mine?.scores, data?.mine?.comment]);
   if (!data) return null;
   const others = data.reviews.filter((review) => review.reviewerId !== data.mine?.reviewerId);
+  async function assign(value) {
+    const result = await commands.assignApplications([applicationId], value || null);
+    if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Could not change the reviewer."); return; }
+    notify(result.data?.assigneeName ? `Assigned to ${result.data.assigneeName}.` : "Reviewer removed.");
+    onAssigned?.();
+  }
   async function save(event) {
     event.preventDefault();
     setBusy(true);
@@ -42,6 +49,13 @@ export default function ApplicantScorePanel({ applicationId, canReview, commands
         <Star size={15} aria-hidden="true" />
         {data.average == null ? "Not scored yet" : `${data.average.toFixed(1)} / 5 · ${data.reviews.length} ${data.reviews.length === 1 ? "reviewer" : "reviewers"}`}
       </span>
+      {canReview && reviewersQuery.data && <label className={styles.reviewerPicker}>
+        Reviewer
+        <select value={assignedTo || ""} onChange={(event) => void assign(event.target.value)}>
+          <option value="">Unassigned</option>
+          {reviewersQuery.data.map((reviewer) => <option key={reviewer.id} value={reviewer.id}>{reviewer.name}</option>)}
+        </select>
+      </label>}
     </div>
     {canReview && <form className={styles.scoreForm} onSubmit={save}>
       {data.rubric.map((criterion) => (

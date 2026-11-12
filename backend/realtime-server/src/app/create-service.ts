@@ -208,6 +208,11 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       const event = JSON.stringify({ type: "event", event: "intern.changed" });
       server?.publish(INTERN_TOPICS.company, event, false);
       if (record.type === "application.created") void announceApplication([...ids][0]);
+      // Only the person assigned hears about it, and never about their own assignment.
+      if (record.type === "application.assigned" && typeof record.assigneeId === "string" && record.assigneeId !== record.assignedBy) {
+        const frame = JSON.stringify({ type: "event", event: "intern.assigned", count: ids.size, applicationId: ids.size === 1 ? [...ids][0] : null });
+        for (const socket of staffSockets.forAccount(record.assigneeId)) socket.send(frame);
+      }
       if (record.type === "staff.changed") {
         for (const accountId of Array.isArray(record.staffAccountIds) ? record.staffAccountIds : []) {
           for (const socket of staffSockets.forAccount(accountId)) {

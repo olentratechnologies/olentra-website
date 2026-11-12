@@ -95,3 +95,20 @@ test("each reviewer keeps one score sheet and the list sorts by the average", as
   expect(sorted.items.map((row: any) => row.id)).toEqual([high!.id, low!.id]);
   expect(sorted.items[0].score).toBe(4);
 });
+
+test("applications can be assigned to a reviewer and filtered by assignee", async () => {
+  const items = await seed(3, "assign");
+  const reviewers = await domain.execute("staff.reviewers", {}, recruiter) as any[];
+  expect(reviewers.map(r => r.id)).toEqual(expect.arrayContaining([admin.id, recruiter.id]));
+  const result = await domain.execute("application.assign", { applicationIds: items.slice(0, 2).map(i => i.id), assigneeId: recruiter.id }, admin, `assign-${randomUUID()}`) as any;
+  expect(result).toMatchObject({ updated: 2, assigneeName: "Recruiter" });
+  const mine = await domain.execute("application.list", { search: "assign-", assignee: "me" }, recruiter) as any;
+  expect(mine.items.map((row: any) => row.id).sort()).toEqual(items.slice(0, 2).map(i => i.id).sort());
+  const open = await domain.execute("application.list", { search: "assign-", assignee: "unassigned" }, recruiter) as any;
+  expect(open.items.map((row: any) => row.id)).toEqual([items[2]!.id]);
+  await expect(domain.execute("application.assign", { applicationIds: [items[2]!.id], assigneeId: "not-staff" }, admin, `assign-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await domain.execute("application.assign", { applicationIds: [items[0]!.id], assigneeId: null }, admin, `assign-${randomUUID()}`);
+  expect((await domain.collection("applications").findOne({ _id: items[0]!.id }))?.assignedTo).toBeUndefined();
+  const event = await domain.collection("events").findOne({ type: "application.assigned", assigneeId: recruiter.id });
+  expect(event?.assignedBy).toBe(admin.id);
+});

@@ -91,6 +91,10 @@ export default function ApplicationsPage() {
   const [track, setTrack] = useState("all");
   const [status, setStatus] = useState("all");
   const [video, setVideo] = useState("all");
+  // "?assignee=me" (from an assignment alert) opens the page filtered to my reviews.
+  const [assignee, setAssignee] = useState(() => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("assignee") === "me" ? "me" : "all"));
+  const reviewersQuery = useInternQuery("staff.reviewers", {}, { enabled: canReview });
+  const reviewers = reviewersQuery.data || [];
   const [skill, setSkill] = useState("all");
   // "Videos first" is a per-reviewer preference, remembered in this browser only.
   const [videosFirst, setVideosFirst] = useState(false);
@@ -113,6 +117,7 @@ export default function ApplicationsPage() {
   const activeFilters =
     Number(status !== "all") +
     Number(video !== "all") +
+    Number(assignee !== "all") +
     Number(skill !== "all") +
     Number(Boolean(dateFrom)) +
     Number(Boolean(dateTo));
@@ -128,7 +133,7 @@ export default function ApplicationsPage() {
 
   const debouncedSearch = useInternSearch(search);
   const debouncedQuery = useInternSearch(query);
-  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, video, skill, dateFrom, dateTo };
+  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }) };
   const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction, videosFirst }, { enabled: !invalidDateRange });
   const summaryQuery = useInternQuery("application.list", { ...queryParams, skill: "all", page: 1, pageSize: 1, facets: true }, { enabled: !invalidDateRange });
   refreshListsRef.current = () => { void listQuery.refresh(); void summaryQuery.refresh(); };
@@ -161,6 +166,7 @@ export default function ApplicationsPage() {
     setTrack("all");
     setStatus("all");
     setVideo("all");
+    setAssignee("all");
     setSkill("all");
     setDateFrom("");
     setDateTo("");
@@ -243,6 +249,21 @@ export default function ApplicationsPage() {
     }
   }
 
+  async function assignSelected(assigneeId) {
+    if (bulkBusy || !selectedRows.length) return;
+    setBulkBusy(true);
+    try {
+      const result = await commands.assignApplications(selectedRows.map((application) => application.id), assigneeId);
+      if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Could not assign these applications."); return; }
+      const name = result.data?.assigneeName;
+      notify(name ? `${selectedRows.length} ${selectedRows.length === 1 ? "application" : "applications"} assigned to ${name}.` : `${selectedRows.length} unassigned.`);
+      setSelected(new Set());
+      void listQuery.refresh();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   function SortHeading({ label, sortKey }) {
     const active = sort.key === sortKey;
     const Icon = active
@@ -304,6 +325,14 @@ export default function ApplicationsPage() {
                 {!summary?.counts?.skills?.length && <span>No skills listed</span>}
               </div>
             </fieldset>
+            <label>
+              Assigned
+              <select value={assignee} onChange={(event) => { setAssignee(event.target.value); setPage(1); }}>
+                <option value="all">Anyone</option>
+                <option value="me">Assigned to me</option>
+                <option value="unassigned">Unassigned</option>
+              </select>
+            </label>
             <label>
               Intro video
               <select
@@ -411,6 +440,19 @@ export default function ApplicationsPage() {
                   {action.label}
                 </button>
               ))}
+              {reviewers.length > 0 && (
+                <select
+                  className={styles.bulkButton}
+                  aria-label="Assign selected applications"
+                  value=""
+                  disabled={bulkBusy}
+                  onChange={(event) => { if (event.target.value) void assignSelected(event.target.value === "none" ? null : event.target.value); }}
+                >
+                  <option value="">Assign to…</option>
+                  {reviewers.map((reviewer) => <option key={reviewer.id} value={reviewer.id}>{reviewer.name}</option>)}
+                  <option value="none">Unassign</option>
+                </select>
+              )}
               <button type="button" className={styles.bulkClear} disabled={bulkBusy} onClick={() => setSelected(new Set())}>
                 Clear
               </button>
@@ -501,6 +543,7 @@ export default function ApplicationsPage() {
                   >
                     <SortHeading label="Score" sortKey="score" />
                   </th>
+                  <th>Reviewer</th>
                   <th className={styles.actionHeading}>Actions</th>
                 </tr>
               </thead>
@@ -547,6 +590,7 @@ export default function ApplicationsPage() {
                     <td className={styles.scoreCell}>
                       {typeof application.score === "number" ? application.score.toFixed(1) : <span aria-label="Not scored">—</span>}
                     </td>
+                    <td className={styles.reviewerCell}>{application.assignedToName || <span aria-label="Unassigned">—</span>}</td>
                     <td className={styles.actionCell}>
                       <RowMenu
                         items={[

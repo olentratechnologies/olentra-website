@@ -102,7 +102,7 @@ export class InternClient {
         if (message.type === "event" && message.event === "intern.session_changed") { forgetInternToken(); this.onSessionChanged?.(); socket.close(); return; }
         if (message.type === "event" && message.event === "intern.changed") this.onChange?.("changed");
         if (message.type === "event" && (message.event === "intern.insights" || message.event === "intern.insights.viewers")) { for (const listener of this.insightsListeners) listener(message); return; }
-        if (message.type === "event" && message.event === "intern.application_created") { for (const listener of this.staffListeners) listener(message); return; }
+        if (message.type === "event" && (message.event === "intern.application_created" || message.event === "intern.assigned")) { for (const listener of this.staffListeners) listener(message); return; }
         if (message.type !== "response") return;
         const pending = this.pending.get(message.id); if (!pending) return;
         this.pending.delete(message.id); clearTimeout(pending.timer);

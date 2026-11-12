@@ -1254,3 +1254,29 @@
   font-weight: 600;
   color: var(--ad-text);
 }
+
+.reviewerCell {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ad-muted);
+}
+
+.reviewerPicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ad-muted);
+}
+
+.reviewerPicker select {
+  padding: 6px 10px;
+  border: 1px solid var(--ad-border);
+  border-radius: 8px;
+  background: var(--ad-panel);
+  color: var(--ad-text);
+  font: inherit;
+  font-size: 13px;
+}
