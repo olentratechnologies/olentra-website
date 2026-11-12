@@ -16,7 +16,7 @@ import ApplicationLaunch from "./ApplicationLaunch";
 import LaunchAnimation from "./LaunchAnimation";
 import LoadingIndicator from "@olentra/ui/LoadingIndicator";
 import { useInternship } from "./InternshipProvider";
-import { makeSampleResume, saveAttachment } from "@/lib/intern-attachments.mjs";
+import { saveAttachment } from "@/lib/intern-attachments.mjs";
 import { isProgramAvailable, matchesCompensationMode, resolveProgramSelection } from "@/lib/intern/program-availability.mjs";
 import styles from "./intern.module.css";
 import InternInsights from "./InternInsights";
@@ -196,7 +196,6 @@ export default function InternLanding() {
   const [linkedInError, setLinkedInError] = useState("");
   const [videoError, setVideoError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [sampleBusy, setSampleBusy] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [alreadyAppliedEmail, setAlreadyAppliedEmail] = useState("");
   const [resendStatus, setResendStatus] = useState("idle");
@@ -378,27 +377,6 @@ export default function InternLanding() {
     } finally {
       submissionLock.current = false;
       setSubmitting(false);
-    }
-  }
-
-  async function useSampleResume() {
-    if (sampleBusy || submitting) return;
-    setSampleBusy(true);
-    try {
-      const file = await makeSampleResume();
-      const transfer = new DataTransfer();
-      transfer.items.add(file);
-      if (resumeInput.current) {
-        resumeInput.current.files = transfer.files;
-        updateResume(resumeInput.current);
-      }
-    } catch (error) {
-      setResumeError(
-        error?.message ||
-          "Unable to prepare the sample resume. Please choose a file.",
-      );
-    } finally {
-      setSampleBusy(false);
     }
   }
 
@@ -910,7 +888,6 @@ export default function InternLanding() {
                     !ready ||
                     !sessionReady ||
                     submitting ||
-                    sampleBusy ||
                     launchPhase === "launching"
                   }
                 >
