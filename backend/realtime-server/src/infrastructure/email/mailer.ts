@@ -1,4 +1,5 @@
 import { internshipEnv } from "../../config/env";
+import { interviewIcs, interviewTimeLabel } from "../../modules/interviews/ics";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
 type ApplicantStatus = "shortlisted" | "offer" | "rejected" | "onboarding" | "certificate";
@@ -20,6 +21,11 @@ interface InterviewScheduledEmailOptions {
   scheduledAt: string;
   meetingUrl: string;
   portalUrl: string;
+  /** For the calendar invite: the same id across reschedules, a higher sequence each time. */
+  interviewId?: string;
+  sequence?: number;
+  /** Set when the interview was cancelled. */
+  cancelReason?: string;
 }
 
 interface ApplicationEmailOptions {
@@ -54,7 +60,8 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
       "'": "&#39;",
     })[character]!);
 
-  async function sendEmail(to: string, subject: string, html: string, text: string): Promise<SendResult> {
+  type Attachment = { filename: string; content: string; contentType: string };
+  async function sendEmail(to: string, subject: string, html: string, text: string, attachments: Attachment[] = []): Promise<SendResult> {
     if (!apiKey) {
       console.info(`[mailer:offline] Email to ${to} (Subject: ${subject}):\n${text}`);
       return { ok: true, delivered: false };
@@ -74,6 +81,7 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
           subject,
           html,
           text,
+          ...(attachments.length ? { attachments: attachments.map(file => ({ filename: file.filename, content: Buffer.from(file.content).toString("base64"), content_type: file.contentType })) } : {}),
         }),
       });
 
@@ -99,13 +107,15 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
       scheduledAt,
       meetingUrl,
       portalUrl,
+      interviewId,
+      sequence,
     }: InterviewScheduledEmailOptions): Promise<SendResult> {
       const subject = `Interview scheduled for your ${programName} application`;
       const safeName = escapeHtml(name);
       const safeProgram = escapeHtml(programName);
       const safeMeetingUrl = escapeHtml(meetingUrl);
       const safePortalUrl = escapeHtml(portalUrl);
-      const time = `${new Date(scheduledAt).toISOString().replace("T", " ").slice(0, 16)} UTC`;
+      const time = interviewTimeLabel(scheduledAt);
       const text = `Hi ${name},\n\nYour interview for ${programName} is scheduled for ${time}.\n\nMeeting link: ${meetingUrl}\n\nOpen your candidate portal: ${portalUrl}\n\nBest regards,\nThe Olentra Team`;
       const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(subject)}</title></head>
@@ -117,7 +127,27 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
     </table>
   </td></tr></table>
 </body></html>`;
-      return sendEmail(to, subject, html, text);
+      const invite = interviewId ? [{ filename: "interview.ics", contentType: "text/calendar; charset=utf-8; method=REQUEST", content: interviewIcs({ uid: interviewId, sequence: sequence ?? 0, startsAt: scheduledAt, summary: `Olentra interview · ${programName}`, description: `Your Olentra internship interview for ${programName}. Join: ${meetingUrl}`, url: meetingUrl, method: "REQUEST" }) }] : [];
+      return sendEmail(to, subject, html, text, invite);
+    },
+
+    async sendInterviewCancelled({ to, name, programName, scheduledAt, meetingUrl, portalUrl, interviewId, sequence, cancelReason }: InterviewScheduledEmailOptions): Promise<SendResult> {
+      const subject = `Your ${programName} interview was cancelled`;
+      const time = interviewTimeLabel(scheduledAt);
+      const reason = cancelReason ? `\n\nReason: ${cancelReason}` : "";
+      const text = `Hi ${name},\n\nYour interview for ${programName} on ${time} has been cancelled.${reason}\n\nThe team will be in touch if it's rescheduled. You can check your candidate portal any time: ${portalUrl}\n\nBest regards,\nThe Olentra Team`;
+      const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:32px 16px;background:#0c0f17;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#f1f5f9">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#131926;border:1px solid #1e293b;border-radius:16px">
+      <tr><td style="padding:28px 32px;border-bottom:1px solid #1e293b"><span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#60a5fa">Olentra Careers · Internship Portal</span><h1 style="margin:12px 0 0;font-size:22px;color:#fff">Interview cancelled</h1></td></tr>
+      <tr><td style="padding:28px 32px"><p>Hi <strong>${escapeHtml(name)}</strong>,</p><p>Your interview for ${escapeHtml(programName)} on <strong>${escapeHtml(time)}</strong> has been cancelled.</p>${cancelReason ? `<p>Reason: ${escapeHtml(cancelReason)}</p>` : ""}<p>The team will be in touch if it's rescheduled.</p><p><a href="${escapeHtml(portalUrl)}">Open your candidate portal</a></p></td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+      const cancellation = interviewId ? [{ filename: "interview.ics", contentType: "text/calendar; charset=utf-8; method=CANCEL", content: interviewIcs({ uid: interviewId, sequence: sequence ?? 1, startsAt: scheduledAt, summary: `Olentra interview · ${programName}`, description: "This interview was cancelled.", url: meetingUrl, method: "CANCEL" }) }] : [];
+      return sendEmail(to, subject, html, text, cancellation);
     },
 
     async sendApplicantStatus({

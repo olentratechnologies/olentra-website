@@ -21,7 +21,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
-  const names = new Set(["application.withdraw", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       offers.createIndex({ applicationId: 1 }, { unique: true }),
@@ -218,7 +218,10 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
         const interview = await interviews.findOneAndUpdate(
           { applicationId },
           {
-            $set: { scheduledAt, meetingUrl, updatedOn: now },
+            // The sequence goes up on every change so calendar invites update in place.
+            $set: { scheduledAt, meetingUrl, updatedOn: now, status: "Scheduled" },
+            $unset: { cancelledOn: "", cancelReason: "" },
+            $inc: { sequence: 1 },
             $setOnInsert: { _id: newId("INTV"), applicationId, createdOn: now },
           },
           { ...opts, upsert: true, returnDocument: "after" },
@@ -231,6 +234,19 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
         );
         return plain(interview);
       }
+      if (method === "interview.cancel") {
+        staff(actor);
+        const applicationId = required(p.applicationId, "application");
+        const reason = text(p.reason).slice(0, 500);
+        const interview = await interviews.findOneAndUpdate(
+          { applicationId, status: { $ne: "Cancelled" } },
+          { $set: { status: "Cancelled", cancelledOn: now, updatedOn: now, ...(reason ? { cancelReason: reason } : {}) }, $inc: { sequence: 1 } },
+          { ...opts, returnDocument: "after" },
+        );
+        if (!interview) throw new DomainError("CONFLICT", "There's no scheduled interview to cancel.");
+        await applications.updateOne({ _id: applicationId }, { $push: { history: { id: newId("HST"), title: "Interview cancelled", detail: reason ? `Interview cancelled: ${reason}` : "Interview cancelled.", date: now } } as any }, opts);
+        return plain(interview);
+      }
       throw new DomainError("NOT_IMPLEMENTED", "This action is not available.");
       })();
       // Decisions are audited in the same transaction as the change itself.
@@ -239,7 +255,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);
-      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
+      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
       const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
       const label = labels[method];
       if (label && actor) {

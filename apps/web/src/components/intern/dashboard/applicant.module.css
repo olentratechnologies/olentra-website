@@ -1280,3 +1280,18 @@
   font: inherit;
   font-size: 13px;
 }
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ad-danger, #cb3e67);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.linkButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

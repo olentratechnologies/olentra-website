@@ -78,8 +78,30 @@ test("interview emails include the time, meeting link, and candidate portal", as
     });
     assert.equal(requests[0]?.subject, "Interview scheduled for your Tech Explorer application");
     assert.match(String(requests[0]?.html), /https:\/\/meet\.example\.test\/room/);
-    assert.match(String(requests[0]?.text), /2026-11-12 10:00 UTC/);
+    // India time first, with UTC alongside.
+    assert.match(String(requests[0]?.text), /12 Nov 2026(,| at) 3:30\s?PM IST \(10:00 UTC\)/i);
     assert.match(String(requests[0]?.text), /https:\/\/example\.test\/intern\/portal/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("interview emails attach a calendar invite, and cancellations a matching cancel", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests: Record<string, any>[] = [];
+  globalThis.fetch = (async (_input, init) => { requests.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify({ id: "email-1" }), { status: 200 }); }) as typeof fetch;
+  try {
+    const mailer = createInternshipMailer("test-api-key", "Olentra <test@example.test>");
+    const notice = { to: "intern@example.test", name: "<Test>", programName: "Tech Explorer", scheduledAt: "2026-11-12T10:00:00.000Z", meetingUrl: "https://meet.example.test/room", portalUrl: "https://example.test/intern/portal", interviewId: "INTV-9" };
+    await mailer.sendInterviewScheduled({ ...notice, sequence: 1 });
+    await mailer.sendInterviewCancelled({ ...notice, sequence: 2, cancelReason: "Interviewer unavailable" });
+    const invite = Buffer.from(requests[0]!.attachments[0].content, "base64").toString();
+    const cancel = Buffer.from(requests[1]!.attachments[0].content, "base64").toString();
+    assert.match(invite, /METHOD:REQUEST/); assert.match(invite, /UID:INTV-9@/); assert.match(invite, /SEQUENCE:1/);
+    assert.match(cancel, /METHOD:CANCEL/); assert.match(cancel, /UID:INTV-9@/); assert.match(cancel, /SEQUENCE:2/);
+    assert.equal(requests[1]!.subject, "Your Tech Explorer interview was cancelled");
+    assert.match(String(requests[1]!.html), /&lt;Test&gt;/);
+    assert.match(String(requests[1]!.text), /Interviewer unavailable/);
   } finally {
     globalThis.fetch = originalFetch;
   }

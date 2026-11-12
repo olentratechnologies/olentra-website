@@ -161,6 +161,15 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           if (!result.ok) logger.warn("Interview email was not delivered", { to: notice.to, error: result.error });
         } catch (error) { logger.warn("Failed to send interview email", { error }); }
       },
+      async sendInterviewCancelled(notice) {
+        try {
+          const result = await mailer.sendInterviewCancelled({
+            ...notice,
+            portalUrl: `${siteOrigin}/intern/portal`,
+          });
+          if (!result.ok) logger.warn("Interview cancellation email was not delivered", { to: notice.to, error: result.error });
+        } catch (error) { logger.warn("Failed to send interview cancellation email", { error }); }
+      },
     });
     await domain.initialize();
     await auth.initialize();

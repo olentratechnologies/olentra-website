@@ -235,6 +235,21 @@ export default function ApplicantDetailPage({ applicationId }) {
     }
   }
 
+  async function cancelInterview() {
+    if (busy) return;
+    const reason = window.prompt("Cancel this interview? Add a short reason for the applicant (optional).");
+    if (reason === null) return;
+    setBusy("interview");
+    try {
+      const result = await commands.cancelInterview(applicationId, reason.trim());
+      if (!result.ok) { notify(result.error || "The interview could not be cancelled."); return; }
+      setSavedInterview(result.data);
+      notify("Interview cancelled. The applicant has been emailed.");
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function saveNote(event) {
     event.preventDefault();
     const text = note.trim();
@@ -641,7 +656,8 @@ export default function ApplicantDetailPage({ applicationId }) {
             {canReview && application.status === "Shortlisted" && <Panel>
               <h2 className={styles.panelHeading}>Interview scheduling</h2>
               <p className={styles.reviewDescription}>Schedule or update one interview for this shortlisted applicant.</p>
-              {interview && <p className={styles.interviewCurrent}>Currently scheduled for {dateTime(interview.scheduledAt)} · <a href={interview.meetingUrl} target="_blank" rel="noreferrer">Open meeting link</a></p>}
+              {interview && interview.status !== "Cancelled" && <p className={styles.interviewCurrent}>Currently scheduled for {dateTime(interview.scheduledAt)} · <a href={interview.meetingUrl} target="_blank" rel="noreferrer">Open meeting link</a> · <button type="button" className={styles.linkButton} onClick={() => void cancelInterview()} disabled={Boolean(busy)}>Cancel interview</button></p>}
+              {interview?.status === "Cancelled" && <p className={styles.interviewCurrent}>The interview on {dateTime(interview.scheduledAt)} was cancelled{interview.cancelReason ? `: ${interview.cancelReason}` : "."} Schedule a new time below.</p>}
               <form className={styles.interviewForm} onSubmit={saveInterview}>
                 <label>
                   Date and time
@@ -653,7 +669,7 @@ export default function ApplicantDetailPage({ applicationId }) {
                 </label>
                 <Button type="submit" disabled={Boolean(busy) || !interviewTime || !meetingUrl.trim()}>
                   <CalendarDays size={15} />
-                  {busy === "interview" ? "Saving…" : interview ? "Update interview" : "Schedule interview"}
+                  {busy === "interview" ? "Saving…" : interview && interview.status !== "Cancelled" ? "Update interview" : "Schedule interview"}
                 </Button>
               </form>
             </Panel>}

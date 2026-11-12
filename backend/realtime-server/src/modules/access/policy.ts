@@ -21,7 +21,7 @@ export function authorizeStaff(method: string, params: Record<string, any>, acto
     "analytics.get": ["overview.read"], "notification.list": ["notifications.read"], "notification.markRead": ["notifications.read"],
     "project.create": ["projects.read", "projects.manage"], "project.update": ["projects.read", "projects.manage"],
     "task.create": ["tasks.read", "tasks.manage"], "task.update": ["tasks.read", "tasks.manage"],
-    "application.update": ["applications.read", "applications.review"], "application.bulkUpdate": ["applications.read", "applications.review"], "review.list": ["applications.read"], "staff.reviewers": ["applications.read"], "template.list": [], "view.list": [], "view.save": [], "view.delete": [], "application.assign": ["applications.read", "applications.review"], "review.save": ["applications.read", "applications.review"], "interview.schedule": ["applications.read", "applications.review"], "submission.review": ["submissions.read", "submissions.feedback"],
+    "application.update": ["applications.read", "applications.review"], "application.bulkUpdate": ["applications.read", "applications.review"], "review.list": ["applications.read"], "staff.reviewers": ["applications.read"], "template.list": [], "view.list": [], "view.save": [], "view.delete": [], "application.assign": ["applications.read", "applications.review"], "review.save": ["applications.read", "applications.review"], "interview.schedule": ["applications.read", "applications.review"], "interview.cancel": ["applications.read", "applications.review"], "submission.review": ["submissions.read", "submissions.feedback"],
     "message.list": [], "message.send": [],
   };
   if (method === "project.list") {

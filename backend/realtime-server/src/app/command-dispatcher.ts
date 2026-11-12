@@ -194,8 +194,10 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       });
     }
   }
-  async function sendInterviewScheduledEmail(interview: { applicationId: unknown; scheduledAt: unknown; meetingUrl: unknown }) {
-    if (!activeHooks?.sendInterviewScheduled) return;
+  async function sendInterviewScheduledEmail(interview: { applicationId: unknown; scheduledAt: unknown; meetingUrl: unknown; id?: unknown; sequence?: unknown; status?: unknown; cancelReason?: unknown }) {
+    const cancelled = interview.status === "Cancelled";
+    const hook = cancelled ? activeHooks?.sendInterviewCancelled : activeHooks?.sendInterviewScheduled;
+    if (!hook) return;
     try {
       const applicationId = str(interview.applicationId);
       const scheduledAt = str(interview.scheduledAt);
@@ -208,8 +210,11 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         programName: str(application.program),
         scheduledAt,
         meetingUrl,
+        ...(interview.id ? { interviewId: str(interview.id) } : {}),
+        ...(typeof interview.sequence === "number" ? { sequence: interview.sequence } : {}),
+        ...(cancelled && interview.cancelReason ? { cancelReason: str(interview.cancelReason) } : {}),
       };
-      await activeHooks.sendInterviewScheduled(notice);
+      await hook(notice);
     } catch (error) {
       logger.warn("Interview email failed after the schedule was saved.", { applicationId: str(interview.applicationId), error });
     }
@@ -529,6 +534,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const issued = ((Array.isArray(result) ? result : []) as any[]).filter(certificate => !existingCertificateInternIds.has(certificate.internId));
         await outbox.enqueueMany(issued.map(certificate => ({ type: "applicantStatus" as const, payload: { applicationId: str(certificate.applicationId), status: "certificate", certificateNumber: str(certificate.certificateNumber) } })));
       }
+      if (method === "interview.cancel" && !Array.isArray(result)) await sendInterviewScheduledEmail(result as any);
       if (method === "interview.schedule" && !Array.isArray(result)) {
         const interview = result as { applicationId: unknown; scheduledAt: unknown; meetingUrl: unknown; updatedOn: unknown };
         if (previousInterview?.updatedOn !== interview.updatedOn) await sendInterviewScheduledEmail(interview);

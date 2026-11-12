@@ -137,3 +137,19 @@ test("saved views belong to one staff member and saving a name again replaces it
   await domain.execute("view.delete", { id: first.id }, admin, `view-${randomUUID()}`);
   expect(await domain.execute("view.list", {}, admin)).toEqual([]);
 });
+
+test("an interview can be cancelled with a reason and scheduled again", async () => {
+  const [item] = await seed(1, "interview");
+  await domain.collection("applications").updateOne({ _id: item!.id }, { $set: { status: "Shortlisted" } });
+  const when = new Date(Date.now() + 3 * 86_400_000); when.setUTCMilliseconds(0);
+  const scheduled = await domain.execute("interview.schedule", { applicationId: item!.id, scheduledAt: when.toISOString(), meetingUrl: "https://meet.example.test/a" }, admin, `intv-${randomUUID()}`) as any;
+  expect(scheduled).toMatchObject({ status: "Scheduled", sequence: 1 });
+  const cancelled = await domain.execute("interview.cancel", { applicationId: item!.id, reason: "Interviewer unavailable" }, recruiter, `intv-${randomUUID()}`) as any;
+  expect(cancelled).toMatchObject({ status: "Cancelled", sequence: 2, cancelReason: "Interviewer unavailable" });
+  await expect(domain.execute("interview.cancel", { applicationId: item!.id }, admin, `intv-${randomUUID()}`)).rejects.toMatchObject({ code: "CONFLICT" });
+  const again = await domain.execute("interview.schedule", { applicationId: item!.id, scheduledAt: when.toISOString(), meetingUrl: "https://meet.example.test/b" }, admin, `intv-${randomUUID()}`) as any;
+  expect(again).toMatchObject({ status: "Scheduled", sequence: 3, id: scheduled.id });
+  expect(again.cancelReason).toBeUndefined();
+  const history = (await domain.collection("applications").findOne({ _id: item!.id }))?.history.map((entry: any) => entry.title);
+  expect(history).toEqual(expect.arrayContaining(["Interview scheduled", "Interview cancelled", "Interview rescheduled"]));
+});

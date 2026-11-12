@@ -293,7 +293,11 @@ export default function PortalApplication() {
           <h3 className={styles.subheading}>My skills</h3>
           <Skills values={application.skills || []} />
         </Panel>
-        {interview && <Panel>
+        {interview?.status === "Cancelled" && <Panel>
+          <h2>Interview cancelled</h2>
+          <p>Your interview on {new Date(interview.scheduledAt).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" })} was cancelled{interview.cancelReason ? `: ${interview.cancelReason}` : "."} The team will be in touch if it’s rescheduled.</p>
+        </Panel>}
+        {interview && interview.status !== "Cancelled" && <Panel>
           <h2>Interview scheduled</h2>
           <p>Your interview is scheduled for {new Date(interview.scheduledAt).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" })}.</p>
           <a href={interview.meetingUrl} className={styles.textLink} target="_blank" rel="noreferrer">

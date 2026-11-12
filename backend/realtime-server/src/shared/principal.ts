@@ -25,6 +25,9 @@ export type InterviewScheduledNotice = {
   programName: string;
   scheduledAt: string;
   meetingUrl: string;
+  interviewId?: string;
+  sequence?: number;
+  cancelReason?: string;
 };
 
 export type InternshipHooks = {
@@ -32,4 +35,5 @@ export type InternshipHooks = {
   sendApplicationConfirmation?: (to: string, name: string, programName: string, applicationId: string) => Promise<unknown>;
   sendApplicantStatus?: (notice: ApplicantStatusNotice) => Promise<unknown>;
   sendInterviewScheduled?: (notice: InterviewScheduledNotice) => Promise<unknown>;
+  sendInterviewCancelled?: (notice: InterviewScheduledNotice) => Promise<unknown>;
 };
