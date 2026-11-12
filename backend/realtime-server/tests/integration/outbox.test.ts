@@ -51,10 +51,12 @@ test("an application queues exactly one confirmation, sent only by the worker", 
   expect(sent.filter(e => e.to === email)).toHaveLength(1);
 });
 
-test("a rejected application queues no confirmation; a duplicate queues one sign-in link", async () => {
+test("a repeat application queues one sign-in link and no second confirmation", async () => {
   const email = `outbox-dup-${randomUUID()}@example.test`;
   await apply(email, `outbox-first-${randomUUID().slice(0, 8)}`);
-  await expect(apply(email, `outbox-again-${randomUUID().slice(0, 8)}`)).rejects.toMatchObject({ code: "ALREADY_APPLIED" });
+  // A repeat gets the same answer as a first application, and queues a sign-in link instead.
+  await expect(apply(email, `outbox-again-${randomUUID().slice(0, 8)}`)).resolves.toMatchObject({ received: true });
+  expect(await domain.collection("applications").countDocuments({ email })).toBe(1);
   const rows = await rowsFor(email);
   expect(rows.map(r => r.type).sort()).toEqual(["applicationConfirmation", "magicLink"]);
 });

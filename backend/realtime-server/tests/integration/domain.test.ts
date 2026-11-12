@@ -58,7 +58,10 @@ test("persisted compensation selection controls new applications without changin
       const fileId = `compensation-file-${index}`, fileToken = `compensation-token-${index}`;
       await domain.collection("files").insertOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
       const request = domain.execute("application.submit", { name: "Compensation Candidate", email: `compensation-${index}@example.test`, linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: fileId, resumeAccessToken: fileToken }, null, `compensation-apply-${index}`);
-      if (accepts) expect((await request).programId).toBe("explorer");
+      if (accepts) {
+        expect(await request).toMatchObject({ received: true });
+        expect((await domain.collection("applications").findOne({ email: `compensation-${index}@example.test` }))?.programId).toBe("explorer");
+      }
       else await expect(request).rejects.toMatchObject({ code: "CLOSED" });
     }
   } finally {
@@ -114,7 +117,8 @@ test("staff can securely create an account for an unclaimed application", async 
   await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true } });
   const fileToken = "staff-assist-file-token";
   await domain.collection("files").insertOne({ _id: "staff-assist-file", kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
-  const app = await domain.execute("application.submit", { name: "Assisted Applicant", email: "assisted@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: "staff-assist-file", resumeAccessToken: fileToken }, null, "application-assisted-0001");
+  await domain.execute("application.submit", { name: "Assisted Applicant", email: "assisted@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: "staff-assist-file", resumeAccessToken: fileToken }, null, "application-assisted-0001");
+  const app = { id: String((await domain.collection("applications").findOne({ email: "assisted@example.test" }))!._id) };
   const payload = { applicationId: app.id, password: "TemporaryPassword2026!" };
   const retryKey = "create-staff-assisted-0001";
   await expect(domain.execute("account.createForApplication", payload, null, "create-staff-assisted-0002")).rejects.toBeInstanceOf(DomainError);
