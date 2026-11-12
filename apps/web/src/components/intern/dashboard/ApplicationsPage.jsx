@@ -108,6 +108,37 @@ export default function ApplicationsPage() {
   }
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  // Saved views: each staff member's own named filter sets, kept on the server.
+  const viewsQuery = useInternQuery("view.list", {});
+  const savedViews = viewsQuery.data || [];
+  const [activeView, setActiveView] = useState("");
+  function applyView(viewId) {
+    setActiveView(viewId);
+    const view = savedViews.find((item) => item.id === viewId);
+    if (!view) return;
+    const f = view.filters || {};
+    setSearch(f.search || ""); setStatus(f.status || "all"); setTrack(f.programId || "all"); setVideo(f.video || "all");
+    setSkill(f.skill || "all"); setDateFrom(f.dateFrom || ""); setDateTo(f.dateTo || ""); setAssignee(f.assignee || "all");
+    if (f.sortKey) setSort({ key: f.sortKey, direction: f.sortDirection === "asc" ? "asc" : "desc" });
+    setPage(1);
+  }
+  async function saveView() {
+    const name = window.prompt("Name this view", savedViews.find((item) => item.id === activeView)?.name || "")?.trim();
+    if (!name) return;
+    const result = await commands.saveView(name, { search, status, programId: track, video, skill, dateFrom, dateTo, assignee, sortKey: sort.key, sortDirection: sort.direction });
+    if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Could not save the view."); return; }
+    notify(`Saved “${name}”.`);
+    setActiveView(result.data.id);
+    void viewsQuery.refresh();
+  }
+  async function deleteView() {
+    const view = savedViews.find((item) => item.id === activeView);
+    if (!view || !window.confirm(`Delete the saved view “${view.name}”?`)) return;
+    const result = await commands.deleteView(view.id);
+    if (!result.ok) { notify("Could not delete the view."); return; }
+    setActiveView("");
+    void viewsQuery.refresh();
+  }
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [sort, setSort] = useState({ key: "appliedOn", direction: "desc" });
@@ -161,6 +192,7 @@ export default function ApplicationsPage() {
   }
 
   function resetFilters() {
+    setActiveView("");
     setQuery("");
     setSearch("");
     setTrack("all");
@@ -404,6 +436,15 @@ export default function ApplicationsPage() {
               <Video size={14} aria-hidden="true" />
               Videos first
             </button>
+            <label className={styles.pageSize}>
+              View
+              <select aria-label="Saved views" value={activeView} onChange={(event) => applyView(event.target.value)}>
+                <option value="">{savedViews.length ? "Choose a saved view" : "No saved views"}</option>
+                {savedViews.map((view) => <option key={view.id} value={view.id}>{view.name}</option>)}
+              </select>
+            </label>
+            <Button variant="ghost" onClick={() => void saveView()}>Save view</Button>
+            {activeView && <Button variant="ghost" onClick={() => void deleteView()}>Delete view</Button>}
             {(activeFilters > 0 || search || track !== "all") && (
               <Button variant="ghost" onClick={resetFilters}>
                 <RotateCcw size={13} />

@@ -125,3 +125,15 @@ test("admins manage message templates; staff who can message can read them", asy
   await domain.execute("template.delete", { id: saved.id }, admin, `tpl-${randomUUID()}`);
   expect((await domain.execute("template.list", {}, admin) as any[]).some(item => item.id === saved.id)).toBe(false);
 });
+
+test("saved views belong to one staff member and saving a name again replaces it", async () => {
+  const first = await domain.execute("view.save", { name: "Video shortlist", filters: { status: "Shortlisted", video: "with", evil: "x" } }, admin, `view-${randomUUID()}`) as any;
+  expect(first.filters).toEqual({ status: "Shortlisted", video: "with" });
+  await domain.execute("view.save", { name: "Video shortlist", filters: { status: "Applied" } }, admin, `view-${randomUUID()}`);
+  const mine = await domain.execute("view.list", {}, admin) as any[];
+  expect(mine.filter(view => view.name === "Video shortlist")).toEqual([{ id: first.id, name: "Video shortlist", filters: { status: "Applied" } }]);
+  expect(await domain.execute("view.list", {}, recruiter)).toEqual([]);
+  await expect(domain.execute("view.delete", { id: first.id }, recruiter, `view-${randomUUID()}`)).rejects.toMatchObject({ code: "NOT_FOUND" });
+  await domain.execute("view.delete", { id: first.id }, admin, `view-${randomUUID()}`);
+  expect(await domain.execute("view.list", {}, admin)).toEqual([]);
+});
