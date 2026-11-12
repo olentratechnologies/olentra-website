@@ -128,7 +128,7 @@ export default function ApplicationsPage() {
   const debouncedQuery = useInternSearch(query);
   const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, video, skill, dateFrom, dateTo };
   const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction, videosFirst }, { enabled: !invalidDateRange });
-  const summaryQuery = useInternQuery("application.list", { ...queryParams, skill: "all", page: 1, pageSize: 1 }, { enabled: !invalidDateRange });
+  const summaryQuery = useInternQuery("application.list", { ...queryParams, skill: "all", page: 1, pageSize: 1, facets: true }, { enabled: !invalidDateRange });
   refreshListsRef.current = () => { void listQuery.refresh(); void summaryQuery.refresh(); };
   const result = listQuery.data || { items: [], total: 0 };
   const summary = summaryQuery.data;

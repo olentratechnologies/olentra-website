@@ -59,3 +59,12 @@ test("a recruiter can't make final decisions in bulk", async () => {
   const allowed = await domain.execute("application.bulkUpdate", { items, status: "Shortlisted" }, recruiter, `bulk-${randomUUID()}`) as any[];
   expect(allowed.every(row => row.ok)).toBe(true);
 });
+
+test("application.list computes filter counts only when asked", async () => {
+  await seed(2, "facet");
+  const plain = await domain.execute("application.list", { search: "facet-", pageSize: 5 }, admin) as any;
+  expect(plain.total).toBe(2);
+  expect(plain.counts).toBeUndefined();
+  const withCounts = await domain.execute("application.list", { search: "facet-", pageSize: 1, facets: true }, admin) as any;
+  expect(withCounts.counts.statuses.Applied).toBe(2);
+});
