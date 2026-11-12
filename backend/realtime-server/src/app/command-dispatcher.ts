@@ -463,7 +463,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       // Public check for a shared certificate link. Numbers are random UUIDs, so they can't be enumerated.
       const number = str(params.number).slice(0, 80);
       if (!/^OLENTRA-[0-9a-f-]{36}$/i.test(number)) return { valid: false };
-      const row = await collection("certificates").findOne({ certificateNumber: number }, { projection: { recipient: 1, program: 1, issuedOn: 1, status: 1 } });
+      const row = await collection("certificates").findOne({ certificateNumber: { $eq: number, $type: "string" } }, { projection: { recipient: 1, program: 1, issuedOn: 1, status: 1 } });
       return row ? { valid: true, certificateNumber: number, recipient: row.recipient, program: row.program, issuedOn: row.issuedOn, status: row.status || "Issued" } : { valid: false };
     }
     if (communications.supports(method)) {

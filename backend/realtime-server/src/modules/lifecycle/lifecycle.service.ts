@@ -33,6 +33,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       certificates.createIndex({ internId: 1 }, { unique: true }),
       certificates.createIndex({ applicationId: 1 }),
       // Public certificate checks look a certificate up by its number.
+      // Partial, so older rows without a number are skipped. Queries must say `$type: "string"` for MongoDB to use it.
       certificates.createIndex({ certificateNumber: 1 }, { unique: true, partialFilterExpression: { certificateNumber: { $type: "string" } } }),
       interviews.createIndex({ applicationId: 1 }, { unique: true }),
       projects.createIndex({ team: 1 }),

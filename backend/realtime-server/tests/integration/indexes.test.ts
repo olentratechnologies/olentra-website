@@ -24,7 +24,7 @@ afterAll(async () => {
 const usesIndex = (plan: unknown) => JSON.stringify(plan).includes("IXSCAN") && !JSON.stringify(plan).includes("COLLSCAN");
 
 test("public certificate checks look the number up through an index", async () => {
-  const plan = await domain.collection("certificates").find({ certificateNumber: `OLENTRA-${randomUUID()}` }).explain();
+  const plan = await domain.collection("certificates").find({ certificateNumber: { $eq: `OLENTRA-${randomUUID()}`, $type: "string" } }).explain();
   expect(usesIndex(plan)).toBe(true);
 });
 
