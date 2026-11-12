@@ -78,7 +78,7 @@ test("login, streaming resume, application, registration, live status and refres
   const file = await fetch(base + "/intern/files", { method: "POST", headers: { origin, "content-type": "application/pdf", "x-file-name": "resume.pdf", "x-file-kind": "resume" }, body: "%PDF-1.4 test resume" });
   expect(file.status).toBe(200); const uploaded = (await file.json() as any).data;
   const applicant = await socket();
-  const application = await applicant.request("application.submit", { name: "Test Applicant", email: "applicant@example.test", programId: "explorer", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "submit-application-test-01");
+  const application = await applicant.request("application.submit", { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "submit-application-test-01");
   const registered = await applicant.request("account.register", { applicationId: application.id, claimToken: application.claimToken, password: "ApplicantPassword2026!" }, "register-applicant-test-01");
   expect(registered.role).toBe("intern");
   const intern = await login("applicant@example.test", "ApplicantPassword2026!"); expect(intern.response.status).toBe(200);
@@ -153,6 +153,30 @@ test("concurrent retries share one rotation and an expired retry window revokes 
   await domain.collection("sessions").updateOne({ _id: token.split(".")[0] }, { $set: { refreshRetryUntil: new Date(0) } });
   expect((await fetch(base + "/intern/auth/refresh", { method: "POST", headers })).status).toBe(401);
   expect((await fetch(base + "/intern/auth/refresh", { method: "POST", headers: { ...headers, cookie: rotated, "x-intern-refresh-request": "expired-followup-request-0001" } })).status).toBe(401);
+}, 30000);
+
+test("anonymous careers page receives live aggregate insights without applicant identity", async () => {
+  const viewer = await socket();
+  const pushes: any[] = [];
+  viewer.ws.addEventListener("message", event => { const frame = JSON.parse(String(event.data)); if (frame.type === "event" && String(frame.event).startsWith("intern.insights")) pushes.push(frame); });
+  const initial = await viewer.request("insights.subscribe");
+  expect(initial.viewers).toBeGreaterThanOrEqual(1);
+  expect(initial.totals.applied).toBeGreaterThanOrEqual(0);
+  const before = initial.totals.applied;
+  const file = await fetch(base + "/intern/files", { method: "POST", headers: { origin, "content-type": "application/pdf", "x-file-name": "resume.pdf", "x-file-kind": "resume" }, body: "%PDF-1.4 insights resume" });
+  const uploaded = (await file.json() as any).data;
+  const applicant = await socket();
+  await applicant.request("application.submit", { name: "Insights Applicant", email: "insights-applicant@example.test", linkedin: "https://www.linkedin.com/in/insights-applicant", videoUrl: "https://youtu.be/aqz-KE-bpKQ", programId: "explorer", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "insights-application-0001");
+  expect((await domain.collection("applications").findOne({ email: "insights-applicant@example.test" }))?.hasVideo).toBe(true);
+  const deadline = Date.now() + 15000;
+  while (!pushes.some(frame => frame.event === "intern.insights" && frame.data.totals.applied === before + 1) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));
+  const update = pushes.find(frame => frame.event === "intern.insights" && frame.data.totals.applied === before + 1);
+  expect(update).toBeDefined();
+  expect(update.data.recent[0]).toEqual({ track: "explorer", at: expect.any(String) });
+  expect(JSON.stringify(update.data)).not.toContain("insights-applicant@example.test");
+  expect(JSON.stringify(update.data)).not.toContain("Insights Applicant");
+  await viewer.request("insights.unsubscribe");
+  viewer.ws.close(); applicant.ws.close();
 }, 30000);
 
 test("logout revokes a rotated session even if the browser has the old cookie", async () => {

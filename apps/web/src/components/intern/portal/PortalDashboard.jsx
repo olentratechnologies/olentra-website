@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useInternship } from "@/components/intern/InternshipProvider";
+import { ALL_BADGES, earnedBadges } from "@/lib/intern/badges.mjs";
 import { PlanetArtwork } from "../dashboard/DashboardVisuals";
 import {
   EmptyState,
@@ -24,6 +25,47 @@ import {
   formatDate,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import badgeStyles from "./badges.module.css";
+
+function BadgesRow({ my }) {
+  const earned = new Map(earnedBadges(my).map((badge) => [badge.id, badge]));
+  return (
+    <Panel className={styles.sectionGap}>
+      <div className={styles.panelHeader}>
+        <h2>Your badges</h2>
+        <span className={badgeStyles.count}>
+          {earned.size} / {ALL_BADGES.length} earned
+        </span>
+      </div>
+      <ul className={badgeStyles.badges}>
+        {ALL_BADGES.map((badge) => {
+          const won = earned.get(badge.id);
+          return (
+            <li
+              key={badge.id}
+              className={badgeStyles.badge}
+              data-badge-id={badge.id}
+              data-earned={Boolean(won)}
+              aria-label={`${badge.title}: ${won ? "earned" : `locked. ${badge.hint}`}`}
+            >
+              <span className={badgeStyles.medal} aria-hidden="true">
+                {badge.icon}
+              </span>
+              <strong>{badge.title}</strong>
+              <small>
+                {won
+                  ? won.earnedAt
+                    ? `Earned ${formatDate(won.earnedAt)}`
+                    : badge.description
+                  : badge.hint}
+              </small>
+            </li>
+          );
+        })}
+      </ul>
+    </Panel>
+  );
+}
 
 export default function PortalDashboard() {
   const { ready, account, my } = useInternship();
@@ -248,6 +290,7 @@ export default function PortalDashboard() {
             )}
         </Panel>
       </div>
+      <BadgesRow my={my} />
       {canViewWork && (my.projects || []).length > 0 && (
         <Panel className={styles.sectionGap}>
           <div className={styles.panelHeader}>

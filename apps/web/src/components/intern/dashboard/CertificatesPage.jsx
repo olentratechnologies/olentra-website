@@ -34,6 +34,8 @@ import {
 } from "./DashboardUI";
 import common from "./pages.module.css";
 import styles from "./portfolio.module.css";
+import { burstFrom } from "@/lib/confetti.mjs";
+import StoriesReview from "./StoriesReview";
 
 export function CertificatesPage() {
   const { data, query, notify, generateCertificates, account } = useDashboard();
@@ -103,8 +105,9 @@ export function CertificatesPage() {
     setGenerationError("");
     setBulkOpen(true);
   };
-  const generateSelected = async () => {
+  const generateSelected = async (event) => {
     if (generating) return;
+    const trigger = event?.currentTarget;
     if (!selectedEligible.length)
       return setGenerationError(
         "Select at least one eligible completed intern.",
@@ -121,6 +124,7 @@ export function CertificatesPage() {
         );
         return;
       }
+      burstFrom(trigger, { count: 80 });
       setBulkOpen(false);
       setSelected([]);
       setCreatedPreview(created[0]);
@@ -339,6 +343,7 @@ export function CertificatesPage() {
           Manage certificates <ArrowRight size={13} />
         </button>}
       </div>
+      <StoriesReview isAdmin={isAdmin} />
       <Modal
         open={bulkOpen}
         onOpenChange={setBulkOpen}

@@ -127,64 +127,10 @@
 .navActive svg {
   filter: drop-shadow(0 0 4px #9cc9ff);
 }
-.sidebarPromo {
-  position: relative;
-  margin: 35px 0 24px;
-  min-height: 211px;
-  padding: 112px 20px 17px;
-  overflow: hidden;
-  border: 1px solid var(--ad-promo-border, #427ed473);
-  border-radius: 15px;
-  background: var(--ad-promo-bg,
-    radial-gradient(ellipse at 60% 31%, #164b888c, transparent 65%),
-    linear-gradient(135deg, #1129517a, #101c3d));
-}
-.sidebarPlanet {
-  position: absolute;
-  left: 20px;
-  top: 1px;
-  width: 155px;
-  height: 114px;
-}
-.sidebarPromo > strong {
-  display: block;
-  font-size: 15px;
-  line-height: 1.35;
-  font-weight: 600;
-}
-.sidebarPromo > span {
-  display: block;
-  margin-top: 6px;
-  color: #9db6dc;
-  font-size: 10px;
-}
-.sidebarPromo > a {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 10px;
-  font-size: 10px;
-  color: #d7e7ff;
-  text-decoration: none;
-}
-.logout {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin: auto 0 16px;
-  padding: 11px 17px;
-  border: 1px solid color-mix(in srgb, var(--ad-border-strong, #5473a0) 16%, transparent);
-  border-radius: 10px;
-  color: var(--ad-subtle, #a8bddd);
-  background: color-mix(in srgb, var(--ad-inverse, #142340) 50%, transparent);
-  cursor: pointer;
-  font-size: 12px !important;
-}
-.logout:hover {
-  background: var(--ad-inverse, #203b68);
-}
 .sidebarFooter {
-  padding: 0 9px;
+  /* Pinned to the bottom and indented like the nav items above it. */
+  margin-top: auto;
+  padding: 24px 17px 0;
   color: var(--ad-subtle, #718bb3);
   font-size: 9px;
   line-height: 1.8;
@@ -271,42 +217,6 @@
   background: var(--ad-danger-bg, #ffe2ed);
   color: var(--ad-danger, #ce5275);
   font-size: 9px;
-}
-.profileButton {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: 4px;
-  text-decoration: none;
-  color: var(--ad-muted, #183465);
-}
-.avatar {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 39px;
-  height: 39px;
-  border: 1px solid var(--ad-promo-border, #ffffffbd);
-  border-radius: 50%;
-  color: var(--ad-avatar-text, #fff);
-  background: var(--ad-avatar-bg, linear-gradient(135deg, #1e3c76, #142548));
-  box-shadow: var(--ad-primary-shadow, 0 2px 6px #3956a11a);
-  font-size: 12px;
-}
-.profileButton > span:nth-child(2) {
-  display: grid;
-  gap: 0;
-}
-.profileButton strong {
-  font-size: 12px;
-  font-weight: 600;
-}
-.profileButton small {
-  font-size: 10px;
-  color: var(--ad-subtle, #6680ab);
-}
-.profileButton > svg {
-  margin-left: 7px;
 }
 .content {
   position: relative;
@@ -2151,18 +2061,15 @@
     padding-left: 14px;
     font-size: 11px;
   }
+  .workspaceLabel {
+    margin-left: 14px !important;
+  }
   .main {
     margin-left: 195px;
     padding: 22px;
   }
-  .sidebarPromo {
-    padding-left: 17px;
-    padding-right: 12px;
-  }
-  .sidebarPlanet {
-    left: 8px;
-  }
   .sidebarFooter {
+    padding-left: 14px;
     font-size: 8px;
   }
   .summaryGrid {
@@ -2279,10 +2186,6 @@
   }
   .topbarActions {
     gap: 9px;
-  }
-  .profileButton > span:nth-child(2),
-  .profileButton > svg {
-    display: none;
   }
   .breadcrumb {
     font-size: 11px;
@@ -2486,21 +2389,10 @@
   }
   .workspaceLabel {
     margin-top: 29px !important;
-  }
-  .sidebarPromo {
-    margin-top: 25px;
-    min-height: 185px;
-    padding-top: 97px;
-  }
-  .sidebarPlanet {
-    left: 25px;
-    width: 155px;
-    height: 106px;
-  }
-  .sidebarPromo > strong {
-    font-size: 14px;
+    margin-left: 18px !important;
   }
   .sidebarFooter {
+    padding-left: 18px;
     font-size: 9px;
   }
   .navItem {
@@ -2555,14 +2447,6 @@
     height: 13px;
     min-width: 13px;
     font-size: 8px;
-  }
-  .avatar {
-    width: 33px;
-    height: 33px;
-    font-size: 10px;
-  }
-  .profileButton {
-    margin-left: 1px;
   }
   .heading {
     margin-bottom: 20px;
@@ -3078,25 +2962,11 @@
   .workspaceLabel {
     margin-top: 24px !important;
   }
-  .sidebarPromo {
-    margin-top: 24px;
-    min-height: 187px;
-    padding-top: 101px;
-  }
-  .sidebarPlanet {
-    height: 103px;
-  }
   .navItem {
     min-height: 43px;
   }
   .sidebarFooter {
     font-size: 8px;
-  }
-  .logout {
-    margin-bottom: 13px;
-  }
-  .sidebarPromo {
-    margin-bottom: 22px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -3168,22 +3038,6 @@
   color: var(--ad-subtle, #6b87ad);
 }
 
-.switchAccount {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  margin: -3px 0 17px;
-  padding: 3px 5px;
-  border: 0;
-  color: var(--ad-subtle, #819bc4);
-  background: transparent;
-  font-size: 9px !important;
-  cursor: pointer;
-}
-.switchAccount:hover {
-  color: var(--ad-subtle, #cee2ff);
-}
 
 /* Navigation stays out of the focus order when the mobile drawer is closed. */
 @media (max-width: 680px) {
@@ -3388,15 +3242,6 @@
   box-shadow: var(--ad-primary-shadow, 0 5px 12px #0054e830, inset 0 1px 2px #b9e4ff80);
 }
 :global(html[data-intern-theme]) .navActive svg { filter: none; }
-:global(html[data-intern-theme]) .logout {
-  border: 1px solid var(--ad-border-strong);
-  border-radius: 999px;
-  color: var(--ad-button-text);
-  background: var(--ad-button-bg);
-}
-:global(html[data-intern-theme]) .logout:hover { border-color: var(--ad-blue); color: var(--ad-link); background: var(--ad-button-hover); }
-:global(html[data-intern-theme]) .switchAccount { color: var(--ad-subtle); }
-:global(html[data-intern-theme]) .switchAccount:hover { color: var(--ad-link); }
 :global(html[data-intern-theme]) .sidebarFooter { color: var(--ad-subtle); }
 :global(html[data-intern-theme]) .roundButton {
   border: 1px solid var(--ad-border-strong);
@@ -3404,7 +3249,6 @@
   background: var(--ad-button-bg);
 }
 :global(html[data-intern-theme]) .roundButton:hover { border-color: var(--ad-blue); color: var(--ad-link); background: var(--ad-button-hover); }
-:global(html[data-intern-theme]) .profileButton { color: var(--ad-text); }
 :global(html[data-intern-theme]) .panel {
   border: 1px solid var(--ad-border);
   border-radius: 22px;
@@ -3415,5 +3259,53 @@
 @media (min-width: 761px) {
   :global(html[data-intern-theme]) .sidebar { inset: 12px auto 12px 12px; border-radius: 24px; }
 }
-:global(html[data-intern-theme]) .sidebarPromo { color: #fff; }
 :global(html[data-intern-theme]) .portal select { color: var(--ad-text); background-color: var(--ad-field); border-color: var(--ad-border-strong); }
+
+/* Feel-good toast: springy entrance, check badge pop with a pulse ring, drawn check mark. */
+.toast {
+  animation: toastSpring 0.55s cubic-bezier(0.2, 1.35, 0.4, 1) both;
+}
+.toast > span {
+  position: relative;
+  animation: toastPop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.12s both;
+}
+.toast > span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0;
+  animation: toastRing 0.9s ease-out 0.3s;
+}
+.toast > span svg path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: toastDraw 0.35s ease-out 0.32s forwards;
+}
+@keyframes toastSpring {
+  from { opacity: 0; transform: translateY(18px) scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes toastPop {
+  from { transform: scale(0.3); }
+  to { transform: scale(1); }
+}
+@keyframes toastRing {
+  from { opacity: 0.55; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.9); }
+}
+@keyframes toastDraw {
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast > span,
+  .toast > span::after {
+    animation: none;
+  }
+  .toast > span svg path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

@@ -32,6 +32,7 @@ import {
   useAction,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import { burstFrom } from "@/lib/confetti.mjs";
 
 export function SubmitWorkModal({ task, onClose }) {
   const { commands, notify } = useInternship();
@@ -65,6 +66,7 @@ export function SubmitWorkModal({ task, onClose }) {
   async function submit(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const trigger = event.nativeEvent?.submitter || event.currentTarget;
     await action.run(
       () =>
         commands.submitWork(task.id, {
@@ -73,6 +75,7 @@ export function SubmitWorkModal({ task, onClose }) {
           ...(attachment ? { attachmentId: attachment.id } : {}),
         }),
       () => {
+        burstFrom(trigger);
         notify("Your work has been submitted for review.");
         onClose();
       },
@@ -256,10 +259,13 @@ export function PortalProjectDetail({ projectId }) {
   const canEdit =
     my.application?.status === "Joined" && my.intern?.status === "Active";
   const approved = tasks.filter((task) => task.status === "Approved").length;
-  async function start(task) {
+  async function start(task, trigger) {
     await action.run(
       () => commands.startTask(task.id),
-      () => notify("Task started. Happy building!"),
+      () => {
+        burstFrom(trigger, { small: true });
+        notify("Task started. Happy building!");
+      },
     );
   }
 
@@ -401,7 +407,7 @@ export function PortalProjectDetail({ projectId }) {
                                 variant="secondary"
                                 busy={action.busy}
                                 disabled={action.busy}
-                                onClick={() => start(task)}
+                                onClick={(event) => start(task, event.currentTarget)}
                               >
                                 <Play size={13} />
                                 Start task

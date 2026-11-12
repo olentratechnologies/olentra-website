@@ -4,7 +4,16 @@
 }
 .applicationTabs {
   border-bottom: 1px solid var(--ad-border, #d4e0ff);
-  padding: 0 17px;
+  padding: 12px 18px 0;
+}
+/* The wrapper draws the full-width divider; drop the tab list's own line so there is only one. */
+.applicationTabs > [role="tablist"],
+.profileTabs > [role="tablist"] {
+  border-bottom: 0;
+}
+/* Inset the table to the same 18px edge as the search toolbar and pagination. */
+.applicationTableWrap {
+  margin: 0 18px;
 }
 .listToolbar {
   display: flex;
@@ -68,6 +77,143 @@
 .applicantLink:hover {
   color: var(--ad-blue, #1768f2);
 }
+.videoBadge {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: var(--ad-blue, #2465e9);
+  background: var(--ad-panel-alt, #e7efff);
+}
+.srOnlyText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.selectCell {
+  width: 44px;
+  padding-right: 0 !important;
+}
+.selectCell input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ad-blue, #2465e9);
+  cursor: pointer;
+}
+.selectCell input:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.rowSelected {
+  background: color-mix(in srgb, var(--ad-blue, #2465e9) 9%, transparent) !important;
+}
+.rowFresh {
+  animation: rowFresh 6s ease-out;
+}
+@keyframes rowFresh {
+  0%, 25% { background: color-mix(in srgb, #2fd38c 22%, transparent); }
+  100% { background: transparent; }
+}
+.bulkBar {
+  position: sticky;
+  top: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 18px 12px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--ad-blue, #2465e9) 45%, transparent);
+  border-radius: 12px;
+  color: var(--ad-text, #102354);
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 92%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px #1e3e7b26;
+  font-size: 12.5px;
+  animation: bulkIn 0.25s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+.bulkActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bulkButton,
+.bulkClear {
+  min-height: 32px;
+  padding: 0 13px;
+  border: 1px solid var(--ad-border, #cfdcf6);
+  border-radius: 999px;
+  color: var(--ad-text, #173763);
+  background: var(--ad-panel-alt, #eef3ff);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bulkButton:hover {
+  border-color: var(--ad-blue, #2465e9);
+}
+.bulkDanger {
+  color: var(--ad-danger, #c7354f);
+  border-color: color-mix(in srgb, var(--ad-danger, #c7354f) 40%, transparent);
+  background: color-mix(in srgb, var(--ad-danger, #c7354f) 8%, transparent);
+}
+.bulkClear {
+  background: transparent;
+}
+.bulkButton:disabled,
+.bulkClear:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+.bulkWorking {
+  color: var(--ad-subtle, #64789c);
+}
+@keyframes bulkIn {
+  from { opacity: 0; transform: translateY(-6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rowFresh,
+  .bulkBar {
+    animation: none;
+  }
+}
+@media (max-width: 640px) {
+  .bulkBar {
+    margin: 0 13px 12px;
+  }
+}
+.videosFirst {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--ad-border, #cfdcf6);
+  border-radius: 999px;
+  color: var(--ad-muted, #35558f);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.videosFirst:hover {
+  background: var(--ad-panel-alt, #eef3ff);
+}
+.videosFirstOn {
+  border-color: var(--ad-blue, #2465e9);
+  color: #fff;
+  background: var(--ad-blue, #2465e9);
+}
+.videosFirstOn:hover {
+  background: var(--ad-blue, #2465e9);
+}
 .collegeCell {
   color: var(--ad-subtle, #536d99);
   max-width: 220px;
@@ -114,6 +260,42 @@
   flex-direction: column;
   gap: 8px;
   font-size: 12px;
+  color: var(--ad-subtle, #526b96);
+}
+.skillFilters {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.skillFilters legend {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--ad-subtle, #526b96);
+}
+.skillFilters > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.skillFilters button {
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--ad-border, #c9d9fa);
+  border-radius: 999px;
+  background: var(--ad-panel, #fff);
+  color: var(--ad-muted, #254577);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.skillFilters button[aria-pressed="true"] {
+  border-color: var(--ad-blue, #1768ed);
+  background: color-mix(in srgb, var(--ad-blue, #1768ed) 10%, var(--ad-panel, #fff));
+  color: var(--ad-blue, #1768ed);
+}
+.skillFilters span {
+  font-size: 11px;
   color: var(--ad-subtle, #526b96);
 }
 .filterFields input,
@@ -254,6 +436,63 @@
 }
 .overviewGrid > * {
   min-width: 0;
+}
+.videoPanel {
+  margin-top: 17px;
+}
+.videoHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.profilePage .videoHeading .panelHeading {
+  margin: 0;
+}
+.videoProvider {
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: var(--ad-blue, #2465e9);
+  background: var(--ad-panel-alt, #e9f0ff);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.videoOpen {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ad-link, #2465e9);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.videoOpen:hover {
+  text-decoration: underline;
+}
+.videoFrame {
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--ad-border, #d6e2fb);
+  border-radius: 14px;
+  background: #0b1530;
+}
+.videoFrame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.videoNote {
+  margin: 0;
+  color: var(--ad-subtle, #64789c);
+  font-size: 13px;
 }
 .profilePage .panelHeading {
   display: flex;
@@ -560,6 +799,42 @@
   flex-direction: column;
   gap: 16px;
 }
+.interviewCurrent {
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ad-muted, #254577);
+}
+.interviewCurrent a {
+  color: var(--ad-blue, #1768ed);
+  font-weight: 600;
+}
+.interviewForm {
+  display: grid;
+  gap: 14px;
+}
+.interviewForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ad-subtle, #526b96);
+}
+.interviewForm input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--ad-border, #c9d9fa);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 75%, transparent);
+  color: var(--ad-muted, #254577);
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 12px;
+  color-scheme: var(--ad-scheme, light);
+}
+.interviewForm button {
+  justify-self: end;
+}
 .statusForm button {
   align-self: flex-end;
 }
@@ -852,7 +1127,10 @@
     justify-content: flex-end;
   }
   .applicationTabs {
-    padding: 0 6px;
+    padding: 8px 13px 0;
+  }
+  .applicationTableWrap {
+    margin: 0 13px;
   }
   .paginationRow {
     padding: 13px;

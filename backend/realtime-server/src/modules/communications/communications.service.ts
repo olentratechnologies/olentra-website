@@ -266,7 +266,7 @@ export function createCommunications({ collection, transact }: Options) {
         values.compensationMode = patch.compensationMode;
       }
       for (const field of ["programName", "defaultBatch"]) if (patch[field] !== undefined) { const value = str(patch[field]); if ((field === "programName" && !value) || value.length > 120) throw new DomainError("INVALID_REQUEST", `Enter a valid ${field}.`); values[field] = value; }
-      for (const field of ["programEnabled", "applicationAlerts", "weeklyDigest", "reviewReminder"]) if (patch[field] !== undefined) { if (typeof patch[field] !== "boolean") throw new DomainError("INVALID_REQUEST", `Invalid ${field}.`); values[field] = patch[field]; }
+      for (const field of ["programEnabled", "applicationAlerts", "weeklyDigest", "reviewReminder", "rejectionEmails"]) if (patch[field] !== undefined) { if (typeof patch[field] !== "boolean") throw new DomainError("INVALID_REQUEST", `Invalid ${field}.`); values[field] = patch[field]; }
       if (patch.maxStipend !== undefined) { const amount = Number(patch.maxStipend); if (!Number.isSafeInteger(amount) || amount < 0 || amount > 1000000) throw new DomainError("INVALID_REQUEST", "Enter a valid stipend."); values.maxStipend = amount; }
       if (patch.emailNotifications === true || patch.weeklyDigest === true || patch.reviewReminder === true || (patch.integrations && Object.values(patch.integrations).some(Boolean))) throw new DomainError("UNAVAILABLE", "Email, scheduled reminders, and external integrations are not configured.");
       return transact(key, account, { method, params }, async session => {

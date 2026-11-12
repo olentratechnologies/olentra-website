@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { hasStaffPermission } from "./staffAccess";
+import { dashboardInsights, dashboardQuickActions } from "@/lib/intern/dashboard-insights.mjs";
 import { usePathname, useRouter } from "next/navigation";
 import { exportCsv } from "./DashboardUI";
 import {
@@ -108,6 +109,9 @@ export default function InternDashboard() {
   } = useDashboard();
   const canApplications = hasStaffPermission(account, "applications.read");
   const canNotifications = hasStaffPermission(account, "notifications.read");
+  // Both panels are computed from live data (they used to read empty placeholder lists).
+  const insights = dashboardInsights(data.analytics);
+  const quickActions = dashboardQuickActions({ isAdmin: account?.staffRole === "admin", can: (permission) => hasStaffPermission(account, permission) });
   const [periodId, setPeriodId] = useState("1Y");
   const router = useRouter();
   const section = "dashboard";
@@ -174,7 +178,9 @@ export default function InternDashboard() {
   }
   const setSelectedApplication = (application) =>
     router.push(`/intern/dashboard/applications/${application.id}`);
-  const activityList = (all = false) => (
+  const activityList = (all = false) => !activities.length ? (
+    <p className={styles.insightEmpty}>No recent activity yet. New applications and decisions will show up here.</p>
+  ) : (
     <ol className={styles.activityList}>
       {activities.slice(0, all ? 10 : 4).map((activity) => {
         const Icon = icons[activity.icon] || ClipboardCheck;
@@ -356,7 +362,10 @@ export default function InternDashboard() {
                   Insights
                 </h2>
                 <div className={styles.insightGrid}>
-                  {data.insights.map((insight) => (
+                  {!insights.length && (
+                    <p className={styles.insightEmpty}>Insights appear once your role can view program analytics.</p>
+                  )}
+                  {insights.map((insight) => (
                     <article key={insight.id} className={styles.insightCard}>
                       <InsightGlyph
                         type={insight.icon}
@@ -448,7 +457,7 @@ export default function InternDashboard() {
                 <Zap size={23} fill="#ffe3a5" stroke="#fff3ca" /> Quick Actions
               </h2>
               <div className={styles.quickActionList}>
-                {data.quickActions.map((action) => {
+                {quickActions.map((action) => {
                   const Icon = icons[action.icon] || ArrowRight;
                   return (
                     <button

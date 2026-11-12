@@ -33,6 +33,7 @@ import {
 } from "./DashboardUI";
 import styles from "./company-workflow.module.css";
 import { hasStaffPermission } from "./staffAccess";
+import { burstFrom } from "@/lib/confetti.mjs";
 
 function localDate(days = 0) {
   const date = new Date();
@@ -180,6 +181,7 @@ export function ApplicantWorkflow({ applicationId }) {
 
   async function sendOffer(event) {
     event.preventDefault();
+    const trigger = event.nativeEvent?.submitter || event.currentTarget;
     if (busy || !canOffer) return;
     if (offerForm.endOn < offerForm.startOn) {
       notify("The internship end date must follow its start date.");
@@ -187,7 +189,7 @@ export function ApplicantWorkflow({ applicationId }) {
     }
     setBusy(true);
     try {
-      await perform(
+      const sent = await perform(
         () =>
           commands.sendOffer(applicationId, {
             ...offerForm,
@@ -197,19 +199,22 @@ export function ApplicantWorkflow({ applicationId }) {
         notify,
         "Offer sent to the applicant’s portal.",
       );
+      if (sent) burstFrom(trigger, { count: 60 });
     } finally {
       setBusy(false);
     }
   }
-  async function approve() {
+  async function approve(event) {
     if (busy || !canApprove) return;
+    const trigger = event?.currentTarget;
     setBusy(true);
     try {
-      await perform(
+      const approved = await perform(
         () => commands.approveOnboarding(applicationId),
         notify,
         "Onboarding approved. The applicant is now an active intern.",
       );
+      if (approved) burstFrom(trigger, { count: 60 });
     } finally {
       setBusy(false);
     }
@@ -678,8 +683,11 @@ function SubmissionReview({
       notify("Add feedback so the intern knows what to improve.");
       return;
     }
-    if (await onReview(submission.id, { decision, feedback: feedback.trim() }))
+    const trigger = event.nativeEvent.submitter || event.currentTarget;
+    if (await onReview(submission.id, { decision, feedback: feedback.trim() })) {
       setFeedback("");
+      if (decision === "Approved") burstFrom(trigger, { count: 50 });
+    }
   }
   async function download() {
     try {

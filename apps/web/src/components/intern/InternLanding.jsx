@@ -19,6 +19,8 @@ import { useInternship } from "./InternshipProvider";
 import { makeSampleResume, saveAttachment } from "@/lib/intern-attachments.mjs";
 import { isProgramAvailable, matchesCompensationMode, resolveProgramSelection } from "@/lib/intern/program-availability.mjs";
 import styles from "./intern.module.css";
+import InternInsights from "./InternInsights";
+import SuccessStories from "./SuccessStories";
 import { useSiteFeatures } from "@olentra/site-features/react";
 
 const ART_SOURCE = "/images/intern/reference-art.png";
@@ -77,6 +79,7 @@ const tracks = [
     cta: "Apply for Innovator",
   },
 ];
+const trackNames = Object.fromEntries(tracks.map((track) => [track.id, track.name]));
 
 const benefits = [
   { art: "benefitRocket", lines: ["Real-World", "Projects"] },
@@ -191,6 +194,7 @@ export default function InternLanding() {
   const [resumeError, setResumeError] = useState("");
   const [resumeDragging, setResumeDragging] = useState(false);
   const [linkedInError, setLinkedInError] = useState("");
+  const [videoError, setVideoError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sampleBusy, setSampleBusy] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -202,6 +206,7 @@ export default function InternLanding() {
   const nameInput = useRef(null);
   const resumeInput = useRef(null);
   const linkedInInput = useRef(null);
+  const videoInput = useRef(null);
   const submitButtonRef = useRef(null);
   const previousLaunchPhase = useRef("idle");
   const lenis = useLenis();
@@ -302,6 +307,10 @@ export default function InternLanding() {
       linkedInInput.current.reportValidity();
       return;
     }
+    if (videoInput.current && !validateVideo(videoInput.current)) {
+      videoInput.current.reportValidity();
+      return;
+    }
     const formData = new FormData(event.currentTarget);
     const input = {
       name: String(formData.get("fullName") || "").trim(),
@@ -310,12 +319,15 @@ export default function InternLanding() {
         .toLowerCase(),
       programId: selectedTrack,
       linkedin: String(formData.get("linkedin") || "").trim(),
+      videoUrl: String(formData.get("videoUrl") || "").trim(),
     };
     if (
       savedApplication &&
       savedApplication.email?.toLowerCase() === input.email &&
       savedApplication.name === input.name &&
-      savedApplication.programId === input.programId
+      savedApplication.programId === input.programId &&
+      (savedApplication.linkedin || "") === input.linkedin &&
+      (savedApplication.videoUrl || "") === input.videoUrl
     ) {
       setPreviewComplete(false);
       setLaunchPhase("launching");
@@ -446,7 +458,9 @@ export default function InternLanding() {
   function validateLinkedIn(input) {
     const value = input.value.trim();
     let message = "";
-    if (value) {
+    if (!value) {
+      message = "Please enter your LinkedIn profile URL.";
+    } else {
       try {
         const url = new URL(value);
         const isLinkedIn =
@@ -467,6 +481,23 @@ export default function InternLanding() {
     }
     input.setCustomValidity(message);
     setLinkedInError(message);
+    return !message;
+  }
+
+  function validateVideo(input) {
+    const value = input.value.trim();
+    let message = "";
+    if (value) {
+      try {
+        const url = new URL(value);
+        if (!["http:", "https:"].includes(url.protocol)) throw new Error();
+      } catch {
+        message =
+          "Enter the full video link, starting with https:// (YouTube, Google Drive, Loom, etc.).";
+      }
+    }
+    input.setCustomValidity(message);
+    setVideoError(message);
     return !message;
   }
 
@@ -576,29 +607,33 @@ export default function InternLanding() {
           data-theme="light"
           aria-labelledby="insights-title"
         >
-          <div className={styles.sectionHeading}>
-            <ReferenceArt name="bars" />
-            <div>
-              <h2 id="insights-title">Our Internship Insights</h2>
-              <p>A glimpse into our growing talent community</p>
-            </div>
-          </div>
-          <div className={styles.insightsGrid}>
-            <div className={styles.metrics} aria-label="Internship experience">
-              {[{art:"users",value:"Learn",label:"Join the community"},{art:"rocket",value:"Build",label:"Work on projects"},{art:"star",value:"Grow",label:"Develop your skills"}].map((metric)=><div className={styles.metric} key={metric.label}><ReferenceArt name={metric.art}/><strong>{metric.value}</strong><span>{metric.label}</span></div>)}
-            </div>
-            <aside className={styles.journey}>
-              <ReferenceArt name="bulb" />
-              <div>
-                <h3>Be a part of our innovative journey!</h3>
-                <p>
-                  Gain valuable experience and contribute to cutting-edge
-                  projects.
-                </p>
+          <InternInsights
+            trackNames={trackNames}
+            heading={
+              <div className={styles.sectionHeading}>
+                <ReferenceArt name="bars" />
+                <div>
+                  <h2 id="insights-title">Our Internship Insights</h2>
+                  <p>Live numbers from our growing talent community</p>
+                </div>
               </div>
-            </aside>
-          </div>
+            }
+          />
         </section>
+
+        <div className={styles.container}>
+          <SuccessStories
+            heading={
+              <div className={styles.sectionHeading}>
+                <ReferenceArt name="star" />
+                <div>
+                  <h2 id="stories-title">Stories from our interns</h2>
+                  <p>Real words from certified Olentra interns</p>
+                </div>
+              </div>
+            }
+          />
+        </div>
 
         <section
           className={`${styles.container} ${styles.bottomGrid}`}
@@ -713,7 +748,7 @@ export default function InternLanding() {
                     </label>
                     <div className={styles.profileField}>
                       <label htmlFor="intern-linkedin">
-                        LinkedIn Profile <span>(optional)</span>
+                        LinkedIn Profile <span className={styles.requiredMark}>*</span>
                       </label>
                       <input
                         ref={linkedInInput}
@@ -722,6 +757,7 @@ export default function InternLanding() {
                         type="url"
                         placeholder="https://www.linkedin.com/in/your-name"
                         autoComplete="url"
+                        required
                         maxLength={500}
                         spellCheck={false}
                         aria-describedby={
@@ -743,6 +779,39 @@ export default function InternLanding() {
                           role="alert"
                         >
                           {linkedInError}
+                        </p>
+                      )}
+                    </div>
+                    <div className={`${styles.profileField} ${styles.profileFieldWide}`}>
+                      <label htmlFor="intern-video">
+                        Intro Video Link <span className={styles.preferredTag}>Preferred</span>
+                      </label>
+                      <input
+                        ref={videoInput}
+                        id="intern-video"
+                        name="videoUrl"
+                        type="url"
+                        placeholder="https://youtu.be/… or a Google Drive / Loom link"
+                        maxLength={500}
+                        spellCheck={false}
+                        aria-describedby={`intern-video-hint${videoError ? " intern-video-error" : ""}`}
+                        aria-invalid={Boolean(videoError)}
+                        onBlur={(event) => validateVideo(event.currentTarget)}
+                        onInput={(event) => {
+                          event.currentTarget.setCustomValidity("");
+                          setVideoError("");
+                        }}
+                      />
+                      <p className={styles.fieldHint} id="intern-video-hint">
+                        A short 1–2 minute video introducing yourself. Applicants who share one are usually shortlisted first — make sure the link is viewable by anyone.
+                      </p>
+                      {videoError && (
+                        <p
+                          className={styles.fieldError}
+                          id="intern-video-error"
+                          role="alert"
+                        >
+                          {videoError}
                         </p>
                       )}
                     </div>

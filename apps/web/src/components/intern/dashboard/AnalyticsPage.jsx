@@ -154,7 +154,7 @@ export default function AnalyticsPage() {
   const skills = useMemo(() => (stats.skills || []).filter(skill => skill.name.toLowerCase().includes(skillQuery.trim().toLowerCase())), [stats.skills, skillQuery]);
   const highestSkill = Math.max(1, ...(stats.skills || []).map(skill => skill.count));
   const items = [
-    { id: "applications", label: "Applications · all time", value: total, tone: "blue", icon: "users" },
+    { id: "applications", label: "Total applications", value: total, tone: "blue", icon: "users" },
     { id: "shortlisted", label: "Currently shortlisted", value: counts.Shortlisted || 0, tone: "purple", icon: "users" },
     { id: "selected", label: "Currently selected", value: counts.Selected || 0, tone: "green", icon: "check" },
     { id: "joined", label: "Joined", value: counts.Joined || 0, tone: "orange", icon: "users" },

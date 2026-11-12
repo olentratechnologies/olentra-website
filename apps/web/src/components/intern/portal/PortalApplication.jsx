@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Celebration from "@/components/intern/Celebration";
 import {
   ArrowRight,
   CalendarDays,
@@ -36,10 +38,13 @@ export default function PortalApplication() {
   const { features, ready: featuresReady } = useSiteFeatures();
   const { ready, my, commands, notify } = useInternship();
   const [declining, setDeclining] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
+  const router = useRouter();
   const action = useAction();
   if (!ready) return <Loading />;
   const application = my.application;
   const offer = my.offer;
+  const interview = my.interview;
   if (!application)
     return (
       <>
@@ -64,7 +69,7 @@ export default function PortalApplication() {
   async function accept() {
     await action.run(
       () => commands.acceptOffer(application.id),
-      () => notify("Offer accepted. Your onboarding is ready to complete."),
+      () => setCelebrating(true),
     );
   }
   async function decline(event) {
@@ -90,6 +95,20 @@ export default function PortalApplication() {
 
   return (
     <>
+      <Celebration
+        open={celebrating}
+        title={`Welcome aboard${application.name ? `, ${application.name.split(/\s+/)[0]}` : ""}!`}
+        message={`You’ve accepted your offer for ${application.program || "the Olentra internship"}. You’re officially part of the team — your onboarding checklist is ready.`}
+        actionLabel="Start onboarding"
+        onAction={() => {
+          setCelebrating(false);
+          router.push("/intern/portal/onboarding");
+        }}
+        onClose={() => {
+          setCelebrating(false);
+          notify("Offer accepted. Your onboarding is ready to complete.");
+        }}
+      />
       <Heading
         title="My Application"
         description="Every step of your application, in one place."
@@ -255,6 +274,13 @@ export default function PortalApplication() {
           <h3 className={styles.subheading}>My skills</h3>
           <Skills values={application.skills || []} />
         </Panel>
+        {interview && <Panel>
+          <h2>Interview scheduled</h2>
+          <p>Your interview is scheduled for {new Date(interview.scheduledAt).toLocaleString(undefined, { dateStyle: "long", timeStyle: "short" })}.</p>
+          <a href={interview.meetingUrl} className={styles.textLink} target="_blank" rel="noreferrer">
+            Join the interview <ArrowRight size={14} />
+          </a>
+        </Panel>}
         <Panel>
           <h2>Application timeline</h2>
           <ol className={styles.timeline}>

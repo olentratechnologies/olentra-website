@@ -7,6 +7,8 @@ export const INTERN_TOPICS = {
   work: realtimeTopic("internship", "updates", "work"),
   applicantMessages: realtimeTopic("internship", "updates", "applicant-messages"),
   internMessages: realtimeTopic("internship", "updates", "intern-messages"),
+  /** Aggregate-only public numbers for the careers page; sockets opt in via insights.subscribe. */
+  insights: realtimeTopic("internship", "insights"),
 } as const;
 
 export const STAFF_TOPICS = [

@@ -1,0 +1,103 @@
+.panel {
+  margin-top: 20px;
+}
+.head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.head h2 {
+  margin: 0 !important;
+  font-size: 17px !important;
+}
+.head p {
+  margin: 4px 0 0 !important;
+  color: var(--ad-subtle, #64789c);
+  font-size: 12.5px;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #2583ff, #8256ff);
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 16px 0 0 !important;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.status span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status[data-tone="pending"] { color: #a46a06; background: #fff3d6; }
+.status[data-tone="live"] { color: #17734a; background: #e2f6ea; }
+.status[data-tone="rejected"] { color: #a22746; background: #fbe8ed; }
+.form {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+.quoteLabel {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  color: var(--ad-text, #23365b);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.quoteLabel textarea {
+  width: 100%;
+  min-height: 92px;
+  padding: 12px 14px 24px;
+  border: 1px solid var(--ad-border, #bdd2f0);
+  border-radius: 12px;
+  color: var(--ad-text, #20365a);
+  background: var(--ad-panel, #ffffffc4);
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
+.counter {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  color: var(--ad-subtle, #73829b);
+  font-size: 11px;
+  font-weight: 500;
+}
+.counter[data-low="true"] {
+  color: #c7354f;
+}
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--ad-muted, #4b628d);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.consent input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  accent-color: var(--ad-blue, #2465e9);
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}

@@ -1,0 +1,129 @@
+/* "Your badges" row on the intern dashboard. Colours come from the --ad-* theme
+   tokens, so light and dark follow html[data-intern-theme]. */
+.count {
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--ad-border, #c8d7ff) 70%, transparent);
+  border-radius: 999px;
+  color: var(--ad-muted, #3f598a);
+  background: color-mix(in srgb, var(--ad-panel-alt, #eaf1ff) 55%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badges {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.badge {
+  --tone: var(--ad-blue, #3987ed);
+  --tone-bg: var(--ad-blue-soft, #e8f1ff);
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 16px 10px 14px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--tone) 34%, var(--ad-border, #d7e7ff));
+  border-radius: 18px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--tone) 18%, transparent), transparent 70%),
+    color-mix(in srgb, var(--ad-panel, #ffffff) 72%, transparent);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.badge[data-badge-id="first-submission"] { --tone: var(--ad-purple, #8c5ced); --tone-bg: var(--ad-purple-soft, #f2eaff); }
+.badge[data-badge-id="first-approval"] { --tone: var(--ad-success, #18a687); --tone-bg: var(--ad-success-bg, #e5f8f0); }
+.badge[data-badge-id="high-five"] { --tone: var(--ad-warning, #e5a03a); --tone-bg: var(--ad-warning-bg, #fff4dd); }
+.badge[data-badge-id="on-time-streak"] { --tone: var(--ad-danger, #ce5275); --tone-bg: var(--ad-danger-bg, #ffe2ed); }
+.badge[data-badge-id="certified"] { --tone: var(--ad-link, #2465d4); --tone-bg: var(--ad-panel-alt, #edf5ff); }
+
+.medal {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border: 2px solid color-mix(in srgb, var(--tone) 55%, transparent);
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  background: linear-gradient(140deg, var(--tone-bg), color-mix(in srgb, var(--tone) 26%, var(--tone-bg)));
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--tone) 70%, transparent);
+}
+
+.badge strong {
+  color: var(--ad-text, #1d2b45);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+.badge small {
+  color: var(--ad-subtle, #6682ad);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+/* Earned: a light sweep crosses the card every few seconds. */
+.badge[data-earned="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, #ffffff 55%, transparent), transparent);
+  transform: rotate(18deg) translateX(-120%);
+  animation: shine 4.8s ease-in-out infinite;
+  pointer-events: none;
+}
+.badge[data-earned="true"]:nth-child(2)::after { animation-delay: 0.4s; }
+.badge[data-earned="true"]:nth-child(3)::after { animation-delay: 0.8s; }
+.badge[data-earned="true"]:nth-child(4)::after { animation-delay: 1.2s; }
+.badge[data-earned="true"]:nth-child(5)::after { animation-delay: 1.6s; }
+.badge[data-earned="true"]:nth-child(6)::after { animation-delay: 2s; }
+.badge[data-earned="true"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px -16px color-mix(in srgb, var(--tone) 80%, transparent);
+}
+:global(html[data-intern-theme="dark"]) .badge[data-earned="true"]::after {
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, #ffffff 18%, transparent), transparent);
+}
+
+@keyframes shine {
+  0%, 55% { transform: rotate(18deg) translateX(-120%); }
+  85%, 100% { transform: rotate(18deg) translateX(420%); }
+}
+
+/* Locked: greyed out, with the hint shown in place of the date. */
+.badge[data-earned="false"] {
+  border-style: dashed;
+  border-color: var(--ad-border, #d0ddf8);
+  background: color-mix(in srgb, var(--ad-panel-alt, #f1f5fc) 45%, transparent);
+}
+.badge[data-earned="false"] .medal {
+  border-color: var(--ad-border, #d0ddf8);
+  background: var(--ad-panel-soft, #eef2f8);
+  box-shadow: none;
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.badge[data-earned="false"] strong { color: var(--ad-muted, #5d6f8f); }
+
+@media (max-width: 1100px) {
+  .badges { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .badges { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .badge { padding: 14px 8px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge { transition: none; }
+  .badge[data-earned="true"]::after { display: none; }
+  .badge[data-earned="true"]:hover { transform: none; }
+}

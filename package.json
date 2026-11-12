@@ -29,6 +29,7 @@
     "realtime:dev": "bun run --cwd backend/realtime-server dev",
     "realtime:start": "bun run --cwd backend/realtime-server start",
     "realtime:test": "bun run --cwd backend/realtime-server test",
+    "realtime:seed": "bun run --cwd backend/realtime-server seed:test",
     "realtime:typecheck": "bun run --cwd backend/realtime-server typecheck",
     "realtime:bench": "bun run --cwd backend/realtime-server bench",
     "presence:dev": "npm run realtime:dev",

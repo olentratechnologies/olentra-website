@@ -4,11 +4,13 @@ import LoadingIndicator from "@olentra/ui/LoadingIndicator";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import * as Popover from "@radix-ui/react-popover";
 import CompanyBrand from "@/components/intern/CompanyBrand";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowRight,
   Award,
+  BadgeCheck,
   Bell,
   BriefcaseBusiness,
   Check,
@@ -19,12 +21,13 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  Rocket,
   Send,
   UserRound,
+  Users,
   X,
 } from "lucide-react";
 import { useInternship } from "@/components/intern/InternshipProvider";
-import { PlanetArtwork } from "../dashboard/DashboardVisuals";
 import {
   Button,
   EmptyState,
@@ -34,8 +37,29 @@ import {
   formatDate,
 } from "./PortalUI";
 import styles from "./portal.module.css";
-import { InternThemeToggle } from "../InternTheme";
+// The header profile menu shares the admin dashboard's styles so both workspaces match.
+import dashboardStyles from "../dashboard/dashboard.module.css";
 import { useSiteFeatures } from "@olentra/site-features/react";
+import Celebration from "@/components/intern/Celebration";
+import useMilestoneCelebrations from "./useMilestoneCelebrations";
+
+/** Copy and destination for each full-page milestone celebration. */
+function milestoneContent(item, firstName) {
+  const name = firstName ? `, ${firstName}` : "";
+  switch (item?.kind) {
+    case "welcome":
+      return { icon: Rocket, title: `Your Olentra journey starts now${name}!`, message: "Your account is ready. Track your application, chat with the team and follow every next step right here.", actionLabel: "Explore my workspace", href: "/intern/portal" };
+    case "offer-received":
+      return { title: `You’ve been selected${name}! 🎉`, message: "Congratulations — Olentra has sent you an internship offer. Review the details and accept it to begin onboarding.", actionLabel: "Review my offer", href: "/intern/portal/application" };
+    case "onboarding-approved":
+      return { icon: BadgeCheck, title: `You’re officially an Olentra intern${name}!`, message: "Your onboarding is approved. Your projects and tasks are ready — let’s build something great.", actionLabel: "See my projects", href: "/intern/portal/projects" };
+    case "certificate":
+      return { icon: Award, title: `You did it${name}!`, message: `Your internship${item.program ? ` in ${item.program}` : ""} is complete and your certificate has been issued. We’re proud of everything you built.`, actionLabel: "View my certificate", href: "/intern/portal/certificates" };
+    default:
+      return null;
+  }
+}
+import { InternThemeToggle } from "../InternTheme";
 import WorkspaceLoading from "@/components/intern/WorkspaceLoading";
 import useWorkspaceNavigation from "@/components/intern/useWorkspaceNavigation";
 
@@ -58,7 +82,6 @@ const navigation = [
 ];
 
 export default function PortalShell({ children }) {
-  const { features, ready: featuresReady } = useSiteFeatures();
   const {
     ready,
     sessionReady,
@@ -100,6 +123,9 @@ export default function PortalShell({ children }) {
       item.href === visiblePathname ||
       (item.href !== "/intern/portal" && visiblePathname.startsWith(`${item.href}/`)),
   );
+  const { features, ready: featuresReady } = useSiteFeatures();
+  const milestone = useMilestoneCelebrations({ account, my, ready: workspaceReady, notify });
+  const milestoneView = milestoneContent(milestone.current, account?.name?.split(/\s+/)[0]);
   const initials =
     account?.name
       ?.split(" ")
@@ -240,24 +266,6 @@ export default function PortalShell({ children }) {
             </Link>
           ))}
         </nav>
-        <div className={styles.sidebarPromo}>
-          <PlanetArtwork className={styles.sidebarPlanet} />
-          <strong>
-            Your next chapter
-            <br />
-            starts here.
-          </strong>
-          <span>Learn. Build. Grow.</span>
-          <Link href={featuresReady && features.internships ? "/careers/intern" : "/"}>
-            Explore Olentra Technologies <ArrowRight size={13} />
-          </Link>
-        </div>
-        <button className={styles.logout} onClick={logout}>
-          <LogOut size={18} /> Sign out
-        </button>
-        <button className={styles.switchAccount} onClick={logout}>
-          Switch account <ArrowRight size={12} />
-        </button>
         <small className={styles.sidebarFooter}>
           {data.organization?.legalName || "Olentra Technologies Pvt. Ltd."}
           <br />
@@ -306,23 +314,72 @@ export default function PortalShell({ children }) {
               <Bell size={22} />
               {unread.length > 0 && <span>{unread.length}</span>}
             </button>
-            <Link
-              href="/intern/portal/profile"
-              className={styles.profileButton}
-            >
-              <span className={styles.avatar}>{initials}</span>
-              <span>
-                <strong>{account?.name}</strong>
-                <small>Intern</small>
-              </span>
-              <ChevronDown size={14} />
-            </Link>
+            <span className={dashboardStyles.topbarDivider} />
+            <Popover.Root>
+              <Popover.Trigger asChild>
+                <button className={dashboardStyles.profileButton}>
+                  <span className={dashboardStyles.profileAvatar}>{initials}</span>
+                  <span className={dashboardStyles.profileText}>
+                    <strong>{account?.name}</strong>
+                    <span>Intern</span>
+                  </span>
+                  <ChevronDown size={16} />
+                </button>
+              </Popover.Trigger>
+              <Popover.Portal>
+                <Popover.Content
+                  className={`${dashboardStyles.popover} ${dashboardStyles.profilePopover}`}
+                  align="end"
+                  sideOffset={12}
+                >
+                  <p>
+                    Signed in as
+                    <br />
+                    <strong>{account?.email}</strong>
+                  </p>
+                  <Popover.Close asChild>
+                    <Link href="/intern/portal/profile" onNavigate={(event) => { event.preventDefault(); navigate("/intern/portal/profile"); }}>
+                      <UserRound size={16} /> My profile
+                    </Link>
+                  </Popover.Close>
+                  {featuresReady && features.internships && <Link href="/careers/intern">
+                    <ArrowRight size={16} /> Internship website
+                  </Link>}
+                  <button
+                    onClick={async () => {
+                      await signOut();
+                      router.replace("/intern/login?role=intern&switch=1");
+                    }}
+                  >
+                    <Users size={16} /> Switch account
+                  </button>
+                  <button onClick={logout}>
+                    <LogOut size={16} /> Sign out
+                  </button>
+                </Popover.Content>
+              </Popover.Portal>
+            </Popover.Root>
           </div>
         </header>
         <div className={styles.content}>{pendingPathname || contentState ? <WorkspaceLoading pathname={pendingPathname || pathname} state={pendingPathname ? "loading" : contentState} onRetry={retryWorkspace} /> : children}</div>
       </main>
+      <Celebration
+        open={Boolean(milestoneView)}
+        replayKey={milestone.current?.key}
+        icon={milestoneView?.icon}
+        title={milestoneView?.title}
+        message={milestoneView?.message}
+        actionLabel={milestoneView?.actionLabel}
+        onAction={() => {
+          const href = milestoneView?.href;
+          milestone.dismiss();
+          if (href && href !== visiblePathname) navigate(href);
+        }}
+        secondaryLabel="Maybe later"
+        onClose={milestone.dismiss}
+      />
       {toast && (
-        <div className={styles.toast} role="status">
+        <div key={toast} className={styles.toast} role="status">
           <span>
             <Check size={17} />
           </span>

@@ -1,0 +1,98 @@
+.section {
+  margin-top: 64px;
+}
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.controls {
+  display: flex;
+  gap: 8px;
+}
+.controls button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #c9ddff;
+  border-radius: 50%;
+  color: #23365b;
+  background: #ffffffc4;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+.controls button:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+.rail {
+  display: flex;
+  gap: 18px;
+  margin-top: 26px;
+  padding: 4px 2px 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 min(360px, 86%);
+  min-height: 210px;
+  padding: 26px 24px 22px;
+  border: 1px solid #c9ddff;
+  border-radius: 22px;
+  background: linear-gradient(150deg, #f8fcffcc, #eaf7ffbf);
+  box-shadow: 0 6px 15px #507bb51a, inset 0 0 0 1px #ffffffb3;
+  scroll-snap-align: start;
+  animation: rise 0.6s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+.quoteMark {
+  color: #8256ff;
+  opacity: 0.5;
+}
+.quote {
+  flex: 1;
+  margin: 12px 0 0;
+  color: #172a49;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.person {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 18px;
+}
+.person strong {
+  display: block;
+  color: #0b1a44;
+  font-size: 14px;
+}
+.person small {
+  color: #647798;
+  font-size: 12px;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card { animation: none; }
+}

@@ -468,6 +468,8 @@ export function reduceAction(base, fixtures, original, actorId, action) {
           location: "",
           skills: [],
           linkedin: String(p.linkedin || ""),
+          videoUrl: String(p.videoUrl || ""),
+          hasVideo: Boolean(String(p.videoUrl || "").trim()),
           github: "",
           bio: "",
           resumeSummary: "A new Olentra internship applicant.",

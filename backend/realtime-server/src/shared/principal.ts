@@ -11,7 +11,25 @@ export type Principal = {
 };
 
 /** Side effects owned by the application composition root. */
+export type ApplicantStatusNotice = {
+  to: string;
+  name: string;
+  programName: string;
+  status: "shortlisted" | "offer" | "rejected" | "onboarding" | "certificate";
+  certificateNumber?: string;
+};
+
+export type InterviewScheduledNotice = {
+  to: string;
+  name: string;
+  programName: string;
+  scheduledAt: string;
+  meetingUrl: string;
+};
+
 export type InternshipHooks = {
   sendMagicLink?: (to: string, name: string, applicationId: string) => Promise<unknown>;
   sendApplicationConfirmation?: (to: string, name: string, programName: string, applicationId: string) => Promise<unknown>;
+  sendApplicantStatus?: (notice: ApplicantStatusNotice) => Promise<unknown>;
+  sendInterviewScheduled?: (notice: InterviewScheduledNotice) => Promise<unknown>;
 };

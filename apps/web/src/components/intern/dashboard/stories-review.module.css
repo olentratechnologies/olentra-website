@@ -1,0 +1,116 @@
+.panel {
+  margin-top: 20px;
+}
+.head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.head h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 16px;
+}
+.head p {
+  margin: 4px 0 0;
+  color: var(--ad-subtle, #64789c);
+  font-size: 12.5px;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, #2583ff, #8256ff);
+}
+.count {
+  padding: 2px 9px;
+  border-radius: 999px;
+  color: #a46a06;
+  background: #fff3d6;
+  font-size: 11px;
+}
+.list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--ad-border, #d4e0ff);
+  border-left: 3px solid #f0b429;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 60%, transparent);
+}
+.item[data-status="Approved"] { border-left-color: #1fb46b; }
+.item[data-status="Rejected"] { border-left-color: #c7354f; opacity: 0.8; }
+.item blockquote {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ad-text, #102354);
+  font-size: 14px;
+  line-height: 1.55;
+  font-style: italic;
+}
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--ad-subtle, #64789c);
+  font-size: 12px;
+}
+.meta strong {
+  color: var(--ad-text, #173763);
+}
+.status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ad-panel-alt, #eef3ff);
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  align-self: center;
+}
+.approve,
+.reject {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.approve {
+  border: 0;
+  color: #fff;
+  background: #1fb46b;
+}
+.reject {
+  border: 1px solid color-mix(in srgb, #c7354f 40%, transparent);
+  color: #c7354f;
+  background: transparent;
+}
+.approve:disabled,
+.reject:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+@media (max-width: 640px) {
+  .item { grid-template-columns: 1fr; }
+}

@@ -18,8 +18,8 @@ const validUrl = (value: unknown) => { const v = text(value); if (v) { try { if 
 
 export function createLifecycle({ collection, transact }: { collection: (name: string) => Collection<Row>; transact: Tx }) {
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
-  const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates");
-  const names = new Set(["offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate"]);
+  const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
+  const names = new Set(["offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       offers.createIndex({ applicationId: 1 }, { unique: true }),
@@ -32,6 +32,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       submissions.createIndex({ applicationId: 1, submittedOn: -1 }),
       certificates.createIndex({ internId: 1 }, { unique: true }),
       certificates.createIndex({ applicationId: 1 }),
+      interviews.createIndex({ applicationId: 1 }, { unique: true }),
       projects.createIndex({ team: 1 }),
     ]);
   }
@@ -168,23 +169,66 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
         }
         return generated;
       }
+      if (method === "interview.schedule") {
+        staff(actor);
+        const applicationId = required(p.applicationId, "application");
+        const application = await applications.findOne({ _id: applicationId }, opts);
+        if (!application) throw new DomainError("NOT_FOUND", "Application not found.");
+        if (application.status !== "Shortlisted") throw new DomainError("CONFLICT", "Only shortlisted applicants can be scheduled for an interview.");
+        const scheduledAt = required(p.scheduledAt, "interview date and time", 40);
+        const date = new Date(scheduledAt);
+        if (Number.isNaN(date.getTime()) || date.toISOString() !== scheduledAt || date.getTime() <= Date.now()) throw new DomainError("INVALID_REQUEST", "Choose a future interview date and time.");
+        const meetingUrl = required(validUrl(p.meetingUrl), "meeting link", 2000);
+        const previous = await interviews.findOne({ applicationId }, opts);
+        const interview = await interviews.findOneAndUpdate(
+          { applicationId },
+          {
+            $set: { scheduledAt, meetingUrl, updatedOn: now },
+            $setOnInsert: { _id: newId("INTV"), applicationId, createdOn: now },
+          },
+          { ...opts, upsert: true, returnDocument: "after" },
+        );
+        if (!interview) throw new DomainError("CONFLICT", "The interview could not be saved.");
+        await applications.updateOne(
+          { _id: applicationId },
+          { $push: { history: { id: newId("HST"), title: previous ? "Interview rescheduled" : "Interview scheduled", detail: `Interview scheduled for ${scheduledAt}.`, date: now } } as any },
+          opts,
+        );
+        return plain(interview);
+      }
       throw new DomainError("NOT_IMPLEMENTED", "This action is not available.");
       })();
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);
-      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready" };
+      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
+      const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
       const label = labels[method];
       if (label && actor) {
-        for (const applicationId of applicationIds) await notifications.insertOne({ _id: newId("NTF"), recipientRole: actor.role === "company" ? "intern" : "company", applicationId, title: label, body: label, href: actor.role === "company" ? "/intern/portal" : `/intern/dashboard/applications/${applicationId}`, createdOn: new Date().toISOString() }, { session });
-        await activity.insertOne({ _id: newId("ACT"), title: label, detail: label, applicationId: applicationIds.length === 1 ? applicationIds[0] : null, icon: "briefcase", tone: "blue", occurredOn: new Date().toISOString() }, { session });
+        for (const applicationId of applicationIds) await notifications.insertOne({ _id: newId("NTF"), recipientRole: actor.role === "company" ? "intern" : "company", applicationId, title: label, body: method === "interview.schedule" ? `Your interview is scheduled for ${interviewScheduledAt}. Open your portal for meeting details.` : label, href: actor.role === "company" ? "/intern/portal" : `/intern/dashboard/applications/${applicationId}`, createdOn: new Date().toISOString() }, { session });
+        const activityApplications = applicationIds.length
+          ? await applications.find({ _id: { $in: applicationIds } }, { session }).project({ name: 1, program: 1 }).toArray()
+          : [];
+        const activityDetails = activityApplications.map((application) => {
+          const name = text(application.name) || "An applicant";
+          const program = text(application.program) || "the internship program";
+          if (method === "offer.accept") return `${name} accepted the ${program} offer.`;
+          if (method === "offer.decline") return `${name} declined the ${program} offer.`;
+          return `${name} · ${program}`;
+        });
+        const detail = activityDetails.length === 1
+          ? activityDetails[0]
+          : activityDetails.length > 1
+            ? `${activityDetails.length} applicants · ${activityDetails.slice(0, 3).join("; ")}`
+            : `${label} activity recorded.`;
+        await activity.insertOne({ _id: newId("ACT"), title: label, detail, applicationId: applicationIds.length === 1 ? applicationIds[0] : null, icon: "briefcase", tone: "blue", occurredOn: new Date().toISOString() }, { session });
       }
       await events.insertOne({ _id: newId("EVT"), type: method, applicationIds, createdAt: new Date() }, { session });
       return result;
     });
   }
   async function snapshot(actor: Principal | null) {
-    const empty = { interns: [], offers: [], onboarding: [], projects: [], tasks: [], submissions: [], certificates: [] };
+    const empty = { interns: [], offers: [], onboarding: [], projects: [], tasks: [], submissions: [], certificates: [], interviews: [] };
     if (!actor) return empty;
     const intern = actor.role === "intern";
     const filter = intern ? { applicationId: actor.applicationId } : {};
@@ -194,7 +238,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
     const projectSummary = !projectDetails && can(actor, "projects.summary");
     // Avoid querying data this role cannot receive. For summary-only viewers,
     // MongoDB returns only the public project summary fields.
-    const [i, o, on, p, t, s, c] = await Promise.all([
+    const [i, o, on, p, t, s, c, iv] = await Promise.all([
       read("interns.read") ? interns.find(filter).limit(500).toArray() : Promise.resolve([]),
       intern || isAdmin(actor) ? offers.find(filter).limit(500).toArray() : Promise.resolve([]),
       intern || isAdmin(actor) ? onboarding.find(filter).limit(500).toArray() : Promise.resolve([]),
@@ -202,13 +246,14 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       read("tasks.read") ? tasks.find(filter).limit(1000).toArray() : Promise.resolve([]),
       read("submissions.read") ? submissions.find(filter).sort({ submittedOn: -1 }).limit(1000).toArray() : Promise.resolve([]),
       read("certificates.read") ? certificates.find(filter).limit(500).toArray() : Promise.resolve([]),
+      intern || can(actor, "applications.read") ? interviews.find(filter).sort({ scheduledAt: 1 }).limit(1000).toArray() : Promise.resolve([]),
     ]);
     const projectRows: any[] = p.map(row => intern ? { ...plain(row), memberCount: (row.team || []).length, team: [actor.applicationId] } : plain(row));
     const projectIdsByApplication = new Map<string, string[]>();
     for (const project of projectRows) for (const applicationId of new Set<string>(project.team || [])) {
       const ids = projectIdsByApplication.get(applicationId) || []; ids.push(project.id); projectIdsByApplication.set(applicationId, ids);
     }
-    return { interns: i.map(row => ({ ...plain(row), projectIds: projectIdsByApplication.get(row.applicationId) || [] })), offers: o.map(plain), onboarding: on.map(plain), projects: projectRows, tasks: t.map(plain), submissions: s.map(plain), certificates: c.map(plain) };
+    return { interns: i.map(row => ({ ...plain(row), projectIds: projectIdsByApplication.get(row.applicationId) || [] })), offers: o.map(plain), onboarding: on.map(plain), projects: projectRows, tasks: t.map(plain), submissions: s.map(plain), certificates: c.map(plain), interviews: iv.map(plain) };
   }
   return { initialize, supports: (method: string) => names.has(method), execute, snapshot };
 }

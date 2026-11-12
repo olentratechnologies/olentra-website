@@ -150,52 +150,6 @@
 .navActive span {
   font-weight: 550;
 }
-.sidebarPromo {
-  position: relative;
-  margin-top: 62px;
-  min-height: 221px;
-  padding: 123px 20px 18px;
-  overflow: hidden;
-  border: 1px solid var(--ad-promo-border, #4078d179);
-  border-radius: 16px;
-  background: var(--ad-promo-bg,
-    radial-gradient(ellipse at 60% 34%, #15397273, transparent 61%),
-    linear-gradient(145deg, #10234c80, #0d1730 60%, #142b5d));
-}
-.sidebarPlanet {
-  position: absolute;
-  top: 7px;
-  left: 11px;
-  width: 157px;
-  height: 112px;
-  filter: drop-shadow(0 0 10px #425eff44);
-}
-.sidebarPromo p {
-  position: relative;
-  font-weight: 600;
-  font-size: 16px;
-  line-height: 1.3;
-  letter-spacing: -0.2px;
-}
-.sidebarPromo a {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 10px;
-  margin-top: 8px;
-  color: #fff;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--ad-promo-bg, linear-gradient(110deg, #244ca6a1, #15327366));
-  text-decoration: none;
-  box-shadow: inset 0 1px #7ea6ff12;
-  transition: background 0.2s;
-}
-.sidebarPromo a:hover {
-  background: var(--ad-promo-border, #285cbb);
-}
 .sidebarFooter {
   margin-top: auto;
   padding: 60px 8px 0;
@@ -370,10 +324,13 @@
 .profileText strong {
   font-size: 13.5px;
   font-weight: 600;
+  white-space: nowrap;
 }
 .profileText > span {
   font-size: 12.5px;
   color: var(--ad-muted, #35558f);
+  text-transform: capitalize;
+  white-space: nowrap;
 }
 .profileButton > svg {
   margin-left: 0;
@@ -752,8 +709,13 @@
   gap: 15px;
   margin-top: 15px;
 }
+.insightEmpty {
+  grid-column: 1 / -1;
+  color: var(--ad-subtle, #64789c);
+  font-size: 13px;
+}
 .insightCard {
-  height: 158px;
+  min-height: 158px;
   padding: 10px 14px;
   border: 1px solid var(--ad-border, #d3e1ff);
   border-top-color: var(--ad-border, #e4eaff);
@@ -925,7 +887,8 @@
 }
 .quickActions {
   position: relative;
-  height: 284px;
+  /* Grows with the number of actions a role can use (admins see five). */
+  min-height: 284px;
   padding: 19px 16px 18px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--ad-blue, #4282d4) 37%, transparent);
@@ -1575,7 +1538,7 @@
     gap: 16px;
   }
   .quickActions {
-    height: 257px;
+    min-height: 257px;
   }
   .quickActionList {
     margin-top: 14px;
@@ -1601,9 +1564,6 @@
   }
   .insightCard > p {
     font-size: 12px;
-  }
-  .sidebarPromo {
-    padding-left: 13px;
   }
   .sidebarFooter {
     font-size: 9.5px;
@@ -1720,7 +1680,7 @@
     margin-top: 13px;
   }
   .insightCard {
-    height: 143px;
+    min-height: 143px;
     padding: 10px 14px;
   }
   .insightCard > p {
@@ -1819,16 +1779,6 @@
   .navItem {
     gap: 18px;
     padding-left: 20px;
-  }
-  .sidebarPromo {
-    margin-top: 40px;
-    min-height: 210px;
-  }
-  .sidebarPlanet {
-    left: 22px;
-  }
-  .sidebarPromo p {
-    font-size: 15px;
   }
   .sidebarFooter {
     padding-top: 25px;
@@ -2050,7 +2000,7 @@
     gap: 8px;
   }
   .insightCard {
-    height: 153px;
+    min-height: 153px;
     padding: 10px 8px;
     border-radius: 11px;
   }
@@ -2148,10 +2098,6 @@
   }
   .navigation {
     margin-top: 32px;
-  }
-  .sidebarPromo {
-    margin-top: 30px;
-    min-height: 210px;
   }
   .sidebarFooter {
     padding-top: 30px;
@@ -2255,6 +2201,160 @@
 @media (min-width: 681px) {
   :global(html[data-intern-theme]) .sidebar { inset: 12px auto 12px 12px; border-radius: 24px; }
 }
-:global(html[data-intern-theme]) .sidebarPromo { color: #fff; }
 :global(html[data-intern-theme]) .dashboard select,
 :global(html[data-intern-theme]) .dialogContent select { color: var(--ad-text); background-color: var(--ad-field); border-color: var(--ad-border-strong); }
+
+/* Feel-good toast: springy entrance, check badge pop with a pulse ring, drawn check mark. */
+.toast {
+  animation: toastSpring 0.55s cubic-bezier(0.2, 1.35, 0.4, 1) both;
+}
+.toast > span {
+  position: relative;
+  animation: toastPop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.12s both;
+}
+.toast > span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0;
+  animation: toastRing 0.9s ease-out 0.3s;
+}
+.toast > span svg path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: toastDraw 0.35s ease-out 0.32s forwards;
+}
+@keyframes toastSpring {
+  from { opacity: 0; transform: translateY(18px) scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes toastPop {
+  from { transform: scale(0.3); }
+  to { transform: scale(1); }
+}
+@keyframes toastRing {
+  from { opacity: 0.55; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.9); }
+}
+@keyframes toastDraw {
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast > span,
+  .toast > span::after {
+    animation: none;
+  }
+  .toast > span svg path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Live "new application" alert and nav counter. */
+.navCount {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: #fff;
+  background: #1fb46b;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 0 0 0 #1fb46b88;
+  animation: navCountPulse 1.8s ease-out infinite;
+}
+@keyframes navCountPulse {
+  0% { box-shadow: 0 0 0 0 #1fb46b88; }
+  70% { box-shadow: 0 0 0 8px #1fb46b00; }
+  100% { box-shadow: 0 0 0 0 #1fb46b00; }
+}
+.liveAlert {
+  position: fixed;
+  top: 22px;
+  right: 24px;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 12px 12px 14px;
+  border: 1px solid color-mix(in srgb, #1fb46b 45%, transparent);
+  border-radius: 14px;
+  color: var(--ad-text, #102354);
+  background: color-mix(in srgb, var(--ad-panel, #ffffff) 95%, transparent);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 14px 40px #0b1d4a33;
+  font-size: 12.5px;
+  animation: liveAlertIn 0.55s cubic-bezier(0.2, 1.35, 0.4, 1) both;
+}
+.liveAlert > div {
+  flex: 1;
+  min-width: 0;
+}
+.liveAlert strong {
+  display: block;
+  font-size: 13px;
+}
+.liveAlert p {
+  margin: 2px 0 0;
+  color: var(--ad-muted, #35558f);
+  overflow-wrap: anywhere;
+}
+.liveAlertIcon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #1fb46b, #2583ff);
+  animation: toastPop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.15s both;
+}
+.liveAlertVideo {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: var(--ad-blue, #2465e9);
+  background: var(--ad-panel-alt, #e7efff);
+  font-size: 10.5px;
+  vertical-align: 1px;
+}
+.liveAlert a {
+  flex: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--ad-blue, #2465e9);
+  font-weight: 600;
+  text-decoration: none;
+}
+.liveAlert > button {
+  display: flex;
+  flex: none;
+  padding: 4px;
+  border: 0;
+  color: var(--ad-subtle, #64789c);
+  background: transparent;
+  cursor: pointer;
+}
+@keyframes liveAlertIn {
+  from { opacity: 0; transform: translateY(-14px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navCount,
+  .liveAlert,
+  .liveAlertIcon {
+    animation: none;
+  }
+}

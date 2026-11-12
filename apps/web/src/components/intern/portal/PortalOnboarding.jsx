@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -25,6 +25,19 @@ import {
   useAction,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import { burstFrom } from "@/lib/confetti.mjs";
+import progress from "./onboarding-progress.module.css";
+
+const READY_FLAG = "olentra_onboarding_ready_v1:";
+
+function encouragement(done, total, status) {
+  if (status === "Approved") return "Approved — welcome to the team!";
+  if (status === "Submitted") return "All done — the team is reviewing your details.";
+  if (done === total - 1) return "Almost there — just submit!";
+  if (done >= total / 2) return "Great progress. Keep going!";
+  if (done > 1) return "Nice start — a few more steps.";
+  return "Let’s get you ready for day one.";
+}
 
 function OnboardingForm({ application, onboarding }) {
   const { commands, notify } = useInternship();
@@ -47,6 +60,27 @@ function OnboardingForm({ application, onboarding }) {
     application.status === "Joined";
   const reviewedResume =
     onboarding?.status === "Approved" && !values.resumeAttachmentId;
+  const submitted = ["Submitted", "Approved"].includes(onboarding?.status);
+  const steps = [
+    { label: "Accept your internship offer", done: true },
+    { label: "Add your personal details", done: Boolean(values.phone && values.college && values.location) },
+    { label: "Tell us about your skills", done: Boolean(values.skills.trim()) },
+    { label: "Attach your resume", done: Boolean(values.resumeAttachmentId) || reviewedResume },
+    { label: "Confirm program guidelines", done: values.acknowledged },
+    { label: "Submit for review", done: submitted },
+  ];
+  const doneCount = steps.filter((step) => step.done).length;
+  const readyToSubmit = !submitted && steps.slice(0, -1).every((step) => step.done);
+  const barRef = useRef(null);
+  const [celebrateReady, setCelebrateReady] = useState(false);
+  // Celebrate the moment everything but "Submit" is complete — once per application.
+  useEffect(() => {
+    if (!readyToSubmit) return;
+    const key = READY_FLAG + application.id;
+    try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch { /* storage blocked: still celebrate */ }
+    setCelebrateReady(true);
+    burstFrom(barRef.current, { small: true });
+  }, [readyToSubmit, application.id]);
   const payload = () => ({
     ...values,
     skills: [
@@ -110,16 +144,17 @@ function OnboardingForm({ application, onboarding }) {
   }
   async function submit(event) {
     event.preventDefault();
+    const trigger = event.nativeEvent?.submitter || event.currentTarget;
     await action.run(
       async () => {
         const saved = await commands.saveOnboarding(application.id, payload());
         if (!saved?.ok) return saved;
         return commands.submitOnboarding(application.id);
       },
-      () =>
-        notify(
-          "Onboarding submitted. The Olentra team will review your details.",
-        ),
+      () => {
+        burstFrom(trigger, { count: 90 });
+        notify("Onboarding submitted. The Olentra team will review your details.");
+      },
     );
   }
   return (
@@ -280,6 +315,7 @@ function OnboardingForm({ application, onboarding }) {
                 type="submit"
                 busy={action.busy}
                 disabled={action.busy || uploading}
+                className={readyToSubmit && celebrateReady ? progress.submitPulse : ""}
               >
                 Submit onboarding <ArrowRight size={14} />
               </Button>
@@ -292,32 +328,26 @@ function OnboardingForm({ application, onboarding }) {
           </span>
           <h2>Your day-one checklist</h2>
           <p>A strong start begins with the basics.</p>
+          <div className={progress.progress}>
+            <div className={progress.progressHead}>
+              <strong>{doneCount} of {steps.length} done</strong>
+              <span>{Math.round((doneCount / steps.length) * 100)}%</span>
+            </div>
+            <div
+              ref={barRef}
+              className={progress.track}
+              role="progressbar"
+              aria-label="Onboarding progress"
+              aria-valuemin={0}
+              aria-valuemax={steps.length}
+              aria-valuenow={doneCount}
+            >
+              <span className={`${progress.fill} ${doneCount === steps.length ? progress.fillDone : ""}`} style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+            </div>
+            <p className={progress.message} aria-live="polite">{encouragement(doneCount, steps.length, onboarding?.status)}</p>
+          </div>
           <ul>
-            {[
-              { label: "Accept your internship offer", done: true },
-              {
-                label: "Add your personal details",
-                done: Boolean(
-                  values.phone && values.college && values.location,
-                ),
-              },
-              {
-                label: "Tell us about your skills",
-                done: Boolean(values.skills.trim()),
-              },
-              {
-                label: "Attach your resume",
-                done: Boolean(values.resumeAttachmentId) || reviewedResume,
-              },
-              {
-                label: "Confirm program guidelines",
-                done: values.acknowledged,
-              },
-              {
-                label: "Submit for review",
-                done: ["Submitted", "Approved"].includes(onboarding?.status),
-              },
-            ].map((item) => (
+            {steps.map((item) => (
               <li key={item.label} data-done={item.done}>
                 <span>{item.done ? <Check size={13} /> : ""}</span>
                 {item.label}

@@ -30,6 +30,7 @@ import styles from "./auth.module.css";
 import FuturisticLogin from "./FuturisticLogin";
 import { InternThemeProvider, InternThemeToggle } from "../InternTheme";
 import { useSiteFeatures } from "@olentra/site-features/react";
+import { WELCOME_FLAG } from "@/lib/intern/milestones.mjs";
 
 const destinationFor = (account) =>
   account?.role === "company" ? "/intern/dashboard" : "/intern/portal";
@@ -346,6 +347,8 @@ export function RegisterPage() {
         name: pendingApplication.name,
       });
       if (!result.ok) return setError(errorText(result.error));
+      // The portal greets brand-new accounts with a one-time welcome celebration.
+      try { sessionStorage.setItem(WELCOME_FLAG, "1"); } catch { /* celebration is optional */ }
       router.replace(safeDestination(result.redirect, "/intern/portal"));
     } catch {
       setError("Unable to create your account. Please try again.");

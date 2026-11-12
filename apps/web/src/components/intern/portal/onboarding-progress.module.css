@@ -1,0 +1,73 @@
+.progress {
+  margin-top: 20px;
+}
+.progressHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.progressHead strong {
+  color: var(--ad-text, #102354);
+  font-size: 13px;
+  font-weight: 650;
+}
+.progressHead span {
+  color: var(--ad-blue, #2465e9);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.track {
+  position: relative;
+  height: 9px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ad-border, #d0def3) 60%, transparent);
+}
+.fill {
+  position: relative;
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2583ff, #8256ff);
+  transition: width 0.7s cubic-bezier(0.2, 1.25, 0.4, 1);
+  overflow: hidden;
+}
+.fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, #ffffff66 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: shine 2.4s ease-in-out infinite;
+}
+.fillDone {
+  background: linear-gradient(90deg, #1fb46b, #2fd38c);
+}
+.message {
+  margin: 8px 0 0 !important;
+  color: var(--ad-muted, #4b628d) !important;
+  font-size: 11.5px !important;
+}
+.submitPulse {
+  animation: pulse 1.6s ease-out 3;
+}
+@keyframes shine {
+  to { transform: translateX(100%); }
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 #2583ff80; }
+  70% { box-shadow: 0 0 0 12px #2583ff00; }
+  100% { box-shadow: 0 0 0 0 #2583ff00; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+  .fill::after,
+  .submitPulse {
+    animation: none;
+  }
+}

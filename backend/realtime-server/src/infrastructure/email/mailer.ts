@@ -1,6 +1,26 @@
 import { internshipEnv } from "../../config/env";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
+type ApplicantStatus = "shortlisted" | "offer" | "rejected" | "onboarding" | "certificate";
+
+interface ApplicantStatusEmailOptions {
+  to: string;
+  name: string;
+  programName: string;
+  status: ApplicantStatus;
+  portalUrl: string;
+  certificateVerifyUrl?: string;
+  linkedinShareUrl?: string;
+}
+
+interface InterviewScheduledEmailOptions {
+  to: string;
+  name: string;
+  programName: string;
+  scheduledAt: string;
+  meetingUrl: string;
+  portalUrl: string;
+}
 
 interface ApplicationEmailOptions {
   to: string;
@@ -25,6 +45,15 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const SENDER_EMAIL = internshipEnv("INTERNSHIP_SENDER_EMAIL", "INTERN_SENDER_EMAIL") || "Olentra Careers <website@olentratechnologies.com>";
 
 export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_EMAIL) {
+  const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[character]!);
+
   async function sendEmail(to: string, subject: string, html: string, text: string): Promise<SendResult> {
     if (!apiKey) {
       console.info(`[mailer:offline] Email to ${to} (Subject: ${subject}):\n${text}`);
@@ -63,6 +92,98 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
   }
 
   return {
+    async sendInterviewScheduled({
+      to,
+      name,
+      programName,
+      scheduledAt,
+      meetingUrl,
+      portalUrl,
+    }: InterviewScheduledEmailOptions): Promise<SendResult> {
+      const subject = `Interview scheduled for your ${programName} application`;
+      const safeName = escapeHtml(name);
+      const safeProgram = escapeHtml(programName);
+      const safeMeetingUrl = escapeHtml(meetingUrl);
+      const safePortalUrl = escapeHtml(portalUrl);
+      const time = `${new Date(scheduledAt).toISOString().replace("T", " ").slice(0, 16)} UTC`;
+      const text = `Hi ${name},\n\nYour interview for ${programName} is scheduled for ${time}.\n\nMeeting link: ${meetingUrl}\n\nOpen your candidate portal: ${portalUrl}\n\nBest regards,\nThe Olentra Team`;
+      const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:32px 16px;background:#0c0f17;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#f1f5f9">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#131926;border:1px solid #1e293b;border-radius:16px">
+      <tr><td style="padding:28px 32px;border-bottom:1px solid #1e293b"><span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#60a5fa">Olentra Careers · Internship Portal</span><h1 style="margin:12px 0 0;font-size:22px;color:#fff">Your interview is scheduled</h1></td></tr>
+      <tr><td style="padding:28px 32px"><p>Hi <strong>${safeName}</strong>,</p><p>Your interview for ${safeProgram} is scheduled for <strong>${time}</strong>.</p><p><a href="${safeMeetingUrl}">Join your interview</a></p><p><a href="${safePortalUrl}">Open your candidate portal</a></p><p style="font-size:12px;color:#64748b">Olentra Technologies Pvt. Ltd. · This is an automated notification.</p></td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+      return sendEmail(to, subject, html, text);
+    },
+
+    async sendApplicantStatus({
+      to,
+      name,
+      programName,
+      status,
+      portalUrl,
+      certificateVerifyUrl,
+      linkedinShareUrl,
+    }: ApplicantStatusEmailOptions): Promise<SendResult> {
+      const messages: Record<ApplicantStatus, { subject: string; heading: string; body: string }> = {
+        shortlisted: {
+          subject: "You’ve been shortlisted at Olentra",
+          heading: "You’ve been shortlisted",
+          body: `Your application to ${programName} has moved to the shortlist. The team will share the next steps through your candidate portal.`,
+        },
+        offer: {
+          subject: `Your Olentra internship offer: ${programName}`,
+          heading: "Your internship offer is ready",
+          body: `The Olentra team has sent you an offer for ${programName}. Review the details and respond in your candidate portal.`,
+        },
+        rejected: {
+          subject: "An update on your Olentra internship application",
+          heading: "An update on your application",
+          body: `The team has completed its review of your ${programName} application. Sign in to your candidate portal to see the latest update.`,
+        },
+        onboarding: {
+          subject: `Your ${programName} onboarding is approved`,
+          heading: "Your onboarding is approved",
+          body: `Your onboarding for ${programName} has been approved. Open your candidate portal to get started.`,
+        },
+        certificate: {
+          subject: `Your Olentra internship certificate is ready`,
+          heading: "Your certificate is ready",
+          body: `Your ${programName} internship certificate has been issued. Verify it or share it on LinkedIn using the links below.`,
+        },
+      };
+      const message = messages[status];
+      const safeName = escapeHtml(name);
+      const safeProgram = escapeHtml(programName);
+      const safePortalUrl = escapeHtml(portalUrl);
+      const certificateLink = certificateVerifyUrl
+        ? `<p><a href="${escapeHtml(certificateVerifyUrl)}">Verify your certificate</a></p>`
+        : "";
+      const linkedinLink = linkedinShareUrl
+        ? `<p><a href="${escapeHtml(linkedinShareUrl)}">Share your certificate on LinkedIn</a></p>`
+        : "";
+      const textLinks = [
+        certificateVerifyUrl ? `Verify your certificate: ${certificateVerifyUrl}` : "",
+        linkedinShareUrl ? `Share on LinkedIn: ${linkedinShareUrl}` : "",
+      ].filter(Boolean).join("\n");
+      const text = `Hi ${name},\n\n${message.body}\n\nOpen your candidate portal: ${portalUrl}${textLinks ? `\n\n${textLinks}` : ""}\n\nBest regards,\nThe Olentra Team`;
+      const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(message.subject)}</title></head>
+<body style="margin:0;padding:32px 16px;background:#0c0f17;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#f1f5f9">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#131926;border:1px solid #1e293b;border-radius:16px">
+      <tr><td style="padding:28px 32px;border-bottom:1px solid #1e293b"><span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#60a5fa">Olentra Careers · Internship Portal</span><h1 style="margin:12px 0 0;font-size:22px;color:#fff">${message.heading}</h1></td></tr>
+      <tr><td style="padding:28px 32px"><p>Hi <strong>${safeName}</strong>,</p><p>${escapeHtml(message.body)}</p>${certificateLink}${linkedinLink}<p style="margin-top:24px"><a href="${safePortalUrl}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#2563eb;color:#fff;text-decoration:none">Open candidate portal</a></p><p style="font-size:12px;color:#94a3b8">Program: ${safeProgram}</p><p style="font-size:12px;color:#64748b">Olentra Technologies Pvt. Ltd. · This is an automated notification.</p></td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+      return sendEmail(to, message.subject, html, text);
+    },
+
     async sendApplicationConfirmation({ to, name, programName, magicLinkUrl }: ApplicationEmailOptions): Promise<SendResult> {
       const subject = `Your Olentra Internship Application: ${programName}`;
       const text = `Hi ${name},\n\nThank you for applying to the Olentra Internship Program (${programName}).\n\nWe have received your application and resume. You can access your candidate portal to track your progress and follow up with the team using the 1-click link below:\n\n${magicLinkUrl}\n\nThis link is unique to you and expires in 24 hours.\n\nBest regards,\nThe Olentra Team`;

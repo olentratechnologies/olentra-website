@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowDown,
@@ -10,8 +10,16 @@ import {
   Check,
   RotateCcw,
   SlidersHorizontal,
+  Video,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
+import { useInternship } from "@/components/intern/InternshipProvider";
+import { bulkActionsFor, canBulkUpdate, runBulk } from "@/lib/intern/bulk.mjs";
+import { burstFrom } from "@/lib/confetti.mjs";
+import {
+  APPLICATION_EXPORT_COLUMNS,
+  applicationExportRow,
+} from "@/lib/intern/application-export.mjs";
 import { hasStaffPermission } from "./staffAccess";
 import { useInternQuery, useInternSearch } from "../useInternQuery";
 import QueryStatus from "./QueryStatus";
@@ -53,13 +61,45 @@ function applicationMetric(data, id, label, value, tone, icon) {
   return { ...source, id, label, value, tone, icon };
 }
 
+const VIDEOS_FIRST_KEY = "olentra_applications_videos_first_v1";
+
 export default function ApplicationsPage() {
   const { data, query, setQuery, notify, updateApplication, account } = useDashboard();
   const canReview = hasStaffPermission(account, "applications.review");
   const isAdmin = account?.staffRole === "admin";
+  const { commands, connected, staffEvents } = useInternship();
+  const [selected, setSelected] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [confirmReject, setConfirmReject] = useState(null);
+  // Rows that just arrived through a live "new application" event get a brief highlight.
+  const [freshIds, setFreshIds] = useState(() => new Set());
+  const refreshListsRef = useRef(null);
+  useEffect(() => {
+    if (!connected || !staffEvents) return undefined;
+    const timers = [];
+    const stop = staffEvents.listen(({ applicationId }) => {
+      if (!applicationId) return;
+      setFreshIds((current) => new Set(current).add(applicationId));
+      refreshListsRef.current?.();
+      timers.push(setTimeout(() => setFreshIds((current) => { const next = new Set(current); next.delete(applicationId); return next; }), 6500));
+    });
+    return () => { stop(); timers.forEach(clearTimeout); };
+  }, [connected, staffEvents]);
   const [search, setSearch] = useState("");
   const [track, setTrack] = useState("all");
   const [status, setStatus] = useState("all");
+  const [video, setVideo] = useState("all");
+  const [skill, setSkill] = useState("all");
+  // "Videos first" is a per-reviewer preference, remembered in this browser only.
+  const [videosFirst, setVideosFirst] = useState(false);
+  useEffect(() => { try { setVideosFirst(localStorage.getItem(VIDEOS_FIRST_KEY) === "1"); } catch { /* storage blocked */ } }, []);
+  function toggleVideosFirst() {
+    setVideosFirst((value) => {
+      try { localStorage.setItem(VIDEOS_FIRST_KEY, value ? "0" : "1"); } catch { /* storage blocked */ }
+      return !value;
+    });
+    setPage(1);
+  }
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
@@ -70,19 +110,26 @@ export default function ApplicationsPage() {
   const [saving, setSaving] = useState(false);
   const activeFilters =
     Number(status !== "all") +
+    Number(video !== "all") +
+    Number(skill !== "all") +
     Number(Boolean(dateFrom)) +
     Number(Boolean(dateTo));
   const invalidDateRange = Boolean(dateFrom && dateTo && dateFrom > dateTo);
 
   useEffect(() => {
     setPage(1);
-  }, [query, search, track, status, dateFrom, dateTo, pageSize]);
+  }, [query, search, track, status, video, skill, dateFrom, dateTo, pageSize]);
+  // Selection is scoped to the rows on screen; any change of view clears it.
+  useEffect(() => {
+    setSelected(new Set());
+  }, [query, search, track, status, video, skill, dateFrom, dateTo, pageSize, page, sort.key, sort.direction, videosFirst]);
 
   const debouncedSearch = useInternSearch(search);
   const debouncedQuery = useInternSearch(query);
-  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, dateFrom, dateTo };
-  const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction }, { enabled: !invalidDateRange });
-  const summaryQuery = useInternQuery("application.list", { ...queryParams, page: 1, pageSize: 1 }, { enabled: !invalidDateRange });
+  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, video, skill, dateFrom, dateTo };
+  const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction, videosFirst }, { enabled: !invalidDateRange });
+  const summaryQuery = useInternQuery("application.list", { ...queryParams, skill: "all", page: 1, pageSize: 1 }, { enabled: !invalidDateRange });
+  refreshListsRef.current = () => { void listQuery.refresh(); void summaryQuery.refresh(); };
   const result = listQuery.data || { items: [], total: 0 };
   const summary = summaryQuery.data;
   useEffect(() => {
@@ -111,6 +158,8 @@ export default function ApplicationsPage() {
     setSearch("");
     setTrack("all");
     setStatus("all");
+    setVideo("all");
+    setSkill("all");
     setDateFrom("");
     setDateTo("");
     setPage(1);
@@ -119,24 +168,8 @@ export default function ApplicationsPage() {
   function exportApplications() {
     exportCsv(
       "olentra-applications.csv",
-      [
-        "Application ID",
-        "Applicant",
-        "Email",
-        "Track",
-        "College",
-        "Applied On",
-        "Status",
-      ],
-      filtered.map((application) => [
-        application.id,
-        application.name,
-        application.email,
-        application.program,
-        application.college || "",
-        application.appliedOn,
-        application.status,
-      ]),
+      APPLICATION_EXPORT_COLUMNS,
+      filtered.map(applicationExportRow),
     );
     notify(`${filtered.length.toLocaleString()} applications from this page exported.`);
   }
@@ -160,6 +193,41 @@ export default function ApplicationsPage() {
       setEditingApplication(null);
     } finally {
       setSaving(false);
+    }
+  }
+
+  const selectable = canReview ? displayed.filter((application) => canBulkUpdate(application, { isAdmin })) : [];
+  const selectedRows = selectable.filter((application) => selected.has(application.id));
+  const allSelected = selectable.length > 0 && selectedRows.length === selectable.length;
+  function toggleRow(id) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(selectable.map((application) => application.id)));
+  }
+  async function applyBulk(action, trigger) {
+    if (bulkBusy || !selectedRows.length) return;
+    const rows = selectedRows.filter((application) => application.status !== action.status);
+    const unchanged = selectedRows.length - rows.length;
+    setBulkBusy(true);
+    try {
+      const { succeeded, failed } = await runBulk(rows, (application) => commands.setApplicationStatus(application.id, action.status, application.version));
+      const verb = { "Under Review": "moved to under review", Shortlisted: "shortlisted", Rejected: "rejected" }[action.status];
+      const parts = [`${succeeded.length} ${succeeded.length === 1 ? "applicant" : "applicants"} ${verb}`];
+      if (unchanged) parts.push(`${unchanged} already ${action.status.toLowerCase()}`);
+      if (failed.length) parts.push(`${failed.length} skipped — changed by someone else or not allowed`);
+      notify(parts.join(" · ") + ".");
+      if (succeeded.length && action.status !== "Rejected") burstFrom(trigger, { count: 60 });
+      setSelected(new Set(failed.map(({ item }) => item.id)));
+      void listQuery.refresh();
+      void summaryQuery.refresh();
+    } finally {
+      setBulkBusy(false);
+      setConfirmReject(null);
     }
   }
 
@@ -205,6 +273,34 @@ export default function ApplicationsPage() {
                 {STATUSES.map((value) => (
                   <option key={value}>{value}</option>
                 ))}
+              </select>
+            </label>
+            <fieldset className={styles.skillFilters}>
+              <legend>Skills</legend>
+              <div>
+                {(summary?.counts?.skills || []).map(({ name }) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={skill === name ? styles.skillFilterActive : ""}
+                    aria-pressed={skill === name}
+                    onClick={() => { setSkill(skill === name ? "all" : name); setPage(1); }}
+                  >
+                    {name}
+                  </button>
+                ))}
+                {!summary?.counts?.skills?.length && <span>No skills listed</span>}
+              </div>
+            </fieldset>
+            <label>
+              Intro video
+              <select
+                value={video}
+                onChange={(event) => { setVideo(event.target.value); setPage(1); }}
+              >
+                <option value="all">Any</option>
+                <option value="with">Has intro video{summary?.counts?.withVideo != null ? ` (${summary.counts.withVideo})` : ""}</option>
+                <option value="without">No intro video</option>
               </select>
             </label>
             <label>
@@ -254,9 +350,19 @@ export default function ApplicationsPage() {
           <SearchBox
             value={search}
             onChange={value => { setSearch(value); setPage(1); }}
-            placeholder="Search applicants, college, or email..."
+            placeholder="Search applicants, college, email, or skill..."
           />
           <div className={styles.listToolbarRight}>
+            <button
+              type="button"
+              className={`${styles.videosFirst} ${videosFirst ? styles.videosFirstOn : ""}`}
+              aria-pressed={videosFirst}
+              onClick={toggleVideosFirst}
+              title="Show applicants who shared an intro video at the top"
+            >
+              <Video size={14} aria-hidden="true" />
+              Videos first
+            </button>
             {(activeFilters > 0 || search || track !== "all") && (
               <Button variant="ghost" onClick={resetFilters}>
                 <RotateCcw size={13} />
@@ -278,11 +384,45 @@ export default function ApplicationsPage() {
           </div>
         </div>
         <QueryStatus query={listQuery} label="applications"/>
+        {selectedRows.length > 0 && (
+          <div className={styles.bulkBar} role="toolbar" aria-label="Bulk actions">
+            <strong>{selectedRows.length} selected</strong>
+            <div className={styles.bulkActions}>
+              {bulkActionsFor({ isAdmin }).map((action) => (
+                <button
+                  key={action.status}
+                  type="button"
+                  className={`${styles.bulkButton} ${action.danger ? styles.bulkDanger : ""}`}
+                  disabled={bulkBusy}
+                  onClick={(event) => (action.danger ? setConfirmReject({ action, trigger: event.currentTarget }) : applyBulk(action, event.currentTarget))}
+                >
+                  {action.label}
+                </button>
+              ))}
+              <button type="button" className={styles.bulkClear} disabled={bulkBusy} onClick={() => setSelected(new Set())}>
+                Clear
+              </button>
+            </div>
+            {bulkBusy && <span className={styles.bulkWorking} role="status">Updating…</span>}
+          </div>
+        )}
         {filtered.length ? (
-          <div className={common.tableWrap}>
+          <div className={`${common.tableWrap} ${styles.applicationTableWrap}`}>
             <table className={`${common.table} ${styles.applicationTable}`}>
               <thead>
                 <tr>
+                  {canReview && (
+                    <th className={styles.selectCell}>
+                      <input
+                        type="checkbox"
+                        aria-label="Select all applicants on this page"
+                        checked={allSelected}
+                        ref={(element) => { if (element) element.indeterminate = selectedRows.length > 0 && !allSelected; }}
+                        disabled={!selectable.length || bulkBusy}
+                        onChange={toggleAll}
+                      />
+                    </th>
+                  )}
                   <th
                     aria-sort={
                       sort.key === "name"
@@ -343,7 +483,19 @@ export default function ApplicationsPage() {
               </thead>
               <tbody>
                 {displayed.map((application) => (
-                  <tr key={application.id}>
+                  <tr key={application.id} className={`${selected.has(application.id) ? styles.rowSelected : ""} ${freshIds.has(application.id) ? styles.rowFresh : ""}`}>
+                    {canReview && (
+                      <td className={styles.selectCell}>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${application.name}`}
+                          checked={selected.has(application.id)}
+                          disabled={bulkBusy || !canBulkUpdate(application, { isAdmin })}
+                          title={canBulkUpdate(application, { isAdmin }) ? undefined : "Only an admin can change a final decision"}
+                          onChange={() => toggleRow(application.id)}
+                        />
+                      </td>
+                    )}
                     <td>
                       <Link
                         className={styles.applicantLink}
@@ -351,6 +503,12 @@ export default function ApplicationsPage() {
                       >
                         <Avatar person={application} size={31} />
                         <span>{application.name}</span>
+                        {application.hasVideo && (
+                          <span className={styles.videoBadge} title="Intro video shared">
+                            <Video size={12} aria-hidden="true" />
+                            <span className={styles.srOnlyText}>Intro video shared</span>
+                          </span>
+                        )}
                       </Link>
                     </td>
                     <td>
@@ -469,6 +627,21 @@ export default function ApplicationsPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+      <Modal
+        open={Boolean(confirmReject)}
+        onOpenChange={(open) => !open && !bulkBusy && setConfirmReject(null)}
+        title={`Reject ${selectedRows.length} ${selectedRows.length === 1 ? "applicant" : "applicants"}?`}
+        description="Each applicant is notified in their portal that their application was not selected. You can change a decision later from the applicant’s page."
+      >
+        <div className={styles.modalActions}>
+          <Button variant="secondary" type="button" disabled={bulkBusy} onClick={() => setConfirmReject(null)}>
+            Cancel
+          </Button>
+          <Button type="button" disabled={bulkBusy} onClick={() => applyBulk(confirmReject.action, confirmReject.trigger)}>
+            {bulkBusy ? "Rejecting…" : "Reject applicants"}
+          </Button>
+        </div>
       </Modal>
     </div>
   );

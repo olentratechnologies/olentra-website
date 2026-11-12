@@ -7,12 +7,15 @@ import { acceptsCompensationMode, normalizeCompensationMode, type CompensationMo
 import { MongoClient, type ClientSession, type Db, type Document } from "mongodb";
 import type { InternshipRow } from "../infrastructure/database/collections";
 import { DomainError } from "../shared/errors";
-import type { InternshipHooks, Principal } from "../shared/principal";
+import { logger } from "../infrastructure/observability/logger";
+import type { ApplicantStatusNotice, InternshipHooks, InterviewScheduledNotice, Principal } from "../shared/principal";
 import { digest, emailValue as emailOf, id, stringValue as str, token } from "../shared/ids";
 
 export { DomainError } from "../shared/errors";
 export type { InternshipHooks, Principal } from "../shared/principal";
 export { connectInternDatabase } from "../infrastructure/database/client";
+import { createStories } from "../modules/stories/stories.service";
+import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "../modules/applications/video-filter";
 
 type Row = InternshipRow;
 const publicAccount = (row: Row): Principal => ({ id: row._id, role: row.role, name: row.name, email: row.email, applicationId: row.applicationId ?? null, sessionVersion: row.sessionVersion ?? 1 });
@@ -33,6 +36,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   async function initialize() {
     await Promise.all([
       lifecycle.initialize(),
+      stories.initialize(),
       communications.initialize(),
       staffManagement.initialize(),
       users.createIndex({ email: 1 }, { unique: true }),
@@ -48,6 +52,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       programs.updateOne({ _id: "explorer" }, { $setOnInsert: { name: "Tech Explorer", fee: null, stipend: null, enabled: false } }, { upsert: true }),
       programs.updateOne({ _id: "innovator" }, { $setOnInsert: { name: "Tech Innovator", fee: null, stipend: null, enabled: false } }, { upsert: true }),
       settings.updateOne({ _id: "program" }, { $setOnInsert: { programEnabled: false, compensationMode: "both", defaultBatch: "", maxStipend: null } }, { upsert: true }),
+      applications.updateMany(HAS_VIDEO_BACKFILL.filter, HAS_VIDEO_BACKFILL.update),
+      applications.createIndex({ hasVideo: -1, appliedOn: -1 }),
     ]);
   }
   async function login(email: string, password: string): Promise<Principal | null> {
@@ -86,13 +92,13 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   type PublicData = {
     organization: { name: string; legalName: string; website: string };
     programs: { id: string; name: string; fee: number | null; stipend: number | null; enabled: boolean }[];
-    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; emailNotifications: boolean; integrations: Record<string, unknown> };
+    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; emailNotifications: boolean; integrations: Record<string, unknown> };
   };
   let cachedPublicData: PublicData | null = null;
   function invalidatePublicData() { cachedPublicData = null; }
   async function fetchPublicData(): Promise<PublicData> {
     const [rows, config] = await Promise.all([programs.find({}).sort({ _id: 1 }).toArray(), settings.findOne({ _id: "program" })]);
-    return { organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, emailNotifications: false, integrations: {} } };
+    return { organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, emailNotifications: false, integrations: {} } };
   }
   async function publicData(): Promise<PublicData> {
     if (cachedPublicData) return cachedPublicData;
@@ -134,9 +140,50 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       throw error;
     } finally { await session.endSession(); }
   }
+  async function sendApplicantStatusEmail(applicationId: string, status: ApplicantStatusNotice["status"], certificateNumber?: string) {
+    if (!activeHooks?.sendApplicantStatus) return;
+    try {
+      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1 } });
+      if (!application) throw new Error(`Application ${applicationId} was not found after its status changed.`);
+      if (status === "rejected") {
+        const preferences = await settings.findOne({ _id: "program" }, { projection: { rejectionEmails: 1 } });
+        if (preferences?.rejectionEmails !== true) return;
+      }
+      await activeHooks.sendApplicantStatus({
+        to: str(application.email),
+        name: str(application.name),
+        programName: str(application.program),
+        status,
+        ...(certificateNumber ? { certificateNumber } : {}),
+      });
+    } catch (error) {
+      logger.warn("Applicant status email failed after the workflow change committed.", { applicationId, status, error });
+    }
+  }
+  async function sendInterviewScheduledEmail(interview: { applicationId: unknown; scheduledAt: unknown; meetingUrl: unknown }) {
+    if (!activeHooks?.sendInterviewScheduled) return;
+    try {
+      const applicationId = str(interview.applicationId);
+      const scheduledAt = str(interview.scheduledAt);
+      const meetingUrl = str(interview.meetingUrl);
+      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1 } });
+      if (!application) throw new Error(`Application ${applicationId} was not found after scheduling its interview.`);
+      const notice: InterviewScheduledNotice = {
+        to: str(application.email),
+        name: str(application.name),
+        programName: str(application.program),
+        scheduledAt,
+        meetingUrl,
+      };
+      await activeHooks.sendInterviewScheduled(notice);
+    } catch (error) {
+      logger.warn("Interview email failed after the schedule was saved.", { applicationId: str(interview.applicationId), error });
+    }
+  }
   const lifecycle = createLifecycle({ collection, transact });
   const communications = createCommunications({ collection, transact });
   const queries = createInternshipQueries(collection);
+  const stories = createStories({ collection, transact });
   const staffManagement = createStaffManagement({ collection, transact, client });
   async function execute(method: string, params: Record<string, any> = {}, actor: Principal | null = null, key = ""): Promise<any> {
     if (actor?.role === "company") authorizeStaff(method, params, actor);
@@ -152,17 +199,22 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const filter: Document = {};
       if (params.status && params.status !== "all") filter.status = str(params.status);
       if (params.programId && params.programId !== "all") filter.programId = str(params.programId);
+      Object.assign(filter, videoFilter(params.video));
       const queries = [str(params.search), str(params.query)].filter(Boolean);
-      if (queries.length) filter.$and = queries.map(value => { const q = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 120); return { $or: ["name", "email", "college", "program", "status", "_id"].map(field => ({ [field]: { $regex: q, $options: "i" } })) }; });
+      if (queries.length) filter.$and = queries.map(value => { const q = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 120); return { $or: ["name", "email", "college", "program", "status", "_id", "skills"].map(field => ({ [field]: { $regex: q, $options: "i" } })) }; });
+      if (params.skill && params.skill !== "all") {
+        const skill = str(params.skill).slice(0, 80);
+        if (skill) filter.skills = { $regex: skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+      }
       const from = str(params.dateFrom), to = str(params.dateTo);
       if ((from && !/^\d{4}-\d{2}-\d{2}$/.test(from)) || (to && !/^\d{4}-\d{2}-\d{2}$/.test(to)) || (from && to && from > to)) throw new DomainError("INVALID_REQUEST", "Choose a valid application date range.");
       if (from || to) filter.appliedOn = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
       const allowed = ["name", "program", "college", "appliedOn", "status"], sortField = allowed.includes(params.sortField) ? params.sortField : "appliedOn", direction = params.sortDirection === "asc" ? 1 : -1;
       const [rows, total, aggregate] = await Promise.all([
-        applications.find(filter).sort({ [sortField]: direction, _id: direction }).skip((page - 1) * limit).limit(limit).toArray(), applications.countDocuments(filter),
-        applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }] } }]).toArray(),
+        applications.find(filter).sort(applicationSort(sortField, direction, params.videosFirst)).skip((page - 1) * limit).limit(limit).toArray(), applications.countDocuments(filter),
+        applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
       ]);
-      return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])) } };
+      return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) } };
     }
     if (method === "application.get") {
       if (!actor) throw new DomainError("UNAUTHENTICATED", "Sign in to view applications.");
@@ -211,7 +263,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
           ? applications.find({ status: "Joined" }, { projection: { _id: 1, name: 1, email: 1, program: 1, programId: 1, initials: 1, avatarColor: 1, status: 1 } }).limit(500).toArray()
           : Promise.resolve([]),
       ]);
-      const data: Record<string, any> = { ...info, user: actor, applications: [], accounts: actor ? [actor] : [], interns: [], projects: [], tasks: [], submissions: [], offers: [], onboarding: [], certificates: [], messages: [], notifications: [], resources: [], activity: [], metrics: [] };
+      const data: Record<string, any> = { ...info, user: actor, applications: [], accounts: actor ? [actor] : [], interns: [], projects: [], tasks: [], submissions: [], offers: [], onboarding: [], certificates: [], interviews: [], messages: [], notifications: [], resources: [], activity: [], metrics: [] };
       Object.assign(data, lifecycleData, communicationData);
       if (applicationItems) data.applications = applicationItems;
       if (actor?.role === "company" && !isAdmin(actor)) {
@@ -228,13 +280,17 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!can(actor, "overview.read")) data.analytics = null;
       }
       if (ownApplication) data.applications = [publicApplication(ownApplication, false)];
-      return { data, my: { application: actor?.role === "intern" ? data.applications[0] || null : null, intern: data.interns[0] || null, offer: data.offers[0] || null, onboarding: data.onboarding[0] || { applicationId: actor?.applicationId, status: "Not started", acknowledged: false }, projects: data.projects, tasks: data.tasks, submissions: data.submissions, certificates: data.certificates, messages: data.messages, notifications: data.notifications, resources: [] }, account: actor };
+      return { data, my: { application: actor?.role === "intern" ? data.applications[0] || null : null, intern: data.interns[0] || null, offer: data.offers[0] || null, interview: actor?.role === "intern" ? data.interviews[0] || null : null, onboarding: data.onboarding[0] || { applicationId: actor?.applicationId, status: "Not started", acknowledged: false }, projects: data.projects, tasks: data.tasks, submissions: data.submissions, certificates: data.certificates, messages: data.messages, notifications: data.notifications, resources: [] }, account: actor };
     }
     if (method === "application.submit") {
       if (actor) throw new DomainError("FORBIDDEN", "Sign out before submitting an application.");
       const name = str(params.name), email = emailOf(params.email), programId = str(params.programId), fileId = str(params.resumeAttachmentId), fileToken = str(params.resumeAccessToken);
       if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Enter your full name and a valid email address.");
       if (!fileId || !fileToken) throw new DomainError("INVALID_REQUEST", "Attach a resume before applying.");
+      const linkedin = str(params.linkedin), videoUrl = str(params.videoUrl);
+      const httpUrl = (v: string) => { try { return ["http:", "https:"].includes(new URL(v).protocol); } catch { return false; } };
+      if (linkedin.length > 500 || !httpUrl(linkedin) || !/(^|\.)linkedin\.com$/i.test(new URL(linkedin).hostname)) throw new DomainError("INVALID_REQUEST", "Enter your LinkedIn profile URL.");
+      if (videoUrl && (videoUrl.length > 500 || !httpUrl(videoUrl))) throw new DomainError("INVALID_REQUEST", "Enter a valid http or https video link.");
       return transact(key, null, { method, params }, async session => {
         if (!(await intakeOpen())) throw new DomainError("CLOSED", "Internship applications are currently closed.");
         const existing = await applications.findOne({ email }, { session });
@@ -250,7 +306,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!program?.enabled || !config?.programEnabled || program.fee == null || !acceptsCompensationMode(program.stipend, config.compensationMode)) throw new DomainError("CLOSED", "This internship track is not accepting applications.");
         if (!file) throw new DomainError("INVALID_REQUEST", "Upload your resume before applying.");
         const applicationId = id("OL"), claimToken = token(), now = new Date();
-        const row: Row = { _id: applicationId, name, email, programId, program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: [], linkedin: str(params.linkedin), github: "", bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1, claimHash: digest(claimToken), claimExpiresAt: new Date(now.getTime() + 86400000) };
+        const row: Row = { _id: applicationId, name, email, programId, program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: [], linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github: "", bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1, claimHash: digest(claimToken), claimExpiresAt: new Date(now.getTime() + 86400000) };
         await applications.insertOne(row, { session });
         await files.updateOne({ _id: fileId, applicationId: { $exists: false } }, { $set: { applicationId } }, { session });
         if (config?.applicationAlerts !== false) await collection("notifications").insertOne({ _id: id("NTF"), recipientRole: "company", applicationId, title: "New internship application", body: `${name} applied to ${program.name}.`, href: `/intern/dashboard/applications/${applicationId}`, createdOn: now.toISOString() }, { session });
@@ -281,7 +337,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     if (method === "application.update") {
       company(actor); const applicationId = str(params.id), patch = params.patch || {}, status = str(params.status || patch.status), expectedVersion = Number(params.expectedVersion);
       if ((!status && !Array.isArray(patch.notes)) || (status && !["Applied", "Under Review", "Shortlisted", "Selected", "Rejected", "Declined"].includes(status)) || !Number.isSafeInteger(expectedVersion)) throw new DomainError("INVALID_REQUEST", "Choose a valid change and the current application version.");
-      return transact(key, actor, { method, params }, async session => {
+      let emailStatus: ApplicantStatusNotice["status"] | null = null;
+      const updated = await transact(key, actor, { method, params }, async session => {
         const now = new Date();
         const existing = await applications.findOne({ _id: applicationId, version: expectedVersion }, { session });
         if (!existing || (status && existing.status === "Joined")) throw new DomainError("CONFLICT", "The application changed or is unavailable. Refresh and try again.");
@@ -297,10 +354,16 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         update.$set = values;
         const changed = await applications.findOneAndUpdate({ _id: applicationId, version: expectedVersion }, update, { session, returnDocument: "after" });
         if (!changed) throw new DomainError("CONFLICT", "The application changed or is unavailable. Refresh and try again.");
+        if (status && existing.status !== status) {
+          if (status === "Shortlisted") emailStatus = "shortlisted";
+          else if (status === "Rejected") emailStatus = "rejected";
+        }
         if (status) await collection("notifications").insertOne({ _id: id("NTF"), recipientRole: "intern", applicationId, title: "Application status updated", body: `Your application is now ${status}.`, href: "/intern/portal/application", createdOn: now.toISOString() }, { session });
         await events.insertOne({ _id: id("EVT"), type: "application.updated", applicationIds: [applicationId], createdAt: now }, { session });
         return publicApplication(changed, true);
       });
+      if (emailStatus) await sendApplicantStatusEmail(applicationId, emailStatus);
+      return updated;
     }
     if (method === "account.createForApplication") {
       company(actor);
@@ -340,7 +403,44 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       if (method === "application.workflow" && actor?.role === "company" && !isAdmin(actor)) return { offer: null, onboarding: null, intern: null };
       return queries.execute(method, params, actor);
     }
-    if (lifecycle.supports(method)) return lifecycle.execute(method, params, actor, key);
+    if (lifecycle.supports(method)) {
+      const previousOffer = method === "offer.send" && actor?.role === "company"
+        ? await collection("offers").findOne({ applicationId: str(params.applicationId) }, { projection: { status: 1, sentOn: 1 } })
+        : null;
+      const previousOnboarding = method === "onboarding.approve" && actor?.role === "company"
+        ? await collection("onboarding").findOne({ applicationId: str(params.applicationId) }, { projection: { status: 1 } })
+        : null;
+      const previousInterview = method === "interview.schedule" && actor?.role === "company"
+        ? await collection("interviews").findOne({ applicationId: str(params.applicationId) }, { projection: { updatedOn: 1 } })
+        : null;
+      const existingCertificateInternIds = method === "certificate.generate" && actor?.role === "company" && Array.isArray(params.internIds)
+        ? new Set((await collection("certificates").find({ internId: { $in: params.internIds.filter((value: unknown) => typeof value === "string") } }, { projection: { internId: 1 } }).toArray()).map((row) => row.internId))
+        : new Set();
+      const result = await lifecycle.execute(method, params, actor, key);
+      if (method === "offer.send" && !Array.isArray(result)) {
+        const offer = result as { applicationId: unknown; sentOn: unknown };
+        if (previousOffer?.status !== "Sent" || previousOffer.sentOn !== offer.sentOn) await sendApplicantStatusEmail(str(offer.applicationId), "offer");
+      }
+      if (method === "onboarding.approve" && !Array.isArray(result) && "applicationId" in result && previousOnboarding?.status !== "Approved") await sendApplicantStatusEmail(str(result.applicationId), "onboarding");
+      if (method === "certificate.generate") {
+        for (const certificate of Array.isArray(result) ? result : []) {
+          if (!existingCertificateInternIds.has(certificate.internId)) await sendApplicantStatusEmail(str(certificate.applicationId), "certificate", str(certificate.certificateNumber));
+        }
+      }
+      if (method === "interview.schedule" && !Array.isArray(result)) {
+        const interview = result as { applicationId: unknown; scheduledAt: unknown; meetingUrl: unknown; updatedOn: unknown };
+        if (previousInterview?.updatedOn !== interview.updatedOn) await sendInterviewScheduledEmail(interview);
+      }
+      return result;
+    }
+    if (stories.supports(method)) return stories.execute(method, params, actor, key);
+    if (method === "certificate.verify") {
+      // Public check for a shared certificate link. Numbers are random UUIDs, so they can't be enumerated.
+      const number = str(params.number).slice(0, 80);
+      if (!/^OLENTRA-[0-9a-f-]{36}$/i.test(number)) return { valid: false };
+      const row = await collection("certificates").findOne({ certificateNumber: number }, { projection: { recipient: 1, program: 1, issuedOn: 1, status: 1 } });
+      return row ? { valid: true, certificateNumber: number, recipient: row.recipient, program: row.program, issuedOn: row.issuedOn, status: row.status || "Issued" } : { valid: false };
+    }
     if (communications.supports(method)) {
       const res = await communications.execute(method, params, actor, key);
       if (method === "settings.update") invalidatePublicData();

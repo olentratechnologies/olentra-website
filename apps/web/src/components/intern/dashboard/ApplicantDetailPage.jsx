@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   BadgeCheck,
   BriefcaseBusiness,
+  CalendarDays,
   Check,
   CircleCheck,
   Clock3,
@@ -16,6 +17,7 @@ import {
   Github,
   GraduationCap,
   Linkedin,
+  Video,
   Mail,
   MapPin,
   MessageSquare,
@@ -32,6 +34,7 @@ import {
 } from "@/lib/intern-attachments.mjs";
 import { ApplicantNextAction, ApplicantWorkflow } from "./CompanyWorkflow";
 import StaffAccountControls from "./StaffAccountControls";
+import { toEmbed } from "@/lib/intern/video-embed.mjs";
 import {
   Avatar,
   Button,
@@ -75,6 +78,15 @@ function dateTime(value) {
   });
 }
 
+function dateTimeLocal(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16);
+}
+
 function safeProfileUrl(value) {
   if (!value) return null;
   try {
@@ -95,6 +107,11 @@ export default function ApplicantDetailPage({ applicationId }) {
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [recoveryBusy, setRecoveryBusy] = useState(false);
   const application = (data.applications || []).find((item) => item.id === applicationId);
+  const listedInterview = (data.interviews || []).find((item) => item.applicationId === applicationId) || null;
+  const [savedInterview, setSavedInterview] = useState(listedInterview);
+  const interview = savedInterview || listedInterview;
+  const [interviewTime, setInterviewTime] = useState(dateTimeLocal(interview?.scheduledAt));
+  const [meetingUrl, setMeetingUrl] = useState(interview?.meetingUrl || "");
   const canMessage = hasStaffPermission(account, application?.status === "Joined" ? "messages.interns" : "messages.applicants");
   const [loadingRecord, setLoadingRecord] = useState(true);
   const [recordError, setRecordError] = useState("");
@@ -110,6 +127,11 @@ export default function ApplicantDetailPage({ applicationId }) {
   useEffect(() => {
     setStatus(application?.status || "Applied");
   }, [application?.status, applicationId]);
+  useEffect(() => {
+    setSavedInterview(listedInterview);
+    setInterviewTime(dateTimeLocal(listedInterview?.scheduledAt));
+    setMeetingUrl(listedInterview?.meetingUrl || "");
+  }, [applicationId, listedInterview?.id, listedInterview?.scheduledAt, listedInterview?.meetingUrl]);
   useEffect(() => {
     setTab("overview");
     setNote("");
@@ -184,6 +206,26 @@ export default function ApplicantDetailPage({ applicationId }) {
     try {
       if ((await updateApplication(applicationId, { status })) === false) return;
       notify(`${application.name}’s application status updated.`);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function saveInterview(event) {
+    event.preventDefault();
+    if (!interviewTime || !meetingUrl.trim() || busy) return;
+    setBusy("interview");
+    try {
+      const result = await commands.scheduleInterview(applicationId, {
+        scheduledAt: new Date(interviewTime).toISOString(),
+        meetingUrl: meetingUrl.trim(),
+      });
+      if (!result.ok) {
+        notify(result.error || "The interview could not be scheduled.");
+        return;
+      }
+      setSavedInterview(result.data);
+      notify(`${application.name}’s interview was scheduled.`);
     } finally {
       setBusy("");
     }
@@ -309,6 +351,21 @@ export default function ApplicantDetailPage({ applicationId }) {
             <span>LinkedIn not provided</span>
           )}
         </li>
+        <li>
+          <Video size={15} />
+          {safeProfileUrl(application.videoUrl) ? (
+            <a
+              href={safeProfileUrl(application.videoUrl)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Intro video
+              <ExternalLink size={11} />
+            </a>
+          ) : (
+            <span>Intro video not provided</span>
+          )}
+        </li>
       </ul>
     </Panel>
   );
@@ -432,6 +489,7 @@ export default function ApplicantDetailPage({ applicationId }) {
             {applicationDetails}
             {applicationFlow}
           </div>
+          <IntroVideoPanel url={application.videoUrl} name={application.name} />
           {isAdmin && <ApplicantNextAction
             applicationId={applicationId}
             onOpenWorkflow={() => setTab("application")}
@@ -571,6 +629,25 @@ export default function ApplicantDetailPage({ applicationId }) {
                 >
                   <Check size={15} />
                   Save status
+                </Button>
+              </form>
+            </Panel>}
+            {canReview && application.status === "Shortlisted" && <Panel>
+              <h2 className={styles.panelHeading}>Interview scheduling</h2>
+              <p className={styles.reviewDescription}>Schedule or update one interview for this shortlisted applicant.</p>
+              {interview && <p className={styles.interviewCurrent}>Currently scheduled for {dateTime(interview.scheduledAt)} · <a href={interview.meetingUrl} target="_blank" rel="noreferrer">Open meeting link</a></p>}
+              <form className={styles.interviewForm} onSubmit={saveInterview}>
+                <label>
+                  Date and time
+                  <input type="datetime-local" value={interviewTime} onChange={(event) => setInterviewTime(event.target.value)} required />
+                </label>
+                <label>
+                  Meeting link
+                  <input type="url" value={meetingUrl} onChange={(event) => setMeetingUrl(event.target.value)} placeholder="https://…" maxLength={2000} required />
+                </label>
+                <Button type="submit" disabled={Boolean(busy) || !interviewTime || !meetingUrl.trim()}>
+                  <CalendarDays size={15} />
+                  {busy === "interview" ? "Saving…" : interview ? "Update interview" : "Schedule interview"}
                 </Button>
               </form>
             </Panel>}
@@ -743,5 +820,43 @@ export default function ApplicantDetailPage({ applicationId }) {
         </form>
       </Modal>
     </div>
+  );
+}
+
+/** Inline player for the applicant's intro video; unknown hosts fall back to a link. */
+function IntroVideoPanel({ url, name }) {
+  const link = safeProfileUrl(url);
+  const embed = toEmbed(url);
+  return (
+    <Panel className={styles.videoPanel}>
+      <div className={styles.videoHeading}>
+        <h2 className={styles.panelHeading}>
+          <Video size={17} /> Intro video
+          {embed && <span className={styles.videoProvider}>{embed.provider}</span>}
+        </h2>
+        {link && (
+          <a href={link} target="_blank" rel="noreferrer" className={styles.videoOpen}>
+            Open in new tab <ExternalLink size={12} />
+          </a>
+        )}
+      </div>
+      {embed ? (
+        <div className={styles.videoFrame}>
+          <iframe
+            src={embed.embedUrl}
+            title={`Intro video from ${name || "the applicant"}`}
+            loading="lazy"
+            allow="fullscreen; picture-in-picture; encrypted-media"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+          />
+        </div>
+      ) : link ? (
+        <p className={styles.videoNote}>This link can’t be previewed here. Open it in a new tab to watch.</p>
+      ) : (
+        <p className={styles.videoNote}>No intro video shared.</p>
+      )}
+    </Panel>
   );
 }

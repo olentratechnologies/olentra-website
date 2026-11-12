@@ -54,17 +54,18 @@ export default function SettingsPage() {
   const [programEnabled, setProgramEnabled] = useState(Boolean(data.settings.programEnabled));
   const [compensationMode, setCompensationMode] = useState(normalizeCompensationMode(data.settings.compensationMode));
   const [applicationAlerts, setApplicationAlerts] = useState(data.settings.applicationAlerts !== false);
+  const [rejectionEmails, setRejectionEmails] = useState(data.settings.rejectionEmails === true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
-  useEffect(() => { setBatch(data.settings.defaultBatch || ""); setName(data.settings.programName || "Olentra Internship Program"); setProgramEnabled(Boolean(data.settings.programEnabled)); setCompensationMode(normalizeCompensationMode(data.settings.compensationMode)); setApplicationAlerts(data.settings.applicationAlerts !== false); }, [data.settings.defaultBatch, data.settings.programName, data.settings.programEnabled, data.settings.compensationMode, data.settings.applicationAlerts]);
+  useEffect(() => { setBatch(data.settings.defaultBatch || ""); setName(data.settings.programName || "Olentra Internship Program"); setProgramEnabled(Boolean(data.settings.programEnabled)); setCompensationMode(normalizeCompensationMode(data.settings.compensationMode)); setApplicationAlerts(data.settings.applicationAlerts !== false); setRejectionEmails(data.settings.rejectionEmails === true); }, [data.settings.defaultBatch, data.settings.programName, data.settings.programEnabled, data.settings.compensationMode, data.settings.applicationAlerts, data.settings.rejectionEmails]);
   const availableTracks = data.programs.filter(program => isProgramAvailable(program, { programEnabled: true, compensationMode }));
   async function save(event) {
     event.preventDefault();
     if (tab === "general" && !name.trim()) { setError("Enter a program name."); return; }
     setBusy(true); setError("");
     try {
-      const result = await updateSettings(tab === "notifications" ? { applicationAlerts } : { programName: name.trim(), defaultBatch: batch.trim(), programEnabled, compensationMode });
+      const result = await updateSettings(tab === "notifications" ? { applicationAlerts, rejectionEmails } : { programName: name.trim(), defaultBatch: batch.trim(), programEnabled, compensationMode });
       if (result !== false) { setSaved(true); notify("Program settings saved."); }
     } finally { setBusy(false); }
   }
@@ -85,7 +86,7 @@ export default function SettingsPage() {
         </div>
         <p id="compensation-availability" className={styles.availability} role="status">{availableTracks.length ? `${availableTracks.length} enabled ${availableTracks.length === 1 ? "track matches" : "tracks match"} this selection.${programEnabled ? "" : " Enable the program to open applications."}` : "No enabled tracks match this selection. Set the stipend and enable a matching track in Tracks."}</p>
       </fieldset>
-      <div className={styles.divider}/><h3 className={styles.subheading}>Workspace details</h3><div className={ui.formGrid}><label className={ui.field}>Program name<input value={name} maxLength={100} onChange={event => edit(setName, event.target.value)}/></label><label className={ui.field}>Default batch (optional)<input value={batch} maxLength={40} onChange={event => edit(setBatch, event.target.value)}/></label></div></> : <><div className={styles.sectionHeading}><span><Bell size={19}/></span><div><h2>Notification Preferences</h2><p>Choose which in-app updates the internship team receives.</p></div></div><div className={styles.switches}><Switch label="New application alerts" description="Notify the internship team when a new application arrives." checked={applicationAlerts} onChange={value => edit(setApplicationAlerts, value)}/></div><p className={styles.helper}>Email and external integrations are not configured. Internship messages and workflow notifications remain available in the app.</p></>}
+      <div className={styles.divider}/><h3 className={styles.subheading}>Workspace details</h3><div className={ui.formGrid}><label className={ui.field}>Program name<input value={name} maxLength={100} onChange={event => edit(setName, event.target.value)}/></label><label className={ui.field}>Default batch (optional)<input value={batch} maxLength={40} onChange={event => edit(setBatch, event.target.value)}/></label></div></> : <><div className={styles.sectionHeading}><span><Bell size={19}/></span><div><h2>Notification Preferences</h2><p>Choose which applicant and staff updates are sent.</p></div></div><div className={styles.switches}><Switch label="New application alerts" description="Notify the internship team when a new application arrives." checked={applicationAlerts} onChange={value => edit(setApplicationAlerts, value)}/><Switch label="Rejection emails" description="Send a status email when an application is rejected. This is off until you opt in." checked={rejectionEmails} onChange={value => edit(setRejectionEmails, value)}/></div><p className={styles.helper}>Applicant emails are sent after shortlisted, offer, onboarding, and certificate updates. Internship messages and workflow notifications remain available in the app.</p></>}
       {error && <p className={styles.error} role="alert">{error}</p>}<div className={styles.saveRow}><span>{saved ? <><Check size={15}/> All changes saved</> : "Changes apply after saving."}</span><Button type="submit" disabled={busy}><Save size={15}/>{busy ? "Saving…" : "Save Changes"}</Button></div>
     </Panel></form>}
     <div className={styles.resetPanel}><div><h3>Password recovery</h3><p>After verifying an intern’s identity, staff can reset their password from their application record.</p></div></div>

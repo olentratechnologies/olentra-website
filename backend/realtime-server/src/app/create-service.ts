@@ -22,6 +22,7 @@ import { StaffSocketRegistry } from "../interfaces/websocket/session";
 import { parseInternRpcFrame, readyMessage, rpcErrorResponse, rpcResponse, type InternSocketData } from "../interfaces/websocket/protocol";
 import { INTERN_TOPICS } from "../interfaces/websocket/topics";
 import { createPresenceTracker } from "../modules/presence/presence-tracker";
+import { affectsInsights, createPublicInsights, throttle } from "../modules/insights/insights.service";
 
 type Domain = ReturnType<typeof createInternshipDomain>;
 type RealtimeSocketData = PresenceSocketData | InternSocketData;
@@ -32,6 +33,10 @@ type InternshipRuntime = {
   authRoutes: ReturnType<typeof createAuthRoutes>;
   fileRoutes: ReturnType<typeof createFilesRoutes>;
   staffSockets: StaffSocketRegistry;
+  insights: ReturnType<typeof createPublicInsights>;
+  insightsViewers: () => number;
+  broadcastInsights: () => void;
+  broadcastViewers: () => void;
   close: () => Promise<void>;
 };
 
@@ -52,6 +57,15 @@ type InternshipAttachOptions = {
 
 const unavailable = (origin: string | null, sendJson: (body: unknown, origin: string | null, status?: number) => Response) =>
   sendJson({ ok: false, error: { code: "SERVICE_UNAVAILABLE", message: "The internship service is temporarily unavailable. Please retry." } }, origin, 503);
+
+/** At most 20 certificate checks per connection per minute. */
+const VERIFY_LIMIT = 20, VERIFY_WINDOW_MS = 60_000;
+export function allowVerify(socket: { data: { verifyWindow?: { start: number; count: number } } }, now = Date.now()) {
+  const window = socket.data.verifyWindow;
+  if (!window || now - window.start >= VERIFY_WINDOW_MS) { socket.data.verifyWindow = { start: now, count: 1 }; return true; }
+  window.count++;
+  return window.count <= VERIFY_LIMIT;
+}
 
 /** Unified Bun composition root for presence and internship real-time modules. */
 export function createRealtimeServer(options: RealtimeServerOptions = {}) {
@@ -116,6 +130,32 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           await mailer.sendMagicLink({ to, name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
         } catch (error) { logger.warn("Failed to send magic link", { error }); }
       },
+      async sendApplicantStatus(notice) {
+        try {
+          const certificateVerifyUrl = notice.certificateNumber
+            ? `${siteOrigin}/certificates/verify/${encodeURIComponent(notice.certificateNumber)}`
+            : undefined;
+          const linkedinShareUrl = certificateVerifyUrl
+            ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificateVerifyUrl)}`
+            : undefined;
+          const result = await mailer.sendApplicantStatus({
+            ...notice,
+            portalUrl: `${siteOrigin}/intern/portal`,
+            certificateVerifyUrl,
+            linkedinShareUrl,
+          });
+          if (!result.ok) logger.warn("Applicant status email was not delivered", { status: notice.status, to: notice.to, error: result.error });
+        } catch (error) { logger.warn("Failed to send applicant status email", { status: notice.status, error }); }
+      },
+      async sendInterviewScheduled(notice) {
+        try {
+          const result = await mailer.sendInterviewScheduled({
+            ...notice,
+            portalUrl: `${siteOrigin}/intern/portal`,
+          });
+          if (!result.ok) logger.warn("Interview email was not delivered", { to: notice.to, error: result.error });
+        } catch (error) { logger.warn("Failed to send interview email", { error }); }
+      },
     });
     await domain.initialize();
     await auth.initialize();
@@ -125,15 +165,44 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const openChanges = () => domain.collection("events").watch([{ $match: { operationType: "insert" } }], { maxAwaitTimeMS: 1000 });
     let changes = openChanges();
     let localStopped = false;
+    const insights = createPublicInsights({ collection: domain.collection });
+    const insightsViewers = () => server ? server.subscriberCount(INTERN_TOPICS.insights) : 0;
+    // One aggregation per burst serves every open careers page; viewers never re-query.
+    const broadcastInsights = throttle(() => {
+      if (localStopped || !insightsViewers()) return;
+      void insights.get()
+        .then(data => { if (!localStopped) server?.publish(INTERN_TOPICS.insights, JSON.stringify({ type: "event", event: "intern.insights", data: { ...data, viewers: insightsViewers() } }), false); })
+        .catch(error => logger.warn("Failed to publish internship insights", { error }));
+    }, 2000);
+    const broadcastViewers = throttle(() => {
+      if (!localStopped) server?.publish(INTERN_TOPICS.insights, JSON.stringify({ type: "event", event: "intern.insights.viewers", viewers: insightsViewers() }), false);
+    }, 1000);
+
+    // Named "new application" alerts go only to staff who may read applications.
+    const announceApplication = async (applicationId: string | undefined) => {
+      if (!applicationId) return;
+      try {
+        const row = await domain.collection("applications").findOne({ _id: applicationId }, { projection: { name: 1, programId: 1, hasVideo: 1 } });
+        if (!row) return;
+        const frame = JSON.stringify({ type: "event", event: "intern.application_created", applicationId, name: String(row.name || ""), programId: String(row.programId || ""), hasVideo: row.hasVideo === true });
+        for (const group of staffSockets.all()) for (const socket of group) {
+          const principal = socket.data.principal;
+          if (principal && (isAdmin(principal) || can(principal, "applications.read"))) socket.send(frame);
+        }
+      } catch (error) { logger.warn("Failed to announce new application", { error }); }
+    };
 
     const publishChange = (change: any) => {
       if (change?.operationType !== "insert") return;
       const record = change.fullDocument;
       if (["application.created", "application.updated", "onboarding.save", "onboarding.submit", "onboarding.approve", "offer.decline", "profile.update"].includes(record.type)) domain.invalidateAnalytics();
       if (record.public === true || record.type === "program.configure") (domain as any).invalidatePublicData?.();
+      // Public events include program/track toggles, which change which tracks insights cover.
+      if (affectsInsights(record.type) || record.public === true) { insights.invalidate(); broadcastInsights(); }
       const ids = new Set<string>([...(Array.isArray(record.applicationIds) ? record.applicationIds : []), record.applicationId].filter((value): value is string => typeof value === "string" && !!value));
       const event = JSON.stringify({ type: "event", event: "intern.changed" });
       server?.publish(INTERN_TOPICS.company, event, false);
+      if (record.type === "application.created") void announceApplication([...ids][0]);
       if (record.type === "staff.changed") {
         for (const accountId of Array.isArray(record.staffAccountIds) ? record.staffAccountIds : []) {
           for (const socket of staffSockets.forAccount(accountId)) {
@@ -185,6 +254,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
             if (first) publishChange(first);
             domain.invalidateAnalytics();
             (domain as any).invalidatePublicData?.();
+            insights.invalidate(); broadcastInsights();
             server?.publish(INTERN_TOPICS.public, JSON.stringify({ type: "event", event: "intern.changed" }), false);
             delay = 1000;
             break;
@@ -202,8 +272,13 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       authRoutes,
       fileRoutes,
       staffSockets,
+      insights,
+      insightsViewers,
+      broadcastInsights,
+      broadcastViewers,
       async close() {
         localStopped = true;
+        broadcastInsights.cancel(); broadcastViewers.cancel();
         await changes.close().catch(() => {});
         if (runtime === nextRuntime) runtime = null;
       },
@@ -293,6 +368,20 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
             if (principal?.role === "company") runtime.staffSockets.add(principal.id, socket as ServerWebSocket<InternSocketData>);
             subscribeForPrincipal(socket as ServerWebSocket<InternSocketData>, principal);
             result = principal;
+          } else if (request.method === "insights.subscribe") {
+            socket.subscribe(INTERN_TOPICS.insights);
+            (socket.data as InternSocketData).insights = true;
+            result = { ...(await runtime.insights.get()), viewers: runtime.insightsViewers() };
+            runtime.broadcastViewers();
+          } else if (request.method === "insights.unsubscribe") {
+            socket.unsubscribe(INTERN_TOPICS.insights);
+            (socket.data as InternSocketData).insights = false;
+            runtime.broadcastViewers();
+            result = null;
+          } else if (request.method === "certificate.verify" && !allowVerify(socket as ServerWebSocket<InternSocketData>)) {
+            throw new DomainError("RATE_LIMITED", "Too many certificate checks. Please wait a minute and try again.");
+          } else if (request.method === "intern.insights") {
+            result = { ...(await runtime.insights.get()), viewers: runtime.insightsViewers() };
           } else {
             const principal = socket.data.token ? (await runtime.auth.verify(socket.data.token)).account : null;
             result = await runtime.domain.execute(request.method, request.params || {}, principal, request.idempotencyKey);
@@ -303,7 +392,10 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       },
       close(socket) {
         if (socket.data.kind === "presence") presenceHandlers.close(socket as ServerWebSocket<PresenceSocketData>);
-        else runtime?.staffSockets.remove(socket as ServerWebSocket<InternSocketData>);
+        else {
+          runtime?.staffSockets.remove(socket as ServerWebSocket<InternSocketData>);
+          if ((socket.data as InternSocketData).insights) runtime?.broadcastViewers();
+        }
       },
       error(error) { logger.error("Realtime WebSocket handler error", { error }); },
     },

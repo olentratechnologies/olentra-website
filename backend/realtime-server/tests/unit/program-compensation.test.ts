@@ -89,7 +89,7 @@ test("application submission enforces free, paid and both against the current st
   ];
   for (const { mode, stipend, accepts } of cases) {
     const { domain, inserted } = fixture(mode, stipend);
-    const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", programId: "explorer", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
+    const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
     if (accepts) {
       expect((await request).programId).toBe("explorer");
       expect(inserted.filter(write => write.collection === "applications")).toHaveLength(1);

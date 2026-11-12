@@ -33,6 +33,8 @@ import {
   Zap,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
+import { useInternship } from "@/components/intern/InternshipProvider";
+import { UserPlus as UserPlusIcon, Video as VideoIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { exportCsv } from "./DashboardUI";
 import {
@@ -40,7 +42,6 @@ import {
   GrowthArtwork,
   InsightGlyph,
   MetricGlyph,
-  PlanetArtwork,
   ProgramDonut,
   Sparkline,
 } from "./DashboardVisuals";
@@ -144,6 +145,25 @@ export default function DashboardShell({ children }) {
   const { navigate: navigateTo, pendingPathname } = useWorkspaceNavigation(pathname);
   const section = pathname.split("/")[3] || "dashboard";
   const selectedSection = (pendingPathname || pathname).split("/")[3] || "dashboard";
+  // Live "new application" alerts for staff who can read applications.
+  const { connected, staffEvents } = useInternship();
+  const [newApplications, setNewApplications] = useState(0);
+  const [liveAlert, setLiveAlert] = useState(null);
+  const sectionRef = useRef(selectedSection);
+  sectionRef.current = selectedSection;
+  useEffect(() => {
+    if (!connected || !staffEvents) return undefined;
+    return staffEvents.listen((event) => {
+      if (sectionRef.current !== "applications") setNewApplications((count) => count + 1);
+      setLiveAlert({ ...event, key: `${event.applicationId}-${Date.now()}` });
+    });
+  }, [connected, staffEvents]);
+  useEffect(() => { if (selectedSection === "applications") setNewApplications(0); }, [selectedSection]);
+  useEffect(() => {
+    if (!liveAlert) return undefined;
+    const timer = setTimeout(() => setLiveAlert(null), 8000);
+    return () => clearTimeout(timer);
+  }, [liveAlert]);
   const contentState = workspaceState || (!ready ? "loading" : null);
   const workspaceReady = !contentState;
   const allowed = canOpenInternSection(account, section);
@@ -290,21 +310,13 @@ export default function DashboardShell({ children }) {
               >
                 <Icon size={24} strokeWidth={1.7} />
                 <span>{item.label}</span>
+                {item.id === "applications" && newApplications > 0 && (
+                  <b className={styles.navCount} aria-label={`${newApplications} new`}>{newApplications > 9 ? "9+" : newApplications}</b>
+                )}
               </Link>
             );
           })}
         </nav>
-        <div className={styles.sidebarPromo}>
-          <PlanetArtwork className={styles.sidebarPlanet} />
-          <p>
-            Build the Next
-            <br />
-            with Olentra Technologies
-          </p>
-          <Link href={data.organization.website}>
-            Visit Website <ArrowRight size={13} />
-          </Link>
-        </div>
         <div className={styles.sidebarFooter}>
           <p>{data.organization.legalName}</p>
           <span>{data.organization.version}</span>
@@ -499,8 +511,22 @@ export default function DashboardShell({ children }) {
         </Dialog.Portal>
       </Dialog.Root>
 
+      {liveAlert && (
+        <div key={liveAlert.key} className={styles.liveAlert} role="status" aria-live="polite">
+          <span className={styles.liveAlertIcon}><UserPlusIcon size={18} /></span>
+          <div>
+            <strong>New application</strong>
+            <p>
+              {liveAlert.name || "An applicant"} · {data.programs.find((program) => program.id === liveAlert.programId)?.name || "Internship"}
+              {liveAlert.hasVideo && <span className={styles.liveAlertVideo}><VideoIcon size={11} /> video</span>}
+            </p>
+          </div>
+          <Link href={`/intern/dashboard/applications/${liveAlert.applicationId}`} onClick={() => setLiveAlert(null)}>View</Link>
+          <button onClick={() => setLiveAlert(null)} aria-label="Dismiss new application alert"><X size={15} /></button>
+        </div>
+      )}
       {toast && (
-        <div className={styles.toast} role="status">
+        <div key={toast} className={styles.toast} role="status">
           <span>
             <Check size={17} />
           </span>

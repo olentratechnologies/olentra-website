@@ -17,11 +17,11 @@ export function authorizeStaff(method: string, params: Record<string, any>, acto
   const basic: Record<string, string[]> = {
     "intern.public": [], "intern.snapshot": [],
     "application.list": ["applications.read"], "application.get": ["applications.read"], "application.workflow": ["applications.read"],
-    "intern.list": ["interns.read"], "task.list": ["tasks.read"], "submission.list": ["submissions.read"], "certificate.list": ["certificates.read"],
+    "intern.list": ["interns.read"], "task.list": ["tasks.read"], "submission.list": ["submissions.read"], "certificate.list": ["certificates.read"], "story.list": ["certificates.read"], "certificate.verify": [], "story.public": [],
     "analytics.get": ["overview.read"], "notification.list": ["notifications.read"], "notification.markRead": ["notifications.read"],
     "project.create": ["projects.read", "projects.manage"], "project.update": ["projects.read", "projects.manage"],
     "task.create": ["tasks.read", "tasks.manage"], "task.update": ["tasks.read", "tasks.manage"],
-    "application.update": ["applications.read", "applications.review"], "submission.review": ["submissions.read", "submissions.feedback"],
+    "application.update": ["applications.read", "applications.review"], "interview.schedule": ["applications.read", "applications.review"], "submission.review": ["submissions.read", "submissions.feedback"],
     "message.list": [], "message.send": [],
   };
   if (method === "project.list") {

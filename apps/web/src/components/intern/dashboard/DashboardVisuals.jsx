@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { monotoneLinePath } from "../../../lib/intern/monotone-line-path.mjs";
 
 const tones = {
   pink: { light: "#ffb4d3", mid: "#f6659c", dark: "#d42c74", halo: "#ffe1ed" },
@@ -22,19 +23,6 @@ const tones = {
 
 function useSvgId(prefix) {
   return `${prefix}-${useId().replace(/:/g, "")}`;
-}
-
-function linePath(points) {
-  if (!points.length) return "";
-  let path = `M ${points[0].x} ${points[0].y}`;
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const previous = points[Math.max(0, index - 1)];
-    const current = points[index];
-    const next = points[index + 1];
-    const following = points[Math.min(points.length - 1, index + 2)];
-    path += ` C ${current.x + (next.x - previous.x) / 6} ${current.y + (next.y - previous.y) / 6}, ${next.x - (following.x - current.x) / 6} ${next.y - (following.y - current.y) / 6}, ${next.x} ${next.y}`;
-  }
-  return path;
 }
 
 export function PlanetArtwork({ className, variant = "default" }) {
@@ -497,7 +485,7 @@ export function Sparkline({
     x: (index * 300) / Math.max(values.length - 1, 1),
     y: 42 - ((value - minimum) / difference) * 35,
   }));
-  const path = linePath(points);
+  const path = monotoneLinePath(points);
   return (
     <svg
       className={className}
@@ -536,11 +524,14 @@ export function ApplicationsAreaChart({ period, className }) {
     plot.left +
     (index / Math.max(points.length - 1, 1)) * (plot.right - plot.left);
   const y = (value) =>
-    plot.bottom - (value / maximum) * (plot.bottom - plot.top);
-  const explorerPath = linePath(
+    Math.max(
+      plot.top,
+      Math.min(plot.bottom, plot.bottom - (value / maximum) * (plot.bottom - plot.top)),
+    );
+  const explorerPath = monotoneLinePath(
     points.map((point, index) => ({ x: x(index), y: y(point.explorer) })),
   );
-  const innovatorPath = linePath(
+  const innovatorPath = monotoneLinePath(
     points.map((point, index) => ({ x: x(index), y: y(point.innovator) })),
   );
   const axisLabels =

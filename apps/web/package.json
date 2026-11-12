@@ -8,7 +8,12 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "test:presence": "node --test scripts/presence-client.test.mjs"
+    "test:presence": "node --test scripts/presence-client.test.mjs",
+    "test:milestones": "node --test scripts/intern-milestones.test.mjs",
+    "test:badges": "node --test scripts/intern-badges.test.mjs",
+    "test:video": "node --test scripts/video-embed.test.mjs",
+    "test:bulk": "node --test scripts/intern-bulk.test.mjs",
+    "test:insights": "node --test scripts/intern-dashboard-insights.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",

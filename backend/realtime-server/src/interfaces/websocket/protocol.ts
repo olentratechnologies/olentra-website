@@ -1,6 +1,6 @@
 import type { Principal } from "../../shared/principal";
 
-export type InternSocketData = { kind: "intern"; token: string | null; principal: Principal | null };
+export type InternSocketData = { kind: "intern"; token: string | null; principal: Principal | null; insights?: boolean; verifyWindow?: { start: number; count: number } };
 export type InternRpcRequest = { id?: string; type?: string; method?: string; params?: Record<string, any>; idempotencyKey?: string };
 
 export function parseInternRpcFrame(frame: string | Buffer): InternRpcRequest | null {
