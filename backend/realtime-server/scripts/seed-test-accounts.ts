@@ -6,12 +6,14 @@
  *   bun run seed:test -- --stage joined       applied | offer | joined
  *   bun run seed:test -- --with-recruiter     also a recruiter staff login
  *   bun run seed:test -- --stage joined --with-certificate   + 5 approved on-time submissions and a certificate
- *   bun run seed:test -- --remove             delete everything this script made
+ *   bun run seed:test -- --remove             delete every .test applicant, their records and the test recruiter
+ *   bun run seed:test -- --remove --dry-run   only count what --remove would delete
  *
  * Every run rebuilds the test intern from scratch, so a stage can be replayed.
  * Credentials come from INTERNSHIP_TEST_INTERN_* / INTERNSHIP_TEST_RECRUITER_*.
  */
 import { randomUUID } from "node:crypto";
+import { GridFSBucket } from "mongodb";
 import { internshipMongoUri } from "../src/config/env";
 import { connectInternDatabase, createInternshipDomain } from "../src/app/command-dispatcher";
 
@@ -22,6 +24,7 @@ const stage = option("stage") || "offer";
 const STAGES = ["applied", "offer", "joined"];
 
 if (process.env.NODE_ENV === "production") throw new Error("Refusing to seed test accounts with NODE_ENV=production.");
+if (args.includes("--dry-run") && !args.includes("--remove")) throw new Error("--dry-run only works with --remove.");
 if (!STAGES.includes(stage)) throw new Error(`--stage must be one of: ${STAGES.join(", ")}`);
 const uri = internshipMongoUri();
 if (!uri) throw new Error("Set INTERNSHIP_MONGODB_URI in the local environment.");
@@ -44,23 +47,35 @@ try {
   const domain = createInternshipDomain(connection);
   await domain.initialize();
   const c = (name: string) => domain.collection(name);
-  const accounts = c("accounts"), credentials = c("test_credentials"), applications = c("applications"), offers = c("offers"), onboarding = c("onboarding"), interns = c("interns"), projects = c("projects"), tasks = c("tasks"), submissions = c("submissions"), certificates = c("certificates"), messages = c("messages"), notifications = c("notifications"), stories = c("stories"), events = c("events");
+  const accounts = c("accounts"), credentials = c("test_credentials"), applications = c("applications"), offers = c("offers"), onboarding = c("onboarding"), interns = c("interns"), projects = c("projects"), tasks = c("tasks"), submissions = c("submissions"), certificates = c("certificates"), messages = c("messages"), notifications = c("notifications"), stories = c("stories"), events = c("events"), interviews = c("interviews"), activity = c("activity"), reads = c("notification_reads"), files = c("files"), outbox = c("outbox");
+  const bucket = new GridFSBucket(connection.db, { bucketName: domain.prefix + "uploads" });
+  const dryRun = flag("dry-run");
+  const counted: Record<string, number> = {};
+  /** Deletes (or, with --dry-run, only counts) matching rows. */
+  const wipe = async (name: string, collection: ReturnType<typeof c>, filter: Record<string, unknown>) => {
+    const count = dryRun ? await collection.countDocuments(filter as any) : (await collection.deleteMany(filter as any)).deletedCount;
+    counted[name] = (counted[name] || 0) + count;
+  };
   console.info(`Seeding test accounts into database "${connection.db.databaseName}" (prefix ${domain.prefix}).`);
 
   async function removeIntern(email: string) {
     const app = await applications.findOne({ email });
     const account = await accounts.findOne({ email, role: "intern" });
-    if (account) await Promise.all([accounts.deleteOne({ _id: account._id }), credentials.deleteMany({ userId: account._id })]);
+    if (account) await Promise.all([wipe("accounts", accounts, { _id: account._id }), wipe("credentials", credentials, { userId: account._id }), wipe("notification reads", reads, { accountId: account._id })]);
+    await wipe("queued emails", outbox, { "payload.to": email });
     if (!app) return;
     const applicationId = app._id;
-    const internRows = await interns.find({ applicationId }).toArray();
+    const internIds = (await interns.find({ applicationId }, { projection: { _id: 1 } }).toArray()).map(row => row._id);
+    const uploads = await files.find({ $or: [{ applicationId }, { ownerApplicationId: applicationId }] }, { projection: { gridId: 1 } }).toArray();
+    if (!dryRun) for (const upload of uploads) await bucket.delete(upload.gridId).catch(() => undefined);
     await Promise.all([
-      applications.deleteOne({ _id: applicationId }),
-      offers.deleteMany({ applicationId }), onboarding.deleteMany({ applicationId }), interns.deleteMany({ applicationId }),
-      tasks.deleteMany({ applicationId }), submissions.deleteMany({ applicationId }), certificates.deleteMany({ applicationId }),
-      messages.deleteMany({ applicationId }), notifications.deleteMany({ applicationId }), stories.deleteMany({ applicationId }),
-      projects.deleteMany({ testAccount: true, team: applicationId }),
-      ...internRows.map(row => certificates.deleteMany({ internId: row._id })),
+      wipe("applications", applications, { _id: applicationId }),
+      wipe("offers", offers, { applicationId }), wipe("onboarding", onboarding, { applicationId }), wipe("interns", interns, { applicationId }),
+      wipe("tasks", tasks, { applicationId }), wipe("submissions", submissions, { applicationId }),
+      wipe("certificates", certificates, { $or: [{ applicationId }, { internId: { $in: internIds } }] }),
+      wipe("messages", messages, { applicationId }), wipe("notifications", notifications, { applicationId }), wipe("stories", stories, { applicationId }),
+      wipe("interviews", interviews, { applicationId }), wipe("activity", activity, { applicationId }), wipe("files", files, { _id: { $in: uploads.map(upload => upload._id) } }),
+      wipe("projects", projects, { testAccount: true, team: applicationId }),
     ]);
   }
   async function removeTestApplications() {
@@ -68,21 +83,24 @@ try {
       .find({ email: { $regex: /\.test$/i } }, { projection: { email: 1 } })
       .toArray();
     for (const application of testApplications) {
-      if (typeof application.email === "string") await removeIntern(application.email);
+      // The seeded intern was already handled by name.
+      if (typeof application.email === "string" && application.email !== intern.email) await removeIntern(application.email);
     }
     return testApplications.length;
   }
   async function removeStaff(email: string) {
     const account = await accounts.findOne({ email, role: "company", testAccount: true });
-    if (account) await Promise.all([accounts.deleteOne({ _id: account._id }), credentials.deleteMany({ userId: account._id })]);
+    if (account) await Promise.all([wipe("accounts", accounts, { _id: account._id }), wipe("credentials", credentials, { userId: account._id })]);
   }
 
   if (flag("remove")) {
+    if (dryRun) console.info("Dry run: nothing will be deleted.");
     await removeIntern(intern.email!);
     const removedApplications = await removeTestApplications();
     if (recruiter.email) await removeStaff(recruiter.email);
-    await events.insertOne({ _id: id("EVT"), type: "application.updated", applicationIds: [], createdAt: new Date() });
-    console.info(`Removed ${removedApplications} .test application(s), their stories, and the test recruiter.`);
+    if (!dryRun) await events.insertOne({ _id: id("EVT"), type: "application.updated", applicationIds: [], createdAt: new Date() });
+    console.info(`${dryRun ? "Would remove" : "Removed"} ${removedApplications} .test application(s) and the test recruiter:`);
+    for (const [name, count] of Object.entries(counted)) if (count) console.info(`  ${name}: ${count}`);
   } else {
     await removeIntern(intern.email!);
     const applicationId = id("OL"), accountId = id("ACC"), now = iso();
