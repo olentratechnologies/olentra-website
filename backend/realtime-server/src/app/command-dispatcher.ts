@@ -21,6 +21,7 @@ import { DEFAULT_RUBRIC, createReviews, type Criterion } from "../modules/review
 import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "../modules/applications/video-filter";
 import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
 import { normalizeSkills } from "../modules/applications/skills";
+import { linkedinKey } from "../modules/applications/duplicates";
 import { auditDecision } from "../modules/audit/decision-audit";
 import { FINAL_STATUSES, eraseApplicant, expiredApplicationIds } from "../modules/privacy/erase";
 
@@ -71,10 +72,21 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       settings.updateOne({ _id: "program" }, { $setOnInsert: { programEnabled: false, compensationMode: "both", defaultBatch: "", maxStipend: null } }, { upsert: true }),
       applications.updateMany(HAS_VIDEO_BACKFILL.filter, HAS_VIDEO_BACKFILL.update),
       applications.createIndex({ hasVideo: -1, appliedOn: -1 }),
+      backfillDuplicates().catch(error => logger.warn("Duplicate backfill failed", { error })),
       applications.createIndex({ assignedTo: 1, appliedOn: -1 }),
+      applications.createIndex({ linkedinKey: 1 }, { partialFilterExpression: { linkedinKey: { $type: "string" } } }),
       // Retention counts from when a final decision was made; older rows start counting today.
       applications.updateMany({ status: { $in: FINAL_STATUSES }, statusChangedOn: { $exists: false } }, { $set: { statusChangedOn: new Date().toISOString() } }),
     ]);
+  }
+  /** Adds LinkedIn keys to older applications and flags the ones that share a profile. */
+  async function backfillDuplicates() {
+    const rows = await applications.find({ linkedinKey: { $exists: false }, linkedin: { $type: "string", $ne: "" } }, { projection: { linkedin: 1 }, limit: 5000 }).toArray();
+    const writes = rows.map(row => ({ updateOne: { filter: { _id: row._id }, update: { $set: { linkedinKey: linkedinKey(row.linkedin) } } } }));
+    if (writes.length) await applications.bulkWrite(writes as any, { ordered: false });
+    if (!writes.length) return;
+    const groups = await applications.aggregate([{ $match: { linkedinKey: { $type: "string", $ne: "" } } }, { $group: { _id: "$linkedinKey", ids: { $push: "$_id" }, count: { $sum: 1 } } }, { $match: { count: { $gt: 1, $lte: 6 } } }]).toArray();
+    for (const group of groups) for (const id of group.ids) await applications.updateOne({ _id: id }, { $set: { possibleDuplicates: group.ids.filter((other: string) => other !== id) } });
   }
   async function login(email: string, password: string): Promise<Principal | null> {
     const user = await users.findOne({ email: emailOf(email), disabled: { $ne: true } });
@@ -361,6 +373,16 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!file) throw new DomainError("INVALID_REQUEST", "Upload your resume before applying.");
         const applicationId = id("OL"), now = new Date();
         const row: Row = { _id: applicationId, name, email, programId, program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github: "", bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
+        // Flag likely duplicates: a different email with the same LinkedIn profile.
+        const profileKey = linkedinKey(linkedin);
+        if (profileKey) {
+          row.linkedinKey = profileKey;
+          const matches = (await applications.find({ linkedinKey: profileKey }, { session, projection: { _id: 1 }, limit: 5 }).toArray()).map(match => String(match._id));
+          if (matches.length) {
+            row.possibleDuplicates = matches;
+            await applications.updateMany({ _id: { $in: matches } }, { $addToSet: { possibleDuplicates: applicationId } } as any, { session });
+          }
+        }
         await applications.insertOne(row, { session });
         await files.updateOne({ _id: fileId, applicationId: { $exists: false } }, { $set: { applicationId } }, { session });
         if (config?.applicationAlerts !== false) await collection("notifications").insertOne({ _id: id("NTF"), recipientRole: "company", applicationId, title: "New internship application", body: `${name} applied to ${program.name}.`, href: `/intern/dashboard/applications/${applicationId}`, createdOn: now.toISOString() }, { session });

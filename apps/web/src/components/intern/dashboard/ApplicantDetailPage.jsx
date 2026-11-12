@@ -503,6 +503,10 @@ export default function ApplicantDetailPage({ applicationId }) {
 
       {tab === "overview" && (
         <>
+          {application.possibleDuplicates?.length > 0 && <div className={styles.duplicateNote} role="note">
+            <strong>Possible duplicate.</strong> Another application uses the same LinkedIn profile:{" "}
+            {application.possibleDuplicates.map((otherId, index) => <span key={otherId}>{index ? ", " : ""}<Link href={`/intern/dashboard/applications/${otherId}`}>{otherId}</Link></span>)}
+          </div>}
           <div className={styles.overviewGrid}>
             {personalDetails}
             {applicationDetails}

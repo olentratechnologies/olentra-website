@@ -1319,3 +1319,17 @@
   background: var(--ad-blue);
   color: #fff;
 }
+
+.duplicateNote {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, #f5a524 45%, var(--ad-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, #f5a524 10%, var(--ad-panel));
+  color: var(--ad-text);
+  font-size: 13px;
+}
+
+.duplicateNote a {
+  color: var(--ad-blue);
+}
