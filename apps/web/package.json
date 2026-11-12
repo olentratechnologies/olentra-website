@@ -14,7 +14,8 @@
     "test:video": "node --test scripts/video-embed.test.mjs",
     "test:bulk": "node --test scripts/intern-bulk.test.mjs",
     "test:insights": "node --test scripts/intern-dashboard-insights.test.mjs",
-    "test:csv": "node --test scripts/csv-cell.test.mjs"
+    "test:csv": "node --test scripts/csv-cell.test.mjs",
+    "test:audit": "node --test scripts/audit-labels.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",

@@ -8,6 +8,7 @@ type Row = Document & { _id: string };
 type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session: ClientSession) => Promise<T>) => Promise<T>;
 const text = (v: unknown) => typeof v === "string" ? v.trim() : "";
 const newId = (p: string) => `${p}-${randomUUID()}`;
+import { auditDecision } from "../audit/decision-audit";
 const plain = (row: Row) => { const { _id, ...data } = row; return { ...data, id: _id }; };
 const required = (value: unknown, label: string, max = 500) => { const v = text(value); if (!v || v.length > max) throw new DomainError("INVALID_REQUEST", `Enter a valid ${label}.`); return v; };
 const own = (actor: Principal | null, app: string) => { if (actor?.role !== "intern" || actor.applicationId !== app) throw new DomainError("FORBIDDEN", "This record belongs to another account."); };
@@ -18,6 +19,7 @@ const validUrl = (value: unknown) => { const v = text(value); if (v) { try { if 
 
 export function createLifecycle({ collection, transact }: { collection: (name: string) => Collection<Row>; transact: Tx }) {
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
+  const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
   const names = new Set(["offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
@@ -184,6 +186,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
           created.push(certificate); return plain(certificate);
         });
         if (created.length) await certificates.insertMany(created, opts);
+        for (const certificate of created) await auditDecision(audit, session, actor, "certificate.issued", String(certificate.applicationId), { certificateNumber: certificate.certificateNumber });
         return generated;
       }
       if (method === "interview.schedule") {
@@ -215,6 +218,9 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       }
       throw new DomainError("NOT_IMPLEMENTED", "This action is not available.");
       })();
+      // Decisions are audited in the same transaction as the change itself.
+      if (method === "offer.send" && result && !Array.isArray(result)) await auditDecision(audit, session, actor, "offer.sent", String((result as any).applicationId), { startOn: (result as any).startOn, endOn: (result as any).endOn, stipend: (result as any).stipend });
+      if (method === "onboarding.approve" && result && !Array.isArray(result)) await auditDecision(audit, session, actor, "onboarding.approved", String((result as any).applicationId));
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);

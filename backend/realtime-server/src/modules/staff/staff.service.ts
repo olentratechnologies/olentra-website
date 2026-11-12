@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { ClientSession, Collection, Document, MongoClient } from "mongodb";
+import { AUDIT_AREAS, type AuditArea } from "../audit/decision-audit";
 import { DomainError } from "../../shared/errors";
 import type { Principal } from "../../shared/principal";
 
@@ -132,7 +133,10 @@ export function createStaffManagement({ collection, transact, client }: Options)
     }
     if (method === "audit.list") {
       const page = Math.max(1, Math.min(100000, Math.floor(Number(params.page) || 1))), pageSize = Math.max(1, Math.min(100, Math.floor(Number(params.pageSize) || 20)));
-      const [rows, total] = await Promise.all([audit.find({}).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * pageSize).limit(pageSize).toArray(), audit.countDocuments({})]);
+      // Optional area filter: "staff" (accounts and roles) or "applications" (decisions).
+      const area = params.area === "staff" || params.area === "applications" ? params.area as AuditArea : null;
+      const filter = area ? { action: { $regex: AUDIT_AREAS[area] } } : {};
+      const [rows, total] = await Promise.all([audit.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * pageSize).limit(pageSize).toArray(), audit.countDocuments(filter)]);
       return { items: rows.map(({ _id, ...row }) => ({ id: _id, ...row })), total, page, pageSize };
     }
     if (method === "role.create" || method === "role.update") {

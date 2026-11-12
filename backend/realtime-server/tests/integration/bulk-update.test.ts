@@ -68,3 +68,14 @@ test("application.list computes filter counts only when asked", async () => {
   const withCounts = await domain.execute("application.list", { search: "facet-", pageSize: 1, facets: true }, admin) as any;
   expect(withCounts.counts.statuses.Applied).toBe(2);
 });
+
+test("status decisions are audited and the audit log filters by area", async () => {
+  const [item] = await seed(1, "audit");
+  await domain.execute("application.update", { id: item!.id, status: "Shortlisted", expectedVersion: 1 }, admin, `audit-${randomUUID()}`);
+  const decisions = await domain.execute("audit.list", { area: "applications", pageSize: 100 }, admin) as any;
+  const row = decisions.items.find((entry: any) => entry.targetId === item!.id);
+  expect(row).toMatchObject({ action: "application.status", actorId: admin.id, detail: { from: "Applied", to: "Shortlisted" } });
+  const staffOnly = await domain.execute("audit.list", { area: "staff", pageSize: 100 }, admin) as any;
+  expect(staffOnly.items.some((entry: any) => entry.action.startsWith("application."))).toBe(false);
+  await expect(domain.execute("audit.list", {}, recruiter)).rejects.toMatchObject({ code: "FORBIDDEN" });
+});

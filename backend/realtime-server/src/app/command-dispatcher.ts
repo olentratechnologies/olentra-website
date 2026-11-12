@@ -18,6 +18,7 @@ import { createStories } from "../modules/stories/stories.service";
 import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "../modules/applications/video-filter";
 import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
 import { normalizeSkills } from "../modules/applications/skills";
+import { auditDecision } from "../modules/audit/decision-audit";
 
 type Row = InternshipRow;
 const SNAPSHOT_APPLICATIONS = 100;
@@ -396,6 +397,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const changed = await applications.findOneAndUpdate({ _id: applicationId, version: expectedVersion }, update, { session, returnDocument: "after" });
         if (!changed) throw new DomainError("CONFLICT", "The application changed or is unavailable. Refresh and try again.");
         if (status && existing.status !== status) {
+          await auditDecision(collection("staff_audit"), session, actor, "application.status", applicationId, { from: existing.status, to: status });
           if (status === "Shortlisted") emailStatus = "shortlisted";
           else if (status === "Rejected") emailStatus = "rejected";
         }

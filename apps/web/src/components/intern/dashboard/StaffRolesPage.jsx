@@ -6,6 +6,7 @@ import { Button, PageHeader, Panel, Tabs } from "./DashboardUI";
 import { useDashboard } from "./DashboardProvider";
 import { useInternQuery } from "../useInternQuery";
 import QueryStatus from "./QueryStatus";
+import { AUDIT_FILTERS, describeAudit } from "@/lib/intern/audit-labels.mjs";
 import ui from "./staff.module.css";
 import page from "./pages.module.css";
 
@@ -26,7 +27,9 @@ export default function StaffRolesPage() {
   const isAdmin = account?.staffRole === "admin";
   const staffQuery = useInternQuery("staff.list", { page: pageNumber, pageSize: 20 }, { enabled: isAdmin && tab === "staff" });
   const rolesQuery = useInternQuery("role.list", {}, { enabled: isAdmin && tab !== "audit" });
-  const auditQuery = useInternQuery("audit.list", { page: 1, pageSize: 20 }, { enabled: isAdmin && tab === "audit" });
+  const [auditPage, setAuditPage] = useState(1), [auditArea, setAuditArea] = useState("all");
+  const auditQuery = useInternQuery("audit.list", { page: auditPage, pageSize: 20, ...(auditArea === "all" ? {} : { area: auditArea }) }, { enabled: isAdmin && tab === "audit" });
+  const auditPages = Math.max(1, Math.ceil((auditQuery.data?.total || 0) / 20));
   const staff = staffQuery.data?.items || [];
   const total = staffQuery.data?.total;
   const roles = rolesQuery.data?.roles || [];
@@ -70,6 +73,22 @@ export default function StaffRolesPage() {
     {tab === "roles" && <div className={ui.stack}><Panel><h2 className={ui.header}><ShieldCheck size={20}/> Roles & permissions</h2><p className={ui.description}>Select a role to review or edit its permissions, or create a custom role. Admin-only decisions and staff management cannot be granted to other roles.</p><div className={ui.roleList}>{roles.map(role=><button type="button" className={`${ui.roleButton} ${editingRole?.id===role.id ? ui.selected : ""}`} key={role.id} onClick={()=>{if(role.id==="admin"){setEditingRole(role);setRoleForm({name:role.name,permissions:role.permissions || []})}else{setEditingRole(role);setRoleForm({name:role.name,permissions:[...(role.permissions || [])]})}}}>{role.name}</button>)}<button type="button" className={ui.roleButton} disabled={!rolesQuery.data} onClick={()=>{setEditingRole(null);setRoleForm({name:"",permissions:[]})}}>+ New custom role</button></div>
       {!rolesQuery.data ? null : editingRole?.id === "admin" ? <p className={ui.summary}>Admin has all internship permissions. This role cannot be edited.</p> : <form onSubmit={saveRole}><label className={ui.field}>Role name<input value={roleForm.name} required maxLength={80} onChange={event=>setRoleForm({...roleForm,name:event.target.value})}/></label><p className={ui.description}>Related read permissions are selected automatically where required.</p><div className={ui.permissions}>{catalog.map(permission=><label key={permission.id} className={ui.check}><input type="checkbox" checked={roleForm.permissions.includes(permission.id)} onChange={event=>setRoleForm({...roleForm,permissions:changePermission(roleForm.permissions,permission.id,event.target.checked)})}/><span>{permission.label || permission.id}</span></label>)}</div><Button type="submit" disabled={busy}>{editingRole ? "Save permissions" : "Create role"}</Button></form>}
     </Panel></div>}
-    {tab === "audit" && <Panel><h2 className={ui.header}>Staff management activity</h2><p className={ui.description}>Recent staff and permission changes. Passwords are never shown.</p><QueryStatus query={auditQuery} label="staff activity"/>{auditQuery.data ? audit.length ? <ol className={ui.audit}>{audit.map(entry=><li key={entry.id}>{entry.action || entry.type || "Staff change"} · {entry.actorName || entry.actorId || "System"} · {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : ""}</li>)}</ol> : <p className={ui.description}>No staff changes yet.</p> : null}</Panel>}
+    {tab === "audit" && <Panel>
+      <h2 className={ui.header}>Activity</h2>
+      <p className={ui.description}>Application decisions and staff changes, newest first. Passwords are never shown.</p>
+      <label className={ui.auditFilter}>
+        <span>Show</span>
+        <select value={auditArea} onChange={event => { setAuditArea(event.target.value); setAuditPage(1); }}>
+          {AUDIT_FILTERS.map(filter => <option key={filter.id} value={filter.id}>{filter.label}</option>)}
+        </select>
+      </label>
+      <QueryStatus query={auditQuery} label="activity"/>
+      {auditQuery.data ? audit.length ? <ol className={ui.audit}>{audit.map(entry => <li key={entry.id}>{describeAudit(entry)} · {entry.actorName || entry.actorId || "System"} · {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : ""}</li>)}</ol> : <p className={ui.description}>No activity yet.</p> : null}
+      {auditPages > 1 && <div className={ui.auditPager}>
+        <Button variant="secondary" disabled={auditPage <= 1} onClick={() => setAuditPage(value => value - 1)}>Newer</Button>
+        <span>Page {auditPage} of {auditPages}</span>
+        <Button variant="secondary" disabled={auditPage >= auditPages} onClick={() => setAuditPage(value => value + 1)}>Older</Button>
+      </div>}
+    </Panel>}
   </div>;
 }
