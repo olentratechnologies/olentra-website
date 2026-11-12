@@ -112,3 +112,16 @@ test("applications can be assigned to a reviewer and filtered by assignee", asyn
   const event = await domain.collection("events").findOne({ type: "application.assigned", assigneeId: recruiter.id });
   expect(event?.assignedBy).toBe(admin.id);
 });
+
+test("admins manage message templates; staff who can message can read them", async () => {
+  const saved = await domain.execute("template.save", { name: "Interview invite", subject: "Interview for {track}", body: "Hi {firstName}, …" }, admin, `tpl-${randomUUID()}`) as any;
+  expect(saved.id).toMatch(/^TPL-/);
+  await domain.execute("template.save", { id: saved.id, name: "Interview invite", subject: "Your interview", body: "Hi {firstName}!" }, admin, `tpl-${randomUUID()}`);
+  const messenger = { ...recruiter, permissions: ["applications.read", "messages.applicants"] };
+  const list = await domain.execute("template.list", {}, messenger) as any[];
+  expect(list.find(item => item.id === saved.id)).toMatchObject({ subject: "Your interview", body: "Hi {firstName}!" });
+  await expect(domain.execute("template.list", {}, { ...recruiter, permissions: ["applications.read"] })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  await expect(domain.execute("template.save", { name: "x", subject: "y", body: "z" }, messenger, `tpl-${randomUUID()}`)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  await domain.execute("template.delete", { id: saved.id }, admin, `tpl-${randomUUID()}`);
+  expect((await domain.execute("template.list", {}, admin) as any[]).some(item => item.id === saved.id)).toBe(false);
+});

@@ -36,6 +36,7 @@ import { ApplicantNextAction, ApplicantWorkflow } from "./CompanyWorkflow";
 import StaffAccountControls from "./StaffAccountControls";
 import EraseApplicantPanel from "./EraseApplicantPanel";
 import ApplicantScorePanel from "./ApplicantScorePanel";
+import TemplatePicker from "./TemplatePicker";
 import { toEmbed } from "@/lib/intern/video-embed.mjs";
 import {
   Avatar,
@@ -786,6 +787,7 @@ export default function ApplicantDetailPage({ applicationId }) {
             To
             <input value={application.email} readOnly type="email" />
           </label>
+          <TemplatePicker application={application} interview={interview} onPick={(nextSubject, nextBody) => { setSubject(nextSubject); setMessage(nextBody); }} />
           <label>
             Subject
             <input

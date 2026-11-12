@@ -35,6 +35,7 @@ import {
 } from "./DashboardUI";
 import ui from "./pages.module.css";
 import styles from "./analytics.module.css";
+import TemplatePicker from "./TemplatePicker";
 
 export default function InternsPage() {
   const { data, query = "", notify, updateIntern, commands, account } = useDashboard();
@@ -378,6 +379,7 @@ export default function InternsPage() {
         {messages.items.map(item=><article key={item.id}><strong>{item.subject}</strong><p>{item.body}</p></article>)}
         {messages.hasMore && <Button variant="ghost" onClick={messages.loadMore} disabled={messages.loading}>Load older messages</Button>}
         <form onSubmit={async event=>{event.preventDefault();setSending(true);setMessageError("");const result=await commands.sendMessage(recipient.applicationId,{subject:subject.trim(),body:body.trim()});setSending(false);if(!result.ok){setMessageError(result.error);return}setSubject("");setBody("");notify("Message sent.")}}>
+          <TemplatePicker application={data.applications.find(item=>item.id===recipient.applicationId) || recipient} onPick={(nextSubject,nextBody)=>{setSubject(nextSubject);setBody(nextBody);}}/>
           <label className={ui.field}>Subject<input required maxLength={140} value={subject} onChange={event=>setSubject(event.target.value)}/></label>
           <label className={ui.field}>Message<textarea required maxLength={3000} rows={4} value={body} onChange={event=>setBody(event.target.value)}/></label>
           {messageError && <p role="alert">{messageError}</p>}<div className={ui.formActions}><Button type="submit" disabled={sending}>{sending ? "Sending…" : "Send message"}</Button></div>

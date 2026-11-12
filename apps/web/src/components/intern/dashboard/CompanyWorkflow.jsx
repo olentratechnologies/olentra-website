@@ -34,6 +34,7 @@ import {
 import styles from "./company-workflow.module.css";
 import { hasStaffPermission } from "./staffAccess";
 import { burstFrom } from "@/lib/confetti.mjs";
+import TemplatePicker from "./TemplatePicker";
 
 function localDate(days = 0) {
   const date = new Date();
@@ -550,6 +551,7 @@ export function ApplicantWorkflow({ applicationId }) {
             ) : null}
           </div>
           <form className={styles.form} onSubmit={sendMessage}>
+            <TemplatePicker application={application} interview={data.interviews?.find((item) => item.applicationId === applicationId)} onPick={(nextSubject, nextBody) => { setSubject(nextSubject); setBody(nextBody); }} />
             <label>
               Subject
               <input
