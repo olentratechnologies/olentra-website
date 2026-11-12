@@ -81,7 +81,7 @@ test("application through approved work and one certificate, with ownership and 
   expect(statusEmails.filter(status => status === "onboarding")).toHaveLength(1);
   const skillSearch = await call("application.list", { search: "MongoDB" });
   expect(skillSearch.items.map((row: any) => row.id)).toContain(application.id);
-  const skillFilter = await call("application.list", { skill: "React" });
+  const skillFilter = await call("application.list", { skill: "React", facets: true });
   expect(skillFilter.items.map((row: any) => row.id)).toContain(application.id);
   expect(skillFilter.counts.skills.some((row: any) => row.name === "React")).toBe(true);
   const timeline = (await call("application.get", { id: application.id }, intern)).history.map((event: any) => event.title);
