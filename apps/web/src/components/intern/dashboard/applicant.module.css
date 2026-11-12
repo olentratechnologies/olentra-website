@@ -1152,3 +1152,105 @@
 .recoveryForm > button {
   justify-self: start;
 }
+
+.scoreHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scoreAverage {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ad-text);
+}
+
+.scoreAverage svg {
+  color: #f5a524;
+}
+
+.scoreForm {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.scoreRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.scoreRow legend {
+  float: left;
+  font-size: 13px;
+  color: var(--ad-text);
+}
+
+.scoreRow legend small {
+  margin-left: 4px;
+  color: var(--ad-muted);
+}
+
+.scoreScale {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.scoreScale button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ad-border);
+  border-radius: 8px;
+  background: var(--ad-panel);
+  color: var(--ad-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.scoreScale button:focus-visible {
+  outline: 2px solid var(--ad-blue);
+  outline-offset: 2px;
+}
+
+.scoreScale .scoreSelected {
+  border-color: var(--ad-blue);
+  background: var(--ad-blue);
+  color: #fff;
+}
+
+.scoreOthers {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--ad-border);
+  list-style: none;
+  font-size: 13px;
+  color: var(--ad-muted);
+}
+
+.scoreOthers strong {
+  color: var(--ad-text);
+}
+
+.scoreOthers p {
+  margin: 4px 0 0;
+}
+
+.scoreCell {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ad-text);
+}

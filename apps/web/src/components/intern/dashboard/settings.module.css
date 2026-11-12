@@ -406,3 +406,29 @@
     transition: none;
   }
 }
+
+.rubricList {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.rubricList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.rubricList input,
+.rubricList select {
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--ad-border);
+  border-radius: 10px;
+  background: var(--ad-panel);
+  color: var(--ad-text);
+  font: inherit;
+}

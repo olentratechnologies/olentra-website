@@ -46,6 +46,12 @@ function TrackSettings({ program, configure, notify }) {
   </form>;
 }
 
+const DEFAULT_RUBRIC = [
+  { id: "video", label: "Intro video", weight: 1 },
+  { id: "skills", label: "Skills & experience", weight: 1 },
+  { id: "communication", label: "Communication", weight: 1 },
+];
+
 const RETENTION_OPTIONS = [
   { days: null, label: "Never (keep until erased by hand)" },
   { days: 180, label: "6 months" },
@@ -63,17 +69,18 @@ export default function SettingsPage() {
   const [applicationAlerts, setApplicationAlerts] = useState(data.settings.applicationAlerts !== false);
   const [rejectionEmails, setRejectionEmails] = useState(data.settings.rejectionEmails === true);
   const [retentionDays, setRetentionDays] = useState(data.settings.retentionDays ?? null);
+  const [rubric, setRubric] = useState(() => data.settings.rubric || DEFAULT_RUBRIC);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
-  useEffect(() => { setBatch(data.settings.defaultBatch || ""); setName(data.settings.programName || "Olentra Internship Program"); setProgramEnabled(Boolean(data.settings.programEnabled)); setCompensationMode(normalizeCompensationMode(data.settings.compensationMode)); setApplicationAlerts(data.settings.applicationAlerts !== false); setRejectionEmails(data.settings.rejectionEmails === true); setRetentionDays(data.settings.retentionDays ?? null); }, [data.settings.retentionDays, data.settings.defaultBatch, data.settings.programName, data.settings.programEnabled, data.settings.compensationMode, data.settings.applicationAlerts, data.settings.rejectionEmails]);
+  useEffect(() => { setBatch(data.settings.defaultBatch || ""); setName(data.settings.programName || "Olentra Internship Program"); setProgramEnabled(Boolean(data.settings.programEnabled)); setCompensationMode(normalizeCompensationMode(data.settings.compensationMode)); setApplicationAlerts(data.settings.applicationAlerts !== false); setRejectionEmails(data.settings.rejectionEmails === true); setRetentionDays(data.settings.retentionDays ?? null); setRubric(data.settings.rubric || DEFAULT_RUBRIC); }, [data.settings.rubric, data.settings.retentionDays, data.settings.defaultBatch, data.settings.programName, data.settings.programEnabled, data.settings.compensationMode, data.settings.applicationAlerts, data.settings.rejectionEmails]);
   const availableTracks = data.programs.filter(program => isProgramAvailable(program, { programEnabled: true, compensationMode }));
   async function save(event) {
     event.preventDefault();
     if (tab === "general" && !name.trim()) { setError("Enter a program name."); return; }
     setBusy(true); setError("");
     try {
-      const result = await updateSettings(tab === "notifications" ? { applicationAlerts, rejectionEmails } : { programName: name.trim(), defaultBatch: batch.trim(), programEnabled, compensationMode, retentionDays });
+      const result = await updateSettings(tab === "notifications" ? { applicationAlerts, rejectionEmails } : { programName: name.trim(), defaultBatch: batch.trim(), programEnabled, compensationMode, retentionDays, rubric: rubric.filter(criterion => criterion.label.trim()) });
       if (result !== false) { setSaved(true); notify("Program settings saved."); }
     } finally { setBusy(false); }
   }
@@ -95,6 +102,18 @@ export default function SettingsPage() {
         <p id="compensation-availability" className={styles.availability} role="status">{availableTracks.length ? `${availableTracks.length} enabled ${availableTracks.length === 1 ? "track matches" : "tracks match"} this selection.${programEnabled ? "" : " Enable the program to open applications."}` : "No enabled tracks match this selection. Set the stipend and enable a matching track in Tracks."}</p>
       </fieldset>
       <div className={styles.divider}/><h3 className={styles.subheading}>Workspace details</h3><div className={ui.formGrid}><label className={ui.field}>Program name<input value={name} maxLength={100} onChange={event => edit(setName, event.target.value)}/></label><label className={ui.field}>Default batch (optional)<input value={batch} maxLength={40} onChange={event => edit(setBatch, event.target.value)}/></label></div>
+      <div className={styles.divider}/><h3 className={styles.subheading}>Scoring criteria</h3>
+      <p className={styles.helper}>Reviewers score each applicant 0–5 on these. A higher weight counts for more in the average.</p>
+      <ul className={styles.rubricList}>
+        {rubric.map((criterion, index) => <li key={criterion.id || index}>
+          <input aria-label={`Criterion ${index + 1} name`} value={criterion.label} maxLength={40} onChange={event => edit(setRubric, rubric.map((item, i) => i === index ? { ...item, label: event.target.value } : item))}/>
+          <select aria-label={`Criterion ${index + 1} weight`} value={criterion.weight} onChange={event => edit(setRubric, rubric.map((item, i) => i === index ? { ...item, weight: Number(event.target.value) } : item))}>
+            {[1, 2, 3, 4, 5].map(weight => <option key={weight} value={weight}>×{weight}</option>)}
+          </select>
+          <Button variant="ghost" disabled={rubric.length <= 1} onClick={() => edit(setRubric, rubric.filter((_, i) => i !== index))}>Remove</Button>
+        </li>)}
+      </ul>
+      {rubric.length < 8 && <Button variant="secondary" onClick={() => edit(setRubric, [...rubric, { id: "", label: "", weight: 1 }])}>Add criterion</Button>}
       <div className={styles.divider}/><h3 className={styles.subheading}>Applicant data</h3>
       <div className={ui.formGrid}><label className={ui.field}>Delete rejected, declined and withdrawn applicants after
         <select value={retentionDays ?? ""} onChange={event => edit(setRetentionDays, event.target.value ? Number(event.target.value) : null)}>

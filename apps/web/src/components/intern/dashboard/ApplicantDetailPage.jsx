@@ -35,6 +35,7 @@ import {
 import { ApplicantNextAction, ApplicantWorkflow } from "./CompanyWorkflow";
 import StaffAccountControls from "./StaffAccountControls";
 import EraseApplicantPanel from "./EraseApplicantPanel";
+import ApplicantScorePanel from "./ApplicantScorePanel";
 import { toEmbed } from "@/lib/intern/video-embed.mjs";
 import {
   Avatar,
@@ -492,6 +493,7 @@ export default function ApplicantDetailPage({ applicationId }) {
             {applicationFlow}
           </div>
           <IntroVideoPanel url={application.videoUrl} name={application.name} />
+          <ApplicantScorePanel applicationId={application.id} canReview={canReview} commands={commands} notify={notify} />
           {isAdmin && <ApplicantNextAction
             applicationId={applicationId}
             onOpenWorkflow={() => setTab("application")}

@@ -490,6 +490,17 @@ export default function ApplicationsPage() {
                   >
                     <SortHeading label="Status" sortKey="status" />
                   </th>
+                  <th
+                    aria-sort={
+                      sort.key === "score"
+                        ? sort.direction === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                  >
+                    <SortHeading label="Score" sortKey="score" />
+                  </th>
                   <th className={styles.actionHeading}>Actions</th>
                 </tr>
               </thead>
@@ -532,6 +543,9 @@ export default function ApplicationsPage() {
                     <td>{formatDate(application.appliedOn)}</td>
                     <td>
                       <StatusBadge status={application.status} />
+                    </td>
+                    <td className={styles.scoreCell}>
+                      {typeof application.score === "number" ? application.score.toFixed(1) : <span aria-label="Not scored">—</span>}
                     </td>
                     <td className={styles.actionCell}>
                       <RowMenu

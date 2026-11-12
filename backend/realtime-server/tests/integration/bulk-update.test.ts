@@ -79,3 +79,19 @@ test("status decisions are audited and the audit log filters by area", async () 
   expect(staffOnly.items.some((entry: any) => entry.action.startsWith("application."))).toBe(false);
   await expect(domain.execute("audit.list", {}, recruiter)).rejects.toMatchObject({ code: "FORBIDDEN" });
 });
+
+test("each reviewer keeps one score sheet and the list sorts by the average", async () => {
+  const [high, low] = await seed(2, "score");
+  await domain.execute("review.save", { applicationId: high!.id, scores: { video: 5, skills: 5, communication: 4 } }, admin, `score-${randomUUID()}`);
+  await domain.execute("review.save", { applicationId: high!.id, scores: { video: 3, skills: 3, communication: 3 } }, recruiter, `score-${randomUUID()}`);
+  await domain.execute("review.save", { applicationId: high!.id, scores: { video: 5, skills: 5, communication: 5 } }, admin, `score-${randomUUID()}`); // edit, not a new sheet
+  await domain.execute("review.save", { applicationId: low!.id, scores: { video: 1 } }, admin, `score-${randomUUID()}`);
+  const sheet = await domain.execute("review.list", { applicationId: high!.id }, recruiter) as any;
+  expect(sheet.reviews).toHaveLength(2);
+  expect(sheet.average).toBe(4);
+  expect(sheet.mine.total).toBe(3);
+  await expect(domain.execute("review.save", { applicationId: high!.id, scores: { video: 9 } }, admin, `score-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  const sorted = await domain.execute("application.list", { search: "score-", sortField: "score", sortDirection: "desc" }, admin) as any;
+  expect(sorted.items.map((row: any) => row.id)).toEqual([high!.id, low!.id]);
+  expect(sorted.items[0].score).toBe(4);
+});

@@ -15,6 +15,7 @@ export { DomainError } from "../shared/errors";
 export type { InternshipHooks, Principal } from "../shared/principal";
 export { connectInternDatabase } from "../infrastructure/database/client";
 import { createStories } from "../modules/stories/stories.service";
+import { DEFAULT_RUBRIC, createReviews, type Criterion } from "../modules/reviews/reviews.service";
 import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "../modules/applications/video-filter";
 import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
 import { normalizeSkills } from "../modules/applications/skills";
@@ -43,6 +44,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     await Promise.all([
       lifecycle.initialize(),
       stories.initialize(),
+      reviews.initialize(),
       outbox.initialize(),
       communications.initialize(),
       staffManagement.initialize(),
@@ -105,13 +107,13 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   type PublicData = {
     organization: { name: string; legalName: string; website: string };
     programs: { id: string; name: string; fee: number | null; stipend: number | null; enabled: boolean }[];
-    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; emailNotifications: boolean; integrations: Record<string, unknown> };
+    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; rubric: Criterion[]; emailNotifications: boolean; integrations: Record<string, unknown> };
   };
   let cachedPublicData: PublicData | null = null;
   function invalidatePublicData() { cachedPublicData = null; }
   async function fetchPublicData(): Promise<PublicData> {
     const [rows, config] = await Promise.all([programs.find({}).sort({ _id: 1 }).toArray(), settings.findOne({ _id: "program" })]);
-    return { organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, emailNotifications: false, integrations: {} } };
+    return { organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, rubric: Array.isArray(config?.rubric) && config.rubric.length ? config.rubric : DEFAULT_RUBRIC, emailNotifications: false, integrations: {} } };
   }
   /**
    * What anonymous visitors and interns may see: tracks and whether they are
@@ -211,6 +213,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   const communications = createCommunications({ collection, transact });
   const queries = createInternshipQueries(collection);
   const stories = createStories({ collection, transact });
+  const reviews = createReviews({ collection, transact });
   const staffManagement = createStaffManagement({ collection, transact, client });
   async function execute(method: string, params: Record<string, any> = {}, actor: Principal | null = null, key = ""): Promise<any> {
     if (actor?.role === "company") authorizeStaff(method, params, actor);
@@ -236,7 +239,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const from = str(params.dateFrom), to = str(params.dateTo);
       if ((from && !/^\d{4}-\d{2}-\d{2}$/.test(from)) || (to && !/^\d{4}-\d{2}-\d{2}$/.test(to)) || (from && to && from > to)) throw new DomainError("INVALID_REQUEST", "Choose a valid application date range.");
       if (from || to) filter.appliedOn = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
-      const allowed = ["name", "program", "college", "appliedOn", "status"], sortField = allowed.includes(params.sortField) ? params.sortField : "appliedOn", direction = params.sortDirection === "asc" ? 1 : -1;
+      const allowed = ["name", "program", "college", "appliedOn", "status", "score"], sortField = allowed.includes(params.sortField) ? params.sortField : "appliedOn", direction = params.sortDirection === "asc" ? 1 : -1;
       const [rows, total, aggregate] = await Promise.all([
         applications.find(filter).sort(applicationSort(sortField, direction, params.videosFirst)).skip((page - 1) * limit).limit(limit).toArray(), applications.countDocuments(filter),
         // Counts are only computed when asked for; the list itself doesn't need them.
@@ -493,6 +496,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       return result;
     }
     if (stories.supports(method)) return stories.execute(method, params, actor, key);
+    if (reviews.supports(method)) return reviews.execute(method, params, actor, key);
     if (method === "certificate.verify") {
       // Public check for a shared certificate link. Numbers are random UUIDs, so they can't be enumerated.
       const number = str(params.number).slice(0, 80);
