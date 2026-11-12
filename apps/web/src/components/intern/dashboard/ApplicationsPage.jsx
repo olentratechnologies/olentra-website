@@ -18,6 +18,7 @@ import { bulkActionsFor, canBulkUpdate, runBulkRequests } from "@/lib/intern/bul
 import { burstFrom } from "@/lib/confetti.mjs";
 import {
   APPLICATION_EXPORT_COLUMNS,
+  fetchAllPages,
   applicationExportRow,
 } from "@/lib/intern/application-export.mjs";
 import { hasStaffPermission } from "./staffAccess";
@@ -165,13 +166,22 @@ export default function ApplicationsPage() {
     setPage(1);
   }
 
-  function exportApplications() {
-    exportCsv(
-      "olentra-applications.csv",
-      APPLICATION_EXPORT_COLUMNS,
-      filtered.map(applicationExportRow),
-    );
-    notify(`${filtered.length.toLocaleString()} applications from this page exported.`);
+  const [exporting, setExporting] = useState(false);
+  // Exports every application matching the current filters, not just this page.
+  async function exportApplications() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const { items, total, capped } = await fetchAllPages((number) => commands.listApplications({ ...queryParams, page: number, pageSize: 100, sortField: sort.key, sortDirection: sort.direction, videosFirst }));
+      exportCsv("olentra-applications.csv", APPLICATION_EXPORT_COLUMNS, items.map(applicationExportRow));
+      notify(capped
+        ? `Exported the first ${items.length.toLocaleString()} of ${total.toLocaleString()} matching applications. Narrow the filters to export the rest.`
+        : `${items.length.toLocaleString()} matching ${items.length === 1 ? "application" : "applications"} exported.`);
+    } catch (error) {
+      notify(error?.message || "Couldn't export the applications. Please try again.");
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function saveStatus(event) {
@@ -253,9 +263,9 @@ export default function ApplicationsPage() {
         title="Applications"
         description="Manage and review all internship applications."
       >
-        <Button variant="secondary" onClick={exportApplications} disabled={!listQuery.data || !filtered.length || invalidDateRange}>
+        <Button variant="secondary" onClick={exportApplications} disabled={!listQuery.data || !filtered.length || invalidDateRange || exporting}>
           <ArrowDownToLine size={16} />
-          Export current page
+          {exporting ? "Exporting…" : `Export ${result.total > filtered.length ? `all ${result.total.toLocaleString()}` : "CSV"}`}
         </Button>
         <FilterMenu>
           <div className={styles.filterFields}>

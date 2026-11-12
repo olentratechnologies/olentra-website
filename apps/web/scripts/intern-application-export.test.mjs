@@ -29,3 +29,18 @@ test("application export includes video and LinkedIn review signals", () => {
   ]);
   assert.equal(row.length, APPLICATION_EXPORT_COLUMNS.length);
 });
+
+test("fetchAllPages reads every page and stops at the cap", async () => {
+  const { fetchAllPages } = await import("../src/lib/intern/application-export.mjs");
+  const all = Array.from({ length: 250 }, (_, index) => ({ id: index }));
+  const pages = [];
+  const page = async (number) => { pages.push(number); return { ok: true, data: { items: all.slice((number - 1) * 100, number * 100), total: all.length } }; };
+  const result = await fetchAllPages(page);
+  assert.equal(result.items.length, 250);
+  assert.deepEqual(pages, [1, 2, 3]);
+  assert.equal(result.capped, false);
+  const capped = await fetchAllPages(page, { max: 150 });
+  assert.equal(capped.items.length, 150);
+  assert.equal(capped.capped, true);
+  await assert.rejects(fetchAllPages(async () => ({ ok: false, error: "Forbidden" })), /Forbidden/);
+});

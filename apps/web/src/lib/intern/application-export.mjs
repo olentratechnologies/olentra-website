@@ -25,3 +25,21 @@ export function applicationExportRow(application) {
     application.hasVideo ? "Yes" : "No",
   ];
 }
+
+/**
+ * Reads every page of a paged list. `fetchPage(page)` resolves to
+ * `{ ok, data: { items, total } }`. Stops at `max` rows and says so.
+ */
+export async function fetchAllPages(fetchPage, { max = 10000 } = {}) {
+  const items = [];
+  let total = 0;
+  for (let page = 1; ; page++) {
+    const result = await fetchPage(page);
+    if (!result?.ok) throw new Error(typeof result?.error === "string" ? result.error : result?.error?.message || "Couldn't load every application.");
+    const rows = result.data?.items || [];
+    total = result.data?.total ?? total;
+    items.push(...rows);
+    if (!rows.length || items.length >= total || items.length >= max) break;
+  }
+  return { items: items.slice(0, max), total, capped: total > max };
+}
