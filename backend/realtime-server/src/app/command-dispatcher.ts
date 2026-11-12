@@ -19,6 +19,7 @@ import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "
 import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
 
 type Row = InternshipRow;
+const SNAPSHOT_APPLICATIONS = 100;
 const publicAccount = (row: Row): Principal => ({ id: row._id, role: row.role, name: row.name, email: row.email, applicationId: row.applicationId ?? null, sessionVersion: row.sessionVersion ?? 1 });
 const publicApplication = (row: Row, staff: boolean) => {
   const { _id, claimHash, claimExpiresAt, communicationFence, ...record } = row;
@@ -159,7 +160,13 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   }
   async function sendApplicantStatusEmail(applicationId: string, status: ApplicantStatusNotice["status"], certificateNumber?: string) {
     if (!activeHooks?.sendApplicantStatus) return;
-    try {
+    try { await deliverApplicantStatus(applicationId, status, certificateNumber); }
+    catch (error) { logger.warn("Applicant status email failed after the workflow change committed.", { applicationId, status, error }); }
+  }
+  /** Builds and sends one status email; throws when it can't be delivered (the outbox retries). */
+  async function deliverApplicantStatus(applicationId: string, status: ApplicantStatusNotice["status"], certificateNumber?: string) {
+    if (!activeHooks?.sendApplicantStatus) throw new Error("No email sender is configured.");
+    {
       const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1 } });
       if (!application) throw new Error(`Application ${applicationId} was not found after its status changed.`);
       if (status === "rejected") {
@@ -173,8 +180,6 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         status,
         ...(certificateNumber ? { certificateNumber } : {}),
       });
-    } catch (error) {
-      logger.warn("Applicant status email failed after the workflow change committed.", { applicationId, status, error });
     }
   }
   async function sendInterviewScheduledEmail(interview: { applicationId: unknown; scheduledAt: unknown; meetingUrl: unknown }) {
@@ -274,7 +279,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         lifecycle.snapshot(actor),
         ownApplicationPromise.then(app => communications.snapshot(actor, app)),
         actor?.role === "company" && can(actor, "applications.read")
-          ? applications.find({}).sort({ appliedOn: -1, _id: -1 }).limit(100).toArray().then(rows => rows.map(row => publicApplication(row, true)))
+          ? applications.find({}).sort({ appliedOn: -1, _id: -1 }).limit(SNAPSHOT_APPLICATIONS + 1).toArray().then(rows => rows.map(row => publicApplication(row, true)))
           : Promise.resolve(null),
         ownApplicationPromise,
         actor?.role === "company" && !isAdmin(actor) && !can(actor, "applications.read") && can(actor, "interns.read")
@@ -283,7 +288,12 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       ]);
       const data: Record<string, any> = { ...info, user: actor, applications: [], accounts: actor ? [actor] : [], interns: [], projects: [], tasks: [], submissions: [], offers: [], onboarding: [], certificates: [], interviews: [], messages: [], notifications: [], resources: [], activity: [], metrics: [] };
       Object.assign(data, lifecycleData, communicationData);
-      if (applicationItems) data.applications = applicationItems;
+      if (applicationItems) {
+        // The dashboard snapshot carries the newest applications only; the
+        // Applications page pages through all of them.
+        if (applicationItems.length > SNAPSHOT_APPLICATIONS) data.truncated = { ...data.truncated, applications: true };
+        data.applications = applicationItems.slice(0, SNAPSHOT_APPLICATIONS);
+      }
       if (actor?.role === "company" && !isAdmin(actor)) {
         if (!can(actor, "interns.read")) data.interns = [];
         else if (!can(actor, "projects.read")) data.interns = data.interns.map((intern: any) => ({ ...intern, projectIds: [] }));
@@ -426,9 +436,9 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       }
       if (method === "onboarding.approve" && !Array.isArray(result) && "applicationId" in result && previousOnboarding?.status !== "Approved") await sendApplicantStatusEmail(str(result.applicationId), "onboarding");
       if (method === "certificate.generate") {
-        for (const certificate of Array.isArray(result) ? result : []) {
-          if (!existingCertificateInternIds.has(certificate.internId)) await sendApplicantStatusEmail(str(certificate.applicationId), "certificate", str(certificate.certificateNumber));
-        }
+        // Queued rather than sent inline, so issuing many certificates stays fast and failed sends are retried.
+        const issued = ((Array.isArray(result) ? result : []) as any[]).filter(certificate => !existingCertificateInternIds.has(certificate.internId));
+        await outbox.enqueueMany(issued.map(certificate => ({ type: "applicantStatus" as const, payload: { applicationId: str(certificate.applicationId), status: "certificate", certificateNumber: str(certificate.certificateNumber) } })));
       }
       if (method === "interview.schedule" && !Array.isArray(result)) {
         const interview = result as { applicationId: unknown; scheduledAt: unknown; meetingUrl: unknown; updatedOn: unknown };
@@ -510,6 +520,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       } else if (row.type === "magicLink") {
         if (!activeHooks?.sendMagicLink) throw new Error("No email sender is configured.");
         await activeHooks.sendMagicLink(to, name, applicationId);
+      } else if (row.type === "applicantStatus") {
+        await deliverApplicantStatus(String(row.payload.applicationId), row.payload.status as ApplicantStatusNotice["status"], row.payload.certificateNumber || undefined);
       } else throw new Error(`Unknown outbox type ${String(row.type)}`);
     }, limit);
   }

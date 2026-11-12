@@ -8,7 +8,7 @@ import type { ClientSession, Collection } from "mongodb";
  * claimed with a short lease, so several server instances can run the worker
  * and still send every email once.
  */
-export type OutboxType = "applicationConfirmation" | "magicLink";
+export type OutboxType = "applicationConfirmation" | "magicLink" | "applicantStatus";
 export type OutboxRow = {
   _id: string;
   type: OutboxType;
@@ -41,6 +41,11 @@ export function createOutbox(rows: Collection<OutboxRow>, now: () => number = Da
     async enqueue(type: OutboxType, payload: Record<string, string>, session?: ClientSession) {
       const at = new Date(now());
       await rows.insertOne({ _id: `MAIL-${randomUUID()}`, type, payload, status: "pending", attempts: 0, nextAttemptAt: at, leaseUntil: null, createdAt: at }, session ? { session } : undefined);
+    },
+    async enqueueMany(items: { type: OutboxType; payload: Record<string, string> }[], session?: ClientSession) {
+      if (!items.length) return;
+      const at = new Date(now());
+      await rows.insertMany(items.map(({ type, payload }) => ({ _id: `MAIL-${randomUUID()}`, type, payload, status: "pending" as const, attempts: 0, nextAttemptAt: at, leaseUntil: null, createdAt: at })), session ? { session } : undefined);
     },
     /** Sends up to `limit` due rows through `send`, which must throw when delivery fails. */
     async process(send: (row: OutboxRow) => Promise<void>, limit = 20) {

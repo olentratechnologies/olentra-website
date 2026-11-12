@@ -441,6 +441,14 @@ export default function InternDashboard() {
                       No applications match “{query}”.
                     </p>
                   )}
+                  {data.truncated?.applications && query && (
+                    <p className={styles.truncatedNote}>
+                      Only the newest {applications.length} applications are searched here.{" "}
+                      <button type="button" className={styles.viewAll} onClick={() => navigate("applications")}>
+                        Search all applications <ArrowRight size={13} />
+                      </button>
+                    </p>
+                  )}
                 </div>
               </section>}
             </div>

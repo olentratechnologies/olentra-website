@@ -40,3 +40,15 @@ test("certificate numbers are unique and the unused events index is gone", async
   const names = (await domain.collection("events").indexes()).map((index) => index.name);
   expect(names).not.toContain("applicationId_1_createdAt_-1");
 });
+
+test("the staff snapshot says when it is showing only the newest applications", async () => {
+  const admin = { id: "snapshot-admin", role: "company", staffRole: "admin", name: "Admin", email: "snapshot-admin@example.test", applicationId: null, sessionVersion: 1 } as any;
+  const snapshot = async () => (await domain.execute("intern.snapshot", {}, admin, "snapshot-truncation")) as any;
+  const rows = (count: number, from: number) => Array.from({ length: count }, (_, index) => ({ _id: `OL-trunc-${from + index}`, name: "Row", email: `trunc-${from + index}@example.test`, programId: "explorer", status: "Applied", appliedOn: "2026-11-01", version: 1 }));
+  await domain.collection("applications").insertMany(rows(100, 0));
+  expect((await snapshot()).data.truncated?.applications).toBeUndefined();
+  await domain.collection("applications").insertOne(rows(1, 100)[0]!);
+  const full = await snapshot();
+  expect(full.data.truncated.applications).toBe(true);
+  expect(full.data.applications).toHaveLength(100);
+});

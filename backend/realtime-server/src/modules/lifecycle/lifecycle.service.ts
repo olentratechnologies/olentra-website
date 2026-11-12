@@ -48,7 +48,10 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
   async function validateTeam(team: unknown, session: ClientSession) {
     if (!Array.isArray(team) || team.length > 100 || team.some(v => typeof v !== "string" || !v)) throw new DomainError("INVALID_REQUEST", "Choose a valid project team.");
     const ids = [...new Set(team as string[])];
-    for (const app of ids) { const record = await active(app, session); await touch(record, session); }
+    // One read and one write for the whole team, instead of two per member.
+    const activeCount = await interns.countDocuments({ applicationId: { $in: ids }, status: "Active" }, { session });
+    if (activeCount !== ids.length) throw new DomainError("CONFLICT", "An active internship is required.");
+    if (ids.length) await interns.updateMany({ applicationId: { $in: ids }, status: "Active" }, { $inc: { revision: 1 } }, { session });
     return ids;
   }
   async function execute(method: string, p: Record<string, any>, actor: Principal | null, key: string) {
@@ -161,15 +164,26 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
         const updated = await interns.findOneAndUpdate({ _id: intern._id }, { $set: { status: next, ...(patch.batch !== undefined ? { batch: text(patch.batch).slice(0, 100) } : {}), ...(next === "Completed" ? { completedOn: intern.completedOn || day() } : {}) }, $inc: { revision: 1 } }, { ...opts, returnDocument: "after" }); return plain(updated!);
       }
       if (method === "certificate.generate") {
-        staff(actor); if (!Array.isArray(p.internIds) || p.internIds.length > 100) throw new DomainError("INVALID_REQUEST", "Choose up to 100 interns."); const generated: any[] = [];
-        for (const internId of [...new Set(p.internIds)] as string[]) {
-          const intern = await interns.findOne({ _id: internId, status: "Completed" }, opts); if (!intern) throw new DomainError("CONFLICT", "Only completed internships can receive certificates.");
-          if (await tasks.findOne({ applicationId: intern.applicationId, required: true, status: { $ne: "Approved" } }, opts)) throw new DomainError("CONFLICT", "Required work must be approved before issuing a certificate.");
-          const existing = await certificates.findOne({ internId }, opts); if (existing) { generated.push(plain(existing)); continue; }
-          const app = await applications.findOne({ _id: intern.applicationId }, opts); if (!app) throw new DomainError("NOT_FOUND", "Application not found.");
+        staff(actor); if (!Array.isArray(p.internIds) || p.internIds.length > 100 || p.internIds.some((v: unknown) => typeof v !== "string")) throw new DomainError("INVALID_REQUEST", "Choose up to 100 interns.");
+        // A fixed number of queries for the whole batch, whatever its size.
+        const internIds = [...new Set(p.internIds)] as string[];
+        const completed = new Map((await interns.find({ _id: { $in: internIds }, status: "Completed" }, opts).toArray()).map(row => [row._id, row]));
+        if (completed.size !== internIds.length) throw new DomainError("CONFLICT", "Only completed internships can receive certificates.");
+        const applicationIds = [...completed.values()].map(row => row.applicationId);
+        if (await tasks.findOne({ applicationId: { $in: applicationIds }, required: true, status: { $ne: "Approved" } }, opts)) throw new DomainError("CONFLICT", "Required work must be approved before issuing a certificate.");
+        const [existingRows, appRows] = await Promise.all([
+          certificates.find({ internId: { $in: internIds } }, opts).toArray(),
+          applications.find({ _id: { $in: applicationIds } }, opts).toArray(),
+        ]);
+        const existing = new Map(existingRows.map(row => [row.internId, row])), apps = new Map(appRows.map(row => [row._id, row]));
+        const created: Row[] = [];
+        const generated = internIds.map(internId => {
+          const prior = existing.get(internId); if (prior) return plain(prior);
+          const intern = completed.get(internId)!, app = apps.get(intern.applicationId); if (!app) throw new DomainError("NOT_FOUND", "Application not found.");
           const certificate: Row = { _id: newId("CERT"), certificateNumber: newId("OLENTRA"), internId, applicationId: intern.applicationId, recipient: app.name, program: app.program, programId: app.programId, issuedOn: day(), status: "Issued" };
-          await certificates.insertOne(certificate, opts); generated.push(plain(certificate));
-        }
+          created.push(certificate); return plain(certificate);
+        });
+        if (created.length) await certificates.insertMany(created, opts);
         return generated;
       }
       if (method === "interview.schedule") {
@@ -208,7 +222,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
       const label = labels[method];
       if (label && actor) {
-        for (const applicationId of applicationIds) await notifications.insertOne({ _id: newId("NTF"), recipientRole: actor.role === "company" ? "intern" : "company", applicationId, title: label, body: method === "interview.schedule" ? `Your interview is scheduled for ${interviewScheduledAt}. Open your portal for meeting details.` : label, href: actor.role === "company" ? "/intern/portal" : `/intern/dashboard/applications/${applicationId}`, createdOn: new Date().toISOString() }, { session });
+        if (applicationIds.length) await notifications.insertMany(applicationIds.map((applicationId: string) => ({ _id: newId("NTF"), recipientRole: actor.role === "company" ? "intern" : "company", applicationId, title: label, body: method === "interview.schedule" ? `Your interview is scheduled for ${interviewScheduledAt}. Open your portal for meeting details.` : label, href: actor.role === "company" ? "/intern/portal" : `/intern/dashboard/applications/${applicationId}`, createdOn: new Date().toISOString() })), { session });
         const activityApplications = applicationIds.length
           ? await applications.find({ _id: { $in: applicationIds } }, { session }).project({ name: 1, program: 1 }).toArray()
           : [];
@@ -241,22 +255,27 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
     const projectSummary = !projectDetails && can(actor, "projects.summary");
     // Avoid querying data this role cannot receive. For summary-only viewers,
     // MongoDB returns only the public project summary fields.
-    const [i, o, on, p, t, s, c, iv] = await Promise.all([
-      read("interns.read") ? interns.find(filter).limit(500).toArray() : Promise.resolve([]),
-      intern || isAdmin(actor) ? offers.find(filter).limit(500).toArray() : Promise.resolve([]),
-      intern || isAdmin(actor) ? onboarding.find(filter).limit(500).toArray() : Promise.resolve([]),
-      projectDetails || projectSummary ? projects.find(projectFilter, projectSummary ? { projection: { _id: 1, name: 1, status: 1, progress: 1, dueOn: 1, program: 1 } } : {}).limit(500).toArray() : Promise.resolve([]),
-      read("tasks.read") ? tasks.find(filter).limit(1000).toArray() : Promise.resolve([]),
-      read("submissions.read") ? submissions.find(filter).sort({ submittedOn: -1 }).limit(1000).toArray() : Promise.resolve([]),
-      read("certificates.read") ? certificates.find(filter).limit(500).toArray() : Promise.resolve([]),
-      intern || can(actor, "applications.read") ? interviews.find(filter).sort({ scheduledAt: 1 }).limit(1000).toArray() : Promise.resolve([]),
+    const [i0, o0, on0, p0, t0, s0, c0, iv0] = await Promise.all([
+      read("interns.read") ? interns.find(filter).limit(501).toArray() : Promise.resolve([]),
+      intern || isAdmin(actor) ? offers.find(filter).limit(501).toArray() : Promise.resolve([]),
+      intern || isAdmin(actor) ? onboarding.find(filter).limit(501).toArray() : Promise.resolve([]),
+      projectDetails || projectSummary ? projects.find(projectFilter, projectSummary ? { projection: { _id: 1, name: 1, status: 1, progress: 1, dueOn: 1, program: 1 } } : {}).limit(501).toArray() : Promise.resolve([]),
+      read("tasks.read") ? tasks.find(filter).limit(1001).toArray() : Promise.resolve([]),
+      read("submissions.read") ? submissions.find(filter).sort({ submittedOn: -1 }).limit(1001).toArray() : Promise.resolve([]),
+      read("certificates.read") ? certificates.find(filter).limit(501).toArray() : Promise.resolve([]),
+      intern || can(actor, "applications.read") ? interviews.find(filter).sort({ scheduledAt: 1 }).limit(1001).toArray() : Promise.resolve([]),
     ]);
+    // Each list is read one row past its cap, so a full list can say it was cut off.
+    const truncated: Record<string, boolean> = {};
+    const cap = <T,>(name: string, rows: T[], max: number) => { if (rows.length > max) { truncated[name] = true; return rows.slice(0, max); } return rows; };
+    const i = cap("interns", i0, 500), o = cap("offers", o0, 500), on = cap("onboarding", on0, 500), p = cap("projects", p0, 500);
+    const t = cap("tasks", t0, 1000), s = cap("submissions", s0, 1000), c = cap("certificates", c0, 500), iv = cap("interviews", iv0, 1000);
     const projectRows: any[] = p.map(row => intern ? { ...plain(row), memberCount: (row.team || []).length, team: [actor.applicationId] } : plain(row));
     const projectIdsByApplication = new Map<string, string[]>();
     for (const project of projectRows) for (const applicationId of new Set<string>(project.team || [])) {
       const ids = projectIdsByApplication.get(applicationId) || []; ids.push(project.id); projectIdsByApplication.set(applicationId, ids);
     }
-    return { interns: i.map(row => ({ ...plain(row), projectIds: projectIdsByApplication.get(row.applicationId) || [] })), offers: o.map(plain), onboarding: on.map(plain), projects: projectRows, tasks: t.map(plain), submissions: s.map(plain), certificates: c.map(plain), interviews: iv.map(plain) };
+    return { interns: i.map(row => ({ ...plain(row), projectIds: projectIdsByApplication.get(row.applicationId) || [] })), offers: o.map(plain), onboarding: on.map(plain), projects: projectRows, tasks: t.map(plain), submissions: s.map(plain), certificates: c.map(plain), interviews: iv.map(plain), truncated };
   }
   return { initialize, supports: (method: string) => names.has(method), execute, snapshot };
 }

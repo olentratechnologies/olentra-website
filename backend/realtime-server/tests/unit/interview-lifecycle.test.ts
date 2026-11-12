@@ -50,7 +50,7 @@ function createFakeLifecycle() {
       };
     }
     if (name === "notifications") {
-      return { insertOne: async (row: Record<string, unknown>) => notifications.push(row) };
+      return { insertOne: async (row: Record<string, unknown>) => notifications.push(row), insertMany: async (rows: Record<string, unknown>[]) => notifications.push(...rows) };
     }
     if (name === "activity") {
       return { insertOne: async (row: Record<string, unknown>) => activities.push(row) };

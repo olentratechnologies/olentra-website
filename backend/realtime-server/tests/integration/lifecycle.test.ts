@@ -102,6 +102,9 @@ test("application through approved work and one certificate, with ownership and 
   const retry = await call("certificate.generate", { internIds: [active.id] }, staff, certificateKey);
   const again = await call("certificate.generate", { internIds: [active.id] });
   expect(generated[0].id).toBe(retry[0].id); expect(generated[0].id).toBe(again[0].id);
+  // Certificate emails are queued once (not per retry) and sent by the outbox worker.
+  expect(statusEmails.filter(status => status === "certificate")).toHaveLength(0);
+  await domain.processOutbox();
   expect(statusEmails.filter(status => status === "certificate")).toHaveLength(1);
   expect(await domain.collection("certificates").countDocuments({ internId: active.id })).toBe(1);
   const snapshot = await call("intern.snapshot", {}, intern);

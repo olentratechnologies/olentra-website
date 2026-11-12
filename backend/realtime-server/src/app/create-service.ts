@@ -135,7 +135,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (!result.ok) throw new Error(result.error || "Sign-in link was not delivered.");
       },
       async sendApplicantStatus(notice) {
-        try {
+        {
           const certificateVerifyUrl = notice.certificateNumber
             ? `${siteOrigin}/certificates/verify/${encodeURIComponent(notice.certificateNumber)}`
             : undefined;
@@ -148,8 +148,9 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
             certificateVerifyUrl,
             linkedinShareUrl,
           });
-          if (!result.ok) logger.warn("Applicant status email was not delivered", { status: notice.status, to: notice.to, error: result.error });
-        } catch (error) { logger.warn("Failed to send applicant status email", { status: notice.status, error }); }
+          // Throwing lets the email outbox retry; direct callers already catch and log.
+          if (!result.ok) throw new Error(result.error || "Applicant status email was not delivered.");
+        }
       },
       async sendInterviewScheduled(notice) {
         try {

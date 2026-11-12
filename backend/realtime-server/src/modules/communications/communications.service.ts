@@ -247,7 +247,7 @@ export function createCommunications({ collection, transact }: Options) {
         const permitted = account.role === "company" && !isAdmin(account)
           ? await notifications.aggregate([...staffScopedPipeline(account, { recipientRole: "company", _id: { $in: ids }, applicationId: { $type: "string" } }), { $project: { _id: 1 } }], { session }).toArray()
           : await notifications.find({ ...scope, _id: { $in: ids } }, { session }).project({ _id: 1 }).toArray();
-        for (const notice of permitted) await reads.updateOne({ accountId: account.id, notificationId: notice._id }, { $setOnInsert: { _id: makeId("READ"), accountId: account.id, notificationId: notice._id, readAt: new Date() } }, { session, upsert: true });
+        if (permitted.length) await reads.bulkWrite(permitted.map(notice => ({ updateOne: { filter: { accountId: account.id, notificationId: notice._id }, update: { $setOnInsert: { _id: makeId("READ"), accountId: account.id, notificationId: notice._id, readAt: new Date() } }, upsert: true } })), { session, ordered: false });
         await changed(session, account.applicationId ? [account.applicationId] : []);
         return true;
       });
