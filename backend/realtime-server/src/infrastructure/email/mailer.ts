@@ -188,12 +188,13 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
       const subject = `Your Olentra Internship Application: ${programName}`;
       const text = `Hi ${name},\n\nThank you for applying to the Olentra Internship Program (${programName}).\n\nWe have received your application and resume. You can access your candidate portal to track your progress and follow up with the team using the 1-click link below:\n\n${magicLinkUrl}\n\nThis link is unique to you and expires in 24 hours.\n\nBest regards,\nThe Olentra Team`;
 
+      const safe = { name: escapeHtml(String(name)), programName: escapeHtml(String(programName)), magicLinkUrl: escapeHtml(String(magicLinkUrl)), subject: escapeHtml(String(subject)) };
       const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>${safe.subject}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0c0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f1f5f9;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0c0f17; padding: 40px 20px;">
@@ -210,17 +211,17 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
           <!-- Main Content -->
           <tr>
             <td style="padding: 32px;">
-              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Hi <strong>${name}</strong>,</p>
-              <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Thank you for applying to the <strong>${programName}</strong> track at Olentra Technologies. Our engineering and recruiting team has received your application and resume.</p>
+              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Hi <strong>${safe.name}</strong>,</p>
+              <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Thank you for applying to the <strong>${safe.programName}</strong> track at Olentra Technologies. Our engineering and recruiting team has received your application and resume.</p>
               
               <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 0 0 28px; text-align: center;">
                 <p style="margin: 0 0 16px; font-size: 13px; color: #94a3b8;">Use your personalized 1-click access link to open your candidate portal:</p>
-                <a href="${magicLinkUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; text-decoration: none; padding: 13px 28px; font-size: 14px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Access Candidate Portal &rarr;</a>
+                <a href="${safe.magicLinkUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; text-decoration: none; padding: 13px 28px; font-size: 14px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Access Candidate Portal &rarr;</a>
                 <p style="margin: 16px 0 0; font-size: 11px; color: #64748b;">This secure link is valid for 24 hours. You can also set a password inside your portal.</p>
               </div>
 
               <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">If the button above does not work, copy and paste this link into your browser:</p>
-              <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all; color: #60a5fa;">${magicLinkUrl}</p>
+              <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all; color: #60a5fa;">${safe.magicLinkUrl}</p>
 
               <hr style="border: none; border-top: 1px solid #1e293b; margin: 24px 0;" />
               <p style="margin: 0; font-size: 12px; color: #64748b;">Olentra Technologies Pvt. Ltd. &middot; Building intelligent systems &middot; This is an automated notification.</p>
@@ -240,12 +241,13 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
       const subject = "Your Olentra Candidate Portal Sign-In Link";
       const text = `Hi ${name},\n\nClick the link below to securely sign in to your Olentra Internship Portal:\n\n${magicLinkUrl}\n\nThis link expires in 24 hours and can be used once.\n\nIf you did not request this link, you can safely ignore this email.\n\nBest regards,\nThe Olentra Team`;
 
+      const safe = { name: escapeHtml(String(name)), magicLinkUrl: escapeHtml(String(magicLinkUrl)), subject: escapeHtml(String(subject)) };
       const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>${safe.subject}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0c0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f1f5f9;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0c0f17; padding: 40px 20px;">
@@ -260,16 +262,16 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
           </tr>
           <tr>
             <td style="padding: 32px;">
-              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Hi <strong>${name}</strong>,</p>
+              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Hi <strong>${safe.name}</strong>,</p>
               <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">We received a request for a 1-click sign-in link to your Olentra Candidate Portal.</p>
               
               <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 0 0 28px; text-align: center;">
-                <a href="${magicLinkUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; text-decoration: none; padding: 13px 28px; font-size: 14px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Sign In to Candidate Portal &rarr;</a>
+                <a href="${safe.magicLinkUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; text-decoration: none; padding: 13px 28px; font-size: 14px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Sign In to Candidate Portal &rarr;</a>
                 <p style="margin: 16px 0 0; font-size: 11px; color: #64748b;">This secure link is valid for 24 hours.</p>
               </div>
 
               <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Or copy and paste this link into your browser:</p>
-              <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all; color: #60a5fa;">${magicLinkUrl}</p>
+              <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all; color: #60a5fa;">${safe.magicLinkUrl}</p>
 
               <hr style="border: none; border-top: 1px solid #1e293b; margin: 24px 0;" />
               <p style="margin: 0; font-size: 12px; color: #64748b;">If you didn't request this sign-in link, you can safely ignore this email.</p>
@@ -289,12 +291,13 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
       const subject = "Reset your Olentra Internship Account Password";
       const text = `Hi ${name},\n\nWe received a request to reset the password for your Olentra Internship account.\n\nClick the link below to set a new password:\n\n${resetUrl}\n\nThis secure link is valid for 1 hour and can be used once.\n\nIf you did not request this password reset, you can safely ignore this email; your password will remain unchanged.\n\nBest regards,\nThe Olentra Team`;
 
+      const safe = { name: escapeHtml(String(name)), resetUrl: escapeHtml(String(resetUrl)), subject: escapeHtml(String(subject)) };
       const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>${safe.subject}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0c0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f1f5f9;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0c0f17; padding: 40px 20px;">
@@ -309,16 +312,16 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
           </tr>
           <tr>
             <td style="padding: 32px;">
-              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Hi <strong>${name}</strong>,</p>
+              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Hi <strong>${safe.name}</strong>,</p>
               <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">We received a request to reset the password for your Olentra Internship account. Click the button below to choose a new password:</p>
               
               <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 0 0 28px; text-align: center;">
-                <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; text-decoration: none; padding: 13px 28px; font-size: 14px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Reset My Password &rarr;</a>
+                <a href="${safe.resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; text-decoration: none; padding: 13px 28px; font-size: 14px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Reset My Password &rarr;</a>
                 <p style="margin: 16px 0 0; font-size: 11px; color: #64748b;">This secure link is valid for 1 hour.</p>
               </div>
 
               <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Or copy and paste this link into your browser:</p>
-              <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all; color: #60a5fa;">${resetUrl}</p>
+              <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all; color: #60a5fa;">${safe.resetUrl}</p>
 
               <hr style="border: none; border-top: 1px solid #1e293b; margin: 24px 0;" />
               <p style="margin: 0; font-size: 12px; color: #64748b;">If you didn't request a password reset, you can safely ignore this email; your password will remain unchanged.</p>

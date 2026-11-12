@@ -120,3 +120,14 @@ test("staff can securely create an account for an unclaimed application", async 
   await expect(domain.execute("account.register", { applicationId: app.id, claimToken: app.claimToken, password: "ExamplePassword2026!" }, null, "registration-assisted-0001")).rejects.toBeInstanceOf(DomainError);
   await expect(domain.execute("account.createForApplication", payload, staff, "create-staff-assisted-0003")).rejects.toBeInstanceOf(DomainError);
 }, 30000);
+
+test("anonymous visitors and interns only see public program settings; staff see all", async () => {
+  const anonymous = await domain.execute("intern.public", {}, null, "public-payload-anon") as any;
+  expect(Object.keys(anonymous).sort()).toEqual(["organization", "programs", "settings"]);
+  expect(Object.keys(anonymous.settings).sort()).toEqual(["compensationMode", "explorerEnabled", "innovatorEnabled", "programEnabled", "programName"]);
+  const internSnapshot = await domain.execute("intern.snapshot", {}, null, "public-payload-snap") as any;
+  expect(internSnapshot.data.settings).not.toHaveProperty("rejectionEmails");
+  const staffSnapshot = await domain.execute("intern.snapshot", {}, staff, "public-payload-staff") as any;
+  expect(staffSnapshot.data.settings).toHaveProperty("rejectionEmails");
+  expect(staffSnapshot.data.settings).toHaveProperty("applicationAlerts");
+});

@@ -4,6 +4,7 @@ import type { createInternshipMailer } from "../../infrastructure/email/mailer";
 import { DomainError } from "../../shared/errors";
 import { bearerToken } from "./middleware";
 import { clientAddress } from "../../modules/auth/login-throttle";
+import type { RateLimiter } from "../../modules/auth/rate-limit";
 import { cookieName } from "./router";
 import { parseCookies, refreshCookie, safeContext } from "./cookies";
 
@@ -27,7 +28,7 @@ type Mailer = ReturnType<typeof createInternshipMailer>;
 type SendJson = (body: unknown, origin: string | null, status?: number, extra?: Record<string, string>) => Response;
 
 /** HTTP authentication adapter. Domain authorization and token claims stay in their modules. */
-export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin = "http://localhost:3002", sendJson }: {
+export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin = "http://localhost:3002", sendJson, limiter }: {
   auth: Auth;
   domain: Domain;
   mailer: Mailer;
@@ -35,7 +36,10 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOr
   /** Company workspace origin; staff who reset from the workspace return there. */
   workspaceOrigin?: string;
   sendJson: SendJson;
+  /** Limits anonymous requests that send email; omitted in unit tests. */
+  limiter?: RateLimiter;
 }) {
+  const trustProxy = () => /^(true|1)$/i.test(process.env.REALTIME_TRUST_PROXY || "");
   const requireBearer = async (request: Request) => {
     const token = bearerToken(request);
     if (!token) throw new DomainError("UNAUTHENTICATED", "Sign in to continue.");
@@ -61,10 +65,11 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOr
       return sendJson({ ok: true, data: { account: result.account, token: result.token, expiresAt: result.expiresAt } }, origin, 200, { "Set-Cookie": refreshCookie(request, context, result.refreshToken, 604800) });
     },
 
-    async magicLink(request: Request, origin: string | null) {
+    async magicLink(request: Request, origin: string | null, peerAddress = "direct") {
       const input = await request.json() as { email?: string };
       const email = String(input.email || "").trim().toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Please enter a valid email address.");
+      await limiter?.consume("emailLink", clientAddress(request, peerAddress, trustProxy()), email);
       const application = await domain.findApplicationByEmail(email);
       if (application) {
         const token = await auth.generateMagicLinkToken(application.email, application._id);
@@ -79,25 +84,27 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOr
       const input = await request.json() as { token?: string };
       const rawToken = String(input.token || "").trim();
       if (!rawToken) throw new DomainError("INVALID_REQUEST", "A sign-in token is required.");
-      const { email, applicationId } = await auth.verifyMagicLinkToken(rawToken);
+      const { email, applicationId } = await auth.redeemMagicLinkToken(rawToken);
       const account = await domain.autoProvisionAccount(applicationId, email);
       const result = await auth.createSessionForAccount(account);
       return sendJson({ ok: true, data: { account: result.account, token: result.token, expiresAt: result.expiresAt } }, origin, 200, { "Set-Cookie": refreshCookie(request, context, result.refreshToken, 604800) });
     },
 
-    async requestPasswordReset(request: Request, origin: string | null) {
+    async requestPasswordReset(request: Request, origin: string | null, peerAddress = "direct") {
       const input = await request.json() as { email?: string; app?: string };
       const email = String(input.email || "").trim().toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Please enter a valid email address.");
-      let user = await domain.findUserByEmail(email);
+      await limiter?.consume("emailLink", clientAddress(request, peerAddress, trustProxy()), email);
+      const user = await domain.findUserByEmail(email);
       if (!user) {
+        // An applicant without an account has no password to reset. Send a
+        // sign-in link instead; the account is created only when they use it.
         const application = await domain.findApplicationByEmail(email);
         if (application) {
-          const provisioned = await domain.autoProvisionAccount(application._id, application.email);
-          user = { _id: provisioned.id, name: provisioned.name, email: provisioned.email } as any;
+          const token = await auth.generateMagicLinkToken(application.email, application._id);
+          await mailer.sendMagicLink({ to: application.email, name: application.name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
         }
-      }
-      if (user) {
+      } else {
         const token = await auth.generatePasswordResetToken(user.email, user._id, Number(user.sessionVersion) || 1);
         const workspace = input.app === "workspace" && user.role === "company";
         const resetUrl = workspace ? `${workspaceOrigin}/dashboard/reset-password?token=${token}` : `${siteOrigin}/intern/reset-password?token=${token}`;

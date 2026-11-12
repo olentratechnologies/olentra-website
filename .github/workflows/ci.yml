@@ -43,7 +43,24 @@ jobs:
       - name: Run email tests
         run: npm run email:test
 
-      - name: Run presence tests
+      - name: Start MongoDB test replica set
+        run: |
+          docker run -d --name mongo-test -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for attempt in $(seq 1 30); do
+            docker exec mongo-test mongosh --quiet --eval "db.adminCommand('ping').ok" >/dev/null 2>&1 && break
+            sleep 2
+          done
+          docker exec mongo-test mongosh --quiet --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
+          for attempt in $(seq 1 30); do
+            [ "$(docker exec mongo-test mongosh --quiet --eval 'db.hello().isWritablePrimary')" = "true" ] && break
+            sleep 2
+          done
+
+      # Runs the web presence tests, backend unit/contract tests, and the
+      # internship integration tests against the throwaway replica set above.
+      - name: Run presence, realtime and internship integration tests
+        env:
+          INTERNSHIP_TEST_MONGODB_URI: mongodb://localhost:27017/olentra_ci_test?replicaSet=rs0&directConnection=true
         run: npm run presence:test
 
       - name: Run company workspace tests

@@ -135,3 +135,64 @@ test("verify-magic-link rejects invalid or tampered token with 401", async () =>
   expect(verifyJson.ok).toBe(false);
   expect(verifyJson.error.code).toBe("UNAUTHENTICATED");
 });
+
+async function requestLink(email: string) {
+  const res = await fetch(`${base}/intern/auth/magic-link`, { method: "POST", headers: { "Content-Type": "application/json", Origin: origin }, body: JSON.stringify({ email }) });
+  expect(res.status).toBe(200);
+  const sent = sentEmails.filter((e) => e.to === email).at(-1);
+  expect(sent).toBeDefined();
+  return new URL(sent!.magicLinkUrl).searchParams.get("token")!;
+}
+const verify = (token: string) => fetch(`${base}/intern/auth/verify-magic-link`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json", Origin: origin, "X-Intern-Context": context },
+  body: JSON.stringify({ token }),
+});
+async function insertApplication(email: string) {
+  const applicationId = `OL-test-${randomUUID()}`;
+  await domain.collection("applications").insertOne({ _id: applicationId, name: "Link Candidate", email, programId: "explorer", program: "Tech Explorer", status: "Applied", appliedOn: new Date().toISOString().slice(0, 10), version: 1 });
+  return applicationId;
+}
+
+test("a magic link signs in once; reusing it is refused", async () => {
+  const email = `once-${randomUUID()}@example.test`;
+  await insertApplication(email);
+  const token = await requestLink(email);
+  expect((await verify(token)).status).toBe(200);
+  const second = await verify(token);
+  expect(second.status).toBe(401);
+  expect(((await second.json()) as any).error.code).toBe("UNAUTHENTICATED");
+});
+
+test("a magic link never signs in to a staff account that shares the applicant's email", async () => {
+  const email = `staff-collision-${randomUUID()}@example.test`;
+  const staffId = `ACC-staff-${randomUUID()}`;
+  await domain.collection("accounts").insertOne({ _id: staffId, role: "company", staffRole: "admin", name: "Staff Person", email, applicationId: null, sessionVersion: 1, createdAt: new Date() });
+  await insertApplication(email);
+  const res = await verify(await requestLink(email));
+  expect(res.status).toBe(401);
+  expect(res.headers.get("set-cookie")).toBeNull();
+  const staff = await domain.collection("accounts").findOne({ _id: staffId });
+  expect(staff?.applicationId).toBeNull();
+  expect(await domain.collection("accounts").countDocuments({ email })).toBe(1);
+});
+
+test("two different links used at the same moment create a single intern account", async () => {
+  const email = `race-${randomUUID()}@example.test`;
+  const applicationId = await insertApplication(email);
+  const first = await requestLink(email);
+  const second = await requestLink(email);
+  const results = await Promise.all([verify(first), verify(second)]);
+  expect(results.map((r) => r.status)).toEqual([200, 200]);
+  expect(await domain.collection("accounts").countDocuments({ email })).toBe(1);
+  expect((await domain.collection("accounts").findOne({ email }))?.applicationId).toBe(applicationId);
+});
+
+test("a password reset request for an applicant without an account creates no account", async () => {
+  const email = `reset-noacct-${randomUUID()}@example.test`;
+  await insertApplication(email);
+  const res = await fetch(`${base}/intern/auth/request-password-reset`, { method: "POST", headers: { "Content-Type": "application/json", Origin: origin }, body: JSON.stringify({ email }) });
+  expect(res.status).toBe(200);
+  expect(await domain.collection("accounts").countDocuments({ email })).toBe(0);
+  expect(sentEmails.filter((e) => e.to === email).at(-1)?.type).toBe("magic-link");
+});

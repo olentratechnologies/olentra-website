@@ -18,6 +18,7 @@ import {
 import { MetricGlyph, Sparkline } from "./DashboardVisuals";
 import styles from "./pages.module.css";
 import dashboardStyles from "./dashboard.module.css";
+import { csvCell } from "@/lib/csv-cell.mjs";
 
 export const formatDate = (value) =>
   value
@@ -362,14 +363,10 @@ export function Modal({
   );
 }
 export function exportCsv(filename, headers, rows) {
-  const escape = (value) => {
-    const text = String(value ?? "");
-    return `"${(/^[=+@\-]/.test(text) ? "'" : "") + text.replaceAll('"', '""')}"`;
-  };
   downloadFile(
     filename,
     "\uFEFF" +
-      [headers, ...rows].map((row) => row.map(escape).join(",")).join("\r\n"),
+      [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n"),
     "text/csv;charset=utf-8;",
   );
 }

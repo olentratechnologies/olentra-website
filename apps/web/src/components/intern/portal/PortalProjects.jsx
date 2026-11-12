@@ -128,6 +128,7 @@ export function SubmitWorkModal({ task, onClose }) {
               {uploading ? "Attaching…" : "Attach file"}
               <input
                 type="file"
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.zip"
                 disabled={uploading || action.busy}
                 onChange={(event) => attach(event.target.files?.[0])}
               />

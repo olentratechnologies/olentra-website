@@ -20,6 +20,8 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
   const sessions = domain.collection("sessions");
   const attempts = mongoAttemptStore(domain.collection("auth_attempts"));
   const throttle = createLoginThrottle({ store: attempts });
+  // One row per redeemed magic link (keyed by a hash of its jti), kept until the link would have expired.
+  const magicLinkUses = domain.collection("magic_link_uses");
   const verifiedTokenCache = new Map<string, { payload: Awaited<ReturnType<typeof jwtVerify>>["payload"]; expiresAt: number }>();
 
   async function initialize() {
@@ -28,6 +30,7 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
       sessions.createIndex({ _id: 1, userId: 1, revoked: 1, expiresAt: 1 }),
       sessions.createIndex({ _id: 1, refreshHash: 1, revoked: 1 }),
       attempts.initialize(),
+      magicLinkUses.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     ]);
   }
   async function resolveSession(match: Document): Promise<{ row: Document; account: Principal | null } | null> {
@@ -82,6 +85,9 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
       .sign(key);
   }
   async function verifyMagicLinkToken(token: string): Promise<{ email: string; applicationId: string }> {
+    return (await readMagicLinkToken(token)).claims;
+  }
+  async function readMagicLinkToken(token: string): Promise<{ claims: { email: string; applicationId: string }; jti: string | undefined; exp: number | undefined }> {
     try {
       const { payload } = await jwtVerify(token, key, {
         algorithms: ["HS256"],
@@ -91,11 +97,23 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
       if (typeof payload.sub !== "string" || typeof payload.aid !== "string") {
         throw new DomainError("UNAUTHENTICATED", "This sign-in link is invalid or has expired.");
       }
-      return { email: payload.sub, applicationId: payload.aid };
+      return { claims: { email: payload.sub, applicationId: payload.aid }, jti: payload.jti, exp: payload.exp };
     } catch (err: any) {
       if (err instanceof DomainError) throw err;
       throw new DomainError("UNAUTHENTICATED", "This sign-in link is invalid or has expired.");
     }
+  }
+  /** Verifies a magic link and marks it used, so each emailed link signs in exactly once. */
+  async function redeemMagicLinkToken(token: string): Promise<{ email: string; applicationId: string }> {
+    const { claims, jti, exp } = await readMagicLinkToken(token);
+    if (!jti || !exp) throw new DomainError("UNAUTHENTICATED", "This sign-in link is invalid or has expired.");
+    try {
+      await magicLinkUses.insertOne({ _id: digest(jti), usedAt: new Date(), expiresAt: new Date(exp * 1000) });
+    } catch (error: any) {
+      if (error?.code === 11000) throw new DomainError("UNAUTHENTICATED", "This sign-in link has already been used. Request a new one.");
+      throw error;
+    }
+    return claims;
   }
   // Reset links are bound to the account's session version. Using a link bumps
   // that version, so each link works once and older links stop working.
@@ -188,5 +206,5 @@ export function createInternshipAuth(domain: ReturnType<typeof createInternshipD
     const [sid, secret, ...extra] = value.split(".");
     if (sid && secret && !extra.length) { const secretHash = digest(secret); await sessions.updateOne({ _id: sid, $or: [{ refreshHash: secretHash }, { previousHash: secretHash }] }, { $set: { revoked: true } }); }
   }
-  return { initialize, login, createSessionForAccount, verify, refresh, revoke, revokeRefresh, generateMagicLinkToken, verifyMagicLinkToken, generatePasswordResetToken, verifyPasswordResetToken };
+  return { initialize, login, createSessionForAccount, verify, refresh, revoke, revokeRefresh, generateMagicLinkToken, verifyMagicLinkToken, redeemMagicLinkToken, generatePasswordResetToken, verifyPasswordResetToken };
 }

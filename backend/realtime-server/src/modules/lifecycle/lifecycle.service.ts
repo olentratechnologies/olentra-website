@@ -32,6 +32,8 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       submissions.createIndex({ applicationId: 1, submittedOn: -1 }),
       certificates.createIndex({ internId: 1 }, { unique: true }),
       certificates.createIndex({ applicationId: 1 }),
+      // Public certificate checks look a certificate up by its number.
+      certificates.createIndex({ certificateNumber: 1 }, { unique: true, partialFilterExpression: { certificateNumber: { $type: "string" } } }),
       interviews.createIndex({ applicationId: 1 }, { unique: true }),
       projects.createIndex({ team: 1 }),
     ]);

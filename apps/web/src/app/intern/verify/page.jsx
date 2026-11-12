@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -28,6 +28,9 @@ function VerifyContent() {
   const [resendEmail, setResendEmail] = useState("");
   const [resendBusy, setResendBusy] = useState(false);
   const [resendSent, setResendSent] = useState(false);
+  // Each emailed link works once, so verify a token exactly once even when the
+  // effect re-runs (React development mode, reconnects); re-runs share the result.
+  const attempt = useRef(null);
 
   useEffect(() => {
     if (!token) {
@@ -42,7 +45,10 @@ function VerifyContent() {
 
     async function runVerification() {
       try {
-        const result = await verifyMagicLink(token);
+        if (attempt.current?.token !== token) {
+          attempt.current = { token, promise: verifyMagicLink(token) };
+        }
+        const result = await attempt.current.promise;
         if (!active) return;
         if (result.ok) {
           setStatus("success");

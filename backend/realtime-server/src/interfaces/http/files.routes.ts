@@ -7,6 +7,9 @@ import type { createInternshipAuth } from "../../modules/auth/auth.service";
 import { DomainError } from "../../shared/errors";
 import { can } from "../../modules/access/policy";
 import { bearerToken } from "./middleware";
+import { clientAddress } from "../../modules/auth/login-throttle";
+import type { RateLimiter } from "../../modules/auth/rate-limit";
+import { SIGNATURE_BYTES, allowedType, matchesSignature } from "../../modules/files/file-types";
 
 export const FILES_PATH = "/intern/files";
 
@@ -22,12 +25,13 @@ type Cors = (origin: string | null, extra?: Record<string, string>) => Headers;
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
 /** GridFS-backed file transport adapter. */
-export function createFilesRoutes({ auth, bucket, files, withCors, sendJson }: {
+export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter }: {
   auth: Auth;
   bucket: GridFSBucket;
   files: Collection<FileRow>;
   withCors: Cors;
   sendJson: SendJson;
+  limiter?: RateLimiter;
 }) {
   const authenticate = async (request: Request) => {
     const value = bearerToken(request);
@@ -35,13 +39,16 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson }: {
   };
 
   return {
-    async upload(request: Request, origin: string | null) {
+    async upload(request: Request, origin: string | null, peerAddress = "direct") {
       const kind = request.headers.get("x-file-kind") || "resume";
       const name = (request.headers.get("x-file-name") || "").split(/[\\/]/).pop()?.replace(/[\x00-\x1f\x7f]/g, "").trim() || "";
-      if (!name || name.length > 200 || !["resume", "work"].includes(kind) || (kind === "resume" && !/\.(pdf|doc|docx)$/i.test(name))) throw new DomainError("INVALID_REQUEST", "Choose a valid file.");
+      if (!name || name.length > 200 || (kind !== "resume" && kind !== "work")) throw new DomainError("INVALID_REQUEST", "Choose a valid file.");
+      const type = allowedType(name, kind);
+      if (!type) throw new DomainError("UNSUPPORTED_MEDIA_TYPE", kind === "resume" ? "Upload your resume as a PDF or Word document." : "This file type isn't supported. Use a document, spreadsheet, slides, image, text or zip file.");
       const account = await authenticate(request);
       if (kind === "work" && !account) throw new DomainError("UNAUTHENTICATED", "Sign in to upload work.");
       if (account?.role === "company") throw new DomainError("FORBIDDEN", "Staff accounts cannot upload intern attachments.");
+      await limiter?.consume("upload", clientAddress(request, peerAddress, /^(true|1)$/i.test(process.env.REALTIME_TRUST_PROXY || "")), account?.id);
       const maximum = (kind === "resume" ? 5 : 10) * 1024 * 1024;
       const declared = Number(request.headers.get("content-length") || 0);
       if (declared > maximum || !request.body) throw new DomainError("INVALID_REQUEST", "The file is too large or empty.");
@@ -49,8 +56,12 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson }: {
       const attachmentId = randomUUID();
       const accessToken = randomBytes(32).toString("base64url");
       const upload = bucket.openUploadStreamWithId(gridId, name);
-      let size = 0;
-      const limit = new Transform({ transform(chunk, _encoding, callback) { size += chunk.length; callback(size > maximum ? new Error("LIMIT") : null, chunk); } });
+      let size = 0, head = new Uint8Array(0);
+      const limit = new Transform({ transform(chunk, _encoding, callback) {
+        if (head.length < SIGNATURE_BYTES) head = Uint8Array.from([...head, ...chunk.subarray(0, SIGNATURE_BYTES - head.length)]);
+        size += chunk.length;
+        callback(size > maximum ? new Error("LIMIT") : null, chunk);
+      } });
       try {
         await pipeline(Readable.fromWeb(request.body as any), limit, upload);
         if (!size) throw new Error("EMPTY");
@@ -58,13 +69,17 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson }: {
         try { await bucket.delete(gridId); } catch {}
         throw new DomainError("INVALID_REQUEST", "The file is too large, empty, or could not be uploaded.");
       }
+      if (!matchesSignature(name, kind, head)) {
+        try { await bucket.delete(gridId); } catch {}
+        throw new DomainError("UNSUPPORTED_MEDIA_TYPE", "This file's contents don't match its type. Save it again as a real ." + type.extension + " file.");
+      }
       try {
-        await files.insertOne({ _id: attachmentId, gridId, kind, name, type: request.headers.get("content-type") || "application/octet-stream", size, status: "ready", accessTokenHash: hash(accessToken), ...(account?.applicationId ? { ownerApplicationId: account.applicationId } : {}), createdAt: new Date() });
+        await files.insertOne({ _id: attachmentId, gridId, kind, name, type: type.mime, size, status: "ready", accessTokenHash: hash(accessToken), ...(account?.applicationId ? { ownerApplicationId: account.applicationId } : {}), createdAt: new Date() });
       } catch (error) {
         try { await bucket.delete(gridId); } catch {}
         throw error;
       }
-      return sendJson({ ok: true, data: { id: attachmentId, name, type: request.headers.get("content-type") || "application/octet-stream", size, accessToken } }, origin);
+      return sendJson({ ok: true, data: { id: attachmentId, name, type: type.mime, size, accessToken } }, origin);
     },
 
     async download(request: Request, origin: string | null) {
@@ -77,7 +92,7 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson }: {
       const pendingUploadAccess = !account && !file.applicationId && !file.ownerApplicationId && accessToken && file.accessTokenHash === hash(accessToken);
       if (!(staffAccess || ownerAccess || pendingUploadAccess)) throw new DomainError("FORBIDDEN", "File access denied.");
       const stream = Readable.toWeb(bucket.openDownloadStream(file.gridId)) as ReadableStream;
-      return new Response(stream, { headers: withCors(origin, { "Content-Type": file.type, "Content-Disposition": `attachment; filename="${file.name.replace(/["\\]/g, "_")}"`, "Content-Length": String(file.size), "Access-Control-Expose-Headers": "Content-Disposition" }) });
+      return new Response(stream, { headers: withCors(origin, { "Content-Type": file.type, "Content-Disposition": `attachment; filename="${file.name.replace(/["\\]/g, "_")}"`, "Content-Length": String(file.size), "Access-Control-Expose-Headers": "Content-Disposition", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox" }) });
     },
   };
 }

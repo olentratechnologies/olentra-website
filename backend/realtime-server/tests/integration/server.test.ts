@@ -86,7 +86,7 @@ test("login, streaming resume, application, registration, live status and refres
   const changed = await admin.request("application.update", { id: application.id, status: "Under Review", expectedVersion: 1 }, "update-application-test-01");
   expect(changed.status).toBe("Under Review");
   const mine = await applicant.request("application.get", { id: application.id }); expect(mine.status).toBe("Under Review"); expect(mine.claimHash).toBeUndefined(); expect(mine.notes).toBeUndefined();
-  const resume = await fetch(base + "/intern/files/" + uploaded.id, { headers: { origin, authorization: "Bearer " + intern.body.data.token } }); expect(await resume.text()).toBe("%PDF-1.4 test resume");
+  const resume = await fetch(base + "/intern/files/" + uploaded.id, { headers: { origin, authorization: "Bearer " + intern.body.data.token } }); expect(await resume.text()).toBe("%PDF-1.4 test resume"); expect(resume.headers.get("x-content-type-options")).toBe("nosniff"); expect(resume.headers.get("content-type")).toBe("application/pdf");
   const anonymousWork = await fetch(base + "/intern/files", { method: "POST", headers: { origin, "content-type": "text/plain", "x-file-name": "work.txt", "x-file-kind": "work" }, body: "test work" }); expect(anonymousWork.status).toBe(401);
   const work = await fetch(base + "/intern/files", { method: "POST", headers: { origin, authorization: "Bearer " + intern.body.data.token, "content-type": "text/plain", "x-file-name": "work.txt", "x-file-kind": "work" }, body: "test work" }); expect(work.status).toBe(200);
   const workFile = (await work.json() as any).data;

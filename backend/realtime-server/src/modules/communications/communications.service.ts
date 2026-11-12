@@ -278,9 +278,12 @@ export function createCommunications({ collection, transact }: Options) {
           writes.push({ namespace: programs.namespace, name: "updateOne", filter: { _id: programId }, update: { $set: { enabled: patch[field] } } });
         }
         if (patch.profile !== undefined) {
-          const name = str(patch.profile?.name), email = str(patch.profile?.email).toLowerCase();
-          if (!name || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Enter a valid administrator name and email.");
-          writes.push({ namespace: users.namespace, name: "updateOne", filter: { _id: account.id, role: "company" }, update: { $set: { name, email } } });
+          const name = str(patch.profile?.name), email = str(patch.profile?.email ?? account.email).toLowerCase();
+          if (!name || name.length > 120) throw new DomainError("INVALID_REQUEST", "Enter a valid administrator name.");
+          // The sign-in email can't change here: that would hand the account to
+          // an address nobody has proved they own.
+          if (email !== String(account.email || "").toLowerCase()) throw new DomainError("INVALID_REQUEST", "The sign-in email can't be changed from settings.");
+          writes.push({ namespace: users.namespace, name: "updateOne", filter: { _id: account.id, role: "company" }, update: { $set: { name } } });
         }
         if (clientBulkWrite) {
           writes.push(

@@ -105,7 +105,8 @@ test("settings validation and a mid-write error roll back every change", async (
   let failure: any;
   try { await communications.execute("settings.update", { patch: { explorerEnabled: false, programEnabled: false, profile: { name: "Staff", email: "duplicate@example.test" } } }, staff, "settings-rollback-duplicate"); }
   catch (error) { failure = error; }
-  expect(failure?.code).toBe(11000);
+  // Changing the sign-in email from settings is refused, and nothing else in the patch is applied.
+  expect(failure?.code).toBe("INVALID_REQUEST");
   expect((await domain.collection("programs").findOne({ _id: "explorer" }))?.enabled).toBe(beforeProgram?.enabled);
   expect((await domain.collection("settings").findOne({ _id: "program" }))?.programEnabled).toBe(beforeSettings?.programEnabled);
   expect((await domain.collection("accounts").findOne({ _id: "staff" }))?.email).toBe("staff@example.test");

@@ -16,6 +16,7 @@ export type { InternshipHooks, Principal } from "../shared/principal";
 export { connectInternDatabase } from "../infrastructure/database/client";
 import { createStories } from "../modules/stories/stories.service";
 import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "../modules/applications/video-filter";
+import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
 
 type Row = InternshipRow;
 const publicAccount = (row: Row): Principal => ({ id: row._id, role: row.role, name: row.name, email: row.email, applicationId: row.applicationId ?? null, sessionVersion: row.sessionVersion ?? 1 });
@@ -33,10 +34,12 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   const collection = (name: string) => db.collection<Row>(prefix + name);
   const users = collection("accounts"), credentials = collection("test_credentials"), applications = collection("applications"), programs = collection("programs"), files = collection("files"), commands = collection("commands");
   const settings = collection("settings"), events = collection("events");
+  const outbox = createOutbox(db.collection<OutboxRow>(prefix + "outbox"));
   async function initialize() {
     await Promise.all([
       lifecycle.initialize(),
       stories.initialize(),
+      outbox.initialize(),
       communications.initialize(),
       staffManagement.initialize(),
       users.createIndex({ email: 1 }, { unique: true }),
@@ -45,8 +48,12 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       applications.createIndex({ programId: 1, status: 1, appliedOn: -1 }),
       credentials.createIndex({ userId: 1 }, { unique: true }),
       commands.createIndex({ createdAt: 1 }, { expireAfterSeconds: 86400 * 7 }),
-      events.createIndex({ applicationId: 1, createdAt: -1 }),
+      applications.createIndex({ status: 1, appliedOn: -1, _id: -1 }),
+      // Live insights read the newest events of one type.
+      events.createIndex({ type: 1, createdAt: -1, _id: -1 }),
       events.createIndex({ createdAt: 1 }, { expireAfterSeconds: 86400 * 7 }),
+      // Events store `applicationIds` and nothing queries `applicationId`, so this old index only slowed writes.
+      events.dropIndex("applicationId_1_createdAt_-1").catch(() => undefined),
     ]);
     await Promise.all([
       programs.updateOne({ _id: "explorer" }, { $setOnInsert: { name: "Tech Explorer", fee: null, stipend: null, enabled: false } }, { upsert: true }),
@@ -99,6 +106,16 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   async function fetchPublicData(): Promise<PublicData> {
     const [rows, config] = await Promise.all([programs.find({}).sort({ _id: 1 }).toArray(), settings.findOne({ _id: "program" })]);
     return { organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, emailNotifications: false, integrations: {} } };
+  }
+  /**
+   * What anonymous visitors and interns may see: tracks and whether they are
+   * open. Staff-only settings (alerts, rejection emails, batches, integrations)
+   * reach staff through their snapshot instead.
+   */
+  async function anonymousData() {
+    const { organization, programs: tracks, settings: all } = await publicData();
+    const { programEnabled, compensationMode, explorerEnabled, innovatorEnabled, programName } = all;
+    return { organization, programs: tracks, settings: { programEnabled, compensationMode, explorerEnabled, innovatorEnabled, programName } };
   }
   async function publicData(): Promise<PublicData> {
     if (cachedPublicData) return cachedPublicData;
@@ -192,7 +209,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const application = await applications.findOne({ _id: str(params.applicationId) }, { projection: { status: 1 } });
       if (!application || !can(actor, application.status === "Joined" ? "messages.interns" : "messages.applicants")) throw new DomainError("FORBIDDEN", "Your role cannot access this conversation.");
     }
-    if (method === "intern.public") return publicData();
+    if (method === "intern.public") return anonymousData();
     if (method === "application.list") {
       company(actor);
       const page = Math.max(1, Math.min(100000, Number(params.page) || 1)), limit = Math.max(1, Math.min(100, Number(params.pageSize) || 20));
@@ -252,7 +269,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       // serial Atlas network round trips during login and every workspace reload.
       const ownApplicationPromise = actor?.role === "intern" && actor.applicationId ? applications.findOne({ _id: actor.applicationId }) : Promise.resolve(null);
       const [info, lifecycleData, communicationData, applicationItems, ownApplication, basicInternApplications] = await Promise.all([
-        publicData(),
+        actor?.role === "company" ? publicData() : anonymousData(),
         lifecycle.snapshot(actor),
         ownApplicationPromise.then(app => communications.snapshot(actor, app)),
         actor?.role === "company" && can(actor, "applications.read")
@@ -291,13 +308,13 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const httpUrl = (v: string) => { try { return ["http:", "https:"].includes(new URL(v).protocol); } catch { return false; } };
       if (linkedin.length > 500 || !httpUrl(linkedin) || !/(^|\.)linkedin\.com$/i.test(new URL(linkedin).hostname)) throw new DomainError("INVALID_REQUEST", "Enter your LinkedIn profile URL.");
       if (videoUrl && (videoUrl.length > 500 || !httpUrl(videoUrl))) throw new DomainError("INVALID_REQUEST", "Enter a valid http or https video link.");
-      return transact(key, null, { method, params }, async session => {
+      let duplicate: Row | null = null;
+      try {
+      return await transact(key, null, { method, params }, async session => {
         if (!(await intakeOpen())) throw new DomainError("CLOSED", "Internship applications are currently closed.");
         const existing = await applications.findOne({ email }, { session });
         if (existing) {
-          if (activeHooks?.sendMagicLink) {
-            void activeHooks.sendMagicLink(existing.email, existing.name, existing._id);
-          }
+          duplicate = existing;
           throw new DomainError("ALREADY_APPLIED", "An application with this email already exists. We have sent a secure sign-in link to your email.");
         }
         const program = await programs.findOne({ _id: programId }, { session });
@@ -312,11 +329,19 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (config?.applicationAlerts !== false) await collection("notifications").insertOne({ _id: id("NTF"), recipientRole: "company", applicationId, title: "New internship application", body: `${name} applied to ${program.name}.`, href: `/intern/dashboard/applications/${applicationId}`, createdOn: now.toISOString() }, { session });
         await collection("activity").insertOne({ _id: id("ACT"), title: "Application received", detail: `${name} applied to ${program.name}.`, applicationId, icon: "application", tone: "blue", occurredOn: now.toISOString() }, { session });
         await events.insertOne({ _id: id("EVT"), type: "application.created", applicationIds: [applicationId], createdAt: now }, { session });
-        if (activeHooks?.sendApplicationConfirmation) {
-          void activeHooks.sendApplicationConfirmation(email, name, program.name, applicationId);
-        }
+        // Queued inside the transaction: it is sent only if the application commits.
+        await outbox.enqueue("applicationConfirmation", { to: email, name, programName: program.name, applicationId }, session);
         return { ...publicApplication(row, false), claimToken };
       });
+      } catch (error) {
+        // The duplicate path rolls the transaction back, so its sign-in link is
+        // queued afterwards, once. Rate limits on applying bound how often.
+        const existing = duplicate as Row | null;
+        if (error instanceof DomainError && error.code === "ALREADY_APPLIED" && existing) {
+          await outbox.enqueue("magicLink", { to: String(existing.email), name: String(existing.name || ""), applicationId: String(existing._id) });
+        }
+        throw error;
+      }
     }
     if (method === "account.register") {
       const applicationId = str(params.applicationId), claimToken = str(params.claimToken), password = str(params.password);
@@ -450,20 +475,27 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   }
   async function autoProvisionAccount(applicationId: string, email: string): Promise<Principal> {
     const normalized = emailOf(email);
-    const existing = await users.findOne({
-      $or: [{ applicationId }, { email: normalized }],
-      disabled: { $ne: true },
-    });
-    if (existing) {
+    const refused = () => new DomainError("UNAUTHENTICATED", "This sign-in link can't be used for this account. Sign in with your password instead.");
+    const app = await applications.findOne({ _id: applicationId });
+    if (!app) throw new DomainError("NOT_FOUND", "Application not found.");
+    if (emailOf(String(app.email || "")) !== normalized) throw refused();
+    // Magic links only ever sign in intern accounts. Any other account sharing
+    // this email (staff, or a disabled row) must use its own password sign-in.
+    const linked = async (): Promise<Principal | null> => {
+      const rows = await users.find({ $or: [{ applicationId }, { email: normalized }] }).toArray();
+      if (!rows.length) return null;
+      const existing = rows.length === 1 ? rows[0] : null;
+      if (!existing || existing.role !== "intern" || existing.disabled === true) throw refused();
+      if (existing.applicationId && existing.applicationId !== applicationId) throw refused();
       if (!existing.applicationId) {
-        await users.updateOne({ _id: existing._id }, { $set: { applicationId } });
+        await users.updateOne({ _id: existing._id, role: "intern", applicationId: null }, { $set: { applicationId } });
         existing.applicationId = applicationId;
       }
       await applications.updateOne({ _id: applicationId, accountId: { $exists: false } }, { $set: { accountId: existing._id } });
       return (await resolveAccount(existing)) || publicAccount(existing);
-    }
-    const app = await applications.findOne({ _id: applicationId });
-    if (!app) throw new DomainError("NOT_FOUND", "Application not found.");
+    };
+    const current = await linked();
+    if (current) return current;
     const user: Row = {
       _id: id("ACC"),
       role: "intern",
@@ -473,13 +505,35 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       sessionVersion: 1,
       createdAt: new Date(),
     };
-    await users.insertOne(user);
+    try {
+      await users.insertOne(user);
+    } catch (error: any) {
+      // Two sign-ins racing on the same link: the unique email index lets one
+      // insert win, and the other signs in to the account it created.
+      if (error?.code !== 11000) throw error;
+      const winner = await linked();
+      if (winner) return winner;
+      throw error;
+    }
     await applications.updateOne(
       { _id: applicationId },
       { $unset: { claimHash: "", claimExpiresAt: "" }, $set: { accountId: user._id } }
     );
     await events.insertOne({ _id: id("EVT"), type: "account.register", applicationIds: [applicationId], createdAt: new Date() });
     return publicAccount(user);
+  }
+  /** Sends queued emails through the hooks; a hook that throws is retried later. */
+  async function processOutbox(limit = 20) {
+    return outbox.process(async row => {
+      const { to = "", name = "", programName = "", applicationId = "" } = row.payload;
+      if (row.type === "applicationConfirmation") {
+        if (!activeHooks?.sendApplicationConfirmation) throw new Error("No email sender is configured.");
+        await activeHooks.sendApplicationConfirmation(to, name, programName, applicationId);
+      } else if (row.type === "magicLink") {
+        if (!activeHooks?.sendMagicLink) throw new Error("No email sender is configured.");
+        await activeHooks.sendMagicLink(to, name, applicationId);
+      } else throw new Error(`Unknown outbox type ${String(row.type)}`);
+    }, limit);
   }
   async function findApplicationByEmail(email: string): Promise<Row | null> {
     return applications.findOne({ email: emailOf(email) });
@@ -542,5 +596,5 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     const passwordHash = await Bun.password.hash(nextPassword, { algorithm: "argon2id" });
     return savePassword(user, passwordHash, user.sessionVersion ?? 1, "account.passwordChanged");
   }
-  return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
+  return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
 }

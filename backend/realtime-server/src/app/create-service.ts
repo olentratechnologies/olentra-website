@@ -10,6 +10,10 @@ import { createInternshipContainer } from "./container";
 import { createCorsHeaders, errorResult, sendJson as sendJsonResponse, statusFor } from "../interfaces/http/router";
 import { CORS_HEADERS, CORS_METHODS, createOriginGuard, requestId } from "../interfaces/http/middleware";
 import { createAuthRoutes, AUTH_PATHS } from "../interfaces/http/auth.routes";
+import { clientAddress, mongoAttemptStore } from "../modules/auth/login-throttle";
+import { runLeasedJob } from "../modules/outbox/outbox";
+import { removeOrphanedUploads } from "../modules/files/cleanup";
+import { createRateLimiter, type RateLimiter } from "../modules/auth/rate-limit";
 import { createFilesRoutes, isFileDownloadPath, isFileUploadPath } from "../interfaces/http/files.routes";
 import { healthResponse as internshipHealthResponse } from "../interfaces/http/health.routes";
 import { healthResponse as presenceHealthResponse } from "../interfaces/http/presence-health.route";
@@ -32,6 +36,7 @@ type InternshipRuntime = {
   domain: Domain;
   authRoutes: ReturnType<typeof createAuthRoutes>;
   fileRoutes: ReturnType<typeof createFilesRoutes>;
+  limiter: RateLimiter;
   staffSockets: StaffSocketRegistry;
   insights: ReturnType<typeof createPublicInsights>;
   insightsViewers: () => number;
@@ -118,17 +123,16 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const container = createInternshipContainer({ domain, secret, mailer, siteOrigin });
     const auth = container.auth;
     domain.setHooks({
+      // These two are sent by the email outbox, which retries when they throw.
       async sendApplicationConfirmation(to, name, programName, applicationId) {
-        try {
-          const token = await auth.generateMagicLinkToken(to, applicationId);
-          await mailer.sendApplicationConfirmation({ to, name, programName, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
-        } catch (error) { logger.warn("Failed to send application confirmation", { error }); }
+        const token = await auth.generateMagicLinkToken(to, applicationId);
+        const result = await mailer.sendApplicationConfirmation({ to, name, programName, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
+        if (!result.ok) throw new Error(result.error || "Application confirmation was not delivered.");
       },
       async sendMagicLink(to, name, applicationId) {
-        try {
-          const token = await auth.generateMagicLinkToken(to, applicationId);
-          await mailer.sendMagicLink({ to, name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
-        } catch (error) { logger.warn("Failed to send magic link", { error }); }
+        const token = await auth.generateMagicLinkToken(to, applicationId);
+        const result = await mailer.sendMagicLink({ to, name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
+        if (!result.ok) throw new Error(result.error || "Sign-in link was not delivered.");
       },
       async sendApplicantStatus(notice) {
         try {
@@ -264,13 +268,19 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     })();
 
     const workspaceOrigin = (process.env.INTERNSHIP_WORKSPACE_ORIGIN || "http://localhost:3002").replace(/\/$/, "");
-    const authRoutes = createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin, sendJson });
-    const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson });
+    const jobLeases = domain.collection("job_leases") as any;
+    const stopUploadCleanup = runLeasedJob(jobLeases, "orphaned-upload-cleanup", 60 * 60_000, () => removeOrphanedUploads(files as any, bucket), error => logger.error("Orphaned upload cleanup failed", { error }));
+    const stopOutbox = runLeasedJob(jobLeases, "email-outbox", 2000, () => domain.processOutbox(), error => logger.error("Email outbox run failed", { error }));
+    const limiter = createRateLimiter(mongoAttemptStore(domain.collection("rate_limits")));
+    await domain.collection("rate_limits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    const authRoutes = createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin, sendJson, limiter });
+    const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter });
     const nextRuntime: InternshipRuntime = {
       auth,
       domain,
       authRoutes,
       fileRoutes,
+      limiter,
       staffSockets,
       insights,
       insightsViewers,
@@ -278,6 +288,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       broadcastViewers,
       async close() {
         localStopped = true;
+        stopOutbox(); stopUploadCleanup();
         broadcastInsights.cancel(); broadcastViewers.cancel();
         await changes.close().catch(() => {});
         if (runtime === nextRuntime) runtime = null;
@@ -302,7 +313,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (url.pathname === "/intern/health") return runtime ? sendJson(internshipHealthResponse(), origin) : unavailable(origin, sendJson);
         if (url.pathname === "/ws/intern") {
           if (!runtime) return unavailable(origin, sendJson);
-          if (instance.upgrade(request, { data: { kind: "intern", token: null, principal: null } })) return;
+          if (instance.upgrade(request, { data: { kind: "intern", token: null, principal: null, address: clientAddress(request, instance.requestIP(request)?.address, /^(true|1)$/i.test(process.env.REALTIME_TRUST_PROXY || "")) } })) return;
           return sendJson({ ok: false, error: { code: "BAD_UPGRADE", message: "WebSocket upgrade failed." } }, origin, 400);
         }
         if (!runtime) return unavailable(origin, sendJson);
@@ -310,15 +321,15 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         // DomainError/MongoDB operations are converted to the API contract
         // rather than escaping Bun as a raw 500 error page.
         if (url.pathname === AUTH_PATHS.login && request.method === "POST") return await runtime.authRoutes.login(request, origin, instance.requestIP(request)?.address);
-        if (url.pathname === AUTH_PATHS.magicLink && request.method === "POST") return await runtime.authRoutes.magicLink(request, origin);
+        if (url.pathname === AUTH_PATHS.magicLink && request.method === "POST") return await runtime.authRoutes.magicLink(request, origin, instance.requestIP(request)?.address);
         if (url.pathname === AUTH_PATHS.verifyMagicLink && request.method === "POST") return await runtime.authRoutes.verifyMagicLink(request, origin);
-        if (url.pathname === AUTH_PATHS.requestPasswordReset && request.method === "POST") return await runtime.authRoutes.requestPasswordReset(request, origin);
+        if (url.pathname === AUTH_PATHS.requestPasswordReset && request.method === "POST") return await runtime.authRoutes.requestPasswordReset(request, origin, instance.requestIP(request)?.address);
         if (url.pathname === AUTH_PATHS.resetPassword && request.method === "POST") return await runtime.authRoutes.resetPassword(request, origin);
         if (url.pathname === AUTH_PATHS.refresh && request.method === "POST") return await runtime.authRoutes.refresh(request, origin);
         if (url.pathname === AUTH_PATHS.logout && request.method === "POST") return await runtime.authRoutes.logout(request, origin);
         if (url.pathname === AUTH_PATHS.session && request.method === "GET") return await runtime.authRoutes.session(request, origin);
         if (url.pathname === AUTH_PATHS.changePassword && request.method === "POST") return await runtime.authRoutes.changePassword(request, origin);
-        if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin);
+        if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);
         throw new DomainError("NOT_FOUND", "Endpoint not found.");
       } catch (error) {
@@ -380,6 +391,12 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
             result = null;
           } else if (request.method === "certificate.verify" && !allowVerify(socket as ServerWebSocket<InternSocketData>)) {
             throw new DomainError("RATE_LIMITED", "Too many certificate checks. Please wait a minute and try again.");
+          } else if (request.method === "application.submit" && !socket.data.token) {
+            // Applying sends email and stores data, so anonymous applies are
+            // limited per client address and per email, shared across sockets.
+            const email = typeof request.params?.email === "string" ? request.params.email : null;
+            await runtime.limiter.consume("apply", (socket.data as InternSocketData).address || "unknown", email);
+            result = await runtime.domain.execute(request.method, request.params || {}, null, request.idempotencyKey);
           } else if (request.method === "intern.insights") {
             result = { ...(await runtime.insights.get()), viewers: runtime.insightsViewers() };
           } else {
