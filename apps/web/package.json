@@ -16,7 +16,8 @@
     "test:insights": "node --test scripts/intern-dashboard-insights.test.mjs",
     "test:csv": "node --test scripts/csv-cell.test.mjs",
     "test:audit": "node --test scripts/audit-labels.test.mjs",
-    "test:templates": "node --test scripts/message-templates.test.mjs"
+    "test:templates": "node --test scripts/message-templates.test.mjs",
+    "test:board": "node --test scripts/intern-board.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",

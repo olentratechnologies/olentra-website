@@ -44,6 +44,7 @@ import {
 } from "./DashboardUI";
 import common from "./pages.module.css";
 import styles from "./applicant.module.css";
+import ApplicationsBoard from "./ApplicationsBoard";
 
 const STATUSES = [
   "Applied",
@@ -64,6 +65,7 @@ function applicationMetric(data, id, label, value, tone, icon) {
 }
 
 const VIDEOS_FIRST_KEY = "olentra_applications_videos_first_v1";
+const LAYOUT_KEY = "olentra_applications_layout_v1";
 
 export default function ApplicationsPage() {
   const { data, query, setQuery, notify, updateApplication, account } = useDashboard();
@@ -105,6 +107,13 @@ export default function ApplicationsPage() {
       return !value;
     });
     setPage(1);
+  }
+  // Table or kanban board; remembered in this browser.
+  const [layout, setLayout] = useState("table");
+  useEffect(() => { try { if (localStorage.getItem(LAYOUT_KEY) === "board") setLayout("board"); } catch { /* storage blocked */ } }, []);
+  function chooseLayout(next) {
+    setLayout(next);
+    try { localStorage.setItem(LAYOUT_KEY, next); } catch { /* storage blocked */ }
   }
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -436,6 +445,10 @@ export default function ApplicationsPage() {
               <Video size={14} aria-hidden="true" />
               Videos first
             </button>
+            <div className={styles.layoutToggle} role="group" aria-label="Layout">
+              <button type="button" aria-pressed={layout === "table"} onClick={() => chooseLayout("table")}>Table</button>
+              <button type="button" aria-pressed={layout === "board"} onClick={() => chooseLayout("board")}>Board</button>
+            </div>
             <label className={styles.pageSize}>
               View
               <select aria-label="Saved views" value={activeView} onChange={(event) => applyView(event.target.value)}>
@@ -501,7 +514,9 @@ export default function ApplicationsPage() {
             {bulkBusy && <span className={styles.bulkWorking} role="status">Updating…</span>}
           </div>
         )}
-        {filtered.length ? (
+        {layout === "board" ? (
+          <ApplicationsBoard queryParams={queryParams} isAdmin={isAdmin} commands={commands} notify={notify} onChanged={() => { void listQuery.refresh(); void summaryQuery.refresh(); }} />
+        ) : filtered.length ? (
           <div className={`${common.tableWrap} ${styles.applicationTableWrap}`}>
             <table className={`${common.table} ${styles.applicationTable}`}>
               <thead>
@@ -669,7 +684,7 @@ export default function ApplicationsPage() {
             </Button>
           </div>
         ) : null}
-        {listQuery.data && <div className={styles.paginationRow}>
+        {layout === "table" && listQuery.data && <div className={styles.paginationRow}>
           <Pagination
             page={currentPage}
             pageSize={pageSize}
