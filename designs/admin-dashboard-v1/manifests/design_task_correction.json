@@ -1,8 +1,0 @@
-{
-  "corrections": [
-    {
-      "screenId": 37,
-      "prompt": "Use case: precise-object-edit. In this dashboard image, remove ONLY the small pill badge containing the text '(Not a hiring review)' located directly to the right of the 'Work review' badge beneath the 'Build contact section' heading. Fill its former area with the same dark card background. Preserve the 'Work review' badge, the 'In progress' badge, all other text and interface content, every card, icon, color, border, spacing and the entire layout. Do not move anything. Keep the original image dimensions."
-    }
-  ]
-}
