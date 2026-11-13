@@ -9,6 +9,7 @@ type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session
 const text = (v: unknown) => typeof v === "string" ? v.trim() : "";
 const newId = (p: string) => `${p}-${randomUUID()}`;
 import { auditDecision } from "../audit/decision-audit";
+import { missingDocuments, type ChecklistItem } from "../onboarding/documents";
 /** The moment an offer stops accepting answers: `days` after `fromIso`. */
 export const offerDeadline = (fromIso: string, days: number) => new Date(new Date(fromIso).getTime() + days * 86_400_000).toISOString();
 /** Offers without a deadline (sent before expiry existed) never expire. */
@@ -25,7 +26,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
-  const names = new Set(["offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       offers.createIndex({ applicationId: 1 }, { unique: true }),
@@ -123,14 +124,44 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
         if (data.resumeAttachmentId !== app.resumeAttachmentId) { const file = await files.findOne({ _id: data.resumeAttachmentId, kind: "resume", status: "ready", ownerApplicationId: applicationId }, opts); if (!file) throw new DomainError("FORBIDDEN", "Resume does not belong to this account."); await files.updateOne({ _id: data.resumeAttachmentId }, { $set: { applicationId } }, opts); }
         if (method === "onboarding.submit" && (!data.phone || !data.college || !data.location || !data.resumeAttachmentId || !data.acknowledged)) throw new DomainError("INVALID_REQUEST", "Complete your profile, resume, and program acknowledgment before submitting.");
         if (method === "onboarding.submit") data.submittedOn = now;
+        if (old?.documents) data.documents = old.documents; // uploaded checklist documents are managed separately
         await onboarding.replaceOne({ applicationId }, data, { ...opts, upsert: true });
         await applications.updateOne({ _id: applicationId }, { $set: { phone: data.phone, college: data.college, location: data.location, skills: data.skills, resumeAttachmentId: data.resumeAttachmentId }, $inc: { version: 1 }, ...(method === "onboarding.submit" ? { $push: { history: { id: newId("HST"), title: "Onboarding submitted", detail: "The company team will review your onboarding details.", date: now } } as any } : {}) }, opts);
         return plain(data);
+      }
+      if (method === "onboarding.document") {
+        // An intern uploads one checklist document (again after changes are requested).
+        const applicationId = required(p.applicationId, "application"); own(actor, applicationId);
+        const docId = required(p.docId, "document", 40), attachmentId = required(p.attachmentId, "file", 120);
+        if (!(await offers.findOne({ applicationId, status: "Accepted" }, opts))) throw new DomainError("CONFLICT", "Accept your offer before uploading onboarding documents.");
+        const checklist = ((await settings.findOne({ _id: "program" }, opts))?.onboardingDocuments || []) as ChecklistItem[];
+        const item = checklist.find(entry => entry.id === docId); if (!item) throw new DomainError("NOT_FOUND", "That document isn't on the checklist.");
+        const file = await files.findOne({ _id: attachmentId, status: "ready", ownerApplicationId: applicationId }, opts); if (!file) throw new DomainError("FORBIDDEN", "Upload the file from this account first.");
+        const existing = await onboarding.findOne({ applicationId }, opts);
+        if (existing?.status === "Approved") throw new DomainError("CONFLICT", "Onboarding is already approved.");
+        if (existing?.documents?.[docId]?.status === "Approved") throw new DomainError("CONFLICT", "This document is already approved.");
+        const entry = { attachmentId, name: String(file.name || item.label), status: "Submitted", uploadedOn: now };
+        const row = await onboarding.findOneAndUpdate({ applicationId }, { $set: { [`documents.${docId}`]: entry }, $setOnInsert: { _id: newId("ONB"), applicationId, status: "Draft", acknowledged: false } }, { ...opts, upsert: true, returnDocument: "after" });
+        return plain(row!);
+      }
+      if (method === "onboarding.reviewDocument") {
+        staff(actor); const applicationId = required(p.applicationId, "application"), docId = required(p.docId, "document", 40);
+        const decision = p.decision === "Approved" ? "Approved" : p.decision === "Changes requested" ? "Changes requested" : "";
+        if (!decision) throw new DomainError("INVALID_REQUEST", "Approve the document or request changes.");
+        const note = text(p.note).slice(0, 500);
+        if (decision === "Changes requested" && !note) throw new DomainError("INVALID_REQUEST", "Say what needs to change.");
+        const row = await onboarding.findOneAndUpdate({ applicationId, [`documents.${docId}`]: { $exists: true }, status: { $ne: "Approved" } }, { $set: { [`documents.${docId}.status`]: decision, [`documents.${docId}.note`]: note, [`documents.${docId}.reviewedOn`]: now } }, { ...opts, returnDocument: "after" });
+        if (!row) throw new DomainError("CONFLICT", "That document hasn't been uploaded, or onboarding is already approved.");
+        return plain(row);
       }
       if (method === "onboarding.approve") {
         staff(actor); const applicationId = required(p.applicationId, "application");
         const app = await applications.findOne({ _id: applicationId, status: "Selected" }, opts); const offer = await offers.findOne({ applicationId, status: "Accepted" }, opts);
         if (!app || !offer) throw new DomainError("CONFLICT", "Only selected applicants with an accepted offer can be onboarded.");
+        const checklist = ((await settings.findOne({ _id: "program" }, { ...opts, projection: { onboardingDocuments: 1 } }))?.onboardingDocuments || []) as ChecklistItem[];
+        const pendingRow = await onboarding.findOne({ applicationId }, opts);
+        const missing = missingDocuments(checklist, pendingRow?.documents);
+        if (missing.length) throw new DomainError("CONFLICT", `Approve these documents first: ${missing.map(item => item.label).join(", ")}.`);
         const updated = await onboarding.findOneAndUpdate({ applicationId, status: "Submitted" }, { $set: { status: "Approved", approvedOn: now } }, { ...opts, returnDocument: "after" }); if (!updated) throw new DomainError("CONFLICT", "The applicant must submit onboarding before approval.");
         await applications.updateOne({ _id: applicationId, status: "Selected" }, { $set: { status: "Joined" }, $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: "Intern onboarded", detail: "Onboarding approved. Your internship workspace is ready.", date: now } } as any }, opts);
         const config = await settings.findOne({ _id: "program" }, opts);
@@ -275,7 +306,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);
-      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
+      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
       const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
       const label = labels[method];
       if (label && actor) {

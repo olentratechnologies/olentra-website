@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { MongoClientBulkWriteError, MongoServerError, type ClientBulkWriteModel, type ClientSession, type Collection, type Document } from "mongodb";
 import { validateRubric } from "../reviews/reviews.service";
+import { validateChecklist } from "../onboarding/documents";
 import { DomainError } from "../../shared/errors";
 import type { Principal } from "../../shared/principal";
 import { can, isAdmin } from "../access/policy";
@@ -269,6 +270,7 @@ export function createCommunications({ collection, transact }: Options) {
       for (const field of ["programName", "defaultBatch"]) if (patch[field] !== undefined) { const value = str(patch[field]); if ((field === "programName" && !value) || value.length > 120) throw new DomainError("INVALID_REQUEST", `Enter a valid ${field}.`); values[field] = value; }
       for (const field of ["programEnabled", "applicationAlerts", "weeklyDigest", "reviewReminder", "rejectionEmails"]) if (patch[field] !== undefined) { if (typeof patch[field] !== "boolean") throw new DomainError("INVALID_REQUEST", `Invalid ${field}.`); values[field] = patch[field]; }
       if (patch.rubric !== undefined) values.rubric = validateRubric(patch.rubric);
+      if (patch.onboardingDocuments !== undefined) values.onboardingDocuments = validateChecklist(patch.onboardingDocuments);
       if (patch.retentionDays !== undefined) {
         // null turns automatic deletion off; otherwise 30 days to 10 years.
         const days = patch.retentionDays === null ? null : Number(patch.retentionDays);

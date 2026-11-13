@@ -72,17 +72,18 @@ export default function SettingsPage() {
   const [rejectionEmails, setRejectionEmails] = useState(data.settings.rejectionEmails === true);
   const [retentionDays, setRetentionDays] = useState(data.settings.retentionDays ?? null);
   const [rubric, setRubric] = useState(() => data.settings.rubric || DEFAULT_RUBRIC);
+  const [checklist, setChecklist] = useState(() => data.settings.onboardingDocuments || []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
-  useEffect(() => { setBatch(data.settings.defaultBatch || ""); setName(data.settings.programName || "Olentra Internship Program"); setProgramEnabled(Boolean(data.settings.programEnabled)); setCompensationMode(normalizeCompensationMode(data.settings.compensationMode)); setApplicationAlerts(data.settings.applicationAlerts !== false); setRejectionEmails(data.settings.rejectionEmails === true); setRetentionDays(data.settings.retentionDays ?? null); setRubric(data.settings.rubric || DEFAULT_RUBRIC); }, [data.settings.rubric, data.settings.retentionDays, data.settings.defaultBatch, data.settings.programName, data.settings.programEnabled, data.settings.compensationMode, data.settings.applicationAlerts, data.settings.rejectionEmails]);
+  useEffect(() => { setBatch(data.settings.defaultBatch || ""); setName(data.settings.programName || "Olentra Internship Program"); setProgramEnabled(Boolean(data.settings.programEnabled)); setCompensationMode(normalizeCompensationMode(data.settings.compensationMode)); setApplicationAlerts(data.settings.applicationAlerts !== false); setRejectionEmails(data.settings.rejectionEmails === true); setRetentionDays(data.settings.retentionDays ?? null); setRubric(data.settings.rubric || DEFAULT_RUBRIC); setChecklist(data.settings.onboardingDocuments || []); }, [data.settings.onboardingDocuments, data.settings.rubric, data.settings.retentionDays, data.settings.defaultBatch, data.settings.programName, data.settings.programEnabled, data.settings.compensationMode, data.settings.applicationAlerts, data.settings.rejectionEmails]);
   const availableTracks = data.programs.filter(program => isProgramAvailable(program, { programEnabled: true, compensationMode }));
   async function save(event) {
     event.preventDefault();
     if (tab === "general" && !name.trim()) { setError("Enter a program name."); return; }
     setBusy(true); setError("");
     try {
-      const result = await updateSettings(tab === "notifications" ? { applicationAlerts, rejectionEmails } : { programName: name.trim(), defaultBatch: batch.trim(), programEnabled, compensationMode, retentionDays, rubric: rubric.filter(criterion => criterion.label.trim()) });
+      const result = await updateSettings(tab === "notifications" ? { applicationAlerts, rejectionEmails } : { programName: name.trim(), defaultBatch: batch.trim(), programEnabled, compensationMode, retentionDays, rubric: rubric.filter(criterion => criterion.label.trim()), onboardingDocuments: checklist.filter(item => item.label.trim()) });
       if (result !== false) { setSaved(true); notify("Program settings saved."); }
     } finally { setBusy(false); }
   }
@@ -116,6 +117,16 @@ export default function SettingsPage() {
         </li>)}
       </ul>
       {rubric.length < 8 && <Button variant="secondary" onClick={() => edit(setRubric, [...rubric, { id: "", label: "", weight: 1 }])}>Add criterion</Button>}
+      <div className={styles.divider}/><h3 className={styles.subheading}>Onboarding documents</h3>
+      <p className={styles.helper}>Documents new interns upload during onboarding. You approve each one, and onboarding can’t be approved until every required document is.</p>
+      {checklist.length > 0 && <ul className={styles.rubricList}>
+        {checklist.map((item, index) => <li key={item.id || index}>
+          <input aria-label={`Document ${index + 1} name`} value={item.label} maxLength={60} placeholder="ID proof" onChange={event => edit(setChecklist, checklist.map((entry, i) => i === index ? { ...entry, label: event.target.value } : entry))}/>
+          <label className={styles.inlineCheck}><input type="checkbox" checked={item.required !== false} onChange={event => edit(setChecklist, checklist.map((entry, i) => i === index ? { ...entry, required: event.target.checked } : entry))}/> Required</label>
+          <Button variant="ghost" onClick={() => edit(setChecklist, checklist.filter((_, i) => i !== index))}>Remove</Button>
+        </li>)}
+      </ul>}
+      {checklist.length < 10 && <Button variant="secondary" onClick={() => edit(setChecklist, [...checklist, { id: "", label: "", required: true }])}>Add document</Button>}
       <div className={styles.divider}/><h3 className={styles.subheading}>Applicant data</h3>
       <div className={ui.formGrid}><label className={ui.field}>Delete rejected, declined and withdrawn applicants after
         <select value={retentionDays ?? ""} onChange={event => edit(setRetentionDays, event.target.value ? Number(event.target.value) : null)}>

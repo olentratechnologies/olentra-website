@@ -490,3 +490,12 @@
   flex-basis: 100%;
   color: var(--ad-muted);
 }
+
+.inlineCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ad-text);
+  white-space: nowrap;
+}

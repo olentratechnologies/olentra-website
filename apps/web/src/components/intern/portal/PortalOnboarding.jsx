@@ -27,6 +27,7 @@ import {
 import styles from "./portal.module.css";
 import { burstFrom } from "@/lib/confetti.mjs";
 import progress from "./onboarding-progress.module.css";
+import OnboardingDocuments from "./OnboardingDocuments";
 
 const READY_FLAG = "olentra_onboarding_ready_v1:";
 
@@ -375,11 +376,19 @@ export default function PortalOnboarding() {
       {my.application &&
       (my.offer?.status === "Accepted" ||
         my.application.status === "Joined") ? (
-        <OnboardingForm
-          key={my.application.id}
-          application={my.application}
-          onboarding={my.onboarding}
-        />
+        <>
+          <OnboardingForm
+            key={my.application.id}
+            application={my.application}
+            onboarding={my.onboarding}
+          />
+          <OnboardingDocuments
+            applicationId={my.application.id}
+            checklist={my.documentChecklist}
+            documents={my.onboarding?.documents}
+            locked={my.onboarding?.status === "Approved"}
+          />
+        </>
       ) : (
         <Panel>
           <EmptyState

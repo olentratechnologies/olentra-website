@@ -36,6 +36,7 @@ import { hasStaffPermission } from "./staffAccess";
 import { burstFrom } from "@/lib/confetti.mjs";
 import TemplatePicker from "./TemplatePicker";
 import { offerTimeLeft } from "@/lib/intern/offer-deadline.mjs";
+import OnboardingDocumentsReview from "./OnboardingDocumentsReview";
 
 function localDate(days = 0) {
   const date = new Date();
@@ -458,6 +459,7 @@ export function ApplicantWorkflow({ applicationId }) {
               </div>
             </li>
           </ul>
+          <OnboardingDocumentsReview applicationId={applicationId} checklist={data.settings?.onboardingDocuments} documents={onboarding?.documents} locked={onboarding?.status === "Approved"} commands={commands} notify={notify} />
           {onboarding && (
             <div className={styles.onboardingDetails}>
               <h3>Submitted details</h3>

@@ -138,3 +138,24 @@ test("active interns check in once a week and mentors can reply", async () => {
   const other = await applicant("Joined");
   await expect(domain.execute("checkin.list", { applicationId }, other.account)).rejects.toMatchObject({ code: "FORBIDDEN" });
 });
+
+test("onboarding can't be approved until every required document is approved", async () => {
+  await domain.execute("settings.update", { patch: { onboardingDocuments: [{ label: "ID proof" }, { label: "Bank form", required: false }] } }, admin, key());
+  const { applicationId, account } = await applicant("Selected");
+  await domain.collection("offers").insertOne({ _id: `OFFER-${randomUUID()}`, applicationId, status: "Accepted", startOn: "2026-12-01", endOn: "2027-03-01", stipend: 0 });
+  await domain.collection("onboarding").insertOne({ _id: `ONB-${randomUUID()}`, applicationId, status: "Submitted", acknowledged: true });
+  const fileId = `FILE-${randomUUID()}`, strangerFile = `FILE-${randomUUID()}`;
+  await domain.collection("files").insertMany([{ _id: fileId, kind: "work", name: "id.pdf", status: "ready", ownerApplicationId: applicationId }, { _id: strangerFile, kind: "work", name: "x.pdf", status: "ready", ownerApplicationId: "someone-else" }]);
+  const snapshot = await domain.execute("intern.snapshot", {}, account, key()) as any;
+  expect(snapshot.my.documentChecklist.map((item: any) => item.id)).toEqual(["id-proof", "bank-form"]);
+  await expect(domain.execute("onboarding.document", { applicationId, docId: "id-proof", attachmentId: strangerFile }, account, key())).rejects.toMatchObject({ code: "FORBIDDEN" });
+  await domain.execute("onboarding.document", { applicationId, docId: "id-proof", attachmentId: fileId }, account, key());
+  await expect(domain.execute("onboarding.approve", { applicationId }, admin, key())).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("ID proof") });
+  await expect(domain.execute("onboarding.reviewDocument", { applicationId, docId: "id-proof", decision: "Changes requested" }, admin, key())).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await domain.execute("onboarding.reviewDocument", { applicationId, docId: "id-proof", decision: "Changes requested", note: "Photo is blurry" }, admin, key());
+  await domain.execute("onboarding.document", { applicationId, docId: "id-proof", attachmentId: fileId }, account, key());
+  await domain.execute("onboarding.reviewDocument", { applicationId, docId: "id-proof", decision: "Approved" }, admin, key());
+  const intern = await domain.execute("onboarding.approve", { applicationId }, admin, key()) as any;
+  expect(intern.status).toBe("Active");
+  await domain.execute("settings.update", { patch: { onboardingDocuments: [] } }, admin, key());
+});

@@ -3453,3 +3453,43 @@
 .checkinSummary small {
   color: var(--ad-muted, #5b6b8c);
 }
+
+.documentList {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documentList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ad-border, #d6e0f5);
+  border-radius: 10px;
+}
+
+.documentList li > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.documentList small {
+  overflow: hidden;
+  color: var(--ad-muted, #5b6b8c);
+  text-overflow: ellipsis;
+}
+
+.documentNote {
+  color: var(--ad-danger, #ce5275) !important;
+}
+
+@media (max-width: 520px) {
+  .documentList li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
