@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
+import { Feature } from "@olentra/site-features/react";
 gsap.registerPlugin(useGSAP);
 
 const VIDEO_URL = "/videos/hero-video.mp4";
@@ -59,7 +60,7 @@ export default function Hero() {
         className="cc-hero is-entered relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-[#070b12] text-white flex flex-col justify-between"
       >
         {/* Neural Warp Video Background */}
-        <video
+        <Feature name="home.hero.video"><video
           ref={videoRef}
           className="cc-art absolute inset-0 w-full h-full object-cover object-center z-0 pointer-events-none select-none"
           autoPlay
@@ -70,7 +71,7 @@ export default function Hero() {
           aria-hidden="true"
           poster={POSTER_URL}
           src={VIDEO_URL}
-        />
+        /></Feature>
 
         {/* Atmospheric Radial Veil */}
         <div className="cc-veil absolute inset-0 z-[1] pointer-events-none" aria-hidden="true" />
@@ -127,7 +128,7 @@ export default function Hero() {
             </div>
 
             {/* Feature Chevrons */}
-            <ul className="mt-6 sm:mt-8 md:mt-12 flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:gap-8 lg:gap-10 w-full">
+            <Feature name="home.hero.highlights"><ul className="mt-6 sm:mt-8 md:mt-12 flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:gap-8 lg:gap-10 w-full">
               {FEATS.map((feat, index) => (
                 <li data-hero-enter
                   key={feat}
@@ -145,7 +146,7 @@ export default function Hero() {
                   <span>{feat}</span>
                 </li>
               ))}
-            </ul>
+            </ul></Feature>
           </div>
         </div>
       </section>

@@ -5,3 +5,69 @@
 
 .controlStats{margin-bottom:0}
 @media(max-width:760px){.overviewPage :global(.workspace-page-header .workspace-actions){display:none}.overviewTop>section:nth-child(2){display:none}.overviewPage>section:last-child{display:none}.overviewBottom{display:flex;flex-direction:column}.overviewBottom>section:first-child{order:2}.overviewBottom>section:nth-child(2){order:1}.overviewPage :global(.workspace-chart){height:190px!important}.overviewPage :global(.workspace-panel-header p){display:none}.overviewPage :global(.workspace-stat){min-height:88px}.overviewPage .attention{padding:11px;margin-bottom:8px}.overviewPage .attention strong{font-size:11px}.overviewPage .attention p{font-size:10px}.overviewPage .healthyTable thead{display:none}}
+
+.sectionGroup {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.sectionGroup h3 {
+  margin: 0 0 4px;
+  color: var(--ad-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sectionBlock {
+  display: grid;
+  border: 1px solid var(--ad-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.sectionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(150px, auto);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.sectionRow + .sectionRow {
+  border-top: 1px solid var(--ad-border);
+}
+
+.sectionRow[data-child="true"] {
+  padding-left: 36px;
+  background: var(--ad-panel-soft);
+}
+
+.sectionRow[data-child="true"] .sectionLabel::before {
+  content: "↳ ";
+  color: var(--ad-muted);
+}
+
+.sectionLabel {
+  min-width: 0;
+  color: var(--ad-text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.sectionRow[data-child="true"] .sectionLabel {
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .sectionRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .sectionRow > :last-child {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

@@ -8,7 +8,7 @@ import { MetricCards } from "./overview-page";
 import { useAdmin } from "./store";
 import { CompanyLogo } from "./company-logo";
 import { selectMonitoring } from "@/lib/admin/selectors.mjs";
-import { effectiveSiteFeatures, isFeatureHrefVisible } from "@olentra/site-features/rules";
+import { SECTION_CATALOG, effectiveSiteFeatures, isFeatureHrefVisible } from "@olentra/site-features/rules";
 import coreData from "@/data/admin/core.json";
 import contentData from "@/data/admin/content.json";
 import styles from "./core.module.css";
@@ -86,6 +86,39 @@ function NavigationPreview({ draftNavigation, allowNavigationDraft = false }) {
   </div>;
 }
 
+/** Why a section that is switched on still isn't showing, if anything. */
+function sectionStatus(entry, parent, features, visible) {
+  if (visible[entry.id]) return { label: "Visible", tone: "success" };
+  if (!features[entry.id]) return { label: "Hidden", tone: "muted" };
+  if (features.maintenance) return { label: "Paused by maintenance", tone: "warning" };
+  if (parent && !visible[parent.id]) return { label: "Hidden with " + parent.label, tone: "muted" };
+  if (entry.requires) return { label: "Hidden: " + entry.requires + " is off", tone: "muted" };
+  return { label: "Hidden", tone: "muted" };
+}
+
+/** Every page section and subsection with its own live switch, grouped by page. */
+function PageSectionsPanel({ features, saving, setVisibility }) {
+  const visible = effectiveSiteFeatures(features);
+  const pages = [...new Set(SECTION_CATALOG.map(section => section.page))];
+  const row = (entry, parent) => {
+    const status = sectionStatus(entry, parent, features, visible);
+    return <div key={entry.id} className={styles.sectionRow} data-child={Boolean(parent)}>
+      <span className={styles.sectionLabel}>{entry.label}</span>
+      <Switch aria-label={(parent ? parent.label + " › " : "") + entry.label + " visibility"} checked={Boolean(features[entry.id])} disabled={saving} onChange={value => setVisibility(entry.id, value)} />
+      <Badge tone={status.tone}>{status.label}</Badge>
+    </div>;
+  };
+  return <Panel title="Page sections" description="Turn individual sections and their parts on or off. A part only shows when its section is on. Changes apply to the live website immediately.">
+    {pages.map(page => <div key={page} className={styles.sectionGroup}>
+      <h3>{page}</h3>
+      {SECTION_CATALOG.filter(section => section.page === page).map(section => <div key={section.id} className={styles.sectionBlock}>
+        {row(section, null)}
+        {(section.children || []).map(child => row(child, section))}
+      </div>)}
+    </div>)}
+  </Panel>;
+}
+
 export function WebsiteControlsPage() {
   const { db, features, scope, environment } = useAdmin();
   const { setVisibility, saving, error } = useImmediateFeatureActions();
@@ -101,6 +134,7 @@ export function WebsiteControlsPage() {
     <PageHeader title="Website control center" description={environmentMessage(environment)} actions={<div className={"workspace-actions " + styles.desktopActions}>{actions}</div>} /><FeatureSyncStatus saving={saving} error={error} /><div className={styles.controlStats}><MetricCards /></div>
     <div className={styles.controlsGrid}><Panel title="Feature visibility" description="Each switch is saved immediately and applies globally." actions={<Button href="/dashboard/website-controls/navigation" variant="ghost">Navigation & sections</Button>}><div className={styles.featureHead}><span>Feature</span><span>Public visibility</span><span>Scope</span></div>{rows.map(row => { const Icon = icons[row.id] || Layers; return <div key={row.id} className={styles.featureRow + (row.id === "internships" ? " " + styles.selected : "")}><div className={styles.featureName}><Icon size={21} /><div><Link href={"/dashboard/website-controls/features/" + row.id}>{row.label}</Link>{row.id === "assistant" && <p className="workspace-small workspace-muted" style={{ marginTop: 4 }}>Add an assistant integration to enable this feature.</p>}</div></div><div className={styles.featureStatus}><Switch aria-label={row.label + " visibility"} checked={row.id === "assistant" ? false : features[row.id]} disabled={saving || row.id === "assistant"} onChange={value => setVisibility(row.id, value)} /><span>{row.id === "assistant" ? "Not configured" : row.id === "maintenance" ? features.maintenance ? "On" : "Off" : visibleFeatures[row.id] ? "Visible" : features[row.id] && features.maintenance ? "Paused by maintenance" : "Hidden"}</span></div><span>Global</span></div>; })}<div className={styles.featureFooter}><Button href="/dashboard/audit" icon={History}>View history</Button></div></Panel>
       <Panel title="Internship settings" actions={<Badge>{visibleFeatures.internships ? "Visible" : "Hidden"}</Badge>}><div className={styles.internSettings}><Switch label="Public page visibility" description={visibleFeatures.internships ? "Shown on public pages" : features.internships && features.maintenance ? "Paused during maintenance" : "Hidden from navigation and public pages"} checked={features.internships} disabled={saving} onChange={value => setVisibility("internships", value)} /><Switch label={labelFor(catalog, "applications")} description={features.internships && features.applications && !features.maintenance ? "New submissions open" : "New submissions closed"} checked={features.applications} disabled={saving} onChange={value => setVisibility("applications", value)} /><Switch label={labelFor(catalog, "portal")} description={features.portal ? "Current interns keep access" : "Portal access is paused"} checked={features.portal} disabled={saving} onChange={value => setVisibility("portal", value)} /><div className={styles.internMeta}><div><Link2 size={19} /><span>Public page: <b>{visibleFeatures.internships ? "Available" : "Not available"}</b></span></div><div><MapPin size={19} /><span>Scope</span><Badge>Global</Badge></div><div><Info size={19} /><span>Existing applications are preserved.</span></div><Button variant="ghost" icon={Eye} onClick={() => setPreview(true)}>Preview visitor experience</Button></div></div></Panel></div>
+    <PageSectionsPanel features={features} saving={saving} setVisibility={setVisibility} />
     <div className={styles.bottomGrid}><Panel title="Global monitoring"><div className={styles.monitorMap}><MiniMap /><div>{monitoring.regionalRows.map(row => { const Icon = row.status === "Operational" ? Check : TriangleAlert; return <div className={styles.regionStatus} key={row.name}><Icon style={row.status === "Operational" ? undefined : { color: "#fbbf24", background: "#49351a" }} /><div><strong>{row.name}</strong><small>{row.status}</small></div></div>; })}</div></div></Panel><Panel title="Performance" description="Regional website response time (ms).">{probes.length ? <LineChart values={probes.map(row => row.responseMs)} labels={[]} height={95} /> : <p className="workspace-small workspace-muted">No measurements for this scope.</p>}<div className={styles.performance}><div><p>LCP · p75</p><strong>{monitoring.probes.length ? (monitoring.lcpMs / 1000).toFixed(2) + " s" : "—"}</strong></div><div><p>INP · p75</p><strong>{monitoring.probes.length ? Math.round(monitoring.inpMs) + " ms" : "—"}</strong></div><div><p>CLS · p75</p><strong>{monitoring.probes.length ? monitoring.cls.toFixed(3) : "—"}</strong></div></div></Panel><Panel title="Recent activity">{activity.map(event => <div className={styles.activity} key={event.id}><FileText size={20} /><div><strong>{event.action}</strong><p>{event.resource} · {event.actor}</p><p>{event.date || dateLabel(event.at)}</p></div></div>)}{!activity.length && <p className="workspace-small workspace-muted">No workspace changes yet.</p>}<Button href="/dashboard/audit" variant="ghost" icon={FileText}>View audit log</Button></Panel></div>
     <div className={styles.mobileActions}>{actions}</div><Modal open={preview} onClose={() => setPreview(false)} title="Visitor experience preview"><NavigationPreview /></Modal>
   </div>;

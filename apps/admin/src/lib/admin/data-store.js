@@ -3,6 +3,7 @@
 import { initialDatabase } from "./data-source";
 import { can } from "./selectors.mjs";
 import { executeCommand, migrateSnapshot, resolveDataset, updateDataset, validateSnapshot } from "./model.mjs";
+import { switchLabel } from "@olentra/site-features/rules";
 
 const STORAGE_KEY="olentra.admin.database.v2";
 const clone=value=>JSON.parse(JSON.stringify(value));
@@ -51,7 +52,7 @@ export function syncSiteFeatureState(state){
   if(changed){
     let next=database;const change=state.lastChange,id="SITE-"+state.revision;
     if(change&&!database.datasets["olentra-admin-governance-audit-v1"].some(row=>row.id===id)){
-      const label=initialDatabase.reference.core.features.find(row=>row.id===change.feature)?.label||change.feature;
+      const label=initialDatabase.reference.core.features.find(row=>row.id===change.feature)?.label||switchLabel(change.feature);
       const action=(change.enabled?"Enabled ":"Disabled ")+label;
       const event={id,action,category:"Feature switches",module:"Website Controls",resource:change.feature,environment:change.environment,scope:"Global",actor:change.actor,at:change.at,date:new Date(change.at).toLocaleString("en-GB",{timeZone:"UTC"})+" UTC",after:state.environments[change.environment]};
       next={...database,datasets:{...database.datasets,"olentra-admin-governance-audit-v1":[event,...database.datasets["olentra-admin-governance-audit-v1"]].slice(0,1000),"feature-history":[{...event,feature:change.feature,values:state.environments[change.environment]},...database.datasets["feature-history"]]}};

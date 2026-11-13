@@ -43,13 +43,13 @@ export default function HomePage() {
       <JsonLd data={organizationSchema()} />
       <JsonLd data={websiteSchema()} />
       <Navbar />
-      <div className="relative overflow-hidden">
+      <Feature name="home.hero"><div className="relative overflow-hidden">
         <Hero />
-      </div>
-      <Mission />
-      <CreativeProcess />
-      <StripeAnimation />
-      <Feature name="services"><ServicesTimeline
+      </div></Feature>
+      <Feature name="home.mission"><Mission /></Feature>
+      <Feature name="home.process"><CreativeProcess /></Feature>
+      <Feature name="home.engagement"><StripeAnimation /></Feature>
+      <Feature name="home.services"><ServicesTimeline
         sectionId="services"
         highlightedServices={[
           "AI Solutions",
@@ -60,14 +60,14 @@ export default function HomePage() {
         ctaHref="/services"
         ctaLabel="View All Services"
       /></Feature>
-      <ImpactStats />
-      <Feature name="products"><Products /></Feature>
-      <LatestProjects />
-      <Feature name="blog"><Blogs /></Feature>
-      <Testimonials />
+      <Feature name="home.stats"><ImpactStats /></Feature>
+      <Feature name="home.products"><Products /></Feature>
+      <Feature name="home.projects"><LatestProjects /></Feature>
+      <Feature name="home.blogs"><Blogs /></Feature>
+      <Feature name="home.testimonials"><Testimonials /></Feature>
       
       {/* Global Presence Section - White Theme */}
-      <section className="bg-white py-12 md:py-16 relative overflow-hidden">
+      <Feature name="home.globe"><section className="bg-white py-12 md:py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.03] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
           <div className="text-center mb-8">
@@ -85,9 +85,9 @@ export default function HomePage() {
           {/* Globe Section - White Theme */}
           <GlobeSection />
         </div>
-      </section>
+      </section></Feature>
       
-      <ContactForm />
+      <Feature name="home.contact"><ContactForm /></Feature>
       <Footer />
       <ScrollToTopProgress />
     </main>

@@ -3,7 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import seed from "../seed.json" with { type: "json" };
-import { ENVIRONMENTS, FEATURE_IDS, effectiveSiteFeatures } from "../rules.mjs";
+import { ENVIRONMENTS, SWITCH_IDS, effectiveSiteFeatures, normalizeFlags } from "../rules.mjs";
 
 const hubKey = Symbol.for("olentra.site-features.events");
 const hub = globalThis[hubKey] ||= new EventEmitter().setMaxListeners(0);
@@ -20,7 +20,9 @@ export function validateSiteFeatureState(value) {
   if (!value || value.schemaVersion !== 1 || !Number.isInteger(value.revision) || value.revision < 0) throw new Error("Invalid website feature data.");
   for (const env of ENVIRONMENTS) {
     const flags = value.environments?.[env];
-    if (!flags || Object.keys(flags).length !== FEATURE_IDS.length || FEATURE_IDS.some(id => typeof flags[id] !== "boolean")) throw new Error("Invalid feature switches in " + env + ".");
+    if (!flags || typeof flags !== "object" || Object.values(flags).some(flag => typeof flag !== "boolean")) throw new Error("Invalid feature switches in " + env + ".");
+    // Switches added since this was saved start at their defaults.
+    value.environments[env] = normalizeFlags(flags);
   }
   return value;
 }
@@ -76,7 +78,7 @@ export function publicSiteFeatureState(state) {
 export function watchSiteFeatures(listener) { hub.on("change", listener); return () => hub.off("change", listener); }
 
 export async function setSiteFeature({ environment = "Production", feature, enabled, actor = "Administrator", token = "" }) {
-  if (!ENVIRONMENTS.includes(environment) || !FEATURE_IDS.includes(feature) || typeof enabled !== "boolean") throw new Error("Choose a valid feature, environment and boolean value.");
+  if (!ENVIRONMENTS.includes(environment) || !SWITCH_IDS.includes(feature) || typeof enabled !== "boolean") throw new Error("Choose a valid feature, environment and boolean value.");
   if (!useFile()) return setRemote({ environment, feature, enabled, actor, token });
   const file = storePath(), lock = file + ".lock";
   await mkdir(path.dirname(file), { recursive: true });

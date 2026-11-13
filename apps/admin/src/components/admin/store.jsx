@@ -10,6 +10,7 @@ import { updateSiteFeature } from "@olentra/site-features/client";
 import { effectiveSiteFeatures } from "@olentra/site-features/rules";
 import { restoreWorkspaceSession, signInToWorkspace, signOutOfWorkspace, withWorkspaceToken } from "@/lib/workspace-auth.mjs";
 import { canControlWebsite, workspaceRole } from "@/lib/workspace-access.mjs";
+import { switchLabel } from "@olentra/site-features/rules";
 
 export const initialFeatures=coreData.datasets["features:Production"];
 const REFRESH_INTERVAL=12*60*1000;
@@ -82,7 +83,7 @@ export function AdminProvider({children}){
         setFeatureError(result.error);return result;
       }
       syncSiteFeatureState(result.value);
-      const label=db.reference.core.features.find(row=>row.id===key)?.label||key;
+      const label=db.reference.core.features.find(row=>row.id===key)?.label||switchLabel(key);
       notify(label+" "+(value?"enabled":"disabled")+(targetEnvironment==="Production"?" on the website.":" in Staging."));return result;
     }catch(failure){const message=failure.message||"Could not save website settings. Check your connection and try again.";setFeatureError(message);return{ok:false,error:message};}
     finally{busy.current=false;setFeatureSaving(false);}

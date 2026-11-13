@@ -18,7 +18,8 @@ const socialIcons = {
 };
 
 export default function Footer() {
-  const { isVisibleHref } = useSiteFeatures();
+  const { isVisibleHref, features } = useSiteFeatures();
+  if (!features.footer) return null;
   return (
     <footer
       data-testid="footer"
@@ -49,7 +50,7 @@ export default function Footer() {
           </div>
 
           {/* Services Column */}
-          <Feature name="services"><div className="space-y-4">
+          <Feature name="footer.services"><div className="space-y-4">
             <h4 className="text-[10px] text-primary font-bold tracking-[0.3em] uppercase">Services</h4>
             <div className="flex flex-col gap-2">
               {servicePages.map((service) => (
@@ -66,7 +67,7 @@ export default function Footer() {
           </div></Feature>
 
           {/* Quick Links Column */}
-          <div className="space-y-4">
+          <Feature name="footer.links"><div className="space-y-4">
             <h4 className="text-[10px] text-primary font-bold tracking-[0.3em] uppercase">Quick Links</h4>
             <div className="flex flex-col gap-2">
               {quickLinks.filter((link) => isVisibleHref(link.href)).map((link) => (
@@ -80,10 +81,10 @@ export default function Footer() {
                 </Link>
               ))}
             </div>
-          </div>
+          </div></Feature>
 
           {/* Contact Column */}
-          <div className="space-y-4">
+          <Feature name="footer.contact"><div className="space-y-4">
             <h4 className="text-[10px] text-primary font-bold tracking-[0.3em] uppercase">Contact</h4>
             <div className="space-y-3">
               {contactInfo.phone && (
@@ -145,7 +146,7 @@ export default function Footer() {
                 </div>
               </div>
             </div>
-          </div>
+          </div></Feature>
         </div>
 
         {/* Very bottom branding */}

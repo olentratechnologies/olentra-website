@@ -8,6 +8,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import { Zap, Shield, Cpu, Globe, Terminal } from 'lucide-react';
 import { missionData } from '../data/about';
+import { Feature } from "@olentra/site-features/react";
 
 const aboutText = missionData.aboutText;
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -59,7 +60,7 @@ export default function Mission() {
         </div>
 
         {/* Operational Pillars */}
-        <div className="relative pt-6 mb-12 md:mb-14">
+        <Feature name="home.mission.pillars"><div className="relative pt-6 mb-12 md:mb-14">
           {/* Border top */}
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
 
@@ -81,10 +82,10 @@ export default function Mission() {
               </div>
             ))}
           </div>
-        </div>
+        </div></Feature>
 
         {/* INTEGRATED: Visual System Arena (Light Theme) */}
-        <div className="flex flex-col items-center pt-6 md:pt-10">
+        <Feature name="home.mission.showcase"><div className="flex flex-col items-center pt-6 md:pt-10">
           {/* Visual Header */}
           <div className="mb-14 md:mb-20 text-center">
             <motion.h2
@@ -165,7 +166,7 @@ export default function Mission() {
             {/* Soft Ambient Glow */}
             <div className="absolute inset-0 bg-primary/[0.02] blur-[80px] md:blur-[120px] rounded-full pointer-events-none z-0" />
           </motion.div>
-        </div>
+        </div></Feature>
       </div>
     </section>
   );
