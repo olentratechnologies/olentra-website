@@ -4,7 +4,7 @@
  * can't be stored, so it has to be chosen again.
  */
 export const APPLY_DRAFT_KEY = "olentra_apply_draft_v1";
-export const DRAFT_FIELDS = ["fullName", "email", "linkedin", "videoUrl", "skills"];
+export const DRAFT_FIELDS = ["fullName", "email", "linkedin", "videoUrl"];
 const MAX_FIELD = 500;
 /** Drafts older than this are dropped. */
 const MAX_AGE_MS = 14 * 86_400_000;

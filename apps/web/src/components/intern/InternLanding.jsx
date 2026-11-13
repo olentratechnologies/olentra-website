@@ -342,7 +342,6 @@ export default function InternLanding() {
       programId: selectedTrack,
       linkedin: String(formData.get("linkedin") || "").trim(),
       videoUrl: String(formData.get("videoUrl") || "").trim(),
-      skills: String(formData.get("skills") || "").split(",").map((skill) => skill.trim()).filter(Boolean).slice(0, 10),
     };
     if (
       savedApplication &&
@@ -350,8 +349,7 @@ export default function InternLanding() {
       savedApplication.name === input.name &&
       savedApplication.programId === input.programId &&
       (savedApplication.linkedin || "") === input.linkedin &&
-      (savedApplication.videoUrl || "") === input.videoUrl &&
-      (savedApplication.skills || []).join(",") === input.skills.join(",")
+      (savedApplication.videoUrl || "") === input.videoUrl
     ) {
       setPreviewComplete(false);
       setLaunchPhase("launching");
@@ -821,21 +819,6 @@ export default function InternLanding() {
                           {videoError}
                         </p>
                       )}
-                    </div>
-                    <div className={`${styles.profileField} ${styles.profileFieldWide}`}>
-                      <label htmlFor="intern-skills">Skills</label>
-                      <input
-                        id="intern-skills"
-                        name="skills"
-                        type="text"
-                        placeholder="React, Python, SQL"
-                        maxLength={400}
-                        autoComplete="off"
-                        aria-describedby="intern-skills-hint"
-                      />
-                      <p className={styles.fieldHint} id="intern-skills-hint">
-                        Optional. Up to 10, separated by commas.
-                      </p>
                     </div>
                   </div>
                   <div className={styles.resumeField}>
