@@ -21,7 +21,7 @@ import { isProgramAvailable, matchesCompensationMode, resolveProgramSelection } 
 import styles from "./intern.module.css";
 import InternInsights from "./InternInsights";
 import SuccessStories from "./SuccessStories";
-import { useSiteFeatures } from "@olentra/site-features/react";
+import { Feature, useSiteFeatures } from "@olentra/site-features/react";
 import { DRAFT_FIELDS, clearApplyDraft, readApplyDraft, writeApplyDraft } from "@/lib/intern/apply-draft.mjs";
 
 const ART_SOURCE = "/images/intern/reference-art.png";
@@ -510,7 +510,7 @@ export default function InternLanding() {
     <div className={styles.page}>
       <BackgroundWaves />
       <main className={styles.main}>
-        <section
+        <Feature name="careers.hero"><section
           className={styles.hero}
           data-theme="light"
           aria-labelledby="intern-title"
@@ -554,9 +554,9 @@ export default function InternLanding() {
             </div>
             <ReferenceArt name="hero" className={styles.heroArt} />
           </div>
-        </section>
+        </section></Feature>
 
-        <section
+        <Feature name="careers.tracks"><section
           className={`${styles.container} ${styles.tracks}`}
           id="internship-tracks"
           data-theme="light"
@@ -604,9 +604,9 @@ export default function InternLanding() {
               );
             })}
           </div> : ready ? <p className={styles.tracksEmpty} role="status">Internship opportunities will be announced soon.</p> : <LoadingIndicator label="Loading internship opportunities…" />}
-        </section>
+        </section></Feature>
 
-        <section
+        <Feature name="careers.insights"><section
           className={`${styles.container} ${styles.insights}`}
           id="internship-insights"
           data-theme="light"
@@ -624,9 +624,9 @@ export default function InternLanding() {
               </div>
             }
           />
-        </section>
+        </section></Feature>
 
-        <div className={styles.container}>
+        <Feature name="careers.stories"><div className={styles.container}>
           <SuccessStories
             heading={
               <div className={styles.sectionHeading}>
@@ -638,14 +638,14 @@ export default function InternLanding() {
               </div>
             }
           />
-        </div>
+        </div></Feature>
 
         <section
           className={`${styles.container} ${styles.bottomGrid}`}
           data-theme="light"
           aria-label="Internship benefits and application"
         >
-          <div className={styles.whyChoose}>
+          <Feature name="careers.why"><div className={styles.whyChoose}>
             <div className={styles.sectionHeading}>
               <ReferenceArt name="diamond" />
               <div>
@@ -667,7 +667,7 @@ export default function InternLanding() {
                 </div>
               ))}
             </div>
-          </div>
+          </div></Feature>
 
           {canApply ? <div className={styles.application} id="internship-application">
             <div className={styles.applicationContent}>

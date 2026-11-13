@@ -8,6 +8,7 @@ import JsonLd from "@/components/JsonLd";
 import PrimaryCtaBand from "@/components/site/PrimaryCtaBand";
 import PageHero from "@/components/site/PageHero";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo";
+import { Feature } from "@olentra/site-features/react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -26,7 +27,7 @@ export default function ServicesPage() {
         ])}
       />
       <Navbar />
-      <PageHero
+      <Feature name="servicesPage.hero"><PageHero
         eyebrow="Service Cluster"
         title="Enterprise services designed for high-consequence delivery."
         description="Choose the capability cluster that matches your current stage, constraints, and growth priorities."
@@ -39,9 +40,9 @@ export default function ServicesPage() {
         image="/images/backgrounds/cyber-bg.png"
         panelLabel="SERVICE_CLUSTER"
         panelTag="Capability Index"
-      />
+      /></Feature>
 
-      <motion.div
+      <Feature name="servicesPage.list"><motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
@@ -53,7 +54,7 @@ export default function ServicesPage() {
           ctaLabel="Start Service Discussion"
           theme="light"
         />
-      </motion.div>
+      </motion.div></Feature>
       <Footer />
     </main>
   );

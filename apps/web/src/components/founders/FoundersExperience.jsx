@@ -208,7 +208,7 @@ export default function FoundersExperience() {
         Skip to shared vision
       </a>
       {/* 1. HERO - BLACK THEME */}
-      <section
+      <Feature name="about.hero"><section
         className={styles.hero}
         data-theme="dark"
         aria-labelledby="founders-title"
@@ -236,7 +236,7 @@ export default function FoundersExperience() {
             ))}
           </div>
         </div>
-      </section>
+      </section></Feature>
       <div className={styles.chapterStrip}>
         <span>Two minds.</span>
         <i />
@@ -246,7 +246,7 @@ export default function FoundersExperience() {
       </div>
 
       {/* 2. VISION - WHITE THEME */}
-      <section
+      <Feature name="about.vision"><section
         id="shared-vision"
         data-theme="light"
         className={`${styles.section} ${styles.vision} ${styles.lightSection}`}
@@ -269,10 +269,10 @@ export default function FoundersExperience() {
             </article>
           ))}
         </div>
-      </section>
+      </section></Feature>
 
       {/* 3. THINKING - BLACK THEME */}
-      <section
+      <Feature name="about.thinking"><section
         className={`${styles.section} ${styles.thinking}`}
         data-theme="dark"
         aria-labelledby="thinking-title"
@@ -305,10 +305,10 @@ export default function FoundersExperience() {
             </article>
           ))}
         </div>
-      </section>
+      </section></Feature>
 
       {/* 4. BELIEF MESSAGE - WHITE THEME */}
-      <section
+      <Feature name="about.belief"><section
         className={`${styles.section} ${styles.message} ${styles.lightSection}`}
         data-theme="light"
         aria-labelledby="message-title"
@@ -334,13 +334,13 @@ export default function FoundersExperience() {
             </span>
           ))}
         </div>
-      </section>
+      </section></Feature>
 
       {/* 5. FUTURE DIRECTION - BLACK THEME */}
-      <FutureDirection />
+      <Feature name="about.future"><FutureDirection /></Feature>
 
       {/* 6. CLOSING CTA - WHITE THEME */}
-      <section
+      <Feature name="about.closing"><section
         className={`${styles.section} ${styles.closing} ${styles.lightSection}`}
         data-theme="light"
         aria-labelledby="closing-title"
@@ -367,7 +367,7 @@ export default function FoundersExperience() {
           <Feature name="services"><Link href="/services">Our services</Link></Feature>
           <Feature name="products"><Link href="/products">Our products</Link></Feature>
         </nav>
-      </section>
+      </section></Feature>
     </section>
   );
 }

@@ -12,6 +12,7 @@ import PageHero from "@/components/site/PageHero";
 import SectionIntro from "@/components/site/SectionIntro";
 import { blogs } from "@/data/blogs";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo";
+import { Feature } from "@olentra/site-features/react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -37,7 +38,7 @@ export default function BlogsPage() {
         ])}
       />
       <Navbar />
-      <PageHero
+      <Feature name="blogPage.hero"><PageHero
         eyebrow="Editorial Stream"
         title="Field notes from enterprise product delivery."
         description="Explore practical insights on engineering execution, AI operations, frontend performance, and growth systems."
@@ -50,9 +51,9 @@ export default function BlogsPage() {
         image="/images/products/ai-studio-new.png"
         panelLabel="EDITORIAL_OS"
         panelTag="Delivery-Backed Insights"
-      />
+      /></Feature>
 
-      <section id="blog-section" className="relative py-24 md:py-28 bg-white text-slate-900 overflow-hidden">
+      <Feature name="blogPage.list"><section id="blog-section" className="relative py-24 md:py-28 bg-white text-slate-900 overflow-hidden">
         <div className="absolute inset-0 bg-cyber-grid-light opacity-[0.05] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
           <motion.div {...fadeInUp}>
@@ -118,7 +119,7 @@ export default function BlogsPage() {
             ))}
           </motion.div>
         </div>
-      </section>
+      </section></Feature>
 
       <Footer />
     </main>

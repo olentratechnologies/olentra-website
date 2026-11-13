@@ -11,6 +11,7 @@ import PageHero from "@/components/site/PageHero";
 import SectionIntro from "@/components/site/SectionIntro";
 import { products } from "@/data/products-data";
 import { buildMetadata, breadcrumbSchema } from "@/lib/seo";
+import { Feature } from "@olentra/site-features/react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -39,7 +40,7 @@ export default function ProductsPage() {
         ])}
       />
       <Navbar />
-      <PageHero
+      <Feature name="productsPage.hero"><PageHero
         eyebrow="Product Ecosystem"
         title="Operational products built to scale enterprise outcomes."
         description="Olentra products are designed for teams that need reliable architecture, measurable workflows, and launch-ready execution quality."
@@ -52,9 +53,9 @@ export default function ProductsPage() {
         image="/images/products/ai-studio-new.png"
         panelLabel="PRODUCT_SUITE"
         panelTag="Launch-Ready Platforms"
-      />
+      /></Feature>
 
-      <Products light />
+      <Feature name="productsPage.list"><Products light /></Feature>
 
       <Footer />
     </main>
