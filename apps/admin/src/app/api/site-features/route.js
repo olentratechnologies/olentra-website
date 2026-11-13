@@ -20,6 +20,6 @@ export async function PUT(request) {
   const staff = await verifyStaffRequest(request);
   if (staff.error) return NextResponse.json({ error: staff.error }, { status: staff.status, headers });
   if (!WEBSITE_CONTROL_ROLES.has(staff.role)) return NextResponse.json({ error: "Only workspace owners and administrators can change live website switches." }, { status: 403, headers });
-  try { return NextResponse.json(await setSiteFeature({ ...await request.json(), actor: staff.account.email }), { headers }); }
+  try { return NextResponse.json(await setSiteFeature({ ...await request.json(), actor: staff.account.email, token: (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "") }), { headers }); }
   catch (error) { return NextResponse.json({ error: error.message }, { status: 400, headers }); }
 }

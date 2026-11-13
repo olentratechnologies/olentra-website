@@ -12,6 +12,8 @@ import { CORS_HEADERS, CORS_METHODS, createOriginGuard, requestId } from "../int
 import { createAuthRoutes, AUTH_PATHS } from "../interfaces/http/auth.routes";
 import { clientAddress, mongoAttemptStore } from "../modules/auth/login-throttle";
 import { runLeasedJob } from "../modules/outbox/outbox";
+import { SITE_FEATURES_PATH, canControlWebsite, createSiteFeatureStore } from "../modules/site-features/site-features";
+import { bearerToken } from "../interfaces/http/middleware";
 import { removeOrphanedUploads } from "../modules/files/cleanup";
 import { createRateLimiter, type RateLimiter } from "../modules/auth/rate-limit";
 import { createFilesRoutes, isFileDownloadPath, isFileUploadPath } from "../interfaces/http/files.routes";
@@ -37,6 +39,7 @@ type InternshipRuntime = {
   authRoutes: ReturnType<typeof createAuthRoutes>;
   fileRoutes: ReturnType<typeof createFilesRoutes>;
   limiter: RateLimiter;
+  siteFeatures: ReturnType<typeof createSiteFeatureStore>;
   staffSockets: StaffSocketRegistry;
   insights: ReturnType<typeof createPublicInsights>;
   insightsViewers: () => number;
@@ -296,12 +299,14 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     await domain.collection("rate_limits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     const authRoutes = createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin, sendJson, limiter });
     const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter });
+    const siteFeatures = createSiteFeatureStore(domain.collection("site_features") as any);
     const nextRuntime: InternshipRuntime = {
       auth,
       domain,
       authRoutes,
       fileRoutes,
       limiter,
+      siteFeatures,
       staffSockets,
       insights,
       insightsViewers,
@@ -350,6 +355,17 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (url.pathname === AUTH_PATHS.logout && request.method === "POST") return await runtime.authRoutes.logout(request, origin);
         if (url.pathname === AUTH_PATHS.session && request.method === "GET") return await runtime.authRoutes.session(request, origin);
         if (url.pathname === AUTH_PATHS.changePassword && request.method === "POST") return await runtime.authRoutes.changePassword(request, origin);
+        if (url.pathname === SITE_FEATURES_PATH && request.method === "GET") return sendJson({ ok: true, data: await runtime.siteFeatures.read() }, origin);
+        if (url.pathname === SITE_FEATURES_PATH && request.method === "PUT") {
+          // Only owners and workspace administrators may change live website switches.
+          const token = bearerToken(request);
+          const account = token ? (await runtime.auth.verify(token)).account : null;
+          if (!account) throw new DomainError("UNAUTHENTICATED", "Sign in to change website settings.");
+          if (!canControlWebsite(account)) throw new DomainError("FORBIDDEN", "Only workspace owners and administrators can change live website switches.");
+          if (Number(request.headers.get("content-length") || 0) > 16_384) throw new DomainError("INVALID_REQUEST", "The website settings are too large.");
+          const body = await request.json() as { state?: unknown; expectedRevision?: unknown };
+          return sendJson({ ok: true, data: await runtime.siteFeatures.write(body.state, Number(body.expectedRevision)) }, origin);
+        }
         if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);
         throw new DomainError("NOT_FOUND", "Endpoint not found.");
