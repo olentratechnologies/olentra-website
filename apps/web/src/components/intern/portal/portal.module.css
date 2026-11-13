@@ -3309,3 +3309,8 @@
     stroke-dashoffset: 0;
   }
 }
+
+.offerUrgent {
+  color: var(--ad-danger, #ce5275);
+  font-weight: 600;
+}

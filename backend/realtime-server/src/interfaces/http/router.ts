@@ -26,7 +26,7 @@ export function errorResult(error: unknown) {
 
 export function statusFor(error: unknown): number {
   if (error instanceof DomainError) {
-    return ({ UNAUTHENTICATED: 401, RATE_LIMITED: 429, UNSUPPORTED_MEDIA_TYPE: 415, FORBIDDEN: 403, NOT_FOUND: 404, CONFLICT: 409, CLOSED: 409, INVALID_REQUEST: 400, INVALID_CLAIM: 400, ALREADY_APPLIED: 409 } as Record<string, number>)[error.code] || 400;
+    return ({ UNAUTHENTICATED: 401, RATE_LIMITED: 429, UNSUPPORTED_MEDIA_TYPE: 415, FORBIDDEN: 403, NOT_FOUND: 404, CONFLICT: 409, CLOSED: 409, INVALID_REQUEST: 400, INVALID_CLAIM: 400, ALREADY_APPLIED: 409, OFFER_EXPIRED: 409 } as Record<string, number>)[error.code] || 400;
   }
   return error instanceof MongoError ? 503 : 500;
 }

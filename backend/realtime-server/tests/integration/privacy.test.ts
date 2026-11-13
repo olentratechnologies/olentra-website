@@ -91,3 +91,16 @@ test("retention does nothing while off, then erases only final decisions older t
   expect(await domain.collection("staff_audit").countDocuments({ action: "applicant.erased", targetId: expired.applicationId, "detail.reason": "retention" })).toBe(1);
   await domain.execute("settings.update", { patch: { retentionDays: null } }, admin, key());
 });
+
+test("an expired offer can't be accepted until an admin extends it", async () => {
+  await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { stipend: 1000, fee: 0 } });
+  const { applicationId, account } = await applicant("Selected");
+  const offer = await domain.execute("offer.send", { applicationId, startOn: "2026-12-01", endOn: "2027-03-01", stipend: 500, expiresInDays: 3 }, admin, key()) as any;
+  expect(Date.parse(offer.expiresOn) - Date.parse(offer.sentOn)).toBe(3 * 86_400_000);
+  await domain.collection("offers").updateOne({ applicationId }, { $set: { expiresOn: new Date(Date.now() - 60_000).toISOString() } });
+  await expect(domain.execute("offer.accept", { applicationId }, account, key())).rejects.toMatchObject({ code: "OFFER_EXPIRED" });
+  await expect(domain.execute("offer.extend", { applicationId, days: 5 }, recruiter, key())).rejects.toMatchObject({ code: "FORBIDDEN" });
+  const extended = await domain.execute("offer.extend", { applicationId, days: 5 }, admin, key()) as any;
+  expect(Date.parse(extended.expiresOn)).toBeGreaterThan(Date.now() + 4 * 86_400_000);
+  expect((await domain.execute("offer.accept", { applicationId }, account, key()) as any).status).toBe("Accepted");
+});

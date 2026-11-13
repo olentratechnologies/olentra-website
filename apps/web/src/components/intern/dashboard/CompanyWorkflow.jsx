@@ -35,6 +35,7 @@ import styles from "./company-workflow.module.css";
 import { hasStaffPermission } from "./staffAccess";
 import { burstFrom } from "@/lib/confetti.mjs";
 import TemplatePicker from "./TemplatePicker";
+import { offerTimeLeft } from "@/lib/intern/offer-deadline.mjs";
 
 function localDate(days = 0) {
   const date = new Date();
@@ -153,6 +154,7 @@ export function ApplicantWorkflow({ applicationId }) {
     startOn: localDate(7),
     endOn: localDate(97),
     stipend: 0,
+    expiresInDays: 7,
     message:
       "We’re excited to welcome you to the Olentra internship program. Review your offer and take the next step in your journey.",
   });
@@ -195,6 +197,7 @@ export function ApplicantWorkflow({ applicationId }) {
           commands.sendOffer(applicationId, {
             ...offerForm,
             stipend: Number(offerForm.stipend),
+            expiresInDays: Number(offerForm.expiresInDays),
             message: offerForm.message.trim(),
           }),
         notify,
@@ -292,7 +295,12 @@ export function ApplicantWorkflow({ applicationId }) {
                   <dt>Monthly stipend</dt>
                   <dd>₹{Number(offer.stipend || 0).toLocaleString("en-IN")}</dd>
                 </div>
+                {offer.status === "Sent" && offer.expiresOn && <div>
+                  <dt>Answer by</dt>
+                  <dd>{timestamp(offer.expiresOn)} · {offerTimeLeft(offer.expiresOn)?.label}</dd>
+                </div>}
               </dl>
+              {isAdmin && offer.status === "Sent" && <Button variant="secondary" disabled={busy} onClick={async () => { setBusy(true); try { await perform(() => commands.extendOffer(applicationId, 7), notify, "Offer extended by 7 days."); } finally { setBusy(false); } }}>Extend 7 days</Button>}
               {offer.message && <p>{offer.message}</p>}
               {(offer.respondedOn || offer.decidedOn) && (
                 <small>
@@ -346,6 +354,12 @@ export function ApplicantWorkflow({ applicationId }) {
                       })
                     }
                   />
+                </label>
+                <label>
+                  Open for
+                  <select value={offerForm.expiresInDays} onChange={(event) => setOfferForm({ ...offerForm, expiresInDays: Number(event.target.value) })}>
+                    {[3, 5, 7, 10, 14, 30].map((days) => <option key={days} value={days}>{days} days</option>)}
+                  </select>
                 </label>
                 <label className={styles.fullWidth}>
                   Welcome message
