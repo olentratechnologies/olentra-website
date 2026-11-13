@@ -16,9 +16,9 @@ export const products = [
         price: 'Explore Daily Supply',
         image: '/Company names and product logo/DailySupply.jpeg',
         navLogo: {
-            src: '/images/products/dailysupply/dailysupply-logo.png',
-            width: 180,
-            height: 180,
+            src: '/images/products/branding/dailysupply-transparent.png',
+            width: 1254,
+            height: 1254,
         }
     },
     {
