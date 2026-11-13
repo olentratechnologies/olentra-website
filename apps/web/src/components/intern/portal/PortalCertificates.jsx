@@ -5,6 +5,7 @@ import CompanyBrand from "@/components/intern/CompanyBrand";
 import { Award, Copy, Download, Eye, Linkedin, Printer, ShieldCheck } from "lucide-react";
 import { linkedInAddUrl, verifyUrl } from "@/lib/intern/certificate-share.mjs";
 import PortalStory from "./PortalStory";
+import ExitFeedback from "./ExitFeedback";
 import { useInternship } from "@/components/intern/InternshipProvider";
 import {
   Button,
@@ -173,6 +174,7 @@ export default function PortalCertificates() {
           />
         )}
       </Panel>
+      <ExitFeedback />
       {certificates.some((certificate) => certificate.status === "Issued") && <PortalStory />}
       <Modal
         open={Boolean(selected)}

@@ -816,3 +816,26 @@
     font-size: 9px;
   }
 }
+
+.feedbackComments {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedbackComments li {
+  padding: 12px 14px;
+  border: 1px solid var(--ad-border);
+  border-radius: 12px;
+}
+
+.feedbackComments p {
+  margin: 0 0 6px;
+  color: var(--ad-text);
+}
+
+.feedbackComments small {
+  color: var(--ad-muted);
+}

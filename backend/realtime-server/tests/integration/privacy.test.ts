@@ -159,3 +159,21 @@ test("onboarding can't be approved until every required document is approved", a
   expect(intern.status).toBe("Active");
   await domain.execute("settings.update", { patch: { onboardingDocuments: [] } }, admin, key());
 });
+
+test("completed interns give feedback once; only admins see comments", async () => {
+  const { applicationId, account } = await applicant("Joined");
+  await domain.collection("interns").insertOne({ _id: `INT-${randomUUID()}`, applicationId, status: "Active" });
+  await expect(domain.execute("feedback.submit", { programRating: 5, mentorRating: 4, recommend: true }, account, key())).rejects.toMatchObject({ code: "CONFLICT" });
+  await domain.collection("interns").updateOne({ applicationId }, { $set: { status: "Completed" } });
+  expect(await domain.execute("feedback.mine", {}, account)).toMatchObject({ eligible: true, submitted: false });
+  await domain.execute("feedback.submit", { programRating: 5, mentorRating: 4, recommend: true, comment: "Loved the mentoring" }, account, key());
+  await expect(domain.execute("feedback.submit", { programRating: 1, mentorRating: 1 }, account, key())).rejects.toMatchObject({ code: "CONFLICT" });
+  const forAdmin = await domain.execute("feedback.summary", {}, admin) as any;
+  expect(forAdmin.count).toBeGreaterThanOrEqual(1);
+  expect(forAdmin.comments.some((entry: any) => entry.comment === "Loved the mentoring")).toBe(true);
+  const analyst = { ...recruiter, permissions: ["overview.read"] };
+  const forStaff = await domain.execute("feedback.summary", {}, analyst) as any;
+  expect(forStaff.count).toBe(forAdmin.count);
+  expect(forStaff.comments).toEqual([]);
+  await expect(domain.execute("feedback.summary", {}, recruiter)).rejects.toMatchObject({ code: "FORBIDDEN" });
+});
