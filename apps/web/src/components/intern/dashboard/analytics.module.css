@@ -839,3 +839,14 @@
 .feedbackComments small {
   color: var(--ad-muted);
 }
+
+.mentorSelect {
+  max-width: 160px;
+  padding: 5px 8px;
+  border: 1px solid var(--ad-border);
+  border-radius: 8px;
+  background: var(--ad-panel);
+  color: var(--ad-text);
+  font: inherit;
+  font-size: 13px;
+}

@@ -9,6 +9,7 @@ type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session
 const text = (v: unknown) => typeof v === "string" ? v.trim() : "";
 const newId = (p: string) => `${p}-${randomUUID()}`;
 import { auditDecision } from "../audit/decision-audit";
+import { mentorScope } from "../access/mentor-scope";
 import { missingDocuments, type ChecklistItem } from "../onboarding/documents";
 /** The moment an offer stops accepting answers: `days` after `fromIso`. */
 export const offerDeadline = (fromIso: string, days: number) => new Date(new Date(fromIso).getTime() + days * 86_400_000).toISOString();
@@ -26,7 +27,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
-  const names = new Set(["onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       offers.createIndex({ applicationId: 1 }, { unique: true }),
@@ -129,6 +130,19 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
         await applications.updateOne({ _id: applicationId }, { $set: { phone: data.phone, college: data.college, location: data.location, skills: data.skills, resumeAttachmentId: data.resumeAttachmentId }, $inc: { version: 1 }, ...(method === "onboarding.submit" ? { $push: { history: { id: newId("HST"), title: "Onboarding submitted", detail: "The company team will review your onboarding details.", date: now } } as any } : {}) }, opts);
         return plain(data);
       }
+      if (method === "intern.assignMentor") {
+        // Admin only: link (or unlink, with null) a mentor to an intern.
+        staff(actor); const internId = required(p.internId, "intern");
+        const mentorId = p.mentorId === null || p.mentorId === "" ? null : required(p.mentorId, "mentor");
+        let mentor: Row | null = null;
+        if (mentorId) {
+          mentor = await accounts.findOne({ _id: mentorId, role: "company", staffRole: "mentor", disabled: { $ne: true } }, { ...opts, projection: { name: 1 } });
+          if (!mentor) throw new DomainError("INVALID_REQUEST", "Choose an active staff member with the Mentor role.");
+        }
+        const updated = await interns.findOneAndUpdate({ _id: internId }, mentor ? { $set: { mentorId, mentorName: String(mentor.name || "") }, $inc: { revision: 1 } } : { $unset: { mentorId: "", mentorName: "" }, $inc: { revision: 1 } }, { ...opts, returnDocument: "after" });
+        if (!updated) throw new DomainError("NOT_FOUND", "Intern not found.");
+        return plain(updated);
+      }
       if (method === "onboarding.document") {
         // An intern uploads one checklist document (again after changes are requested).
         const applicationId = required(p.applicationId, "application"); own(actor, applicationId);
@@ -219,6 +233,8 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       }
       if (method === "submission.review") {
         staff(actor); const submission = await submissions.findOne({ _id: required(p.id, "submission"), status: "Submitted" }, opts); if (!submission) throw new DomainError("CONFLICT", "This submission has already been reviewed.");
+        const reviewScope = await mentorScope(actor, interns);
+        if (reviewScope && !reviewScope.includes(String(submission.applicationId))) throw new DomainError("FORBIDDEN", "You can only review work from interns you mentor.");
         const task = await tasks.findOne({ _id: submission.taskId, submissionVersion: submission.version, status: "Under review" }, opts); if (!task) throw new DomainError("CONFLICT", "Review the latest submission version.");
         const intern = await active(submission.applicationId, session); await touch(intern, session); if (!["Approved", "Changes requested"].includes(p.decision)) throw new DomainError("INVALID_REQUEST", "Choose a review decision."); const feedback = text(p.feedback).slice(0, 10000); if (p.decision === "Changes requested" && !feedback) throw new DomainError("INVALID_REQUEST", "Explain the requested changes.");
         const updated = await submissions.findOneAndUpdate({ _id: submission._id, status: "Submitted" }, { $set: { status: p.decision, feedback, reviewedOn: now, reviewerAccountId: actor!.id } }, { ...opts, returnDocument: "after" });
@@ -306,7 +322,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);
-      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
+      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "intern.assignMentor": "Your mentor was updated", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
       const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
       const label = labels[method];
       if (label && actor) {
@@ -337,7 +353,8 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
     const empty = { interns: [], offers: [], onboarding: [], projects: [], tasks: [], submissions: [], certificates: [], interviews: [] };
     if (!actor) return empty;
     const intern = actor.role === "intern";
-    const filter = intern ? { applicationId: actor.applicationId } : {};
+    const scope = intern ? null : await mentorScope(actor, interns);
+    const filter: Record<string, unknown> = intern ? { applicationId: actor.applicationId } : scope ? { applicationId: { $in: scope } } : {};
     const projectFilter = intern ? { team: actor.applicationId } : {};
     const read = (permission: string) => intern || can(actor, permission);
     const projectDetails = read("projects.read");

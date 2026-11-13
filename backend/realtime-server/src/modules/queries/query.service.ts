@@ -1,4 +1,5 @@
 import type { Collection, Document } from "mongodb";
+import { mentorScope } from "../access/mentor-scope";
 import { DomainError } from "../../shared/errors";
 import type { Principal } from "../../shared/principal";
 import { can } from "../access/policy";
@@ -56,6 +57,9 @@ export function createInternshipQueries(collection: CollectionOf) {
     }
     const page = number(params.page, 1, 100000), pageSize = number(params.pageSize, 20, 100), skip = (page - 1) * pageSize;
     const pipeline: Document[] = [], initialFilters: Document[] = [], filters: Document[] = [], statusFilter: Document[] = [];
+    // Mentors only see their assigned interns and those interns' work.
+    const scope = ["intern.list", "task.list", "submission.list"].includes(method) ? await mentorScope(actor, collection("interns") as any) : null;
+    if (scope) initialFilters.push({ applicationId: { $in: scope } });
     let table = "", searchFields: string[] = [], sortFields: Record<string, string> = {}, programField = "programId";
     if (method === "intern.list") {
       table = "interns";

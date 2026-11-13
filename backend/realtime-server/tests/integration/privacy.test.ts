@@ -177,3 +177,24 @@ test("completed interns give feedback once; only admins see comments", async () 
   expect(forStaff.comments).toEqual([]);
   await expect(domain.execute("feedback.summary", {}, recruiter)).rejects.toMatchObject({ code: "FORBIDDEN" });
 });
+
+test("a mentor sees and reviews only the interns assigned to them", async () => {
+  const mentorId = `mentor-${randomUUID()}`;
+  await domain.collection("accounts").insertOne({ _id: mentorId, role: "company", staffRole: "mentor", name: "Mira Mentor", email: `${mentorId}@example.test`, sessionVersion: 1 });
+  const mentor = { id: mentorId, role: "company", staffRole: "mentor", name: "Mira Mentor", email: `${mentorId}@example.test`, applicationId: null, sessionVersion: 1, permissions: ["overview.read", "interns.read", "tasks.read", "submissions.read", "submissions.feedback", "messages.interns"] } as any;
+  const mine = await applicant("Joined"), theirs = await applicant("Joined");
+  const myIntern = `INT-${randomUUID()}`, theirIntern = `INT-${randomUUID()}`;
+  await domain.collection("interns").insertMany([{ _id: myIntern, applicationId: mine.applicationId, status: "Active", revision: 1 }, { _id: theirIntern, applicationId: theirs.applicationId, status: "Active", revision: 1 }]);
+  await expect(domain.execute("intern.assignMentor", { internId: myIntern, mentorId: recruiter.id }, admin, key())).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await domain.execute("intern.assignMentor", { internId: myIntern, mentorId }, admin, key());
+  const listed = await domain.execute("intern.list", { pageSize: 100 }, mentor) as any;
+  expect(listed.items.map((row: any) => row.applicationId)).toEqual([mine.applicationId]);
+  const snapshot = await domain.execute("intern.snapshot", {}, mentor, key()) as any;
+  expect(snapshot.data.interns.map((row: any) => row.applicationId)).toEqual([mine.applicationId]);
+  await domain.collection("submissions").insertOne({ _id: `SUB-${randomUUID()}`, applicationId: theirs.applicationId, taskId: "t", version: 1, status: "Submitted" });
+  const other = await domain.collection("submissions").findOne({ applicationId: theirs.applicationId });
+  await expect(domain.execute("submission.review", { id: other!._id, decision: "Changes requested", feedback: "x" }, mentor, key())).rejects.toMatchObject({ code: "FORBIDDEN" });
+  await expect(domain.execute("message.list", { applicationId: theirs.applicationId }, mentor)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  expect((await domain.execute("intern.list", { pageSize: 100 }, admin) as any).items.length).toBeGreaterThanOrEqual(2);
+  expect((await domain.execute("intern.snapshot", {}, mine.account, key()) as any).my.intern.mentorName).toBe("Mira Mentor");
+});

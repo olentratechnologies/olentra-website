@@ -26,6 +26,7 @@ import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
 import { normalizeSkills } from "../modules/applications/skills";
 import { linkedinKey } from "../modules/applications/duplicates";
 import { auditDecision } from "../modules/audit/decision-audit";
+import { mentorScope } from "../modules/access/mentor-scope";
 import { FINAL_STATUSES, eraseApplicant, expiredApplicationIds } from "../modules/privacy/erase";
 
 type Row = InternshipRow;
@@ -254,6 +255,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     if (actor?.role === "company" && !isAdmin(actor) && (method === "message.list" || method === "message.send")) {
       const application = await applications.findOne({ _id: str(params.applicationId) }, { projection: { status: 1 } });
       if (!application || !can(actor, application.status === "Joined" ? "messages.interns" : "messages.applicants")) throw new DomainError("FORBIDDEN", "Your role cannot access this conversation.");
+      const scope = await mentorScope(actor, collection("interns"));
+      if (scope && !scope.includes(str(params.applicationId))) throw new DomainError("FORBIDDEN", "You can only message interns you mentor.");
     }
     if (method === "intern.public") return anonymousData();
     if (method === "application.list") {
@@ -329,7 +332,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
           : Promise.resolve(null),
         ownApplicationPromise,
         actor?.role === "company" && !isAdmin(actor) && !can(actor, "applications.read") && can(actor, "interns.read")
-          ? applications.find({ status: "Joined" }, { projection: { _id: 1, name: 1, email: 1, program: 1, programId: 1, initials: 1, avatarColor: 1, status: 1 } }).limit(500).toArray()
+          ? mentorScope(actor, collection("interns")).then(scope => applications.find({ status: "Joined", ...(scope ? { _id: { $in: scope } } : {}) }, { projection: { _id: 1, name: 1, email: 1, program: 1, programId: 1, initials: 1, avatarColor: 1, status: 1 } }).limit(500).toArray())
           : Promise.resolve([]),
       ]);
       const data: Record<string, any> = { ...info, user: actor, applications: [], accounts: actor ? [actor] : [], interns: [], projects: [], tasks: [], submissions: [], offers: [], onboarding: [], certificates: [], interviews: [], messages: [], notifications: [], resources: [], activity: [], metrics: [] };
@@ -404,6 +407,11 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         await outbox.enqueue("applicationConfirmation", { to: email, name, programName: program.name, applicationId }, session);
         return received;
       });
+    }
+    if (method === "staff.mentors") {
+      // Who can be assigned as an intern's mentor (admins assign them).
+      company(actor);
+      return (await users.find({ role: "company", staffRole: "mentor", disabled: { $ne: true } }, { projection: { name: 1 } }).sort({ name: 1 }).limit(200).toArray()).map(row => ({ id: String(row._id), name: String(row.name || "Mentor") }));
     }
     if (method === "staff.reviewers") {
       // Who an application can be assigned to: active staff who can read applications.

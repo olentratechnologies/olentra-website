@@ -103,7 +103,7 @@ export default function PortalDashboard() {
     <>
       <Heading
         title={`Welcome back, ${account?.name?.split(" ")[0] || "there"}! 👋`}
-        description="Your next chapter at Olentra, all in one place."
+        description={my.intern?.mentorName ? `Your mentor is ${my.intern.mentorName}. Your next chapter at Olentra, all in one place.` : "Your next chapter at Olentra, all in one place."}
       />
       <section className={styles.welcomeBanner}>
         <div>

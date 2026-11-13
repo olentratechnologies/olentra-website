@@ -61,6 +61,15 @@ export default function InternsPage() {
   const listQuery = useInternQuery("intern.list", { ...params, status: tab, page, pageSize, sortField: sort.key, sortDirection: sort.direction });
   const summaryQuery = useInternQuery("intern.list", { ...params, status: "all", page: 1, pageSize: 1 });
   const listing = listQuery.data || { items: [], total: 0 };
+  // Admins link a mentor (a staff member with the Mentor role) to each intern.
+  const mentorsQuery = useInternQuery("staff.mentors", {}, { enabled: isAdmin });
+  const mentors = mentorsQuery.data || [];
+  async function assignMentor(intern, mentorId) {
+    const result = await commands.assignMentor(intern.id, mentorId || null);
+    if (!result.ok) { notify?.(typeof result.error === "string" ? result.error : "Couldn't change the mentor."); return; }
+    notify?.(mentorId ? `${intern.name} now has a mentor.` : `Mentor removed for ${intern.name}.`);
+    void listQuery.refresh();
+  }
   const summary = summaryQuery.data;
   useEffect(() => { setPage(1); }, [query, search, track, batch, tab]);
   useEffect(() => {
@@ -275,6 +284,7 @@ export default function InternsPage() {
                 <th>{sortable("Batch", "batch")}</th>
                 <th>{sortable("Project", "project")}</th>
                 <th>{sortable("Status", "status")}</th>
+                <th>Mentor</th>
                 <th className={styles.actionsHeading}>Actions</th>
               </tr>
             </thead>
@@ -318,6 +328,14 @@ export default function InternsPage() {
                   </td>
                   <td>
                     <StatusBadge status={intern.status} />
+                  </td>
+                  <td>
+                    {isAdmin && mentors.length ? (
+                      <select className={styles.mentorSelect} aria-label={`Mentor for ${intern.name}`} value={intern.mentorId || ""} onChange={(event) => void assignMentor(intern, event.target.value)}>
+                        <option value="">No mentor</option>
+                        {mentors.map((mentor) => <option key={mentor.id} value={mentor.id}>{mentor.name}</option>)}
+                      </select>
+                    ) : (intern.mentorName || <span className={styles.unassigned}>None</span>)}
                   </td>
                   <td className={styles.rowActions}>
                     {(isAdmin || canApplications || canMessage) && <RowMenu
