@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -19,7 +18,7 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import JsonLd from "@/components/JsonLd";
-import ProductLogo from "@/components/products/ProductLogo";
+import ProductHero from "@/components/products/ProductHero";
 import { olentraAiStudio } from "@/data/olentra-ai-studio";
 import { breadcrumbSchema, productSchema } from "@/lib/seo";
 
@@ -59,147 +58,7 @@ export default function OlentraAIStudioPage() {
       />
       <Navbar />
 
-      {/* --- 1. HERO (DARK / SPLIT) --- */}
-      <section className="relative min-h-[90vh] mt-10 sm:mt-12 overflow-hidden bg-[#020617] flex items-center">
-        {/* Immersive Background */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/backgrounds/cyber-bg.png"
-            alt="Product Background"
-            fill
-            priority
-            className="object-cover opacity-20 filter grayscale"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-transparent to-[#020617]" />
-          <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.05] pointer-events-none" />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 w-full pt-8 sm:pt-10 pb-20">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.9fr] gap-12 lg:gap-20 items-center">
-
-            {/* TEXT SECTION (LEFT ON DESKTOP) */}
-            <div className="order-1 lg:order-1 space-y-10 lg:pr-4 text-left">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="inline-flex items-center py-1.5 px-4 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm shadow-[0_0_15px_rgba(37,99,235,0.15)] w-fit"
-              >
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">AI STUDIO</span>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="space-y-6"
-              >
-                <div className="flex items-center gap-5 sm:gap-6">
-                  <div className="w-24 shrink-0 sm:w-32">
-                    <ProductLogo product="studio" priority decorative />
-                  </div>
-                  <h1 className="text-[clamp(2rem,4.5vw,3.6rem)] font-black uppercase tracking-tighter leading-[0.95] text-white">
-                    {hero.title}
-                  </h1>
-                </div>
-
-                <div className="relative inline-block mt-4">
-                  <p className="text-[1.1rem] md:text-[1.4rem] font-bold text-slate-100 uppercase tracking-tight leading-tight max-w-xl">
-                    {hero.tagline}
-                  </p>
-                  <div className="absolute -bottom-4 left-0 w-24 h-[1px] bg-primary/40" />
-                </div>
-              </motion.div>
-
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1, delay: 0.4 }}
-                className="text-[0.98rem] md:text-[1.1rem] text-slate-400 font-medium leading-relaxed max-w-xl"
-              >
-                {hero.subheading}
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto"
-              >
-                <a
-                  href={hero.primaryCta.href}
-                  className="group relative inline-flex items-center justify-center gap-3 px-10 py-4 text-[12px] font-black uppercase tracking-[0.25em] bg-primary text-white transition-all hover:bg-blue-700 shadow-[0_0_30px_rgba(37,99,235,0.3)]"
-                  style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)" }}
-                >
-                  <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-                  {hero.primaryCta.label}
-                </a>
-                <a
-                  href={hero.secondaryCta.href}
-                  className="group relative inline-flex items-center justify-center gap-3 px-10 py-4 text-[12px] font-black uppercase tracking-[0.25em] border border-white/20 bg-white/5 text-slate-100 backdrop-blur-md transition-all hover:border-primary/60 hover:bg-white/10"
-                  style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)" }}
-                >
-                  {hero.secondaryCta.label}
-                  <ArrowUpRight className="w-4 h-4 text-primary transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-                </a>
-              </motion.div>
-            </div>
-
-            {/* IMAGE SECTION (RIGHT ON DESKTOP) */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 1, delay: 0.3 }}
-              className="order-2 lg:order-2 relative group md:px-4"
-            >
-              <div className="absolute -inset-10 bg-primary/20 blur-[120px] rounded-full opacity-40 animate-pulse pointer-events-none" />
-
-              <div
-                className="relative bg-[#0a0f1e] border border-white/10 p-1.5 shadow-[0_40px_100px_rgba(2,6,23,0.8)] backdrop-blur-3xl overflow-hidden"
-                style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%)" }}
-              >
-                {/* Custom Window Header */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-white/[0.02]">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-red-500/40" />
-                    <div className="w-2 h-2 rounded-full bg-amber-500/40" />
-                    <div className="w-2 h-2 rounded-full bg-emerald-500/40" />
-                  </div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 flex items-center gap-2">
-                    <Terminal size={10} className="text-primary" />
-                    STUDIO_CORE_OS
-                  </div>
-                </div>
-
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={hero.heroImage}
-                    alt="Product UI Preview"
-                    width={1200}
-                    height={900}
-                    className="w-full h-full object-cover grayscale-[0.2] contrast-125 group-hover:grayscale-0 group-hover:scale-[1.02] transition-all duration-1000"
-                  />
-                  <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.02),rgba(0,255,0,0.01),rgba(0,0,255,0.02))] bg-[length:100%_2px,3px_100%] pointer-events-none opacity-40" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1e] via-transparent to-transparent opacity-60" />
-                </div>
-
-                <div className="absolute bottom-10 right-0 left-0 px-6 flex justify-between items-end">
-                  <div className="bg-primary/90 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 shadow-2xl">
-                    Live Orchestration
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="h-1 w-12 bg-white/10" />
-                    <div className="h-1 w-8 bg-white/10" />
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -top-4 -left-4 w-12 h-12 border-t-2 border-l-2 border-primary/40 pointer-events-none" />
-              <div className="absolute -bottom-4 -right-4 w-12 h-12 border-b-2 border-r-2 border-primary/40 pointer-events-none" />
-            </motion.div>
-
-          </div>
-        </div>
-      </section>
+      <ProductHero product="studio" hero={hero} />
 
       {/* --- 2. OVERVIEW (WHITE) --- */}
       <section className="relative py-24 md:py-32 bg-white text-slate-900" id="overview">
