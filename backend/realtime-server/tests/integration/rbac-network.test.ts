@@ -28,7 +28,9 @@ beforeAll(async () => {
     { _id: "app-review", name: "Private Applicant", email: "private@example.test", program: "Tech Explorer", programId: "explorer", status: "Applied", notes: [{ text: "private note" }], version: 1 },
     { _id: "app-intern", name: "Private Intern", email: "intern@example.test", program: "Tech Explorer", programId: "explorer", status: "Joined", notes: [], version: 1 },
   ]);
-  await domain.collection("interns").insertOne({ _id: "intern-1", applicationId: "app-intern", status: "Active", revision: 1 });
+  // Mentors only see interns assigned to them, so the test mentor mentors this intern.
+  const mentorAccount = await domain.collection("accounts").findOne({ email: "mentor@example.test" });
+  await domain.collection("interns").insertOne({ _id: "intern-1", applicationId: "app-intern", status: "Active", revision: 1, mentorId: mentorAccount!._id, mentorName: "mentor" });
   await domain.collection("projects").insertOne({ _id: "project-1", name: "Test Project", description: "Private description", team: ["app-intern"], status: "In progress", progress: 10, program: "Tech Explorer" });
   await domain.collection("tasks").insertOne({ _id: "task-1", projectId: "project-1", applicationId: "app-intern", title: "Work", status: "Under review", submissionVersion: 1, required: true });
   await domain.collection("submissions").insertOne({ _id: "submission-1", taskId: "task-1", applicationId: "app-intern", version: 1, status: "Submitted", notes: "Private submitted work" });
