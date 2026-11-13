@@ -19,6 +19,7 @@ import {
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import JsonLd from "@/components/JsonLd";
+import ProductLogo from "@/components/products/ProductLogo";
 import { olentraAiStudio } from "@/data/olentra-ai-studio";
 import { breadcrumbSchema, productSchema } from "@/lib/seo";
 
@@ -93,11 +94,14 @@ export default function OlentraAIStudioPage() {
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="space-y-6"
               >
-                <h1 className="text-[clamp(2.5rem,7vw,5rem)] font-[900] uppercase tracking-tighter leading-[0.9] text-white italic drop-shadow-2xl">
-                  {hero.title.split(' ').map((word, i) => (
-                    <span key={i} className={i === 1 ? 'text-primary' : ''}>{word} </span>
-                  ))}
-                </h1>
+                <div className="flex items-center gap-5 sm:gap-6">
+                  <div className="w-24 shrink-0 sm:w-32">
+                    <ProductLogo product="studio" priority decorative />
+                  </div>
+                  <h1 className="text-[clamp(2rem,4.5vw,3.6rem)] font-black uppercase tracking-tighter leading-[0.95] text-white">
+                    {hero.title}
+                  </h1>
+                </div>
 
                 <div className="relative inline-block mt-4">
                   <p className="text-[1.1rem] md:text-[1.4rem] font-bold text-slate-100 uppercase tracking-tight leading-tight max-w-xl">

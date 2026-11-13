@@ -12,6 +12,7 @@ import { products } from '../data/products-data';
 import { contactInfo } from '../data/contact';
 import { servicePages } from '../data/service-pages';
 import InternMobileDock from './intern/InternMobileDock';
+import ProductLogo from './products/ProductLogo';
 import { useSiteFeatures } from '@olentra/site-features/react';
 
 function RingingPhoneIcon({ size = 15, active = true, className = "" }) {
@@ -787,16 +788,19 @@ export default function Navbar() {
                                       />
 
                                       <div className="flex items-center gap-3">
-                                        {/* Enterprise Monogram Badge - Highlighted */}
-                                        <div className={`w-6 h-6 rounded-md border flex items-center justify-center transition-[transform,opacity,box-shadow] duration-300 shrink-0 shadow-sm ${
-                                          isLightSection
-                                            ? 'bg-blue-600/10 border-blue-500/40 text-blue-600 group-hover/item:bg-blue-600 group-hover/item:border-blue-600 group-hover/item:text-white group-hover/item:shadow-[0_0_10px_rgba(37,99,235,0.4)]'
-                                            : 'bg-blue-500/20 border-blue-400/40 text-blue-400 group-hover/item:bg-blue-600 group-hover/item:border-blue-500 group-hover/item:text-white group-hover/item:shadow-[0_0_12px_rgba(37,99,235,0.6)]'
-                                        }`}>
-                                          <span className="text-[10px] font-mono font-black tracking-tight">
-                                            0{pIdx + 1}
-                                          </span>
-                                        </div>
+                                        {product.navLogo || product.logo ? (
+                                          <ProductLogo product={product.id} decorative variant="nav" />
+                                        ) : (
+                                          <div className={`w-6 h-6 rounded-md border flex items-center justify-center transition-[transform,opacity,box-shadow] duration-300 shrink-0 shadow-sm ${
+                                            isLightSection
+                                              ? 'bg-blue-600/10 border-blue-500/40 text-blue-600 group-hover/item:bg-blue-600 group-hover/item:border-blue-600 group-hover/item:text-white group-hover/item:shadow-[0_0_10px_rgba(37,99,235,0.4)]'
+                                              : 'bg-blue-500/20 border-blue-400/40 text-blue-400 group-hover/item:bg-blue-600 group-hover/item:border-blue-500 group-hover/item:text-white group-hover/item:shadow-[0_0_12px_rgba(37,99,235,0.6)]'
+                                          }`}>
+                                            <span className="text-[10px] font-mono font-black tracking-tight">
+                                              0{pIdx + 1}
+                                            </span>
+                                          </div>
+                                        )}
 
                                         <div className="flex flex-col">
                                           <span className={`text-[10px] font-black uppercase tracking-wider transition-none ${
@@ -1009,7 +1013,14 @@ export default function Navbar() {
                                       : 'text-white hover:bg-white/5'
                                       }`}
                                   >
-                                    <span className="text-[10px] font-bold tracking-wide">{product.title}</span>
+                                    {product.navLogo || product.logo ? (
+                                      <span className="flex items-center gap-3">
+                                        <ProductLogo product={product.id} decorative variant="nav" />
+                                        <span className="text-[10px] font-bold tracking-wide">{product.title}</span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] font-bold tracking-wide">{product.title}</span>
+                                    )}
                                   </Link>
                                 );
                               })}

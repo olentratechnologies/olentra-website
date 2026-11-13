@@ -9,6 +9,7 @@ import { useGSAP } from '@gsap/react';
 import { ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { products } from '../data/products-data';
+import ProductLogo from './products/ProductLogo';
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 export default function Products(props) { return <Feature name="products"><ProductsContent {...props} /></Feature>; }
@@ -81,6 +82,11 @@ function ProductCard({ product, index, light }) {
 
                 <div className="relative">
                     <div className="relative aspect-[16/10] overflow-hidden bg-white/[0.03] flex items-center justify-center">
+                        {product.logo ? (
+                            <div className={`absolute inset-0 flex items-center justify-center overflow-hidden p-3 ${light ? "bg-slate-50" : "bg-transparent"}`}>
+                                <ProductLogo product={product.id} variant="card" decorative className="transition-transform duration-700 group-hover:scale-105" />
+                            </div>
+                        ) : (
                         <Image
                             src={product.image}
                             alt={product.title}
@@ -92,7 +98,8 @@ function ProductCard({ product, index, light }) {
                                     : "object-cover transition-transform duration-700 group-hover:scale-105"
                             }
                         />
-                        {!product.image.includes('DailySupply.jpeg') && (
+                        )}
+                        {!product.logo && !product.image.includes('DailySupply.jpeg') && (
                             <div className={`absolute inset-0 bg-gradient-to-t ${light ? "from-white" : "from-[#070b12]"} via-transparent to-transparent opacity-80`} />
                         )}
                     </div>
@@ -100,10 +107,10 @@ function ProductCard({ product, index, light }) {
 
                 <div className="relative z-10 p-6 flex flex-col flex-1">
                     <div className="flex items-start justify-between mb-5">
-                        <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+                        {!product.logo && <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]">
                             <Icon size={18} strokeWidth={2.5} />
-                        </div>
-                        <div className={`px-3 py-1 rounded-full ${light ? "bg-slate-100" : "bg-slate-900/80"} border ${light ? "border-slate-200" : "border-white/10"} text-[9px] font-black ${light ? "text-slate-600" : "text-slate-300"} uppercase tracking-widest`}>
+                        </div>}
+                        <div className={`${product.logo ? "ml-auto " : ""}px-3 py-1 rounded-full ${light ? "bg-slate-100" : "bg-slate-900/80"} border ${light ? "border-slate-200" : "border-white/10"} text-[9px] font-black ${light ? "text-slate-600" : "text-slate-300"} uppercase tracking-widest`}>
                             {product.status}
                         </div>
                     </div>

@@ -14,7 +14,12 @@ export const products = [
         features: ['Smart POS & Offline Billing', 'Milk & Daily Subscriptions', 'Society Commerce Marketplace'],
         status: 'Active',
         price: 'Explore Daily Supply',
-        image: '/Company names and product logo/DailySupply.jpeg'
+        image: '/Company names and product logo/DailySupply.jpeg',
+        navLogo: {
+            src: '/images/products/dailysupply/dailysupply-logo.png',
+            width: 180,
+            height: 180,
+        }
     },
     {
         id: 'studio',
@@ -29,7 +34,12 @@ export const products = [
         features: ['Multi-Agent Orchestration', 'Next.js App Builder', 'Enterprise-Grade Security'],
         status: 'Flagship',
         price: 'Consult for Pricing',
-        image: '/images/products/ai-studio.png'
+        image: '/images/products/ai-studio.png',
+        logo: {
+            src: '/images/products/branding/olentra-ai-studio-build-cascade-transparent.png',
+            width: 1254,
+            height: 1254,
+        }
     },
     {
         id: 'olenbot',
@@ -44,7 +54,12 @@ export const products = [
         features: ['Automated Lead Collection', 'AI Call Engine', 'Real-Time Analytics'],
         status: 'In Pilot',
         price: 'Usage-Based',
-        image: '/images/products/olen-bot.png'
+        image: '/images/products/olen-bot.png',
+        logo: {
+            src: '/images/products/branding/olenbot-transparent.png',
+            width: 1254,
+            height: 1254,
+        }
     }
 ];
 
