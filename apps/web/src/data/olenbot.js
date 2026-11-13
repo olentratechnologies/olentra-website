@@ -1,9 +1,11 @@
 export const olenbot = {
   hero: {
     title: "Olenbot",
-    tagline: "Help your team reach more leads, follow up faster, and track what is actually converting.",
+    titleAccent: "bot",
+    tagline: "More leads. Less busywork.",
+    taglineHighlight: "",
     subheading:
-      "Olenbot gives outbound teams one place to capture leads, run conversations, automate follow-up, and stay on top of conversion performance.",
+      "Automate conversations and follow-ups. Track results in one place.",
     primaryCta: { label: "Request a Demo", href: "#contact" },
     secondaryCta: { label: "See The Workflow", href: "#architecture" },
     heroImage: "/images/products/olen-bot.png",

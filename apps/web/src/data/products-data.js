@@ -22,26 +22,6 @@ export const products = [
         }
     },
     {
-        id: 'studio',
-        title: 'Olentra AI Studio',
-        seoTitle: 'Olentra AI Studio',
-        metaDescription: 'Olentra AI Studio is a full-stack enterprise AI product studio for building and launching production-ready applications.',
-        description: 'A full-stack AI product studio for turning prompts into production apps with multi-agent orchestration, secure auth, and scalable deployment pipelines.',
-        icon: Sparkles,
-        emoji: '✨',
-        color: 'from-blue-500/20 to-indigo-500/20 text-blue-400',
-        href: '/products/olentra-ai-studio',
-        features: ['Multi-Agent Orchestration', 'Next.js App Builder', 'Enterprise-Grade Security'],
-        status: 'Flagship',
-        price: 'Consult for Pricing',
-        image: '/images/products/ai-studio.png',
-        logo: {
-            src: '/images/products/branding/olentra-ai-studio-build-cascade-transparent.png',
-            width: 1254,
-            height: 1254,
-        }
-    },
-    {
         id: 'olenbot',
         title: 'Olenbot',
         seoTitle: 'Olenbot',
@@ -52,11 +32,31 @@ export const products = [
         color: 'from-purple-500/20 to-pink-500/20 text-purple-400',
         href: '/products/olenbot',
         features: ['Automated Lead Collection', 'AI Call Engine', 'Real-Time Analytics'],
-        status: 'In Pilot',
+        status: 'In Development',
         price: 'Usage-Based',
         image: '/images/products/olen-bot.png',
         logo: {
             src: '/images/products/branding/olenbot-transparent.png',
+            width: 1254,
+            height: 1254,
+        }
+    },
+    {
+        id: 'studio',
+        title: 'Olentra AI Studio',
+        seoTitle: 'Olentra AI Studio',
+        metaDescription: 'Olentra AI Studio is an AI video generator that turns a creative brief into publish-ready cinematic video.',
+        description: 'An AI video generator that turns a creative brief into publish-ready cinematic video, with multi-model generation, consistent characters and products, and one-click social publishing.',
+        icon: Sparkles,
+        emoji: '✨',
+        color: 'from-blue-500/20 to-indigo-500/20 text-blue-400',
+        href: '/products/olentra-ai-studio',
+        features: ['Multi-Model Video Generation', 'Character & Product Lock', 'One-Click Publishing'],
+        status: 'In Development',
+        price: 'Consult for Pricing',
+        image: '/images/products/ai-studio.png',
+        logo: {
+            src: '/images/products/branding/olentra-ai-studio-film-transparent.png',
             width: 1254,
             height: 1254,
         }

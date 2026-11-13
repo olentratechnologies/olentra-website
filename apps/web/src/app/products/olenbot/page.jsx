@@ -19,6 +19,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import JsonLd from "@/components/JsonLd";
 import ProductHero from "@/components/products/ProductHero";
+import OlenbotHeroVisual from "@/components/products/hero-visuals/OlenbotHeroVisual";
 import { olenbot } from "@/data/olenbot";
 import { breadcrumbSchema, productSchema } from "@/lib/seo";
 
@@ -67,7 +68,7 @@ export default function OlenbotPage() {
       />
       <Navbar />
 
-      <ProductHero product="olenbot" hero={hero} />
+      <ProductHero product="olenbot" hero={hero} stats={overview.stats} visual={<OlenbotHeroVisual />} />
 
       <section className="relative py-24 md:py-32 bg-white text-slate-900" id="overview">
         <div className="absolute inset-0 bg-cyber-grid-light opacity-[0.05] pointer-events-none" />
