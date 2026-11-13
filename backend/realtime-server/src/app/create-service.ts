@@ -161,6 +161,10 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           if (!result.ok) logger.warn("Interview email was not delivered", { to: notice.to, error: result.error });
         } catch (error) { logger.warn("Failed to send interview email", { error }); }
       },
+      async sendNotice(notice) {
+        const result = await mailer.sendNotice({ ...notice, ctaUrl: `${siteOrigin}${notice.ctaPath}` });
+        if (!result.ok) throw new Error(result.error || "Reminder email was not delivered.");
+      },
       async sendInterviewCancelled(notice) {
         try {
           const result = await mailer.sendInterviewCancelled({
@@ -286,6 +290,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const jobLeases = domain.collection("job_leases") as any;
     const stopUploadCleanup = runLeasedJob(jobLeases, "orphaned-upload-cleanup", 60 * 60_000, () => removeOrphanedUploads(files as any, bucket), error => logger.error("Orphaned upload cleanup failed", { error }));
     const stopRetention = runLeasedJob(jobLeases, "applicant-retention", 6 * 60 * 60_000, () => domain.runRetention(), error => logger.error("Applicant retention run failed", { error }));
+    const stopReminders = runLeasedJob(jobLeases, "reminders", 60 * 60_000, () => domain.runReminders(), error => logger.error("Reminder run failed", { error }));
     const stopOutbox = runLeasedJob(jobLeases, "email-outbox", 2000, () => domain.processOutbox(), error => logger.error("Email outbox run failed", { error }));
     const limiter = createRateLimiter(mongoAttemptStore(domain.collection("rate_limits")));
     await domain.collection("rate_limits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
@@ -304,7 +309,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       broadcastViewers,
       async close() {
         localStopped = true;
-        stopOutbox(); stopUploadCleanup(); stopRetention();
+        stopOutbox(); stopUploadCleanup(); stopRetention(); stopReminders();
         broadcastInsights.cancel(); broadcastViewers.cancel();
         await changes.close().catch(() => {});
         if (runtime === nextRuntime) runtime = null;

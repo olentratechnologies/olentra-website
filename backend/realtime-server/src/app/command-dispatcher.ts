@@ -27,6 +27,7 @@ import { normalizeSkills } from "../modules/applications/skills";
 import { linkedinKey } from "../modules/applications/duplicates";
 import { auditDecision } from "../modules/audit/decision-audit";
 import { mentorScope } from "../modules/access/mentor-scope";
+import { runReminders } from "../modules/reminders/reminders";
 import { FINAL_STATUSES, eraseApplicant, expiredApplicationIds } from "../modules/privacy/erase";
 
 type Row = InternshipRow;
@@ -674,6 +675,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     if (erased) { invalidatePublicData(); communications.invalidateAnalytics(); }
     return erased;
   }
+  /** Hourly interview reminders, review reminders and the Monday digest (all via the outbox). */
+  async function remind(now = new Date()) { return runReminders({ collection, outbox, now }); }
   /** Sends queued emails through the hooks; a hook that throws is retried later. */
   async function processOutbox(limit = 20) {
     return outbox.process(async row => {
@@ -684,6 +687,10 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       } else if (row.type === "magicLink") {
         if (!activeHooks?.sendMagicLink) throw new Error("No email sender is configured.");
         await activeHooks.sendMagicLink(to, name, applicationId);
+      } else if (row.type === "notice") {
+        if (!activeHooks?.sendNotice) throw new Error("No email sender is configured.");
+        const p = row.payload;
+        await activeHooks.sendNotice({ to: p.to || "", subject: p.subject || "", heading: p.heading || "", intro: p.intro || "", items: (p.items || "").split("\n").filter(Boolean), ctaLabel: p.ctaLabel || "", ctaPath: p.ctaPath || "/" });
       } else if (row.type === "applicantStatus") {
         await deliverApplicantStatus(String(row.payload.applicationId), row.payload.status as ApplicantStatusNotice["status"], row.payload.certificateNumber || undefined);
       } else throw new Error(`Unknown outbox type ${String(row.type)}`);
@@ -750,5 +757,5 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     const passwordHash = await Bun.password.hash(nextPassword, { algorithm: "argon2id" });
     return savePassword(user, passwordHash, user.sessionVersion ?? 1, "account.passwordChanged");
   }
-  return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runRetention, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
+  return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runRetention, runReminders: remind, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
 }

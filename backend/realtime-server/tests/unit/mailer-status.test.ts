@@ -106,3 +106,18 @@ test("interview emails attach a calendar invite, and cancellations a matching ca
     globalThis.fetch = originalFetch;
   }
 });
+
+test("reminder emails escape their content and link to the site", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests: Record<string, any>[] = [];
+  globalThis.fetch = (async (_input, init) => { requests.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify({ id: "email-1" }), { status: 200 }); }) as typeof fetch;
+  try {
+    const mailer = createInternshipMailer("test-api-key", "Olentra <test@example.test>");
+    await mailer.sendNotice({ to: "a@example.test", subject: "2 applications are waiting", heading: "Waiting", intro: "Hi", items: ["<b>Asha</b> · Tech Explorer", "Ravi · Tech Innovator"], ctaLabel: "Review", ctaUrl: "https://site.example.test/intern/dashboard/applications" });
+    assert.match(String(requests[0]!.html), /&lt;b&gt;Asha&lt;\/b&gt;/);
+    assert.match(String(requests[0]!.html), /href="https:\/\/site\.example\.test\/intern\/dashboard\/applications"/);
+    assert.match(String(requests[0]!.text), /- Ravi · Tech Innovator/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

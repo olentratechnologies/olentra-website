@@ -278,7 +278,7 @@ export function createCommunications({ collection, transact }: Options) {
         values.retentionDays = days;
       }
       if (patch.maxStipend !== undefined) { const amount = Number(patch.maxStipend); if (!Number.isSafeInteger(amount) || amount < 0 || amount > 1000000) throw new DomainError("INVALID_REQUEST", "Enter a valid stipend."); values.maxStipend = amount; }
-      if (patch.emailNotifications === true || patch.weeklyDigest === true || patch.reviewReminder === true || (patch.integrations && Object.values(patch.integrations).some(Boolean))) throw new DomainError("UNAVAILABLE", "Email, scheduled reminders, and external integrations are not configured.");
+      if (patch.emailNotifications === true || (patch.integrations && Object.values(patch.integrations).some(Boolean))) throw new DomainError("UNAVAILABLE", "Email notifications and external integrations are not configured.");
       return transact(key, account, { method, params }, async session => {
         const writes: ClientBulkWriteModel<Record<string, Row>>[] = [];
         for (const [field, programId] of [["explorerEnabled", "explorer"], ["innovatorEnabled", "innovator"]] as const) if (patch[field] !== undefined) {

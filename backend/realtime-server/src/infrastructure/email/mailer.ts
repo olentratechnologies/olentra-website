@@ -150,6 +150,22 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
       return sendEmail(to, subject, html, text, cancellation);
     },
 
+    /** A plain reminder or digest: a heading, an intro, a short list and one button. */
+    async sendNotice({ to, subject, heading, intro, items, ctaLabel, ctaUrl }: { to: string; subject: string; heading: string; intro: string; items: string[]; ctaLabel: string; ctaUrl: string }): Promise<SendResult> {
+      const text = `${intro}\n\n${items.map(item => `- ${item}`).join("\n")}\n\n${ctaLabel}: ${ctaUrl}\n\nThe Olentra Team`;
+      const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:32px 16px;background:#0c0f17;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#f1f5f9">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#131926;border:1px solid #1e293b;border-radius:16px">
+      <tr><td style="padding:28px 32px;border-bottom:1px solid #1e293b"><span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#60a5fa">Olentra Careers · Internship Program</span><h1 style="margin:12px 0 0;font-size:22px;color:#fff">${escapeHtml(heading)}</h1></td></tr>
+      <tr><td style="padding:28px 32px;color:#cbd5e1;font-size:15px;line-height:1.6"><p>${escapeHtml(intro)}</p><ul style="padding-left:20px">${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul><p style="margin-top:24px"><a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600">${escapeHtml(ctaLabel)}</a></p></td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+      return sendEmail(to, subject, html, text);
+    },
+
     async sendApplicantStatus({
       to,
       name,

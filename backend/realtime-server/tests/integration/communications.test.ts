@@ -79,7 +79,9 @@ test("settings cannot open an unconfigured track or enable unavailable integrati
   await expect(communications.execute("settings.update", { patch: { compensationMode: null } }, staff, "settings-null-mode")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   await expect(communications.execute("settings.update", { patch: { explorerEnabled: true } }, staff, "settings-one")).rejects.toBeInstanceOf(DomainError);
   await expect(communications.execute("settings.update", { patch: { emailNotifications: true } }, staff, "settings-two")).rejects.toBeInstanceOf(DomainError);
-  await expect(communications.execute("settings.update", { patch: { weeklyDigest: true } }, staff, "settings-digest")).rejects.toBeInstanceOf(DomainError);
+  // The weekly digest and review reminders are available now; general email notifications are not.
+  await communications.execute("settings.update", { patch: { weeklyDigest: true, reviewReminder: true } }, staff, "settings-digest");
+  expect(await domain.collection("settings").findOne({ _id: "program" })).toMatchObject({ weeklyDigest: true, reviewReminder: true });
   await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { fee: 0, stipend: 0 } });
   await communications.execute("settings.update", { patch: { explorerEnabled: true, programEnabled: true, defaultBatch: "Autumn" } }, staff, "settings-three");
   expect((await domain.collection("programs").findOne({ _id: "explorer" }))?.enabled).toBe(true);

@@ -198,3 +198,28 @@ test("a mentor sees and reviews only the interns assigned to them", async () => 
   expect((await domain.execute("intern.list", { pageSize: 100 }, admin) as any).items.length).toBeGreaterThanOrEqual(2);
   expect((await domain.execute("intern.snapshot", {}, mine.account, key()) as any).my.intern.mentorName).toBe("Mira Mentor");
 });
+
+test("reminders send once: interviews always, reviews and the digest only when switched on", async () => {
+  const now = new Date("2026-11-16T04:00:00.000Z"); // Monday 09:30 India time
+  const sent = () => domain.collection("outbox").find({ type: "notice" }).toArray();
+  const before = (await sent()).length;
+  const interviewee = await applicant("Shortlisted");
+  await domain.collection("interviews").insertOne({ _id: `INTV-${randomUUID()}`, applicationId: interviewee.applicationId, scheduledAt: new Date(now.getTime() + 20 * 3_600_000).toISOString(), meetingUrl: "https://meet.example.test/r", status: "Scheduled" });
+  const waiting = await applicant("Applied", { appliedOn: "2026-11-01", assignedTo: recruiter.id });
+  await domain.collection("accounts").updateOne({ _id: recruiter.id }, { $set: { email: "privacy-recruiter@example.test" } });
+  await domain.execute("settings.update", { patch: { weeklyDigest: false, reviewReminder: false } }, admin, key());
+  const off = await domain.runReminders(now);
+  expect(off).toMatchObject({ interviews: 1, reviews: 0, digests: 0 });
+  await domain.execute("settings.update", { patch: { weeklyDigest: true, reviewReminder: true } }, admin, key());
+  const on = await domain.runReminders(now);
+  expect(on.interviews).toBe(0); // already reminded
+  expect(on.reviews).toBeGreaterThanOrEqual(1);
+  expect(on.digests).toBeGreaterThanOrEqual(1);
+  const rows = (await sent()).slice(before);
+  expect(rows.some(row => row.payload.to === interviewee.email && /tomorrow/.test(row.payload.subject))).toBe(true);
+  expect(rows.some(row => row.payload.to === "privacy-recruiter@example.test" && row.payload.items.includes("Privacy Person") && row.payload.ctaPath.includes("assignee=me"))).toBe(true);
+  expect(rows.some(row => row.payload.to === admin.email && row.payload.subject === "Your weekly internship summary")).toBe(true);
+  expect(await domain.runReminders(now)).toMatchObject({ interviews: 0, reviews: 0, digests: 0 });
+  expect((await domain.collection("applications").findOne({ _id: waiting.applicationId }))?.reviewReminderSentOn).toBeTruthy();
+  await domain.execute("settings.update", { patch: { weeklyDigest: false, reviewReminder: false } }, admin, key());
+});
