@@ -22,6 +22,7 @@ import styles from "./intern.module.css";
 import InternInsights from "./InternInsights";
 import SuccessStories from "./SuccessStories";
 import { useSiteFeatures } from "@olentra/site-features/react";
+import { DRAFT_FIELDS, clearApplyDraft, readApplyDraft, writeApplyDraft } from "@/lib/intern/apply-draft.mjs";
 
 const ART_SOURCE = "/images/intern/reference-art.png";
 const MAX_RESUME_BYTES = 5 * 1024 * 1024;
@@ -203,6 +204,28 @@ export default function InternLanding() {
   const submissionLock = useRef(false);
   const uploadedResume = useRef(null);
   const nameInput = useRef(null);
+  // Unfinished applications are kept in this browser only (never sent until
+  // submitted), restored on the next visit and cleared after applying.
+  const formRef = useRef(null);
+  useEffect(() => {
+    const draft = readApplyDraft();
+    const form = formRef.current;
+    if (!draft || !form) return;
+    for (const field of DRAFT_FIELDS) {
+      const input = form.elements.namedItem(field);
+      if (input && "value" in input && !input.value && typeof draft[field] === "string") input.value = draft[field];
+    }
+    if (typeof draft.track === "string") setTrackChoice(draft.track);
+  }, []);
+  // The track is state, so save again once a new choice has rendered.
+  useEffect(() => { if (trackChoice) saveDraft(); }, [trackChoice]);
+  function saveDraft() {
+    const form = formRef.current;
+    if (!form) return;
+    const draft = { track: trackChoice };
+    for (const field of DRAFT_FIELDS) draft[field] = String(form.elements.namedItem(field)?.value || "");
+    writeApplyDraft(draft);
+  }
   const resumeInput = useRef(null);
   const linkedInInput = useRef(null);
   const videoInput = useRef(null);
@@ -368,6 +391,7 @@ export default function InternLanding() {
       }
       // The response is the same for new and repeat emails, so remember what was sent.
       setSavedApplication({ ...input, message: result.data?.message });
+      clearApplyDraft();
       if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) return;
       setLaunchPhase("launching");
     } catch (error) {
@@ -658,7 +682,9 @@ export default function InternLanding() {
               </div>
               <form
                 className={`${styles.form} ${showValidation ? styles.validationAttempted : ""}`}
+                ref={formRef}
                 onSubmit={submitPreview}
+                onInput={saveDraft}
                 onChange={() => {
                   setPreviewComplete(false);
                   setShowValidation(false);
