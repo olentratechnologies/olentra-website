@@ -8,6 +8,7 @@ import { isProgramAvailable, normalizeCompensationMode } from "@/lib/intern/prog
 import ui from "./pages.module.css";
 import styles from "./settings.module.css";
 import TemplatesSettings from "./TemplatesSettings";
+import ResourcesSettings from "./ResourcesSettings";
 
 const compensationOptions = [
   { value: "free", label: "Free / unpaid", description: "Only tracks with no stipend." },
@@ -88,8 +89,8 @@ export default function SettingsPage() {
   function edit(setter, value) { setter(value); setSaved(false); setError(""); }
   return <div className={ui.page}>
     <PageHeader title="Settings" description="Configure your internship program"/>
-    <Tabs label="Settings sections" value={tab} onChange={value => { setTab(value); setSaved(false); setError(""); }} items={[{ id: "general", label: "General" }, { id: "tracks", label: "Tracks" }, { id: "notifications", label: "Notifications" }, { id: "templates", label: "Templates" }]}/>
-    {tab === "templates" ? <TemplatesSettings commands={commands} notify={notify}/> : tab === "tracks" ? <Panel className={`${styles.settingsPanel} ${styles.settingsForm}`}><div className={styles.sectionHeading}><span><Layers size={19}/></span><div><h2>Internship Tracks</h2><p>Configure each track before accepting applications.</p></div></div><div className={styles.trackCards}>{data.programs.map(program => <TrackSettings key={program.id} program={program} configure={commands.configureProgram} notify={notify}/>)}</div><p className={styles.helper}><ShieldCheck size={15}/> Existing application and intern records remain available when a track is paused. The program must also be enabled in General.</p></Panel> : <form onSubmit={save} className={styles.settingsForm}><Panel className={styles.settingsPanel}>
+    <Tabs label="Settings sections" value={tab} onChange={value => { setTab(value); setSaved(false); setError(""); }} items={[{ id: "general", label: "General" }, { id: "tracks", label: "Tracks" }, { id: "notifications", label: "Notifications" }, { id: "templates", label: "Templates" }, { id: "learning", label: "Learning" }]}/>
+    {tab === "learning" ? <ResourcesSettings programs={data.programs} commands={commands} notify={notify}/> : tab === "templates" ? <TemplatesSettings commands={commands} notify={notify}/> : tab === "tracks" ? <Panel className={`${styles.settingsPanel} ${styles.settingsForm}`}><div className={styles.sectionHeading}><span><Layers size={19}/></span><div><h2>Internship Tracks</h2><p>Configure each track before accepting applications.</p></div></div><div className={styles.trackCards}>{data.programs.map(program => <TrackSettings key={program.id} program={program} configure={commands.configureProgram} notify={notify}/>)}</div><p className={styles.helper}><ShieldCheck size={15}/> Existing application and intern records remain available when a track is paused. The program must also be enabled in General.</p></Panel> : <form onSubmit={save} className={styles.settingsForm}><Panel className={styles.settingsPanel}>
       {tab === "general" ? <><div className={styles.sectionHeading}><span><Settings2 size={19}/></span><div><h2>Program General Settings</h2><p>Manage the internship program and application intake.</p></div></div><div className={styles.switches}><Switch label="Enable Internship Program" description="Accept applications for tracks that are enabled and configured." checked={programEnabled} onChange={value => edit(setProgramEnabled, value)}/></div>
       <fieldset className={styles.compensationFieldset} aria-describedby="compensation-help compensation-availability">
         <legend>Internship type</legend>

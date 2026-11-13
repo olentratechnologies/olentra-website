@@ -104,3 +104,19 @@ test("an expired offer can't be accepted until an admin extends it", async () =>
   expect(Date.parse(extended.expiresOn)).toBeGreaterThan(Date.now() + 4 * 86_400_000);
   expect((await domain.execute("offer.accept", { applicationId }, account, key()) as any).status).toBe("Accepted");
 });
+
+test("interns see resources for their track and can tick them off", async () => {
+  const all = await domain.execute("resource.save", { title: "Git basics", url: "https://git-scm.com/book", type: "doc" }, admin, key()) as any;
+  const explorerOnly = await domain.execute("resource.save", { title: "React", url: "https://react.dev/learn", type: "course", minutes: 90, programIds: ["explorer"] }, admin, key()) as any;
+  const innovatorOnly = await domain.execute("resource.save", { title: "Systems", url: "https://example.test/sys", programIds: ["innovator"] }, admin, key()) as any;
+  await expect(domain.execute("resource.save", { title: "x", url: "https://a.test" }, recruiter, key())).rejects.toMatchObject({ code: "FORBIDDEN" });
+  const { account } = await applicant("Joined");
+  await domain.execute("resource.complete", { resourceId: explorerOnly.id }, account, key());
+  const snapshot = await domain.execute("intern.snapshot", {}, account, key()) as any;
+  const ids = snapshot.my.resources.map((item: any) => item.id);
+  expect(ids).toEqual(expect.arrayContaining([all.id, explorerOnly.id]));
+  expect(ids).not.toContain(innovatorOnly.id);
+  expect(snapshot.my.resources.find((item: any) => item.id === explorerOnly.id).done).toBe(true);
+  await domain.execute("resource.complete", { resourceId: explorerOnly.id, done: false }, account, key());
+  expect((await domain.execute("intern.snapshot", {}, account, key()) as any).my.resources.find((item: any) => item.id === explorerOnly.id).done).toBe(false);
+});

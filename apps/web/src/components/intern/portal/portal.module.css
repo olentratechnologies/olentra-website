@@ -3314,3 +3314,76 @@
   color: var(--ad-danger, #ce5275);
   font-weight: 600;
 }
+
+.resourceList {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resourceList li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ad-border, #d6e0f5);
+  border-radius: 10px;
+}
+
+.resourceList a {
+  overflow: hidden;
+  color: var(--ad-text, #10203f);
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resourceList a:hover {
+  text-decoration: underline;
+}
+
+.resourceList small {
+  color: var(--ad-muted, #5b6b8c);
+  white-space: nowrap;
+}
+
+.resourceDone a {
+  color: var(--ad-muted, #5b6b8c);
+  text-decoration: line-through;
+}
+
+.resourceCheck {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--ad-border, #c8d8ff);
+  border-radius: 6px;
+  background: var(--ad-panel, #fff);
+  color: #fff;
+  cursor: pointer;
+}
+
+.resourceCheck[aria-pressed="true"] {
+  border-color: var(--ad-blue, #2583ff);
+  background: var(--ad-blue, #2583ff);
+}
+
+.resourceCheck:focus-visible {
+  outline: 2px solid var(--ad-blue, #2583ff);
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .resourceList li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .resourceList small {
+    grid-column: 2;
+  }
+}

@@ -25,6 +25,7 @@ import {
   formatDate,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import LearningResources from "./LearningResources";
 import badgeStyles from "./badges.module.css";
 
 function BadgesRow({ my }) {
@@ -291,6 +292,7 @@ export default function PortalDashboard() {
         </Panel>
       </div>
       <BadgesRow my={my} />
+      <LearningResources resources={my.resources} />
       {canViewWork && (my.projects || []).length > 0 && (
         <Panel className={styles.sectionGap}>
           <div className={styles.panelHeader}>

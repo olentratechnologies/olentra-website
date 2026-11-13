@@ -466,3 +466,27 @@
 .templateBody {
   grid-column: 1 / -1;
 }
+
+.trackChoices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 13px;
+  color: var(--ad-text);
+}
+
+.trackChoices legend {
+  margin-bottom: 6px;
+  color: var(--ad-muted);
+  font-size: 12px;
+}
+
+.trackChoices small {
+  flex-basis: 100%;
+  color: var(--ad-muted);
+}

@@ -17,6 +17,7 @@ export { connectInternDatabase } from "../infrastructure/database/client";
 import { createStories } from "../modules/stories/stories.service";
 import { createTemplates } from "../modules/templates/templates.service";
 import { createViews } from "../modules/views/views.service";
+import { createResources } from "../modules/resources/resources.service";
 import { DEFAULT_RUBRIC, createReviews, type Criterion } from "../modules/reviews/reviews.service";
 import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "../modules/applications/video-filter";
 import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
@@ -50,6 +51,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       reviews.initialize(),
       templates.initialize(),
       views.initialize(),
+      resources.initialize(),
       outbox.initialize(),
       communications.initialize(),
       staffManagement.initialize(),
@@ -238,6 +240,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   const reviews = createReviews({ collection, transact });
   const templates = createTemplates({ collection, transact });
   const views = createViews({ collection, transact });
+  const resources = createResources({ collection, transact });
   const staffManagement = createStaffManagement({ collection, transact, client });
   async function execute(method: string, params: Record<string, any> = {}, actor: Principal | null = null, key = ""): Promise<any> {
     if (actor?.role === "company") authorizeStaff(method, params, actor);
@@ -309,6 +312,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       // These reads have no ordering dependency. Running them together avoids
       // serial Atlas network round trips during login and every workspace reload.
       const ownApplicationPromise = actor?.role === "intern" && actor.applicationId ? applications.findOne({ _id: actor.applicationId }) : Promise.resolve(null);
+      const resourcesPromise = resources.snapshot(actor);
       const hasPasswordPromise = actor ? credentials.countDocuments({ userId: actor.id }, { limit: 1 }).then(count => count > 0) : Promise.resolve(false);
       const [info, lifecycleData, communicationData, applicationItems, ownApplication, basicInternApplications] = await Promise.all([
         actor?.role === "company" ? publicData() : anonymousData(),
@@ -324,6 +328,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       ]);
       const data: Record<string, any> = { ...info, user: actor, applications: [], accounts: actor ? [actor] : [], interns: [], projects: [], tasks: [], submissions: [], offers: [], onboarding: [], certificates: [], interviews: [], messages: [], notifications: [], resources: [], activity: [], metrics: [] };
       Object.assign(data, lifecycleData, communicationData);
+      const learning = await resourcesPromise;
+      if (actor?.role === "company") data.resources = learning;
       if (applicationItems) {
         // The dashboard snapshot carries the newest applications only; the
         // Applications page pages through all of them.
@@ -344,7 +350,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!can(actor, "overview.read")) data.analytics = null;
       }
       if (ownApplication) data.applications = [publicApplication(ownApplication, false)];
-      return { data, my: { application: actor?.role === "intern" ? data.applications[0] || null : null, intern: data.interns[0] || null, offer: data.offers[0] || null, interview: actor?.role === "intern" ? data.interviews[0] || null : null, onboarding: data.onboarding[0] || { applicationId: actor?.applicationId, status: "Not started", acknowledged: false }, projects: data.projects, tasks: data.tasks, submissions: data.submissions, certificates: data.certificates, messages: data.messages, notifications: data.notifications, resources: [], hasPassword: await hasPasswordPromise }, account: actor };
+      return { data, my: { application: actor?.role === "intern" ? data.applications[0] || null : null, intern: data.interns[0] || null, offer: data.offers[0] || null, interview: actor?.role === "intern" ? data.interviews[0] || null : null, onboarding: data.onboarding[0] || { applicationId: actor?.applicationId, status: "Not started", acknowledged: false }, projects: data.projects, tasks: data.tasks, submissions: data.submissions, certificates: data.certificates, messages: data.messages, notifications: data.notifications, resources: actor?.role === "intern" ? learning : [], hasPassword: await hasPasswordPromise }, account: actor };
     }
     if (method === "application.submit") {
       if (actor) throw new DomainError("FORBIDDEN", "Sign out before submitting an application.");
@@ -567,6 +573,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     if (reviews.supports(method)) return reviews.execute(method, params, actor, key);
     if (templates.supports(method)) return templates.execute(method, params, actor, key);
     if (views.supports(method)) return views.execute(method, params, actor, key);
+    if (resources.supports(method)) return resources.execute(method, params, actor, key);
     if (method === "certificate.verify") {
       // Public check for a shared certificate link. Numbers are random UUIDs, so they can't be enumerated.
       const number = str(params.number).slice(0, 80);
