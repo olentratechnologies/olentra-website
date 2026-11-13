@@ -3387,3 +3387,69 @@
     grid-column: 2;
   }
 }
+
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #f5a524 16%, transparent);
+  color: #b26b00;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.moodRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.moodRow legend {
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--ad-text, #10203f);
+}
+
+.moodRow button {
+  padding: 6px 12px;
+  border: 1px solid var(--ad-border, #c8d8ff);
+  border-radius: 999px;
+  background: var(--ad-panel, #fff);
+  color: var(--ad-text, #10203f);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.moodRow button[aria-pressed="true"] {
+  border-color: var(--ad-blue, #2583ff);
+  background: var(--ad-blue, #2583ff);
+  color: #fff;
+}
+
+.checkinSummary {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.checkinSummary p {
+  margin: 0;
+}
+
+.checkinSummary blockquote {
+  margin: 4px 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--ad-blue, #2583ff);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ad-blue, #2583ff) 8%, transparent);
+}
+
+.checkinSummary small {
+  color: var(--ad-muted, #5b6b8c);
+}

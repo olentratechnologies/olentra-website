@@ -18,6 +18,7 @@ import { createStories } from "../modules/stories/stories.service";
 import { createTemplates } from "../modules/templates/templates.service";
 import { createViews } from "../modules/views/views.service";
 import { createResources } from "../modules/resources/resources.service";
+import { createCheckins } from "../modules/checkins/checkins.service";
 import { DEFAULT_RUBRIC, createReviews, type Criterion } from "../modules/reviews/reviews.service";
 import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "../modules/applications/video-filter";
 import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
@@ -52,6 +53,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       templates.initialize(),
       views.initialize(),
       resources.initialize(),
+      checkins.initialize(),
       outbox.initialize(),
       communications.initialize(),
       staffManagement.initialize(),
@@ -241,6 +243,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   const templates = createTemplates({ collection, transact });
   const views = createViews({ collection, transact });
   const resources = createResources({ collection, transact });
+  const checkins = createCheckins({ collection, transact });
   const staffManagement = createStaffManagement({ collection, transact, client });
   async function execute(method: string, params: Record<string, any> = {}, actor: Principal | null = null, key = ""): Promise<any> {
     if (actor?.role === "company") authorizeStaff(method, params, actor);
@@ -574,6 +577,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     if (templates.supports(method)) return templates.execute(method, params, actor, key);
     if (views.supports(method)) return views.execute(method, params, actor, key);
     if (resources.supports(method)) return resources.execute(method, params, actor, key);
+    if (checkins.supports(method)) return checkins.execute(method, params, actor, key);
     if (method === "certificate.verify") {
       // Public check for a shared certificate link. Numbers are random UUIDs, so they can't be enumerated.
       const number = str(params.number).slice(0, 80);

@@ -36,12 +36,14 @@ import {
 import ui from "./pages.module.css";
 import styles from "./analytics.module.css";
 import TemplatePicker from "./TemplatePicker";
+import InternCheckins from "./InternCheckins";
 
 export default function InternsPage() {
   const { data, query = "", notify, updateIntern, commands, account } = useDashboard();
   const isAdmin = account?.staffRole === "admin";
   const canApplications = hasStaffPermission(account, "applications.read");
   const canMessage = hasStaffPermission(account, "messages.interns");
+  const [checkinsFor,setCheckinsFor] = useState(null);
   const [recipient,setRecipient] = useState(null), [subject,setSubject] = useState(""), [body,setBody] = useState(""), [sending,setSending] = useState(false), [messageError,setMessageError] = useState("");
   const messages = useInternHistory("messages", { applicationId: recipient?.applicationId, enabled: Boolean(recipient && canMessage), revision: data.messages });
   const [tab, setTab] = useState("all");
@@ -325,6 +327,7 @@ export default function InternsPage() {
                           href: `/intern/dashboard/applications/${intern.applicationId}`,
                         }] : []),
                         ...(canMessage ? [{label:"Message intern",onClick:()=>{setRecipient(intern);setSubject("");setBody("");setMessageError("")}}] : []),
+                        {label:"Check-ins",onClick:()=>setCheckinsFor(intern)},
                         ...(!isAdmin || intern.status === "Completed"
                           ? []
                           : [
@@ -384,6 +387,9 @@ export default function InternsPage() {
           <label className={ui.field}>Message<textarea required maxLength={3000} rows={4} value={body} onChange={event=>setBody(event.target.value)}/></label>
           {messageError && <p role="alert">{messageError}</p>}<div className={ui.formActions}><Button type="submit" disabled={sending}>{sending ? "Sending…" : "Send message"}</Button></div>
         </form>
+      </Modal>
+      <Modal open={Boolean(checkinsFor)} onOpenChange={open=>{if(!open)setCheckinsFor(null)}} title={`${checkinsFor?.name || "Intern"}'s check-ins`} description="Recent weekly check-ins, newest first.">
+        {checkinsFor && <InternCheckins applicationId={checkinsFor.applicationId} commands={commands} notify={notify}/>}
       </Modal>
     </div>
   );

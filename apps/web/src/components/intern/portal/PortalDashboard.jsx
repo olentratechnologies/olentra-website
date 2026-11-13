@@ -26,6 +26,7 @@ import {
 } from "./PortalUI";
 import styles from "./portal.module.css";
 import LearningResources from "./LearningResources";
+import WeeklyCheckin from "./WeeklyCheckin";
 import badgeStyles from "./badges.module.css";
 
 function BadgesRow({ my }) {
@@ -292,6 +293,7 @@ export default function PortalDashboard() {
         </Panel>
       </div>
       <BadgesRow my={my} />
+      {my.intern?.status === "Active" && my.application?.id && <WeeklyCheckin applicationId={my.application.id} />}
       <LearningResources resources={my.resources} />
       {canViewWork && (my.projects || []).length > 0 && (
         <Panel className={styles.sectionGap}>

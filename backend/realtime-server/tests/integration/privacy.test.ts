@@ -120,3 +120,21 @@ test("interns see resources for their track and can tick them off", async () => 
   await domain.execute("resource.complete", { resourceId: explorerOnly.id, done: false }, account, key());
   expect((await domain.execute("intern.snapshot", {}, account, key()) as any).my.resources.find((item: any) => item.id === explorerOnly.id).done).toBe(false);
 });
+
+test("active interns check in once a week and mentors can reply", async () => {
+  const { applicationId, account } = await applicant("Joined");
+  await expect(domain.execute("checkin.submit", { done: "Read docs", mood: 4 }, account, key())).rejects.toMatchObject({ code: "CONFLICT" });
+  await domain.collection("interns").insertOne({ _id: `INT-${randomUUID()}`, applicationId, status: "Active" });
+  await domain.execute("checkin.submit", { done: "Built the form", mood: 4 }, account, key());
+  const edited = await domain.execute("checkin.submit", { done: "Built and tested the form", blockers: "Need API access", mood: 3 }, account, key()) as any;
+  expect(await domain.collection("checkins").countDocuments({ applicationId })).toBe(1);
+  await expect(domain.execute("checkin.submit", { done: "x", mood: 9 }, account, key())).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(domain.execute("checkin.reply", { id: edited.id, reply: "Nice" }, recruiter, key())).rejects.toMatchObject({ code: "FORBIDDEN" });
+  await domain.execute("checkin.reply", { id: edited.id, reply: "Great progress — I'll get you API access." }, admin, key());
+  const mine = await domain.execute("checkin.list", { applicationId }, account) as any;
+  expect(mine.current).toMatchObject({ done: "Built and tested the form", mood: 3, reply: "Great progress — I'll get you API access.", repliedBy: "Admin" });
+  expect(mine.streak).toBe(1);
+  expect(await domain.collection("notifications").countDocuments({ applicationId, title: "Reply to your weekly check-in" })).toBe(1);
+  const other = await applicant("Joined");
+  await expect(domain.execute("checkin.list", { applicationId }, other.account)).rejects.toMatchObject({ code: "FORBIDDEN" });
+});

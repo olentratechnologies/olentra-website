@@ -27,3 +27,42 @@
   font-size: 13px;
   color: var(--ad-muted);
 }
+
+.checkins {
+  display: grid;
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.checkins article {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--ad-border);
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.checkins header {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ad-muted);
+}
+
+.checkins p {
+  margin: 0;
+  color: var(--ad-text);
+}
+
+.checkins blockquote {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--ad-blue);
+  color: var(--ad-text);
+}
+
+.checkins form {
+  display: grid;
+  gap: 8px;
+}
