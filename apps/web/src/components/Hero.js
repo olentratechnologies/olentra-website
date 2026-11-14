@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import { Feature } from "@olentra/site-features/react";
+import HeroBackdrop from "./HeroBackdrop";
 gsap.registerPlugin(useGSAP);
-
-const VIDEO_URL = "/videos/hero-video.mp4";
-const POSTER_URL = "/videos/hero-poster.jpg";
 
 const FEATS = [
   "Enterprise Modernization",
@@ -17,7 +15,6 @@ const FEATS = [
 ];
 
 export default function Hero() {
-  const videoRef = useRef(null);
   const root = useRef(null);
 
   useGSAP(() => {
@@ -30,55 +27,22 @@ export default function Hero() {
     return () => media.revert();
   }, { scope: root });
 
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => {
-      if (!videoRef.current) return;
-      if (query.matches) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      } else {
-        void videoRef.current.play().catch(() => {});
-      }
-    };
-    sync();
-
-    if (query.addEventListener) query.addEventListener("change", sync);
-    else query.addListener(sync);
-
-    return () => {
-      if (query.removeEventListener) query.removeEventListener("change", sync);
-      else query.removeListener(sync);
-    };
-  }, []);
-
   return (
     <>
       <section
         data-testid="hero-section"
         ref={root}
-        className="cc-hero is-entered relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-[#070b12] text-white flex flex-col justify-between"
+        className="cc-hero is-entered relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-[#020821] text-white flex flex-col justify-between"
       >
-        {/* Neural Warp Video Background */}
-        <Feature name="home.hero.video"><video
-          ref={videoRef}
-          className="cc-art absolute inset-0 w-full h-full object-cover object-center z-0 pointer-events-none select-none"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-          poster={POSTER_URL}
-          src={VIDEO_URL}
-        /></Feature>
+        {/* Floating ribbon backdrop */}
+        <Feature name="home.hero.video"><HeroBackdrop /></Feature>
 
         {/* Atmospheric Radial Veil */}
         <div className="cc-veil absolute inset-0 z-[1] pointer-events-none" aria-hidden="true" />
 
         {/* Hero Content */}
         <div className="relative z-20 flex-1 flex flex-col items-center justify-center text-center px-3 sm:px-4 md:px-6 pt-0 sm:pt-4 md:pt-8 my-auto">
-          {/* Localized Dark Scrim Backdrop to insulate text from the bright video flares */}
+          {/* Localized Dark Scrim Backdrop to insulate text from the bright ribbon glow */}
           <div
             className="pointer-events-none absolute inset-0 max-w-4xl mx-auto rounded-full blur-3xl opacity-80 z-0"
             style={{

@@ -9,7 +9,7 @@ export const ENVIRONMENTS = ["Production", "Staging"];
  */
 export const SECTION_CATALOG = [
   { page: "Homepage", id: "home.hero", label: "Hero", children: [
-    { id: "home.hero.video", label: "Background video" },
+    { id: "home.hero.video", label: "Background animation" },
     { id: "home.hero.highlights", label: "Highlight chips" },
   ] },
   { page: "Homepage", id: "home.mission", label: "Mission & about", children: [
