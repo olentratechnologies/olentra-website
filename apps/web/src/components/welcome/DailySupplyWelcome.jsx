@@ -66,18 +66,13 @@ export default function DailySupplyWelcome() {
       return;
     }
 
-    let timer;
-    const schedule = () => {
-      let seen = dismissedThisSession;
-      try { seen ||= Boolean(localStorage.getItem(STORAGE_KEY)); } catch { /* Storage may be disabled. */ }
-      if (!seen) timer = window.setTimeout(() => {
-        previousFocus.current = document.activeElement;
-        setOpen(true);
-      }, 1400);
-    };
-    if (document.readyState === "complete") schedule();
-    else window.addEventListener("load", schedule, { once: true });
-    return () => { clearTimeout(timer); window.removeEventListener("load", schedule); };
+    // Open as soon as the client mounts — no waiting for window "load" or a timer.
+    let seen = dismissedThisSession;
+    try { seen ||= Boolean(localStorage.getItem(STORAGE_KEY)); } catch { /* Storage may be disabled. */ }
+    if (!seen) {
+      previousFocus.current = document.activeElement;
+      setOpen(true);
+    }
   }, [excluded]);
 
   function dismiss() {

@@ -375,7 +375,8 @@ export default function Navbar() {
   const careersMenuId = useId();
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [scrolled, setScrolled] = useState(false);
-  const [isLightSection, setIsLightSection] = useState(isInternPage);
+  // Navbar is always rendered in its white theme.
+  const isLightSection = true;
   const headerRowRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeServiceGroupIndex, setActiveServiceGroupIndex] = useState(0);
@@ -453,52 +454,8 @@ export default function Navbar() {
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
-
-    const targets = Array.from(document.querySelectorAll('section, footer'));
-    let observer;
-    let sampleY = 0;
-
-    const updateTheme = () => {
-      let currentSection;
-      for (const target of targets) {
-        const bounds = target.getBoundingClientRect();
-        // Gaps keep the preceding section's theme, including when scrolling upward.
-        if (bounds.height > 0 && bounds.top <= sampleY) currentSection = target;
-      }
-      if (!currentSection) return;
-      setIsLightSection(
-        currentSection.classList.contains('bg-white') ||
-        currentSection.classList.contains('bg-slate-50') ||
-        currentSection.getAttribute('data-theme') === 'light'
-      );
-    };
-
-    const observeSections = () => {
-      observer?.disconnect();
-      const bar = headerRowRef.current?.getBoundingClientRect();
-      sampleY = Math.max(0, Math.min(window.innerHeight - 1, (bar?.top || 12) + (bar?.height || 40) / 2));
-      // Use a one-pixel band behind the bar; percentage margins depend on screen width.
-      observer = new IntersectionObserver(updateTheme, {
-        root: null,
-        rootMargin: `-${Math.max(0, sampleY - 1)}px 0px -${Math.max(0, window.innerHeight - sampleY)}px 0px`,
-        threshold: 0,
-      });
-      targets.forEach(target => observer.observe(target));
-      updateTheme();
-    };
-
-    observeSections();
-    window.addEventListener('resize', observeSections);
-    const barResizeObserver = new ResizeObserver(observeSections);
-    if (headerRowRef.current) barResizeObserver.observe(headerRowRef.current);
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', observeSections);
-      barResizeObserver.disconnect();
-      observer?.disconnect();
-    };
-  }, [handleScroll, pathname, ready, features.services, features.products, features.blog, features.internships]);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   const accentGradient = 'linear-gradient(135deg, #2563eb, #4f46e5)';
   const resolveHref = useCallback((href) => {
