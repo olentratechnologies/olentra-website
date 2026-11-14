@@ -8,6 +8,7 @@ process.env.OLENTRA_FEATURE_STORE_PATH ||= path.join(repoRoot, '.data', 'site-fe
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  allowedDevOrigins: ['*.*.*.*', '*.*', '**.*'],
   transpilePackages: ['@olentra/site-features', '@olentra/ui', '@olentra/realtime'],
   outputFileTracingRoot: repoRoot,
   async redirects() {

@@ -9,6 +9,7 @@ const adminUrl = (process.env.OLENTRA_ADMIN_URL || 'http://localhost:3002').repl
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  allowedDevOrigins: ['*.*.*.*', '*.*', '**.*'],
   transpilePackages: ['@olentra/site-features', '@olentra/ui', '@olentra/realtime'],
   outputFileTracingRoot: repoRoot,
   async redirects() {
