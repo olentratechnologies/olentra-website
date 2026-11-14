@@ -1,22 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, startTransition, useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Layers, Clock3 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { projects } from '../data/projects';
 import styles from './latest-projects.module.css';
-
-const projectDetails = [
-  ['Built an e-commerce experience that brings silk collections, product discovery, and online shopping together.', 'Next.js · Node.js', 'Cloud infrastructure on AWS'],
-  ['Created a job discovery platform that makes finding government opportunities and career updates simpler.', 'Search-friendly discovery', 'Powered by Appwrite'],
-  ['Built a fintech dashboard that turns financial data into clear, accessible insights.', 'Interactive data charts', 'React · Vercel'],
-  ['Created an AI-powered trading platform with strategy insights and automated reporting.', 'GPT strategy insights', 'Automated reporting'],
-  ['Built a streetwear shopping experience that puts bold collections and effortless discovery first.', 'Fashion commerce', 'Shopify experience'],
-  ['Redesigned an e-commerce platform around intuitive browsing and a considered shopping experience.', 'Product discovery', 'E-commerce redesign'],
-  ['Designed a SaaS dashboard that brings analytics and everyday workflows into one clear interface.', 'Dashboard design', 'Analytics experience'],
-  ['Designed a mobile fitness experience that makes everyday activity easier to explore.', 'Mobile-first design', 'Fitness experience'],
-];
 
 export default function LatestProjects() {
   return (
@@ -31,13 +20,31 @@ export default function LatestProjects() {
 }
 
 function ProjectCarousel({ items }) {
-  const [viewportRef, api] = useEmblaCarousel({ loop: items.length > 2, align: 'center', containScroll: false, duration: 18, skipSnaps: true });
+  const [viewportRef, api] = useEmblaCarousel({
+    loop: items.length > 2,
+    align: 'center',
+    containScroll: false,
+    duration: 18,
+    skipSnaps: true,
+    breakpoints: {
+      // Mobile: let Embla own the whole swipe (drag, release, snap) with a
+      // slightly softer spring so cards glide into place instead of jumping.
+      '(max-width: 768px)': { duration: 30 },
+      '(max-width: 768px) and (prefers-reduced-motion: reduce)': {
+        duration: 0, skipSnaps: false,
+      },
+    },
+  });
   const [selected, setSelected] = useState(0);
   const [canPrevious, setCanPrevious] = useState(false);
   const [canNext, setCanNext] = useState(items.length > 1);
   const carouselRef = useRef(null);
   const inertiaIdRef = useRef(null);
   const isCoastingRef = useRef(false);
+  const caughtSpinRef = useRef(false);
+  // While a mobile flick is spinning, the pill follows the card passing the center.
+  const followCenterRef = useRef(false);
+  const centerIndexRef = useRef(0);
 
   useEffect(() => {
     if (!api) return undefined;
@@ -63,6 +70,7 @@ function ProjectCarousel({ items }) {
         radius: (first.width + gap) / divisor,
         cards: slides.map((slide, index) => ({
           node: slide.firstElementChild,
+          visibility: '',
           center: engine.slideRects[index].left - engine.containerRect.left
             + engine.slideRects[index].width / 2 - width / 2,
           loopPoint: engine.slideLooper.loopPoints.find((point) => point.index === index),
@@ -76,25 +84,47 @@ function ProjectCarousel({ items }) {
       // Use the rendered (interpolated) position, including each slide's loop shift,
       // so the arc and track stay aligned on every display refresh.
       const trackOffset = engine.axis.direction(engine.offsetLocation.get());
-      cards.forEach(({ node, center, loopPoint }) => {
+      let nearestIndex = -1;
+      let nearestDistance = Infinity;
+      cards.forEach((card, index) => {
+        const { node, center, loopPoint } = card;
         if (!node) return;
         if (reducedMotion.matches) {
           node.style.transform = 'none';
           node.style.visibility = 'visible';
+          card.visibility = 'visible';
           return;
         }
         const loopOffset = loopPoint ? engine.axis.direction(loopPoint.slideLocation.get()) : 0;
         const offset = center + trackOffset + loopOffset;
+        if (Math.abs(offset) < nearestDistance) {
+          nearestDistance = Math.abs(offset);
+          nearestIndex = index;
+        }
         const angle = offset / radius;
-        node.style.visibility = Math.abs(angle) > Math.PI / 2 ? 'hidden' : 'visible';
+        // Only touch visibility when it flips; rewriting it every frame forces
+        // extra style recalculation, which shows up as dropped frames on phones.
+        const visibility = Math.abs(angle) > Math.PI / 2 ? 'hidden' : 'visible';
+        if (card.visibility !== visibility) {
+          card.visibility = visibility;
+          node.style.visibility = visibility;
+        }
         const x = radius * Math.sin(angle) - offset;
         const y = radius * (1 - Math.cos(angle));
         node.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad)`;
       });
+      if (followCenterRef.current && nearestIndex >= 0 && nearestIndex !== centerIndexRef.current) {
+        centerIndexRef.current = nearestIndex;
+        // Low priority: React renders between frames instead of blocking one.
+        startTransition(() => setSelected(nearestIndex));
+      }
     };
 
     const sync = () => {
-      setSelected(api.selectedScrollSnap());
+      if (!followCenterRef.current) {
+        centerIndexRef.current = api.selectedScrollSnap();
+        setSelected(centerIndexRef.current);
+      }
       setCanPrevious(api.canScrollPrev());
       setCanNext(api.canScrollNext());
     };
@@ -119,6 +149,7 @@ function ProjectCarousel({ items }) {
     if (!api) return undefined;
     const root = api.rootNode();
     const doc = root.ownerDocument;
+    const mobile = window.matchMedia('(max-width: 768px)');
     let isTouch = false;
     let previousX = 0;
     let samples = [];
@@ -188,7 +219,9 @@ function ProjectCarousel({ items }) {
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const engine = api.internalEngine();
 
-      if (reduced || samples.length < 2) {
+      // With fewer projects, Embla can disable looping on wider viewports.
+      // Let its bounds handling settle those drags instead of looping manually.
+      if (!engine.options.loop || reduced || samples.length < 2) {
         engine.scrollBody.useDuration(25).useFriction(0.72);
         engine.scrollTo.distance(0, true);
         engine.animation.start();
@@ -288,20 +321,196 @@ function ProjectCarousel({ items }) {
       doc.addEventListener('touchmove', accelerate, { passive: true });
     };
 
-    root.addEventListener('mousedown', rememberStart, true);
-    root.addEventListener('touchstart', rememberStart, { capture: true, passive: true });
-    root.addEventListener('touchcancel', cancelMomentum, true);
-    root.addEventListener('contextmenu', cancelMomentum, true);
-    api.on('pointerDown', start).on('pointerUp', release).on('reInit', stop);
-
-    return () => {
+    const detachMomentum = () => {
       stop();
       stopInertia();
+      samples = [];
       root.removeEventListener('mousedown', rememberStart, true);
       root.removeEventListener('touchstart', rememberStart, true);
       root.removeEventListener('touchcancel', cancelMomentum, true);
       root.removeEventListener('contextmenu', cancelMomentum, true);
       api.off('pointerDown', start).off('pointerUp', release).off('reInit', stop);
+    };
+
+    const configureMomentum = () => {
+      detachMomentum();
+      // On mobile, let Embla own dragging, velocity and snapping end to end.
+      // Taking over on release interrupts its motion and makes flicks jump.
+      if (mobile.matches) return;
+      root.addEventListener('mousedown', rememberStart, true);
+      root.addEventListener('touchstart', rememberStart, { capture: true, passive: true });
+      root.addEventListener('touchcancel', cancelMomentum, true);
+      root.addEventListener('contextmenu', cancelMomentum, true);
+      api.on('pointerDown', start).on('pointerUp', release).on('reInit', stop);
+    };
+
+    configureMomentum();
+    mobile.addEventListener('change', configureMomentum);
+    return () => {
+      mobile.removeEventListener('change', configureMomentum);
+      detachMomentum();
+    };
+  }, [api]);
+
+  // Mobile flick physics. The glide starts at exactly the finger's release
+  // velocity (no jump or kick), throws far so a strong flick spins through many
+  // cards, then eases out and lands precisely on a card.
+  useEffect(() => {
+    if (!api) return undefined;
+    const root = api.rootNode();
+    const doc = root.ownerDocument;
+    const mobile = window.matchMedia('(max-width: 768px)');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // How far a flick travels: ms of release velocity. Higher = longer, faster spins.
+    const THROW = 720;
+    const EASE_POWER = 3; // ease-out cubic: starting speed = EASE_POWER * distance / duration
+    let samples = [];
+    // Timestamp of the last frame drawn under the finger; the glide continues from it.
+    let lastDrawTime = 0;
+
+    const active = () => mobile.matches && !reducedMotion.matches && api.internalEngine().options.loop;
+
+    const stopGlide = () => {
+      if (inertiaIdRef.current) {
+        cancelAnimationFrame(inertiaIdRef.current);
+        inertiaIdRef.current = null;
+      }
+      isCoastingRef.current = false;
+      followCenterRef.current = false;
+    };
+
+    const freezeAtRenderedPosition = () => {
+      const engine = api.internalEngine();
+      const position = engine.offsetLocation.get();
+      engine.animation.stop();
+      engine.location.set(position);
+      engine.previousLocation.set(position);
+      engine.target.set(position);
+    };
+
+    const onTouchStart = (event) => {
+      if (!active()) return;
+      if (inertiaIdRef.current) {
+        // Catch the spinning wheel exactly where it is.
+        stopGlide();
+        freezeAtRenderedPosition();
+        const engine = api.internalEngine();
+        engine.index.set(centerIndexRef.current);
+        engine.eventHandler.emit('select');
+      }
+      const touch = event.touches[0];
+      lastDrawTime = 0;
+      samples = [{ x: touch.clientX, time: event.timeStamp || performance.now() }];
+    };
+
+    const drawAt = (engine, position, direction) => {
+      engine.location.set(position);
+      engine.previousLocation.set(position);
+      engine.offsetLocation.set(position);
+      engine.scrollLooper.loop(direction);
+      engine.slideLooper.loop();
+      engine.translate.to(engine.offsetLocation.get());
+      engine.eventHandler.emit('scroll');
+    };
+
+    const onTouchMove = (event) => {
+      if (!active() || !samples.length || event.touches.length !== 1) return;
+      const now = event.timeStamp || performance.now();
+      samples.push({ x: event.touches[0].clientX, time: now });
+      while (samples.length > 2 && now - samples[0].time > 80) samples.shift();
+
+      // Embla handled this move first (its listener is on the carousel root).
+      // By default it eases the cards toward the finger on a fixed 60 Hz step,
+      // which trails the finger and stutters on 90/120 Hz screens. Draw the
+      // cards exactly under the finger on every touch frame instead.
+      const engine = api.internalEngine();
+      if (!event.defaultPrevented || !engine.dragHandler.pointerDown()) return;
+      const previous = engine.offsetLocation.get();
+      engine.scrollBody.useDuration(0).useFriction(0).seek();
+      const position = engine.target.get();
+      drawAt(engine, position, Math.sign(position - previous));
+      lastDrawTime = now;
+    };
+
+    const releaseVelocity = () => {
+      if (samples.length < 2) return 0;
+      const last = samples[samples.length - 1];
+      const idle = performance.now() - last.time;
+      if (idle > 90) return 0; // finger paused before lifting
+      const first = samples[0];
+      const elapsed = last.time - first.time;
+      if (elapsed < 8) return 0;
+      return (last.x - first.x) / elapsed; // px per ms
+    };
+
+    const onPointerUp = () => {
+      if (!active()) return;
+      const engine = api.internalEngine();
+      const velocity = engine.axis.direction(releaseVelocity());
+      samples = [];
+      // Replace Embla's spring settle with our glide from the rendered position.
+      freezeAtRenderedPosition();
+
+      const speed = Math.min(Math.abs(velocity), 6);
+      const loopLength = engine.limit.length;
+      let throwDistance = Math.sign(velocity) * Math.min(speed * THROW, loopLength * 3);
+      if (speed < 0.08) throwDistance = 0;
+      const destination = engine.scrollTarget.byDistance(throwDistance, true);
+      const distance = destination.distance;
+      if (Math.abs(distance) < 0.5) {
+        engine.scrollTo.distance(0, true);
+        return;
+      }
+
+      // Match the curve's starting speed to the finger; clamp for tiny or huge throws.
+      const duration = speed >= 0.08
+        ? Math.min(Math.max((EASE_POWER * Math.abs(distance)) / speed, 320), 2600)
+        : 380;
+
+      engine.target.add(distance);
+      if (destination.index !== engine.index.get()) {
+        engine.indexPrevious.set(engine.index.get());
+        engine.index.set(destination.index);
+      }
+      isCoastingRef.current = true;
+      followCenterRef.current = true;
+
+      // Start the curve at the last finger frame so the first glide frame
+      // advances by exactly one frame of the release speed: no pause, no kick.
+      const start = lastDrawTime && performance.now() - lastDrawTime < 100 ? lastDrawTime : performance.now();
+      let applied = 0;
+      const glide = (now) => {
+        const t = Math.min(Math.max((now - start) / duration, 0), 1);
+        const eased = 1 - Math.pow(1 - t, EASE_POWER);
+        const step = distance * eased - applied;
+        applied += step;
+        drawAt(engine, engine.location.get() + step, Math.sign(step) || Math.sign(distance));
+        if (t < 1) {
+          inertiaIdRef.current = requestAnimationFrame(glide);
+          return;
+        }
+        inertiaIdRef.current = null;
+        isCoastingRef.current = false;
+        followCenterRef.current = false;
+        engine.location.set(engine.target.get());
+        engine.offsetLocation.set(engine.target.get());
+        engine.previousLocation.set(engine.target.get());
+        engine.translate.to(engine.offsetLocation.get());
+        engine.eventHandler.emit('scroll');
+        engine.eventHandler.emit('select');
+        engine.eventHandler.emit('settle');
+      };
+      inertiaIdRef.current = requestAnimationFrame(glide);
+    };
+
+    root.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
+    doc.addEventListener('touchmove', onTouchMove, { passive: true });
+    api.on('pointerUp', onPointerUp);
+    return () => {
+      stopGlide();
+      root.removeEventListener('touchstart', onTouchStart, { capture: true });
+      doc.removeEventListener('touchmove', onTouchMove);
+      api.off('pointerUp', onPointerUp);
     };
   }, [api]);
 
@@ -311,25 +520,60 @@ function ProjectCarousel({ items }) {
     if (focused?.closest('[data-project-card]') && carouselRef.current?.contains(focused)) carouselRef.current.focus({ preventScroll: true });
   }, [selected]);
 
-  const navigate = useCallback((direction) => {
+  // Stop a mobile flick mid-spin so buttons continue from the card in view.
+  const haltGlide = useCallback(() => {
+    const wasGliding = followCenterRef.current;
     if (inertiaIdRef.current) {
       cancelAnimationFrame(inertiaIdRef.current);
       inertiaIdRef.current = null;
     }
     isCoastingRef.current = false;
+    followCenterRef.current = false;
+    const engine = api?.internalEngine();
+    if (!wasGliding || !engine) return;
+    const position = engine.offsetLocation.get();
+    engine.location.set(position);
+    engine.previousLocation.set(position);
+    engine.target.set(position);
+    engine.index.set(centerIndexRef.current);
+  }, [api]);
+
+  const navigate = useCallback((direction) => {
+    haltGlide();
     const instant = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (direction < 0) api?.scrollPrev(instant);
     else api?.scrollNext(instant);
-  }, [api]);
+  }, [api, haltGlide]);
 
   const select = (index) => {
-    if (inertiaIdRef.current) {
-      cancelAnimationFrame(inertiaIdRef.current);
-      inertiaIdRef.current = null;
-    }
-    isCoastingRef.current = false;
+    haltGlide();
     api?.scrollTo(index, window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   };
+
+  // Stable so memoized slides skip re-rendering while the carousel moves.
+  const handleCardClick = useCallback((event) => {
+    if (caughtSpinRef.current && event.detail > 0) {
+      caughtSpinRef.current = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (isCoastingRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (inertiaIdRef.current) {
+        cancelAnimationFrame(inertiaIdRef.current);
+        inertiaIdRef.current = null;
+      }
+      isCoastingRef.current = false;
+      const engine = api?.internalEngine();
+      if (engine) {
+        engine.scrollBody.useDuration(26).useFriction(0.74);
+        engine.scrollTo.distance(0, true);
+        engine.animation.start();
+      }
+    }
+  }, [api]);
 
   return (
     <div ref={carouselRef} className={styles.carousel} role="region" aria-roledescription="carousel" aria-label="Project portfolio" tabIndex={0}
@@ -348,57 +592,20 @@ function ProjectCarousel({ items }) {
         </div>
         <button type="button" className={styles.arrow} aria-label="Next project" disabled={!canNext} onClick={() => navigate(1)}><ArrowRight size={19} /></button>
       </div>
-      <div ref={viewportRef} className={styles.viewport}>
+      <div ref={viewportRef} className={styles.viewport}
+        onPointerDownCapture={(event) => {
+          if (!event.isPrimary) return;
+          const engine = api?.internalEngine();
+          // On touch screens a tap that stops a gliding carousel should only stop it,
+          // not open the card that happens to be under the finger.
+          caughtSpinRef.current = Boolean(engine && window.matchMedia('(max-width: 768px)').matches
+            && Math.abs(engine.target.get() - engine.offsetLocation.get()) > 2);
+        }}>
         <div className={styles.track}>
-          {items.map((project, index) => {
-            const active = index === selected;
-            // Existing placeholder destinations point to the homepage contact section.
-            const href = project.href === '/contact' ? '/#contact' : project.href;
-            const external = href.startsWith('http');
-            return (
-              <div key={project.title} className={styles.slide} role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${items.length}: ${project.title}`} aria-hidden={!active}>
-                <a data-project-card className={styles.card} data-active={active}
-                  href={href} target={external ? '_blank' : undefined}
-                  rel={external ? 'noopener noreferrer' : undefined}
-                  tabIndex={active ? 0 : -1} draggable={false}
-                  onClickCapture={(event) => {
-                    if (isCoastingRef.current) {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      if (inertiaIdRef.current) {
-                        cancelAnimationFrame(inertiaIdRef.current);
-                        inertiaIdRef.current = null;
-                      }
-                      isCoastingRef.current = false;
-                      const engine = api?.internalEngine();
-                      if (engine) {
-                        engine.scrollBody.useDuration(26).useFriction(0.74);
-                        engine.scrollTo.distance(0, true);
-                        engine.animation.start();
-                      }
-                    }
-                  }}
-                  aria-label={`${external ? 'Visit' : 'Enquire about'} ${project.title}`}>
-
-                  <div className={styles.cardCopy}>
-                    <div className={styles.brandRow}>
-                      <span className={styles.brandMark} aria-hidden="true">{project.title.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span>
-                      <h3>{project.title}</h3>
-                    </div>
-                    <p>{projectDetails[index][0]}</p>
-                    <div className={styles.features}>
-                      <div><Layers strokeWidth={1.6} /><span>{projectDetails[index][1]}</span></div>
-                      <div><Clock3 strokeWidth={1.6} /><span>{projectDetails[index][2]}</span></div>
-                    </div>
-                  </div>
-                  <div className={styles.preview}>
-                    <Image src={project.image} alt={`${project.title} project preview`} fill sizes="(max-width: 640px) 84vw, (max-width: 1024px) 46vw, 460px" className={styles.image} draggable={false} />
-                    <span className={styles.visit} aria-hidden="true">{external ? 'View site' : 'Enquire'}<ArrowUpRight size={18} /></span>
-                  </div>
-                </a>
-              </div>
-            );
-          })}
+          {items.map((project, index) => (
+            <ProjectSlide key={project.title} project={project} index={index} total={items.length}
+              active={index === selected} onClickCapture={handleCardClick} />
+          ))}
         </div>
       </div>
       <div className={styles.pagination} aria-label="Project pagination">{items.map((project, index) => <button key={project.title} type="button" aria-label={`Show ${project.title}`} aria-pressed={selected === index} onClick={() => select(index)}><span /></button>)}</div>
@@ -406,3 +613,38 @@ function ProjectCarousel({ items }) {
     </div>
   );
 }
+
+const ProjectSlide = memo(function ProjectSlide({ project, index, total, active, onClickCapture }) {
+  const href = project.href;
+  const external = href.startsWith('http');
+  return (
+    <div className={styles.slide} role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${total}: ${project.title}`} aria-hidden={!active}>
+      <a data-project-card className={styles.card} data-active={active}
+        href={href} target={external ? '_blank' : undefined}
+        rel={external ? 'noopener noreferrer' : undefined}
+        tabIndex={active ? 0 : -1} draggable={false}
+        onClickCapture={onClickCapture}
+        aria-label={`${external ? 'Visit' : 'Enquire about'} ${project.title}${project.status ? `, ${project.status}` : ''}`}>
+
+        <div className={styles.cardCopy}>
+          <div className={styles.brandRow}>
+            <span className={styles.brandMark} aria-hidden="true">{project.title.split(' ').map((word) => word[0]).slice(0, 2).join('')}</span>
+            <div className={styles.brandInfo}>
+              <h3>{project.title}</h3>
+              {project.status && <span className={styles.status}>{project.status}</span>}
+            </div>
+          </div>
+          <p>{project.description}</p>
+          <div className={styles.features}>
+            <div><Layers strokeWidth={1.6} /><span>{project.features[0]}</span></div>
+            <div><Clock3 strokeWidth={1.6} /><span>{project.features[1]}</span></div>
+          </div>
+        </div>
+        <div className={styles.preview}>
+          <Image src={project.image} alt={`${project.title} project preview`} fill sizes="(max-width: 640px) 84vw, (max-width: 1024px) 46vw, 460px" className={styles.image} draggable={false} loading="eager" />
+          <span className={styles.visit} aria-hidden="true">{external ? 'View site' : 'Enquire'}<ArrowUpRight size={18} /></span>
+        </div>
+      </a>
+    </div>
+  );
+});

@@ -208,6 +208,36 @@
   overflow-wrap: break-word;
 }
 
+.brandInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid #d0a341;
+  border-radius: 9999px;
+  background: #fff8e6;
+  color: #805100;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.status::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .cardCopy p {
   margin: clamp(14px, 1.6vw, 22px) 0 0;
   font-size: clamp(13px, 0.9vw, 16px);
@@ -387,6 +417,26 @@
   .heading h2 {
     font-size: clamp(22px, 5.8vw, 34px);
     max-width: 480px;
+  }
+
+  /* Swipe performance: no grey tap flash when a drag starts on a card,
+     no long-press callout, and keep each card on its own GPU layer. */
+  .viewport,
+  .card {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  .card {
+    backface-visibility: hidden;
+  }
+
+  .selectors button {
+    transition: background-color 0.25s, color 0.25s;
+  }
+
+  .selectors button[aria-pressed="true"] {
+    transform: none;
   }
 }
 
