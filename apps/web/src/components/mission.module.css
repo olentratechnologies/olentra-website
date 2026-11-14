@@ -1,0 +1,19 @@
+.missionWord {
+  display: inline-block;
+  margin-right: 0.5rem;
+  color: rgba(15, 23, 42, 0.28);
+  transition: color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: color;
+}
+
+.missionWordLit {
+  color: #0f172a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .missionWord {
+    color: #0f172a;
+    transition: none;
+  }
+}
+

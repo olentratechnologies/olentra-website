@@ -1,28 +1,61 @@
 "use client";
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useGSAP } from '@gsap/react';
 import { Zap, Shield, Cpu, Globe, Terminal } from 'lucide-react';
 import { missionData } from '../data/about';
 import { Feature } from "@olentra/site-features/react";
+import styles from './mission.module.css';
 
 const aboutText = missionData.aboutText;
-gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 export default function Mission() {
   const containerRef = useRef(null);
+  const textContainerRef = useRef(null);
   const reducedMotion = useReducedMotion();
-  useGSAP(() => {
-    const words = gsap.utils.toArray('.mission-word', containerRef.current);
+
+  useEffect(() => {
     if (reducedMotion) return;
-    gsap.to(words, { color: '#0f172a', stagger: 0.02, ease: 'none', scrollTrigger: {
-      trigger: containerRef.current, start: 'top 90%', end: 'top 15%', scrub: 0.4,
-    }});
-  }, { scope: containerRef, dependencies: [reducedMotion] });
+    const container = containerRef.current;
+    const textEl = textContainerRef.current;
+    if (!container || !textEl) return;
+
+    const words = textEl.querySelectorAll(`.${styles.missionWord}`);
+    if (!words.length) return;
+
+    let ticking = false;
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const rect = container.getBoundingClientRect();
+        const winH = window.innerHeight;
+        // Start progressive reveal when section enters 85% of viewport to 25% of viewport
+        const start = winH * 0.85;
+        const end = winH * 0.25;
+        const progress = Math.min(Math.max((start - rect.top) / (start - end), 0), 1);
+        const litCount = Math.floor(progress * words.length);
+
+        words.forEach((word, index) => {
+          if (index <= litCount) {
+            word.classList.add(styles.missionWordLit);
+          } else {
+            word.classList.remove(styles.missionWordLit);
+          }
+        });
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [reducedMotion]);
 
   const words = aboutText.split(" ");
 
@@ -48,13 +81,16 @@ export default function Mission() {
           </div>
 
           {/* Scrolling Lighting Text */}
-          <div className="max-w-4xl">
+          <div className="max-w-4xl" ref={textContainerRef}>
             <p className="text-[0.95rem] sm:text-[1.1rem] md:text-[1.3rem] font-bold leading-relaxed uppercase flex flex-wrap justify-center">
-              {words.map((word, i) => {
-                const start = i / words.length;
-                const end = (i + 1) / words.length;
-                return <span key={i} className="mission-word mr-2" style={{color: reducedMotion ? '#0f172a' : 'rgba(15,23,42,.4)'}}>{word}</span>;
-              })}
+              {words.map((word, i) => (
+                <span
+                  key={i}
+                  className={`mission-word ${styles.missionWord} ${reducedMotion ? styles.missionWordLit : ''}`}
+                >
+                  {word}
+                </span>
+              ))}
             </p>
           </div>
         </div>
