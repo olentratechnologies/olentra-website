@@ -26,8 +26,11 @@ const LOOP_COPIES = 7;
 const LOOP_MIDDLE = Math.floor(LOOP_COPIES / 2);
 
 function ProjectCarousel({ items }) {
+  // Open on the middle project (4 → 2nd, 5 → 3rd) so the wheel starts balanced.
+  const startIndex = Math.max(0, Math.ceil(items.length / 2) - 1);
   const [viewportRef, api] = useEmblaCarousel({
     loop: items.length > 2,
+    startIndex,
     align: 'center',
     containScroll: false,
     duration: 18,
@@ -35,8 +38,8 @@ function ProjectCarousel({ items }) {
     // Mobile uses the browser's native scroller instead (see the native effect below).
     breakpoints: { [NATIVE_QUERY]: { active: false } },
   });
-  const [selected, setSelected] = useState(0);
-  const [canPrevious, setCanPrevious] = useState(false);
+  const [selected, setSelected] = useState(startIndex);
+  const [canPrevious, setCanPrevious] = useState(startIndex > 0 || items.length > 2);
   const [canNext, setCanNext] = useState(items.length > 1);
   const carouselRef = useRef(null);
   const inertiaIdRef = useRef(null);
@@ -46,7 +49,7 @@ function ProjectCarousel({ items }) {
   // drops frames. Desktop keeps the Embla wheel.
   const [native, setNative] = useState(false);
   const nativeRef = useRef(null);
-  const selectedRef = useRef(0);
+  const selectedRef = useRef(startIndex);
 
   useEffect(() => {
     const query = window.matchMedia(NATIVE_QUERY);
