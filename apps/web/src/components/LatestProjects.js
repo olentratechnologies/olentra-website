@@ -19,6 +19,12 @@ export default function LatestProjects() {
   );
 }
 
+const NATIVE_QUERY = '(max-width: 768px)';
+// Mobile infinite loop: render the projects this many times and keep the
+// reader in the middle set (see recenter in the native effect).
+const LOOP_COPIES = 7;
+const LOOP_MIDDLE = Math.floor(LOOP_COPIES / 2);
+
 function ProjectCarousel({ items }) {
   const [viewportRef, api] = useEmblaCarousel({
     loop: items.length > 2,
@@ -26,14 +32,8 @@ function ProjectCarousel({ items }) {
     containScroll: false,
     duration: 18,
     skipSnaps: true,
-    breakpoints: {
-      // Mobile: let Embla own the whole swipe (drag, release, snap) with a
-      // slightly softer spring so cards glide into place instead of jumping.
-      '(max-width: 768px)': { duration: 30 },
-      '(max-width: 768px) and (prefers-reduced-motion: reduce)': {
-        duration: 0, skipSnaps: false,
-      },
-    },
+    // Mobile uses the browser's native scroller instead (see the native effect below).
+    breakpoints: { [NATIVE_QUERY]: { active: false } },
   });
   const [selected, setSelected] = useState(0);
   const [canPrevious, setCanPrevious] = useState(false);
@@ -41,13 +41,23 @@ function ProjectCarousel({ items }) {
   const carouselRef = useRef(null);
   const inertiaIdRef = useRef(null);
   const isCoastingRef = useRef(false);
-  const caughtSpinRef = useRef(false);
-  // While a mobile flick is spinning, the pill follows the card passing the center.
-  const followCenterRef = useRef(false);
-  const centerIndexRef = useRef(0);
+  // Phones/small tablets scroll natively (like apple.com's galleries): the
+  // browser runs the swipe and momentum on its compositor thread, so it never
+  // drops frames. Desktop keeps the Embla wheel.
+  const [native, setNative] = useState(false);
+  const nativeRef = useRef(null);
+  const selectedRef = useRef(0);
 
   useEffect(() => {
-    if (!api) return undefined;
+    const query = window.matchMedia(NATIVE_QUERY);
+    const update = () => setNative(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    if (!api || native) return undefined;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     let geometry;
@@ -84,9 +94,7 @@ function ProjectCarousel({ items }) {
       // Use the rendered (interpolated) position, including each slide's loop shift,
       // so the arc and track stay aligned on every display refresh.
       const trackOffset = engine.axis.direction(engine.offsetLocation.get());
-      let nearestIndex = -1;
-      let nearestDistance = Infinity;
-      cards.forEach((card, index) => {
+      cards.forEach((card) => {
         const { node, center, loopPoint } = card;
         if (!node) return;
         if (reducedMotion.matches) {
@@ -97,10 +105,6 @@ function ProjectCarousel({ items }) {
         }
         const loopOffset = loopPoint ? engine.axis.direction(loopPoint.slideLocation.get()) : 0;
         const offset = center + trackOffset + loopOffset;
-        if (Math.abs(offset) < nearestDistance) {
-          nearestDistance = Math.abs(offset);
-          nearestIndex = index;
-        }
         const angle = offset / radius;
         // Only touch visibility when it flips; rewriting it every frame forces
         // extra style recalculation, which shows up as dropped frames on phones.
@@ -113,18 +117,10 @@ function ProjectCarousel({ items }) {
         const y = radius * (1 - Math.cos(angle));
         node.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad)`;
       });
-      if (followCenterRef.current && nearestIndex >= 0 && nearestIndex !== centerIndexRef.current) {
-        centerIndexRef.current = nearestIndex;
-        // Low priority: React renders between frames instead of blocking one.
-        startTransition(() => setSelected(nearestIndex));
-      }
     };
 
     const sync = () => {
-      if (!followCenterRef.current) {
-        centerIndexRef.current = api.selectedScrollSnap();
-        setSelected(centerIndexRef.current);
-      }
+      setSelected(api.selectedScrollSnap());
       setCanPrevious(api.canScrollPrev());
       setCanNext(api.canScrollNext());
     };
@@ -143,7 +139,7 @@ function ProjectCarousel({ items }) {
       api.off('scroll', paint).off('settle', paint).off('select', sync).off('reInit', refresh);
       reducedMotion.removeEventListener('change', paint);
     };
-  }, [api]);
+  }, [api, native]);
 
   useEffect(() => {
     if (!api) return undefined;
@@ -352,167 +348,161 @@ function ProjectCarousel({ items }) {
     };
   }, [api]);
 
-  // Mobile flick physics. The glide starts at exactly the finger's release
-  // velocity (no jump or kick), throws far so a strong flick spins through many
-  // cards, then eases out and lands precisely on a card.
   useEffect(() => {
-    if (!api) return undefined;
-    const root = api.rootNode();
-    const doc = root.ownerDocument;
-    const mobile = window.matchMedia('(max-width: 768px)');
+    if (!native) return undefined;
+    const scroller = carouselRef.current?.querySelector('[data-carousel-viewport]');
+    if (!scroller) return undefined;
+    const count = items.length;
+    const slides = [...scroller.firstElementChild.children];
+    const cards = slides.map((slide) => slide.firstElementChild);
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    // How far a flick travels: ms of release velocity. Higher = longer, faster spins.
-    const THROW = 720;
-    const EASE_POWER = 3; // ease-out cubic: starting speed = EASE_POWER * distance / duration
-    let samples = [];
-    // Timestamp of the last frame drawn under the finger; the glide continues from it.
-    let lastDrawTime = 0;
+    // Browsers with CSS scroll-driven animations draw the arc off the main thread.
+    // Others get the same arc from a lightweight scroll listener.
+    const cssArc = window.CSS?.supports?.('animation-timeline: view()');
+    const supportsScrollEnd = 'onscrollend' in window;
+    const clearCards = () => cards.forEach((card) => {
+      card.style.transform = '';
+      card.style.visibility = '';
+    });
+    clearCards(); // drop any transforms left by the desktop wheel
 
-    const active = () => mobile.matches && !reducedMotion.matches && api.internalEngine().options.loop;
+    let frame = 0;
+    let settleTimer = 0;
+    let touching = false;
+    let rawIndex = -1;
+    let geometry = { first: 0, step: 1, setWidth: 1, radius: 1, centers: [] };
 
-    const stopGlide = () => {
-      if (inertiaIdRef.current) {
-        cancelAnimationFrame(inertiaIdRef.current);
-        inertiaIdRef.current = null;
-      }
-      isCoastingRef.current = false;
-      followCenterRef.current = false;
+    const measure = () => {
+      const centers = slides.map((slide) => slide.offsetLeft + slide.offsetWidth / 2);
+      const step = centers.length > 1 ? centers[1] - centers[0] : scroller.clientWidth;
+      geometry = {
+        first: centers[0] || 0,
+        step: step || 1,
+        // Exact distance between a card and its copy in the next set.
+        setWidth: centers.length > count ? centers[count] - centers[0] : (step || 1) * count,
+        radius: (step || 1) / (window.innerWidth < 640 ? 0.20 : 0.25),
+        centers,
+      };
     };
 
-    const freezeAtRenderedPosition = () => {
-      const engine = api.internalEngine();
-      const position = engine.offsetLocation.get();
-      engine.animation.stop();
-      engine.location.set(position);
-      engine.previousLocation.set(position);
-      engine.target.set(position);
-    };
+    const leftFor = (index) => geometry.first + index * geometry.step - scroller.clientWidth / 2;
 
-    const onTouchStart = (event) => {
-      if (!active()) return;
-      if (inertiaIdRef.current) {
-        // Catch the spinning wheel exactly where it is.
-        stopGlide();
-        freezeAtRenderedPosition();
-        const engine = api.internalEngine();
-        engine.index.set(centerIndexRef.current);
-        engine.eventHandler.emit('select');
-      }
-      const touch = event.touches[0];
-      lastDrawTime = 0;
-      samples = [{ x: touch.clientX, time: event.timeStamp || performance.now() }];
-    };
-
-    const drawAt = (engine, position, direction) => {
-      engine.location.set(position);
-      engine.previousLocation.set(position);
-      engine.offsetLocation.set(position);
-      engine.scrollLooper.loop(direction);
-      engine.slideLooper.loop();
-      engine.translate.to(engine.offsetLocation.get());
-      engine.eventHandler.emit('scroll');
-    };
-
-    const onTouchMove = (event) => {
-      if (!active() || !samples.length || event.touches.length !== 1) return;
-      const now = event.timeStamp || performance.now();
-      samples.push({ x: event.touches[0].clientX, time: now });
-      while (samples.length > 2 && now - samples[0].time > 80) samples.shift();
-
-      // Embla handled this move first (its listener is on the carousel root).
-      // By default it eases the cards toward the finger on a fixed 60 Hz step,
-      // which trails the finger and stutters on 90/120 Hz screens. Draw the
-      // cards exactly under the finger on every touch frame instead.
-      const engine = api.internalEngine();
-      if (!event.defaultPrevented || !engine.dragHandler.pointerDown()) return;
-      const previous = engine.offsetLocation.get();
-      engine.scrollBody.useDuration(0).useFriction(0).seek();
-      const position = engine.target.get();
-      drawAt(engine, position, Math.sign(position - previous));
-      lastDrawTime = now;
-    };
-
-    const releaseVelocity = () => {
-      if (samples.length < 2) return 0;
-      const last = samples[samples.length - 1];
-      const idle = performance.now() - last.time;
-      if (idle > 90) return 0; // finger paused before lifting
-      const first = samples[0];
-      const elapsed = last.time - first.time;
-      if (elapsed < 8) return 0;
-      return (last.x - first.x) / elapsed; // px per ms
-    };
-
-    const onPointerUp = () => {
-      if (!active()) return;
-      const engine = api.internalEngine();
-      const velocity = engine.axis.direction(releaseVelocity());
-      samples = [];
-      // Replace Embla's spring settle with our glide from the rendered position.
-      freezeAtRenderedPosition();
-
-      const speed = Math.min(Math.abs(velocity), 6);
-      const loopLength = engine.limit.length;
-      let throwDistance = Math.sign(velocity) * Math.min(speed * THROW, loopLength * 3);
-      if (speed < 0.08) throwDistance = 0;
-      const destination = engine.scrollTarget.byDistance(throwDistance, true);
-      const distance = destination.distance;
-      if (Math.abs(distance) < 0.5) {
-        engine.scrollTo.distance(0, true);
+    const paintArc = () => {
+      if (cssArc) return;
+      if (reducedMotion.matches) {
+        clearCards();
         return;
       }
+      const viewCenter = scroller.scrollLeft + scroller.clientWidth / 2;
+      const { radius, centers } = geometry;
+      cards.forEach((card, index) => {
+        const offset = centers[index] - viewCenter;
+        if (Math.abs(offset) > scroller.clientWidth * 1.5) return; // far off-screen
+        const angle = offset / radius;
+        const x = radius * Math.sin(angle) - offset;
+        const y = radius * (1 - Math.cos(angle));
+        card.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad)`;
+      });
+    };
 
-      // Match the curve's starting speed to the finger; clamp for tiny or huge throws.
-      const duration = speed >= 0.08
-        ? Math.min(Math.max((EASE_POWER * Math.abs(distance)) / speed, 320), 2600)
-        : 380;
-
-      engine.target.add(distance);
-      if (destination.index !== engine.index.get()) {
-        engine.indexPrevious.set(engine.index.get());
-        engine.index.set(destination.index);
-      }
-      isCoastingRef.current = true;
-      followCenterRef.current = true;
-
-      // Start the curve at the last finger frame so the first glide frame
-      // advances by exactly one frame of the release speed: no pause, no kick.
-      const start = lastDrawTime && performance.now() - lastDrawTime < 100 ? lastDrawTime : performance.now();
-      let applied = 0;
-      const glide = (now) => {
-        const t = Math.min(Math.max((now - start) / duration, 0), 1);
-        const eased = 1 - Math.pow(1 - t, EASE_POWER);
-        const step = distance * eased - applied;
-        applied += step;
-        drawAt(engine, engine.location.get() + step, Math.sign(step) || Math.sign(distance));
-        if (t < 1) {
-          inertiaIdRef.current = requestAnimationFrame(glide);
-          return;
+    const update = () => {
+      frame = 0;
+      const { first, step } = geometry;
+      const viewCenter = scroller.scrollLeft + scroller.clientWidth / 2;
+      const index = Math.min(Math.max(Math.round((viewCenter - first) / step), 0), slides.length - 1);
+      if (index !== rawIndex) {
+        const previousReal = rawIndex < 0 ? -1 : rawIndex % count;
+        rawIndex = index;
+        if (index % count !== previousReal) {
+          // Low priority so React never competes with a scroll frame.
+          startTransition(() => setSelected(index % count));
         }
-        inertiaIdRef.current = null;
-        isCoastingRef.current = false;
-        followCenterRef.current = false;
-        engine.location.set(engine.target.get());
-        engine.offsetLocation.set(engine.target.get());
-        engine.previousLocation.set(engine.target.get());
-        engine.translate.to(engine.offsetLocation.get());
-        engine.eventHandler.emit('scroll');
-        engine.eventHandler.emit('select');
-        engine.eventHandler.emit('settle');
-      };
-      inertiaIdRef.current = requestAnimationFrame(glide);
+      }
+      paintArc();
     };
 
-    root.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
-    doc.addEventListener('touchmove', onTouchMove, { passive: true });
-    api.on('pointerUp', onPointerUp);
-    return () => {
-      stopGlide();
-      root.removeEventListener('touchstart', onTouchStart, { capture: true });
-      doc.removeEventListener('touchmove', onTouchMove);
-      api.off('pointerUp', onPointerUp);
+    // Infinite loop: the cards are rendered LOOP_COPIES times. Once scrolling
+    // has fully stopped, silently jump to the identical card in the middle set
+    // so there is always plenty of runway in both directions. Jumping only at
+    // rest never interrupts the phone's own momentum.
+    const recenter = () => {
+      // scrollend can arrive before the queued frame; read the final position now.
+      if (frame) cancelAnimationFrame(frame);
+      update();
+      if (touching || rawIndex < 0) return;
+      const copy = Math.floor(rawIndex / count);
+      if (copy === LOOP_MIDDLE) return;
+      const shift = (copy - LOOP_MIDDLE) * geometry.setWidth;
+      scroller.scrollTo({ left: scroller.scrollLeft - shift, behavior: 'instant' });
+      update();
     };
-  }, [api]);
+
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+      // Safety net for browsers without (or with unreliable) scrollend.
+      clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(recenter, supportsScrollEnd ? 400 : 160);
+    };
+    const onTouchStart = () => {
+      touching = true;
+    };
+    const onTouchEnd = () => {
+      touching = false;
+      clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(recenter, supportsScrollEnd ? 400 : 160);
+    };
+
+    nativeRef.current = {
+      step: (direction) => {
+        scroller.scrollTo({ left: leftFor(rawIndex + direction), behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+      },
+      goToProject: (projectIndex) => {
+        // Travel to the nearest copy of that project, whichever way is shorter.
+        const base = rawIndex - (rawIndex % count);
+        const options = [base + projectIndex - count, base + projectIndex, base + projectIndex + count]
+          .filter((option) => option >= 0 && option < slides.length);
+        const target = options.reduce((best, option) => (
+          Math.abs(option - rawIndex) < Math.abs(best - rawIndex) ? option : best), options[0]);
+        scroller.scrollTo({ left: leftFor(target), behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+      },
+    };
+
+    const resize = new ResizeObserver(() => {
+      const current = rawIndex < 0 ? LOOP_MIDDLE * count + selectedRef.current : rawIndex;
+      measure();
+      scroller.scrollTo({ left: leftFor(current), behavior: 'instant' });
+      update();
+    });
+    resize.observe(scroller);
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    if (supportsScrollEnd) scroller.addEventListener('scrollend', recenter);
+    scroller.addEventListener('touchstart', onTouchStart, { passive: true });
+    scroller.addEventListener('touchend', onTouchEnd, { passive: true });
+    scroller.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    reducedMotion.addEventListener('change', update);
+    measure();
+    // Start on the current project in the middle set.
+    scroller.scrollTo({ left: leftFor(LOOP_MIDDLE * count + selectedRef.current), behavior: 'instant' });
+    update();
+
+    return () => {
+      nativeRef.current = null;
+      if (frame) cancelAnimationFrame(frame);
+      clearTimeout(settleTimer);
+      resize.disconnect();
+      scroller.removeEventListener('scroll', onScroll);
+      scroller.removeEventListener('scrollend', recenter);
+      scroller.removeEventListener('touchstart', onTouchStart);
+      scroller.removeEventListener('touchend', onTouchEnd);
+      scroller.removeEventListener('touchcancel', onTouchEnd);
+      reducedMotion.removeEventListener('change', update);
+      clearCards();
+    };
+  }, [native, items.length]);
+
+  useEffect(() => {
+    selectedRef.current = selected;
+  }, [selected]);
 
   useEffect(() => {
     // Remove keyboard focus from a card that is no longer the active slide.
@@ -520,44 +510,36 @@ function ProjectCarousel({ items }) {
     if (focused?.closest('[data-project-card]') && carouselRef.current?.contains(focused)) carouselRef.current.focus({ preventScroll: true });
   }, [selected]);
 
-  // Stop a mobile flick mid-spin so buttons continue from the card in view.
-  const haltGlide = useCallback(() => {
-    const wasGliding = followCenterRef.current;
+  const navigate = useCallback((direction) => {
+    if (nativeRef.current) {
+      nativeRef.current.step(direction);
+      return;
+    }
     if (inertiaIdRef.current) {
       cancelAnimationFrame(inertiaIdRef.current);
       inertiaIdRef.current = null;
     }
     isCoastingRef.current = false;
-    followCenterRef.current = false;
-    const engine = api?.internalEngine();
-    if (!wasGliding || !engine) return;
-    const position = engine.offsetLocation.get();
-    engine.location.set(position);
-    engine.previousLocation.set(position);
-    engine.target.set(position);
-    engine.index.set(centerIndexRef.current);
-  }, [api]);
-
-  const navigate = useCallback((direction) => {
-    haltGlide();
     const instant = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (direction < 0) api?.scrollPrev(instant);
     else api?.scrollNext(instant);
-  }, [api, haltGlide]);
+  }, [api]);
 
   const select = (index) => {
-    haltGlide();
+    if (nativeRef.current) {
+      nativeRef.current.goToProject(index);
+      return;
+    }
+    if (inertiaIdRef.current) {
+      cancelAnimationFrame(inertiaIdRef.current);
+      inertiaIdRef.current = null;
+    }
+    isCoastingRef.current = false;
     api?.scrollTo(index, window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   };
 
   // Stable so memoized slides skip re-rendering while the carousel moves.
   const handleCardClick = useCallback((event) => {
-    if (caughtSpinRef.current && event.detail > 0) {
-      caughtSpinRef.current = false;
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
     if (isCoastingRef.current) {
       event.preventDefault();
       event.stopPropagation();
@@ -584,28 +566,29 @@ function ProjectCarousel({ items }) {
         }
       }}>
       <div className={styles.navigation}>
-        <button type="button" className={styles.arrow} aria-label="Previous project" disabled={!canPrevious} onClick={() => navigate(-1)}><ArrowLeft size={19} /></button>
+        <button type="button" className={styles.arrow} aria-label="Previous project" disabled={!native && !canPrevious} onClick={() => navigate(-1)}><ArrowLeft size={19} /></button>
         <div className={styles.selectors} aria-label="Choose a project">
           <button type="button" onClick={() => select(Math.max(0, selected - 1))}>{items[Math.max(0, selected - 1)]?.title || ''}</button>
           <button type="button" aria-pressed="true" onClick={() => select(selected)}>{items[selected]?.title || ''}</button>
           <button type="button" onClick={() => select(Math.min(items.length - 1, selected + 1))}>{items[Math.min(items.length - 1, selected + 1)]?.title || ''}</button>
         </div>
-        <button type="button" className={styles.arrow} aria-label="Next project" disabled={!canNext} onClick={() => navigate(1)}><ArrowRight size={19} /></button>
+        <button type="button" className={styles.arrow} aria-label="Next project" disabled={!native && !canNext} onClick={() => navigate(1)}><ArrowRight size={19} /></button>
       </div>
-      <div ref={viewportRef} className={styles.viewport}
-        onPointerDownCapture={(event) => {
-          if (!event.isPrimary) return;
-          const engine = api?.internalEngine();
-          // On touch screens a tap that stops a gliding carousel should only stop it,
-          // not open the card that happens to be under the finger.
-          caughtSpinRef.current = Boolean(engine && window.matchMedia('(max-width: 768px)').matches
-            && Math.abs(engine.target.get() - engine.offsetLocation.get()) > 2);
-        }}>
+      <div ref={viewportRef} className={styles.viewport} data-carousel-viewport>
         <div className={styles.track}>
-          {items.map((project, index) => (
-            <ProjectSlide key={project.title} project={project} index={index} total={items.length}
-              active={index === selected} onClickCapture={handleCardClick} />
-          ))}
+          {native
+            ? Array.from({ length: items.length * LOOP_COPIES }, (_, slot) => {
+              const index = slot % items.length;
+              const clone = Math.floor(slot / items.length) !== LOOP_MIDDLE;
+              return (
+                <ProjectSlide key={slot} project={items[index]} index={index} total={items.length}
+                  active={!clone && index === selected} clone={clone} onClickCapture={handleCardClick} />
+              );
+            })
+            : items.map((project, index) => (
+              <ProjectSlide key={project.title} project={project} index={index} total={items.length}
+                active={index === selected} onClickCapture={handleCardClick} />
+            ))}
         </div>
       </div>
       <div className={styles.pagination} aria-label="Project pagination">{items.map((project, index) => <button key={project.title} type="button" aria-label={`Show ${project.title}`} aria-pressed={selected === index} onClick={() => select(index)}><span /></button>)}</div>
@@ -614,11 +597,11 @@ function ProjectCarousel({ items }) {
   );
 }
 
-const ProjectSlide = memo(function ProjectSlide({ project, index, total, active, onClickCapture }) {
+const ProjectSlide = memo(function ProjectSlide({ project, index, total, active, clone = false, onClickCapture }) {
   const href = project.href;
   const external = href.startsWith('http');
   return (
-    <div className={styles.slide} role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${total}: ${project.title}`} aria-hidden={!active}>
+    <div className={styles.slide} role="group" aria-roledescription="slide" aria-label={`${index + 1} of ${total}: ${project.title}`} aria-hidden={!active} data-clone={clone || undefined}>
       <a data-project-card className={styles.card} data-active={active}
         href={href} target={external ? '_blank' : undefined}
         rel={external ? 'noopener noreferrer' : undefined}

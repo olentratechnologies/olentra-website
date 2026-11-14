@@ -431,6 +431,47 @@
     backface-visibility: hidden;
   }
 
+  /* Native, Apple-style gallery: the browser owns the swipe, momentum and
+     snapping on its compositor thread, so motion stays smooth even when the
+     page is busy. --slide-w mirrors each breakpoint's slide width. */
+  .viewport {
+    --slide-w: clamp(310px, 45vw, 380px);
+    --arc-angle: 21deg;
+    --arc-drop: 90px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y pinch-zoom;
+    cursor: auto;
+  }
+
+  .viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .viewport:active,
+  .viewport:active .card {
+    cursor: pointer;
+  }
+
+  .track {
+    width: max-content;
+    /* Room so the first and last cards can sit in the center too. */
+    padding-inline: calc((100% - var(--slide-w)) / 2);
+    touch-action: auto;
+  }
+
+  .slide {
+    scroll-snap-align: center;
+  }
+
+  .slide:last-child {
+    margin-right: 0;
+  }
+
   .selectors button {
     transition: background-color 0.25s, color 0.25s;
   }
@@ -453,6 +494,9 @@
   }
 
   .viewport {
+    --slide-w: clamp(260px, 78vw, 340px);
+    --arc-angle: 12.5deg;
+    --arc-drop: 36px;
     padding-bottom: 40px;
   }
 
@@ -572,6 +616,9 @@
   }
 
   .viewport {
+    --slide-w: clamp(230px, 82vw, 270px);
+    --arc-angle: 12.5deg;
+    --arc-drop: 35px;
     padding-bottom: 32px;
   }
 
@@ -642,6 +689,36 @@
   .visit svg {
     width: 14px;
     height: 14px;
+  }
+}
+
+/* Mobile wheel arc, driven by each card's position in the native scroller.
+   Runs on the compositor where supported; LatestProjects.js paints the same
+   arc with a scroll listener elsewhere. */
+@keyframes project-arc {
+  0% {
+    transform: translateY(var(--arc-drop)) rotate(var(--arc-angle));
+  }
+  25% {
+    transform: translateY(calc(var(--arc-drop) / 4)) rotate(calc(var(--arc-angle) / 2));
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(calc(var(--arc-drop) / 4)) rotate(calc(var(--arc-angle) / -2));
+  }
+  100% {
+    transform: translateY(var(--arc-drop)) rotate(calc(var(--arc-angle) * -1));
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (max-width: 768px) and (prefers-reduced-motion: no-preference) {
+    .card {
+      animation: project-arc linear both;
+      animation-timeline: view(inline);
+    }
   }
 }
 
