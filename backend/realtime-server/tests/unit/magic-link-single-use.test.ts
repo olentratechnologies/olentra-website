@@ -61,6 +61,7 @@ test("a reset request for an applicant without an account sends a sign-in link a
       sendPasswordResetLink: async (message: unknown) => { resets.push(message); },
     } as any,
     siteOrigin: "https://site.example.test",
+    signinEmailTemplates: { read: async () => ({ variantId: "warm" }) } as any,
     sendJson: (body, _origin, status = 200) => Response.json(body, { status }),
   });
   const response = await routes.requestPasswordReset(new Request("https://api.example.test/intern/auth/request-password-reset", { method: "POST", body: JSON.stringify({ email: "applicant@example.test" }) }), null);
@@ -69,4 +70,5 @@ test("a reset request for an applicant without an account sends a sign-in link a
   expect(resets).toHaveLength(0);
   expect(magic).toHaveLength(1);
   expect(magic[0].magicLinkUrl).toStartWith("https://site.example.test/intern/verify?token=");
+  expect(magic[0].templateVariant).toBe("warm");
 });

@@ -317,33 +317,6 @@ export function LoginPage() {
   );
 }
 
-/**
- * Accounts are set up from the emailed link: applying sends a sign-in link,
- * and a password can then be set in the portal (Profile → Security).
- */
-export function RegisterPage() {
-  const { account } = useInternship();
-  return (
-    <AuthShell eyebrow="YOUR APPLICATION IS JUST THE BEGINNING">
-      <div className={styles.panelHeading}>
-        <span className={styles.headingIcon}>
-          <Mail size={23} />
-        </span>
-        <h2>Your account starts in your inbox.</h2>
-        <p>
-          After you apply, we email you a secure link to your candidate portal.
-          Open it to sign in, then set a password from your profile whenever you like.
-        </p>
-      </div>
-      <Link href={account ? destinationFor(account) : "/intern/login?role=intern"} className={styles.primaryButton}>
-        {account ? "Go to my workspace" : "Sign in or get a new link"}
-        <ArrowRight size={16} />
-      </Link>
-      <Link href="/careers/intern#internship-application" className={styles.textLink}>Haven&apos;t applied yet? Apply now</Link>
-    </AuthShell>
-  );
-}
-
 export function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const router = useRouter();

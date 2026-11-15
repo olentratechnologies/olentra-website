@@ -27,7 +27,7 @@ async function capture(send: (mailer: ReturnType<typeof createInternshipMailer>)
     globalThis.fetch = originalFetch;
   }
   assert.equal(requests.length, 1);
-  return { html: String(requests[0].html), text: String(requests[0].text) };
+  return { html: String(requests[0].html), text: String(requests[0].text), subject: String(requests[0].subject) };
 }
 
 function assertEscaped(html: string) {
@@ -46,9 +46,32 @@ test("confirmation email escapes the applicant name, track and link", async () =
 });
 
 test("magic-link email escapes the name and link", async () => {
-  const { html } = await capture(mailer => mailer.sendMagicLink({ to: "a@example.test", name: hostile, magicLinkUrl: "https://example.test/v?token=a&b" }));
+  const { html } = await capture(mailer => mailer.sendMagicLink({ to: "a@example.test", name: hostile, magicLinkUrl: "https://example.test/v?token=a&b", templateVariant: "professional" }));
   assertEscaped(html);
   assert.match(html, /href="https:\/\/example\.test\/v\?token=a&amp;b"/);
+  assert.match(html, /background-color: #f2f5fb/);
+  assert.match(html, /alt="Olentra Technologies"/);
+  assert.match(html, /Open candidate portal/);
+  assert.match(html, /Single-use link · Expires in 24 hours/);
+  assert.match(html, /Use this secure sign-in link/);
+});
+
+test("each selected sign-in design changes the delivered subject and visual theme without losing security copy", async () => {
+  const variants = [
+    { id: "professional", subject: "Your Olentra Candidate Portal Sign-In Link", background: "#f2f5fb" },
+    { id: "warm", subject: "Your requested Olentra sign-in link", background: "#fbf7f2" },
+    { id: "minimal", subject: "Sign-in link for your Olentra account", background: "#ffffff" },
+  ] as const;
+  for (const variant of variants) {
+    const { html, text, subject } = await capture(mailer => mailer.sendMagicLink({
+      to: "a@example.test", name: "Alex", magicLinkUrl: "https://example.test/verify", templateVariant: variant.id,
+    }));
+    assert.equal(subject, variant.subject);
+    assert.ok(html.includes(`background-color: ${variant.background}`));
+    assert.match(html, /Single-use link · Expires in 24 hours/);
+    assert.match(html, /If you didn’t request this link/);
+    assert.match(text, /single-use link expires in 24 hours/);
+  }
 });
 
 test("password reset email escapes the name and link", async () => {

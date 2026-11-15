@@ -1,5 +1,6 @@
 import { internshipEnv } from "../../config/env";
 import { interviewIcs, interviewTimeLabel } from "../../modules/interviews/ics";
+import type { SigninEmailTemplateVariant } from "../../modules/email-templates/signin-template-settings";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
 type ApplicantStatus = "shortlisted" | "offer" | "rejected" | "onboarding" | "certificate";
@@ -39,6 +40,7 @@ interface MagicLinkEmailOptions {
   to: string;
   name?: string;
   magicLinkUrl: string;
+  templateVariant?: SigninEmailTemplateVariant;
 }
 
 interface PasswordResetEmailOptions {
@@ -284,11 +286,74 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
       return sendEmail(to, subject, html, text);
     },
 
-    async sendMagicLink({ to, name = "there", magicLinkUrl }: MagicLinkEmailOptions): Promise<SendResult> {
-      const subject = "Your Olentra Candidate Portal Sign-In Link";
-      const text = `Hi ${name},\n\nClick the link below to securely sign in to your Olentra Internship Portal:\n\n${magicLinkUrl}\n\nThis link expires in 24 hours and can be used once.\n\nIf you did not request this link, you can safely ignore this email.\n\nBest regards,\nThe Olentra Team`;
+    async sendMagicLink({ to, name = "there", magicLinkUrl, templateVariant = "professional" }: MagicLinkEmailOptions): Promise<SendResult> {
+      const themes = {
+        professional: {
+          subject: "Your Olentra Candidate Portal Sign-In Link",
+          background: "#f2f5fb",
+          accent: "#1877f2",
+          heading: "Your next step is one click away.",
+          intro: "Use your secure link to open your Olentra candidate portal and follow your application.",
+          panel: "#f5f8ff",
+          panelBorder: "#e1e9f8",
+          cardBorder: "#dfe6f0",
+          radius: "14px",
+          padding: "36px 16px",
+        },
+        warm: {
+          subject: "Your requested Olentra sign-in link",
+          background: "#fbf7f2",
+          accent: "#98633b",
+          heading: "Welcome back.",
+          intro: "We’re glad you’re continuing your journey with Olentra. Use the secure link below to return to your candidate portal.",
+          panel: "#fcf8f3",
+          panelBorder: "#eee2d5",
+          cardBorder: "#e9ded2",
+          radius: "18px",
+          padding: "40px 18px",
+        },
+        minimal: {
+          subject: "Sign-in link for your Olentra account",
+          background: "#ffffff",
+          accent: "#145ddd",
+          heading: "Sign in to your portal",
+          intro: "Your requested secure access link is ready.",
+          panel: "#ffffff",
+          panelBorder: "#e8edf5",
+          cardBorder: "#e8edf5",
+          radius: "4px",
+          padding: "28px 16px",
+        },
+      } satisfies Record<SigninEmailTemplateVariant, {
+        subject: string;
+        background: string;
+        accent: string;
+        heading: string;
+        intro: string;
+        panel: string;
+        panelBorder: string;
+        cardBorder: string;
+        radius: string;
+        padding: string;
+      }>;
+      const theme = themes[templateVariant];
+      const subject = theme.subject;
+      const text = `Hi ${name},\n\n${theme.intro}\n\n${magicLinkUrl}\n\nThis single-use link expires in 24 hours.\n\nIf you did not request this link, you can safely ignore this email.\n\nBest regards,\nThe Olentra Team`;
 
-      const safe = { name: escapeHtml(String(name)), magicLinkUrl: escapeHtml(String(magicLinkUrl)), subject: escapeHtml(String(subject)) };
+      const safe = {
+        name: escapeHtml(String(name)),
+        magicLinkUrl: escapeHtml(String(magicLinkUrl)),
+        subject: escapeHtml(String(subject)),
+        heading: escapeHtml(theme.heading),
+        intro: escapeHtml(theme.intro),
+        background: theme.background,
+        accent: theme.accent,
+        panel: theme.panel,
+        panelBorder: theme.panelBorder,
+        cardBorder: theme.cardBorder,
+        radius: theme.radius,
+        padding: theme.padding,
+      };
       const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -296,32 +361,35 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${safe.subject}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #0c0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f1f5f9;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0c0f17; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; background-color: ${safe.background}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #17243d;">
+  <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">Your secure sign-in link for the Olentra Candidate Portal is ready.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${safe.background}" style="background-color: ${safe.background}; padding: ${safe.padding};">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; background-color: #131926; border: 1px solid #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 600px; background-color: #ffffff; border: 1px solid ${safe.cardBorder}; border-radius: ${safe.radius}; overflow: hidden;">
           <tr>
-            <td style="padding: 32px 32px 20px; text-align: left; border-bottom: 1px solid #1e293b; background: linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(15,23,42,0) 100%);">
-              <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #60a5fa; display: block; margin-bottom: 8px;">Olentra Careers · Secure Sign-In</span>
-              <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff;">Sign in to your Candidate Portal</h1>
+            <td style="padding: 26px 32px 22px; text-align: left; background-color: #ffffff;">
+              <img src="https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png" width="190" alt="Olentra Technologies" style="display: block; width: 190px; max-width: 100%; height: auto; border: 0;">
             </td>
           </tr>
           <tr>
-            <td style="padding: 32px;">
-              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Hi <strong>${safe.name}</strong>,</p>
-              <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">We received a request for a 1-click sign-in link to your Olentra Candidate Portal.</p>
-              
-              <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 0 0 28px; text-align: center;">
-                <a href="${safe.magicLinkUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; text-decoration: none; padding: 13px 28px; font-size: 14px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Sign In to Candidate Portal &rarr;</a>
-                <p style="margin: 16px 0 0; font-size: 11px; color: #64748b;">This secure link is valid for 24 hours.</p>
-              </div>
-
-              <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Or copy and paste this link into your browser:</p>
-              <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all; color: #60a5fa;">${safe.magicLinkUrl}</p>
-
-              <hr style="border: none; border-top: 1px solid #1e293b; margin: 24px 0;" />
-              <p style="margin: 0; font-size: 12px; color: #64748b;">If you didn't request this sign-in link, you can safely ignore this email.</p>
+            <td style="padding: 0 32px;"><div style="height: 1px; background-color: #e8edf5; font-size: 1px; line-height: 1px;">&nbsp;</div></td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 32px 32px;">
+              <p style="margin: 0 0 10px; font-size: 11px; line-height: 1.4; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: ${safe.accent};">Candidate portal · Secure sign-in</p>
+              <h1 style="margin: 0; font-size: 26px; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; color: #17243d;">${safe.heading}</h1>
+              <p style="margin: 22px 0 0; font-size: 15px; line-height: 1.65; color: #43536e;">Hi <strong style="color: #17243d;">${safe.name}</strong>,<br><br>${safe.intro}</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${safe.panel}" style="margin-top: 24px; background-color: ${safe.panel}; border: 1px solid ${safe.panelBorder}; border-radius: 12px;">
+                <tr>
+                  <td align="center" style="padding: 22px 16px;">
+                    <a href="${safe.magicLinkUrl}" style="display: inline-block; padding: 14px 24px; border-radius: 8px; background-color: ${safe.accent}; color: #ffffff; text-decoration: none; font-size: 14px; line-height: 1.3; font-weight: 700;">Open candidate portal &rarr;</a>
+                    <p style="margin: 13px 0 0; font-size: 12px; line-height: 1.5; color: #65748c;">Single-use link · Expires in 24 hours</p>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 22px 0 0; font-size: 12px; line-height: 1.6; color: #64748b;">Button not working? <a href="${safe.magicLinkUrl}" style="color: ${safe.accent}; font-weight: 600; text-decoration: underline;">Use this secure sign-in link</a>.</p>
+              <p style="margin: 22px 0 0; padding-top: 18px; border-top: 1px solid #e8edf5; font-size: 12px; line-height: 1.65; color: #718096;">If you didn’t request this link, you can safely ignore this email.<br><br>Olentra Technologies · Building intelligent systems</p>
             </td>
           </tr>
         </table>

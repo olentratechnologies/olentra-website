@@ -1146,7 +1146,7 @@ export default function InternLanding() {
       {canApply && launchPhase !== "idle" && (
         <ApplicationLaunch
           phase={launchPhase}
-          accountHref="/intern/register"
+          accountHref="/intern/login?role=intern"
           onDismiss={() => setLaunchPhase("idle")}
         />
       )}

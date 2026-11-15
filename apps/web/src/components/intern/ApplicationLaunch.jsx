@@ -105,7 +105,7 @@ export default function ApplicationLaunch({
   phase,
   onDismiss,
   applicationId,
-  accountHref = "/intern/register",
+  accountHref = "/intern/login?role=intern",
 }) {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);

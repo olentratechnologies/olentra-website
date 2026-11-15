@@ -1,4 +1,4 @@
-/** Static, preview-only email content. This module does not send email. */
+/** Email preview content. Live delivery settings are managed by the backend. */
 export const EMAIL_TEMPLATE_SELECTION_KEY = "olentra-admin-email-template-selections-v1";
 
 function deepFreeze(value) {
@@ -436,9 +436,9 @@ export const EMAIL_TEMPLATE_CATALOG = deepFreeze([
   defineType({
     id: "account.signin-link", title: "Sign-in link", category: "Accounts", audience: "users", recipient: "Applicant / intern requesting access", trigger: "A candidate requests a secure sign-in link or submits an application for an existing account.", action: "Sign in to your portal", path: "/intern/login?token=preview-only",
     copy: [
-      ["Your secure Olentra sign-in link", "Use this link to access your candidate portal.", "Sign in to Olentra", "A sign-in link was requested for your Olentra account. Use the button below to access your candidate portal.", "Keep this link private. If you did not request it, you can ignore this message."],
+      ["Your Olentra Candidate Portal Sign-In Link", "Use this link to access your candidate portal.", "Sign in to Olentra", "A sign-in link was requested for your Olentra account. Use the button below to access your candidate portal.", "Keep this link private. If you did not request it, you can ignore this message."],
       ["Your requested Olentra sign-in link", "Your requested portal sign-in link is ready.", "Welcome back", "You asked for a way to access your Olentra portal. Use the secure sign-in link below to continue.", "This link is just for you. If the request was not yours, there is nothing you need to do."],
-      ["Sign in to Olentra", "Your requested secure sign-in link.", "Your sign-in link", "Use the link below to sign in to your Olentra portal.", "Do not share the link. Ignore this email if you did not request it."],
+      ["Sign-in link for your Olentra account", "Your requested secure sign-in link.", "Your sign-in link", "Use the link below to sign in to your Olentra portal.", "Do not share the link. Ignore this email if you did not request it."],
     ],
   }),
   defineType({

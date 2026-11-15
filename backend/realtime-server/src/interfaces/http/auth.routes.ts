@@ -7,6 +7,7 @@ import { clientAddress } from "../../modules/auth/login-throttle";
 import type { RateLimiter } from "../../modules/auth/rate-limit";
 import { cookieName } from "./router";
 import { parseCookies, refreshCookie, safeContext } from "./cookies";
+import type { createSigninEmailTemplateSettings } from "../../modules/email-templates/signin-template-settings";
 
 export const AUTH_PATHS = {
   login: "/intern/auth/login",
@@ -28,7 +29,7 @@ type Mailer = ReturnType<typeof createInternshipMailer>;
 type SendJson = (body: unknown, origin: string | null, status?: number, extra?: Record<string, string>) => Response;
 
 /** HTTP authentication adapter. Domain authorization and token claims stay in their modules. */
-export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin = "http://localhost:3002", sendJson, limiter }: {
+export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin = "http://localhost:3002", sendJson, limiter, signinEmailTemplates }: {
   auth: Auth;
   domain: Domain;
   mailer: Mailer;
@@ -38,12 +39,18 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOr
   sendJson: SendJson;
   /** Limits anonymous requests that send email; omitted in unit tests. */
   limiter?: RateLimiter;
+  signinEmailTemplates?: ReturnType<typeof createSigninEmailTemplateSettings>;
 }) {
   const trustProxy = () => /^(true|1)$/i.test(process.env.REALTIME_TRUST_PROXY || "");
   const requireBearer = async (request: Request) => {
     const token = bearerToken(request);
     if (!token) throw new DomainError("UNAUTHENTICATED", "Sign in to continue.");
     return auth.verify(token);
+  };
+  const sendSigninLink = async (email: string, name: string, applicationId: string) => {
+    const token = await auth.generateMagicLinkToken(email, applicationId);
+    const templateVariant = (await signinEmailTemplates?.read())?.variantId || "professional";
+    await mailer.sendMagicLink({ to: email, name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}`, templateVariant });
   };
   const refresh = async (request: Request, origin: string | null) => {
     const context = safeContext(request.headers.get("x-intern-context"));
@@ -71,10 +78,7 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOr
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Please enter a valid email address.");
       await limiter?.consume("emailLink", clientAddress(request, peerAddress, trustProxy()), email);
       const application = await domain.findApplicationByEmail(email);
-      if (application) {
-        const token = await auth.generateMagicLinkToken(application.email, application._id);
-        await mailer.sendMagicLink({ to: application.email, name: application.name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
-      }
+      if (application) await sendSigninLink(application.email, application.name, application._id);
       return sendJson({ ok: true, data: { message: "If an application exists for this email, a sign-in link has been sent to your inbox." } }, origin);
     },
 
@@ -100,10 +104,7 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOr
         // An applicant without an account has no password to reset. Send a
         // sign-in link instead; the account is created only when they use it.
         const application = await domain.findApplicationByEmail(email);
-        if (application) {
-          const token = await auth.generateMagicLinkToken(application.email, application._id);
-          await mailer.sendMagicLink({ to: application.email, name: application.name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
-        }
+        if (application) await sendSigninLink(application.email, application.name, application._id);
       } else {
         const token = await auth.generatePasswordResetToken(user.email, user._id, Number(user.sessionVersion) || 1);
         const workspace = input.app === "workspace" && user.role === "company";

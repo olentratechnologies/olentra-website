@@ -13,6 +13,7 @@ import { createAuthRoutes, AUTH_PATHS } from "../interfaces/http/auth.routes";
 import { clientAddress, mongoAttemptStore } from "../modules/auth/login-throttle";
 import { runLeasedJob } from "../modules/outbox/outbox";
 import { SITE_FEATURES_PATH, canControlWebsite, createSiteFeatureStore } from "../modules/site-features/site-features";
+import { createSigninEmailTemplateSettings, SIGNIN_EMAIL_TEMPLATE_PATH } from "../modules/email-templates/signin-template-settings";
 import { bearerToken } from "../interfaces/http/middleware";
 import { removeOrphanedUploads } from "../modules/files/cleanup";
 import { createRateLimiter, type RateLimiter } from "../modules/auth/rate-limit";
@@ -40,6 +41,7 @@ type InternshipRuntime = {
   fileRoutes: ReturnType<typeof createFilesRoutes>;
   limiter: RateLimiter;
   siteFeatures: ReturnType<typeof createSiteFeatureStore>;
+  signinEmailTemplates: ReturnType<typeof createSigninEmailTemplateSettings>;
   staffSockets: StaffSocketRegistry;
   insights: ReturnType<typeof createPublicInsights>;
   insightsViewers: () => number;
@@ -134,7 +136,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       },
       async sendMagicLink(to, name, applicationId) {
         const token = await auth.generateMagicLinkToken(to, applicationId);
-        const result = await mailer.sendMagicLink({ to, name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
+        const { variantId: templateVariant } = await signinEmailTemplates.read();
+        const result = await mailer.sendMagicLink({ to, name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}`, templateVariant });
         if (!result.ok) throw new Error(result.error || "Sign-in link was not delivered.");
       },
       async sendApplicantStatus(notice) {
@@ -297,7 +300,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const stopOutbox = runLeasedJob(jobLeases, "email-outbox", 2000, () => domain.processOutbox(), error => logger.error("Email outbox run failed", { error }));
     const limiter = createRateLimiter(mongoAttemptStore(domain.collection("rate_limits")));
     await domain.collection("rate_limits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-    const authRoutes = createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin, sendJson, limiter });
+    const signinEmailTemplates = createSigninEmailTemplateSettings(domain.collection("email_template_settings"));
+    const authRoutes = createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin, sendJson, limiter, signinEmailTemplates });
     const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter });
     const siteFeatures = createSiteFeatureStore(domain.collection("site_features") as any);
     const nextRuntime: InternshipRuntime = {
@@ -307,6 +311,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       fileRoutes,
       limiter,
       siteFeatures,
+      signinEmailTemplates,
       staffSockets,
       insights,
       insightsViewers,
@@ -365,6 +370,16 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           if (Number(request.headers.get("content-length") || 0) > 16_384) throw new DomainError("INVALID_REQUEST", "The website settings are too large.");
           const body = await request.json() as { state?: unknown; expectedRevision?: unknown };
           return sendJson({ ok: true, data: await runtime.siteFeatures.write(body.state, Number(body.expectedRevision)) }, origin);
+        }
+        if (url.pathname === SIGNIN_EMAIL_TEMPLATE_PATH && (request.method === "GET" || request.method === "PUT")) {
+          const token = bearerToken(request);
+          const account = token ? (await runtime.auth.verify(token)).account : null;
+          if (!account) throw new DomainError("UNAUTHENTICATED", "Sign in to manage email templates.");
+          if (!canControlWebsite(account)) throw new DomainError("FORBIDDEN", "Only workspace owners and administrators can change live email templates.");
+          if (request.method === "GET") return sendJson({ ok: true, data: await runtime.signinEmailTemplates.read() }, origin);
+          if (Number(request.headers.get("content-length") || 0) > 2048) throw new DomainError("INVALID_REQUEST", "The email template selection is too large.");
+          const body = await request.json() as { variantId?: unknown };
+          return sendJson({ ok: true, data: await runtime.signinEmailTemplates.write(body.variantId, account.email) }, origin);
         }
         if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);

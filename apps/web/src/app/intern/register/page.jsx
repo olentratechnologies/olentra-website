@@ -1,16 +1,5 @@
-import { Suspense } from "react";
-import { AuthLoading, RegisterPage } from "@/components/intern/auth/AuthPages";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: { absolute: "Create Account | Olentra Technologies Internships" },
-  robots: { index: false, follow: false },
-};
 export default function Page() {
-  return (
-    <>
-      <Suspense fallback={<AuthLoading />}>
-        <RegisterPage />
-      </Suspense>
-    </>
-  );
+  redirect("/intern/login?role=intern");
 }
