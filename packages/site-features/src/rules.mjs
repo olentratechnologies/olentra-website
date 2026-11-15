@@ -49,13 +49,27 @@ export const SECTION_CATALOG = [
     { id: "footer.contact", label: "Contact column" },
   ] },
 ];
+/**
+ * One switch per product. A product shows only while Products is on; when off,
+ * its card, navbar entry, product page and related promotions are hidden.
+ */
+export const PRODUCT_CATALOG = [
+  { id: "product.dailysupply", product: "dailysupply", label: "Daily Supply", path: "/products/dailysupply" },
+  { id: "product.olenbot", product: "olenbot", label: "Olenbot", path: "/products/olenbot" },
+  { id: "product.studio", product: "studio", label: "Olentra AI Studio", path: "/products/olentra-ai-studio" },
+];
+export const PRODUCT_SWITCH_IDS = PRODUCT_CATALOG.map(entry => entry.id);
+/** The switch id for a product in the website's product list (e.g. "dailysupply" → "product.dailysupply"). */
+export const productSwitchId = product => "product." + product;
 const SECTION_ENTRIES = SECTION_CATALOG.flatMap(section => [{ ...section, parent: null }, ...(section.children || []).map(child => ({ ...child, page: section.page, parent: section.id }))]);
 export const SECTION_IDS = SECTION_ENTRIES.map(entry => entry.id);
-export const SWITCH_IDS = [...FEATURE_IDS, ...SECTION_IDS];
+export const SWITCH_IDS = [...FEATURE_IDS, ...PRODUCT_SWITCH_IDS, ...SECTION_IDS];
 const FEATURE_DEFAULTS = { services: true, products: true, internships: true, blog: true, assistant: false, maintenance: false, applications: true, portal: true };
 
 /** A readable name for any switch, for messages and the audit log. */
 export function switchLabel(id) {
+  const product = PRODUCT_CATALOG.find(item => item.id === id);
+  if (product) return "Products · " + product.label;
   const entry = SECTION_ENTRIES.find(item => item.id === id);
   if (!entry) return id;
   const parent = entry.parent && SECTION_ENTRIES.find(item => item.id === entry.parent);
@@ -73,6 +87,7 @@ export function effectiveSiteFeatures(raw) {
   const flags = normalizeFlags(raw);
   if (!flags.internships) flags.applications = false;
   if (flags.maintenance) for (const id of ["services", "products", "internships", "blog", "assistant", "applications"]) flags[id] = false;
+  for (const entry of PRODUCT_CATALOG) flags[entry.id] = flags[entry.id] && flags.products;
   // Sections first, then subsections, so each child sees its parent's final state.
   for (const entry of SECTION_ENTRIES) {
     let visible = flags[entry.id] && !flags.maintenance;
@@ -95,12 +110,20 @@ export function featureForPath(value = "/") {
   return null;
 }
 
+/** The product switch that owns a path like /products/dailysupply, if any. */
+export function productSwitchForPath(value = "/") {
+  const path = value.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
+  return PRODUCT_CATALOG.find(entry => path === entry.path || path.startsWith(entry.path + "/"))?.id || null;
+}
+
 export function siteRouteStatus(path, raw) {
   const clean = path.split(/[?#]/)[0];
   if (/^\/(dashboard|api|_next|health)(\/|$)/.test(clean) || /^\/intern\/(dashboard|login|reset-password)(\/|$)/.test(clean) || /\.[a-z\d]+$/i.test(clean)) return 200;
   const feature = featureForPath(clean), flags = effectiveSiteFeatures(raw);
   if (feature === "portal") return flags.portal ? 200 : 404;
   if (flags.maintenance) return 503;
+  const product = productSwitchForPath(clean);
+  if (product && !flags[product]) return 404;
   return feature && !flags[feature] ? 404 : 200;
 }
 
@@ -110,6 +133,7 @@ export function isFeatureHrefVisible(href, raw) {
   if (href === "/#products" || href === "#products") return Boolean(flags.products);
   if (href === "/#blogs" || href === "#blogs") return Boolean(flags.blog);
   if (!href || !href.startsWith("/")) return true;
-  const feature = featureForPath(href);
+  const feature = featureForPath(href), product = productSwitchForPath(href);
+  if (product && !flags[product]) return false;
   return !feature || Boolean(flags[feature]);
 }

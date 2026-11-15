@@ -57,7 +57,7 @@ function GoldHandshake() {
 export default function DailySupplyWelcome() {
   const pathname = usePathname();
   const { features, ready } = useSiteFeatures();
-  const excluded = !ready || !features.products || features.maintenance || pathname === "/careers/intern" || pathname.startsWith("/careers/intern/") || pathname === "/intern" || pathname.startsWith("/intern/") || pathname.startsWith("/dashboard");
+  const excluded = !ready || !features.products || !features["product.dailysupply"] || features.maintenance || pathname === "/careers/intern" || pathname.startsWith("/careers/intern/") || pathname === "/intern" || pathname.startsWith("/intern/") || pathname.startsWith("/dashboard");
   const [open, setOpen] = useState(false);
   const previousFocus = useRef(null);
   useEffect(() => {

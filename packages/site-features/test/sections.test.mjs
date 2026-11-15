@@ -31,3 +31,17 @@ test("switches have readable names for messages and the audit log", () => {
   assert.equal(switchLabel("footer"), "Every page · Footer");
   assert.equal(switchLabel("services"), "services");
 });
+
+test("each product has its own switch that follows Products and hides its page", async () => {
+  const { siteRouteStatus, isFeatureHrefVisible } = await import("../src/rules.mjs");
+  const off = (overrides) => ({ ...legacy, ...overrides });
+  assert.equal(normalizeFlags(legacy)["product.dailysupply"], true);
+  assert.equal(effectiveSiteFeatures(off({ "product.dailysupply": false }))["product.dailysupply"], false);
+  assert.equal(effectiveSiteFeatures(off({ "product.dailysupply": false }))["product.olenbot"], true);
+  assert.equal(effectiveSiteFeatures(off({ products: false }))["product.olenbot"], false);
+  assert.equal(siteRouteStatus("/products/dailysupply", off({ "product.dailysupply": false })), 404);
+  assert.equal(siteRouteStatus("/products/dailysupply/showcase", off({ "product.dailysupply": false })), 404);
+  assert.equal(siteRouteStatus("/products", off({ "product.dailysupply": false })), 200);
+  assert.equal(isFeatureHrefVisible("/products/dailysupply", off({ "product.dailysupply": false })), false);
+  assert.equal(switchLabel("product.dailysupply"), "Products · Daily Supply");
+});

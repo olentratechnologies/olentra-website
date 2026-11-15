@@ -365,6 +365,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { features, ready, isVisibleHref } = useSiteFeatures();
   const primaryLinks = useMemo(() => navLinks.filter((link) => link.id === "nav-careers" ? ready && features.internships : isVisibleHref(link.href)), [ready, features.services, features.products, features.internships, features.blog, features.portal, features.applications, features.maintenance, isVisibleHref]);
+  const visibleProducts = useMemo(() => products.filter((product) => isVisibleHref(product.href)), [isVisibleHref]);
   const showInternLogin = ready && features.portal;
   const showInternApply = ready && features.internships && features.applications;
   const isInternPage = pathname === "/careers/intern" || pathname === "/intern/login";
@@ -777,7 +778,7 @@ export default function Navbar() {
                                 </Link>
                               </div>
                               <div className="flex flex-col gap-1.5">
-                                {products.map((product, pIdx) => {
+                                {visibleProducts.map((product, pIdx) => {
                                   return (
                                     <Link
                                       key={product.id}
@@ -1007,7 +1008,7 @@ export default function Navbar() {
                               exit={{ height: 0, opacity: 0 }}
                               className="overflow-hidden flex flex-col gap-1 pl-4 pt-1"
                             >
-                              {products.map((product) => {
+                              {visibleProducts.map((product) => {
                                 return (
                                   <Link
                                     key={product.id}
