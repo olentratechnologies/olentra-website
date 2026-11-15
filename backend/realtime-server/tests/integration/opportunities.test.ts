@@ -73,7 +73,7 @@ test("every role and schedule persists through the real socket, resume, email-li
   const login = await instance.auth.login("staff@example.test", "OpportunitiesPassword2026!");
   await admin.request("auth.authenticate", { token: login.token });
   const duration = "8-10 weeks";
-  await admin.request("settings.update", { patch: { duration } });
+  await admin.request("settings.update", { patch: { duration } }, key());
   const anonymous = await socket();
   const publicData = await anonymous.request("intern.public");
   expect(publicData.opportunities).toEqual({ ...INTERNSHIP_OPPORTUNITIES, duration });
@@ -106,11 +106,11 @@ test("every role and schedule persists through the real socket, resume, email-li
     for (let n = 0; n < 100 && !admin.events.some(event => event.event === "intern.application_created" && event.applicationId === stored._id); n++) await Bun.sleep(20);
     expect(admin.events.some(event => event.event === "intern.application_created" && event.applicationId === stored._id)).toBe(true);
   }
-  await admin.request("settings.update", { patch: { duration: "4-6 months" } });
+  await admin.request("settings.update", { patch: { duration: "4-6 months" } }, key());
   const updatedPublicData = await anonymous.request("intern.public");
   expect(updatedPublicData.opportunities.duration).toBe("4-6 months");
   expect(await domain.collection("applications").findOne({ _id: firstApplicationId })).toMatchObject({ duration });
-  await admin.request("settings.update", { patch: { duration: INTERNSHIP_OPPORTUNITIES.duration } });
+  await admin.request("settings.update", { patch: { duration: INTERNSHIP_OPPORTUNITIES.duration } }, key());
 }, 30000);
 
 test("invalid choices, the paid track and expired intake are refused without consuming the resume", async () => {
