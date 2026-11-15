@@ -58,16 +58,20 @@ function makeStrands(count) {
   const strands = [];
   for (let i = 0; i < count; i++) {
     const s = i / (count - 1); // 0 = upper edge, 1 = lower edge
+    const hue = 198 + Math.random() * 22;
+    const light = 58 + Math.random() * 18;
     strands.push({
       s,
       amp: 5 + Math.random() * 14,
       freq: 2.2 + Math.random() * 2.6,
       speed: 0.18 + Math.random() * 0.32,
       phase: Math.random() * Math.PI * 2,
-      hue: 198 + Math.random() * 22,
-      light: 58 + Math.random() * 18,
       alpha: 0.07 + Math.random() * 0.16,
       width: 0.6 + Math.random() * 1.1,
+      // Opaque colors built once; per-frame fading goes through globalAlpha
+      // so no color strings are created or parsed while animating.
+      halo: `hsl(${hue}, 100%, ${light}%)`,
+      core: `hsl(${hue}, 100%, ${light + 14}%)`,
     });
   }
   return strands;
@@ -106,7 +110,11 @@ export default function HeroBackdrop() {
       { speed: 0.055, offset: 0.0, s: 0.48 },
       { speed: 0.04, offset: 0.45, s: 0.3 },
       { speed: 0.07, offset: 0.75, s: 0.66 },
-    ];
+    ].map((pulse) => ({ ...pulse, shape: { s: pulse.s, amp: 6, freq: 2.6, speed: 0.3, phase: pulse.offset * 9 } }));
+    // One unit-radius glow reused for every pulse (positioned via transform).
+    const pulseGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    pulseGlow.addColorStop(0, "rgba(210, 238, 255, 0.55)");
+    pulseGlow.addColorStop(1, "rgba(60, 140, 255, 0)");
     const ys = new Float32Array(xs.length);
 
     let w = 0;
@@ -119,7 +127,8 @@ export default function HeroBackdrop() {
     const resize = () => {
       // Layout size, not getBoundingClientRect: the stage's float transform
       // would otherwise feed its animated scale into the canvas mapping.
-      dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      // Soft glowing lines look identical above 1.5x but cost far more pixels.
+      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       w = canvas.clientWidth;
       h = canvas.clientHeight;
       canvas.width = Math.round(w * dpr);
@@ -145,7 +154,9 @@ export default function HeroBackdrop() {
       return ys;
     };
 
-    const tracePath = (arr, from = 0, to = xs.length) => {
+    // Traces samples [from, to) and optionally ends exactly at (endX, endY) so
+    // moving heads glide continuously instead of hopping grid point to point.
+    const tracePath = (arr, from = 0, to = xs.length, endX, endY) => {
       ctx.beginPath();
       for (let i = from; i < to; i++) {
         const px = ox + xs[i] * scale;
@@ -153,11 +164,16 @@ export default function HeroBackdrop() {
         if (i === from) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
       }
+      if (endX !== undefined) ctx.lineTo(endX, endY);
     };
+
+    const PULSE_TAIL = 34;
 
     const draw = (time) => {
       const t = time / 1000;
+      const lineScale = Math.max(scale, 0.6);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalAlpha = 1;
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "lighter";
       ctx.lineCap = "round";
@@ -168,55 +184,64 @@ export default function HeroBackdrop() {
         const arr = strandY(strand, t);
         const breathe = 0.75 + 0.25 * Math.sin(t * 0.6 + strand.phase);
         tracePath(arr);
-        ctx.strokeStyle = `hsla(${strand.hue}, 100%, ${strand.light}%, ${strand.alpha * 0.35 * breathe})`;
-        ctx.lineWidth = strand.width * 7 * Math.max(scale, 0.6);
+        ctx.globalAlpha = strand.alpha * 0.35 * breathe;
+        ctx.strokeStyle = strand.halo;
+        ctx.lineWidth = strand.width * 7 * lineScale;
         ctx.stroke();
-        ctx.strokeStyle = `hsla(${strand.hue}, 100%, ${strand.light + 14}%, ${strand.alpha * breathe})`;
-        ctx.lineWidth = strand.width * Math.max(scale, 0.6);
+        ctx.globalAlpha = strand.alpha * breathe;
+        ctx.strokeStyle = strand.core;
+        ctx.lineWidth = strand.width * lineScale;
         ctx.stroke();
       }
 
-      // Light pulses gliding along the ribbon.
+      // Light pulses gliding along the ribbon at sub-sample precision.
       for (const pulse of pulses) {
         const progress = (t * pulse.speed + pulse.offset) % 1;
-        const head = Math.floor(progress * (xs.length - 1));
-        const tail = Math.max(head - 34, 0);
-        const arr = strandY({ s: pulse.s, amp: 6, freq: 2.6, speed: 0.3, phase: pulse.offset * 9 }, t);
         const fade = Math.sin(progress * Math.PI);
-        if (head - tail > 2) {
-          const x0 = ox + xs[tail] * scale;
-          const x1 = ox + xs[head] * scale;
-          const grad = ctx.createLinearGradient(x0, 0, x1, 0);
+        if (fade <= 0.001) continue;
+        const pos = progress * (xs.length - 1);
+        const i0 = Math.min(Math.floor(pos), xs.length - 2);
+        const frac = pos - i0;
+        const arr = strandY(pulse.shape, t);
+        const hx = ox + (xs[i0] + (xs[i0 + 1] - xs[i0]) * frac) * scale;
+        const hy = oy + (arr[i0] + (arr[i0 + 1] - arr[i0]) * frac) * scale;
+        const tailPos = Math.max(pos - PULSE_TAIL, 0);
+        const tail = Math.ceil(tailPos);
+        ctx.globalAlpha = fade;
+        if (pos - tailPos > 2) {
+          const x0 = ox + (xs[0] + (xs[xs.length - 1] - xs[0]) * (tailPos / (xs.length - 1))) * scale;
+          const grad = ctx.createLinearGradient(x0, 0, hx, 0);
           grad.addColorStop(0, "rgba(120, 190, 255, 0)");
-          grad.addColorStop(1, `rgba(190, 230, 255, ${0.75 * fade})`);
-          tracePath(arr, tail, head + 1);
+          grad.addColorStop(1, "rgba(190, 230, 255, 0.75)");
+          tracePath(arr, tail, i0 + 1, hx, hy);
           ctx.strokeStyle = grad;
-          ctx.lineWidth = 2.2 * Math.max(scale, 0.6);
+          ctx.lineWidth = 2.2 * lineScale;
           ctx.stroke();
         }
-        const hx = ox + xs[head] * scale;
-        const hy = oy + arr[head] * scale;
-        const r = 26 * Math.max(scale, 0.6);
-        const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, r);
-        glow.addColorStop(0, `rgba(210, 238, 255, ${0.55 * fade})`);
-        glow.addColorStop(1, "rgba(60, 140, 255, 0)");
-        ctx.fillStyle = glow;
-        ctx.fillRect(hx - r, hy - r, r * 2, r * 2);
+        const r = 26 * lineScale;
+        ctx.setTransform(dpr, 0, 0, dpr, dpr * hx, dpr * hy);
+        ctx.fillStyle = pulseGlow;
+        ctx.scale(r, r);
+        ctx.fillRect(-1, -1, 2, 2);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
 
       // Drifting motes.
+      ctx.fillStyle = "rgb(150, 205, 255)";
       for (const p of particles) {
         let y = (p.y - t * p.vy) % 1.1;
         if (y < -0.05) y += 1.1;
         const x = p.x + Math.sin(t * 0.4 + p.phase) * p.sway;
         const a = 0.25 + 0.45 * (0.5 + 0.5 * Math.sin(t * p.twinkle + p.phase));
         const edge = Math.min(1, Math.max(0, (y - 0.15) / 0.25));
-        ctx.fillStyle = `rgba(150, 205, 255, ${a * edge})`;
+        if (edge <= 0) continue;
+        ctx.globalAlpha = a * edge;
         ctx.beginPath();
         ctx.arc(x * w, y * h, p.r, 0, Math.PI * 2);
         ctx.fill();
       }
 
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
     };
 

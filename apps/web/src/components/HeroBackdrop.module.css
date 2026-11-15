@@ -30,12 +30,16 @@
   object-fit: cover;
   object-position: 50% 50%;
   -webkit-user-drag: none;
+  /* Opacity over the dark base reads as a gentle brightness swell, but runs
+     on the compositor; animating filter repainted the full image each frame. */
   animation: imageBreathe 11s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .ribbons {
   display: block;
   animation: ribbonBob 9s ease-in-out infinite;
+  will-change: transform;
 }
 
 /* Corner light shafts from the template, breathing slowly. */
@@ -46,6 +50,8 @@
   border-radius: 50%;
   mix-blend-mode: screen;
   filter: blur(18px);
+  /* Own layers: the blur rasterizes once, then only transform/opacity animate. */
+  will-change: transform, opacity;
 }
 
 .beamLeft {
@@ -74,6 +80,7 @@
     radial-gradient(30% 40% at 22% 70%, rgba(40, 120, 255, 0.22), transparent 70%),
     radial-gradient(26% 36% at 72% 60%, rgba(40, 210, 255, 0.18), transparent 70%);
   animation: floorShimmer 16s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 @keyframes stageFloat {
@@ -84,8 +91,8 @@
 }
 
 @keyframes imageBreathe {
-  0%, 100% { filter: brightness(1) saturate(1); }
-  50% { filter: brightness(1.12) saturate(1.1); }
+  0%, 100% { opacity: 0.88; }
+  50% { opacity: 1; }
 }
 
 @keyframes ribbonBob {
