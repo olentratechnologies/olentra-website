@@ -4,6 +4,8 @@ import { createInternshipQueries } from "../modules/queries/query.service";
 import { createStaffManagement } from "../modules/staff/staff.service";
 import { authorizeStaff, can, isAdmin } from "../modules/access/policy";
 import { acceptsCompensationMode, normalizeCompensationMode, type CompensationMode } from "../modules/programs/compensation";
+import { normalizeDeadline } from "../modules/programs/deadline";
+import { INTERNSHIP_OPPORTUNITIES, isInternRole, isInternSchedule, normalizeInternshipDuration } from "../modules/programs/opportunities.mjs";
 import { MongoClient, type ClientSession, type Db, type Document } from "mongodb";
 import type { InternshipRow } from "../infrastructure/database/collections";
 import { DomainError } from "../shared/errors";
@@ -130,15 +132,17 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     return (await account(user._id))!;
   }
   type PublicData = {
+    opportunities: typeof INTERNSHIP_OPPORTUNITIES;
     organization: { name: string; legalName: string; website: string };
     programs: { id: string; name: string; fee: number | null; stipend: number | null; enabled: boolean }[];
-    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; rubric: Criterion[]; onboardingDocuments: { id: string; label: string; required: boolean }[]; emailNotifications: boolean; integrations: Record<string, unknown> };
+    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; rubric: Criterion[]; onboardingDocuments: { id: string; label: string; required: boolean }[]; emailNotifications: boolean; integrations: Record<string, unknown>; applicationDeadline: string | null; duration: string };
   };
   let cachedPublicData: PublicData | null = null;
   function invalidatePublicData() { cachedPublicData = null; }
   async function fetchPublicData(): Promise<PublicData> {
     const [rows, config] = await Promise.all([programs.find({}).sort({ _id: 1 }).toArray(), settings.findOne({ _id: "program" })]);
-    return { organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, rubric: Array.isArray(config?.rubric) && config.rubric.length ? config.rubric : DEFAULT_RUBRIC, onboardingDocuments: Array.isArray(config?.onboardingDocuments) ? config.onboardingDocuments : [], emailNotifications: false, integrations: {} } };
+    const duration = normalizeInternshipDuration(config?.duration);
+    return { opportunities: { ...INTERNSHIP_OPPORTUNITIES, duration }, organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, rubric: Array.isArray(config?.rubric) && config.rubric.length ? config.rubric : DEFAULT_RUBRIC, onboardingDocuments: Array.isArray(config?.onboardingDocuments) ? config.onboardingDocuments : [], emailNotifications: false, integrations: {}, applicationDeadline: normalizeDeadline(config?.applicationDeadline), duration } };
   }
   /**
    * What anonymous visitors and interns may see: tracks and whether they are
@@ -146,9 +150,9 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
    * reach staff through their snapshot instead.
    */
   async function anonymousData() {
-    const { organization, programs: tracks, settings: all } = await publicData();
-    const { programEnabled, compensationMode, explorerEnabled, innovatorEnabled, programName } = all;
-    return { organization, programs: tracks, settings: { programEnabled, compensationMode, explorerEnabled, innovatorEnabled, programName } };
+    const { organization, programs: tracks, settings: all, opportunities } = await publicData();
+    const { programEnabled, compensationMode, explorerEnabled, innovatorEnabled, programName, applicationDeadline, duration } = all;
+    return { organization, programs: tracks, opportunities, settings: { programEnabled, compensationMode, explorerEnabled, innovatorEnabled, programName, applicationDeadline, duration } };
   }
   async function publicData(): Promise<PublicData> {
     if (cachedPublicData) return cachedPublicData;
@@ -364,6 +368,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     }
     if (method === "application.submit") {
       if (actor) throw new DomainError("FORBIDDEN", "Sign out before submitting an application.");
+      const roleId = str(params.roleId), schedule = str(params.schedule);
+      if (!isInternRole(roleId) || !isInternSchedule(schedule)) throw new DomainError("INVALID_REQUEST", "Choose an intern role and a part-time or full-time schedule. Refresh this page if these choices are missing.");
       const name = str(params.name), email = emailOf(params.email), programId = str(params.programId), fileId = str(params.resumeAttachmentId), fileToken = str(params.resumeAccessToken);
       if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Enter your full name and a valid email address.");
       if (!fileId || !fileToken) throw new DomainError("INVALID_REQUEST", "Attach a resume before applying.");
@@ -386,9 +392,11 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const config = await settings.findOne({ _id: "program" }, { session });
         const file = await files.findOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken), applicationId: { $exists: false } }, { session });
         if (!program?.enabled || !config?.programEnabled || program.fee == null || !acceptsCompensationMode(program.stipend, config.compensationMode)) throw new DomainError("CLOSED", "This internship track is not accepting applications.");
+        const deadline = normalizeDeadline(config?.applicationDeadline);
+        if (deadline && Date.parse(deadline) <= Date.now()) throw new DomainError("CLOSED", "The application deadline for this internship cycle has passed.");
         if (!file) throw new DomainError("INVALID_REQUEST", "Upload your resume before applying.");
         const applicationId = id("OL"), now = new Date();
-        const row: Row = { _id: applicationId, name, email, programId, program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github: "", bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
+        const row: Row = { _id: applicationId, name, email, programId, roleId, schedule, workMode: INTERNSHIP_OPPORTUNITIES.workMode, duration: normalizeInternshipDuration(config?.duration), program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github: "", bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
         // Flag likely duplicates: a different email with the same LinkedIn profile.
         const profileKey = linkedinKey(linkedin);
         if (profileKey) {

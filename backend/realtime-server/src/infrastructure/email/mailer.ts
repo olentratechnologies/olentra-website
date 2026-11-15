@@ -63,6 +63,7 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
   type Attachment = { filename: string; content: string; contentType: string };
   async function sendEmail(to: string, subject: string, html: string, text: string, attachments: Attachment[] = []): Promise<SendResult> {
     if (!apiKey) {
+      if (process.env.NODE_ENV === "production") return { ok: false, delivered: false, error: "Email delivery is not configured." };
       console.info(`[mailer:offline] Email to ${to} (Subject: ${subject}):\n${text}`);
       return { ok: true, delivered: false };
     }

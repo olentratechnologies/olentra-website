@@ -1,0 +1,505 @@
+.tab {
+  --accent: #315fe9;
+  --ink: #17233e;
+  --muted: #62708a;
+  --status: #22805c;
+  position: fixed;
+  z-index: 80;
+  width: min(280px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid rgb(213 223 240 / 90%);
+  border-radius: 20px;
+  color: var(--ink);
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 12px 40px -12px rgb(32 57 105 / 22%), 0 2px 6px rgb(32 57 105 / 4%), inset 0 1px 0 #fff;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  font-family: var(--font-inter), Arial, sans-serif;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  transition: top 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s, transform 0.2s;
+  animation: arrive 0.3s ease-out both;
+}
+
+.tab,
+.tab *,
+.tab *::before,
+.tab *::after {
+  box-sizing: border-box;
+}
+
+.tab[data-state="urgent"] {
+  --status: #a56519;
+}
+
+.tab[data-state="closed"] {
+  --status: var(--muted);
+}
+
+.tab[data-dragging] {
+  cursor: grabbing;
+  transform: scale(1.025);
+  transition: none;
+  animation: none;
+  box-shadow: 0 20px 50px -12px rgb(32 57 105 / 30%), 0 3px 8px rgb(32 57 105 / 6%);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.emblem {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e1e9fc;
+  border-radius: 11px;
+  color: var(--accent);
+  background: #f0f4ff;
+}
+
+.heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--status);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.statusDot {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.grip,
+.toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #8490a6;
+  background: transparent;
+  cursor: inherit;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.header .grip {
+  margin-right: -6px;
+}
+
+.toggle {
+  color: #61718f;
+  background: #f6f8fc;
+  border-color: #e9edf5;
+  cursor: pointer;
+}
+
+.grip:hover,
+.toggle:hover {
+  color: var(--accent);
+  background: #edf2ff;
+  border-color: #dbe4fc;
+}
+
+.grip:focus-visible,
+.toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.body {
+  padding-block: 20px 18px;
+}
+
+.caption {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.units {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 12px 5px 10px;
+  border: 1px solid #e6ecf6;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f9fbff, #f2f5fc);
+}
+
+.unit {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.unit + .unit::before {
+  content: ":";
+  position: absolute;
+  top: 3px;
+  left: -2px;
+  color: #b1bfd7;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.digits {
+  display: block;
+  height: 30px;
+  overflow: hidden;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 30px;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.digitValue {
+  display: block;
+  animation: tick 0.22s ease-out;
+}
+
+.unit:last-child .digits {
+  color: var(--accent);
+}
+
+.unitLabel {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #edf0f6;
+}
+
+.deadline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #8895ad;
+}
+
+.deadline > svg {
+  flex: none;
+}
+
+.deadline time {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #52617d;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.deadlineClock {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.closed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 12px;
+  border: 1px solid #e6ecf6;
+  border-radius: 12px;
+  color: var(--muted);
+  background: #f7f9fc;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.closed svg {
+  flex: none;
+}
+
+.tab[data-collapsed] {
+  width: 60px;
+  padding: 6px;
+  border-radius: 18px;
+}
+
+.tab[data-collapsed] .header,
+.tab[data-collapsed] .footer {
+  justify-content: center;
+}
+
+.tab[data-collapsed] .grip {
+  margin: 0;
+}
+
+.tab[data-collapsed] .body {
+  padding-block: 7px 12px;
+}
+
+.tab[data-collapsed] .footer {
+  padding-top: 6px;
+}
+
+.compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.compactIcon {
+  margin-bottom: 7px;
+  color: var(--accent);
+}
+
+.compactValue {
+  font-size: 21px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.compactValue i {
+  margin-left: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.compactLabel {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.tab[data-collapsed] .closed {
+  flex-direction: column;
+  gap: 7px;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+}
+
+@media (pointer: coarse) {
+  .grip,
+  .toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .header {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 639px) {
+  .tab {
+    width: min(224px, calc(100vw - 32px));
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .header {
+    gap: 6px;
+  }
+
+  .emblem {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+  }
+
+  .emblem svg,
+  .compactIcon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .heading {
+    gap: 3px;
+  }
+
+  .title {
+    font-size: 11.5px;
+  }
+
+  .status,
+  .caption,
+  .deadline time,
+  .deadlineClock {
+    font-size: 9.5px;
+  }
+
+  .grip,
+  .toggle {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .header .grip {
+    margin-right: 0;
+  }
+
+  /* Keep a 44px touch target without enlarging the visible controls. */
+  .grip::after,
+  .toggle::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
+  .body {
+    padding-block: 12px 10px;
+  }
+
+  .caption {
+    margin-bottom: 7px;
+  }
+
+  .units {
+    padding: 8px 3px 7px;
+    border-radius: 10px;
+  }
+
+  .unit {
+    gap: 3px;
+  }
+
+  .unit + .unit::before {
+    font-size: 17px;
+  }
+
+  .digits {
+    height: 26px;
+    font-size: 22px;
+    line-height: 26px;
+  }
+
+  .unitLabel,
+  .compactLabel {
+    font-size: 9px;
+  }
+
+  .footer {
+    gap: 6px;
+    padding-top: 8px;
+  }
+
+  .deadline {
+    gap: 6px;
+  }
+
+  .deadline > svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .deadline time {
+    gap: 2px;
+  }
+
+  .closed {
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+
+  .tab[data-collapsed] {
+    width: 52px;
+    padding: 4px;
+    border-radius: 15px;
+  }
+
+  .tab[data-collapsed] .body {
+    padding-block: 6px 8px;
+  }
+
+  .tab[data-collapsed] .footer {
+    padding-top: 4px;
+  }
+
+  .compactIcon {
+    margin-bottom: 5px;
+  }
+
+  .compactValue {
+    font-size: 18px;
+  }
+
+  .compactValue i,
+  .tab[data-collapsed] .closed {
+    font-size: 9px;
+  }
+}
+
+@keyframes tick {
+  from { opacity: 0.4; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .digitValue {
+    animation: none;
+  }
+
+  .tab,
+  .grip,
+  .toggle {
+    transition: none;
+  }
+}

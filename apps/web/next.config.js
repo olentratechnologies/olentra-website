@@ -3,7 +3,9 @@ const path = require('node:path');
 const repoRoot = path.join(__dirname, '../..');
 // The website reads, and the company workspace (apps/admin) writes, one shared
 // feature-switch file. Both apps default to the same repository-level path.
-process.env.OLENTRA_FEATURE_STORE_PATH ||= path.join(repoRoot, '.data', 'site-features.json');
+if (process.env.NODE_ENV !== 'production') {
+  process.env.OLENTRA_FEATURE_STORE_PATH ||= path.join(repoRoot, '.data', 'site-features.json');
+}
 const adminUrl = (process.env.OLENTRA_ADMIN_URL || 'http://localhost:3002').replace(/\/$/, '');
 
 /** @type {import('next').NextConfig} */

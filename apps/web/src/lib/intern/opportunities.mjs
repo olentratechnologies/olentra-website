@@ -1,0 +1,2 @@
+// The same public catalog is bundled into the backend and the website.
+export { INTERN_ROLES, INTERN_SCHEDULES, INTERNSHIP_OPPORTUNITIES, DEFAULT_INTERNSHIP_DURATION, MAX_DURATION_LENGTH, isInternRole, isInternSchedule, internRoleLabel, internScheduleLabel, isInternshipDuration, normalizeInternshipDuration, applicationDurationLabel } from "../../../../../backend/realtime-server/src/modules/programs/opportunities.mjs";

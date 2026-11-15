@@ -40,9 +40,12 @@ export const SECTION_CATALOG = [
   { page: "Blog page", id: "blogPage.list", label: "Articles list", requires: "blog" },
   { page: "Careers (internships)", id: "careers.hero", label: "Hero", requires: "internships" },
   { page: "Careers (internships)", id: "careers.tracks", label: "Internship tracks", requires: "internships" },
+  { page: "Careers (internships)", id: "careers.roles", label: "Intern roles", requires: "internships" },
+  { page: "Careers (internships)", id: "careers.prerequisites", label: "Prerequisites", requires: "internships" },
   { page: "Careers (internships)", id: "careers.insights", label: "Live internship insights", requires: "internships" },
   { page: "Careers (internships)", id: "careers.stories", label: "Success stories", requires: "internships" },
   { page: "Careers (internships)", id: "careers.why", label: "Why choose Olentra", requires: "internships" },
+  { page: "Careers (internships)", id: "careers.faq", label: "FAQ", requires: "internships" },
   { page: "Every page", id: "footer", label: "Footer", children: [
     { id: "footer.services", label: "Services column", requires: "services" },
     { id: "footer.links", label: "Quick links column" },

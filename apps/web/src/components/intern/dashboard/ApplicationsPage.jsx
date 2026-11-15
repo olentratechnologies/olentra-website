@@ -45,6 +45,7 @@ import {
 import common from "./pages.module.css";
 import styles from "./applicant.module.css";
 import ApplicationsBoard from "./ApplicationsBoard";
+import { internRoleLabel, internScheduleLabel } from "@/lib/intern/opportunities.mjs";
 
 const STATUSES = [
   "Applied",
@@ -635,6 +636,8 @@ export default function ApplicationsPage() {
                     </td>
                     <td>
                       <TrackBadge programId={application.programId} />
+                      <div className={styles.applicationPreference}>{internRoleLabel(application.roleId)}</div>
+                      <small>{internScheduleLabel(application.schedule)}</small>
                     </td>
                     <td className={styles.collegeCell}>
                       {application.college || "Not provided"}

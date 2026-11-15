@@ -33,7 +33,7 @@ afterAll(async () => {
 async function apply(email: string, key: string) {
   const fileId = `FILE-${randomUUID()}`, fileToken = randomUUID();
   await domain.collection("files").insertOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
-  return domain.execute("application.submit", { name: "Outbox Candidate", email, linkedin: "https://www.linkedin.com/in/outbox-candidate", programId: "explorer", resumeAttachmentId: fileId, resumeAccessToken: fileToken }, null, key);
+  return domain.execute("application.submit", { name: "Outbox Candidate", email, linkedin: "https://www.linkedin.com/in/outbox-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: fileId, resumeAccessToken: fileToken }, null, key);
 }
 const rowsFor = (to: string) => domain.collection("outbox").find({ "payload.to": to }).toArray();
 
@@ -81,8 +81,8 @@ test("failed sends are retried with backoff and marked failed after the last att
 test("a second application with the same LinkedIn profile is flagged on both records", async () => {
   const first = `dup-a-${randomUUID()}@example.test`, second = `dup-b-${randomUUID()}@example.test`;
   const fileFor = async () => { const fileId = `FILE-${randomUUID()}`, fileToken = randomUUID(); await domain.collection("files").insertOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken) }); return { resumeAttachmentId: fileId, resumeAccessToken: fileToken }; };
-  await domain.execute("application.submit", { name: "Dup One", email: first, linkedin: "https://www.linkedin.com/in/Same-Person/", programId: "explorer", ...(await fileFor()) }, null, `dup-one-${randomUUID().slice(0, 8)}`);
-  await domain.execute("application.submit", { name: "Dup Two", email: second, linkedin: "https://linkedin.com/in/same-person?utm=x", programId: "explorer", ...(await fileFor()) }, null, `dup-two-${randomUUID().slice(0, 8)}`);
+  await domain.execute("application.submit", { name: "Dup One", email: first, linkedin: "https://www.linkedin.com/in/Same-Person/", programId: "explorer", roleId: "build", schedule: "part_time", ...(await fileFor()) }, null, `dup-one-${randomUUID().slice(0, 8)}`);
+  await domain.execute("application.submit", { name: "Dup Two", email: second, linkedin: "https://linkedin.com/in/same-person?utm=x", programId: "explorer", roleId: "build", schedule: "part_time", ...(await fileFor()) }, null, `dup-two-${randomUUID().slice(0, 8)}`);
   const a = await domain.collection("applications").findOne({ email: first }), b = await domain.collection("applications").findOne({ email: second });
   expect(b?.possibleDuplicates).toEqual([a?._id]);
   expect(a?.possibleDuplicates).toEqual([b?._id]);

@@ -78,7 +78,7 @@ test("login, streaming resume, application, registration, live status and refres
   const file = await fetch(base + "/intern/files", { method: "POST", headers: { origin, "content-type": "application/pdf", "x-file-name": "resume.pdf", "x-file-kind": "resume" }, body: "%PDF-1.4 test resume" });
   expect(file.status).toBe(200); const uploaded = (await file.json() as any).data;
   const applicant = await socket();
-  await applicant.request("application.submit", { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "submit-application-test-01");
+  await applicant.request("application.submit", { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "submit-application-test-01");
   const application = { id: String((await domain.collection("applications").findOne({ email: "applicant@example.test" }))!._id) };
   const linked = await domain.autoProvisionAccount(application.id, "applicant@example.test");
   await domain.changePassword(linked.id, "", "ApplicantPassword2026!");
@@ -169,7 +169,7 @@ test("anonymous careers page receives live aggregate insights without applicant 
   const file = await fetch(base + "/intern/files", { method: "POST", headers: { origin, "content-type": "application/pdf", "x-file-name": "resume.pdf", "x-file-kind": "resume" }, body: "%PDF-1.4 insights resume" });
   const uploaded = (await file.json() as any).data;
   const applicant = await socket();
-  await applicant.request("application.submit", { name: "Insights Applicant", email: "insights-applicant@example.test", linkedin: "https://www.linkedin.com/in/insights-applicant", videoUrl: "https://youtu.be/aqz-KE-bpKQ", programId: "explorer", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "insights-application-0001");
+  await applicant.request("application.submit", { name: "Insights Applicant", email: "insights-applicant@example.test", linkedin: "https://www.linkedin.com/in/insights-applicant", videoUrl: "https://youtu.be/aqz-KE-bpKQ", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "insights-application-0001");
   expect((await domain.collection("applications").findOne({ email: "insights-applicant@example.test" }))?.hasVideo).toBe(true);
   const deadline = Date.now() + 15000;
   while (!pushes.some(frame => frame.event === "intern.insights" && frame.data.totals.applied === before + 1) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));

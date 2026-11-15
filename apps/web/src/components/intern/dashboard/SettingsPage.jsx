@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Check, Layers, Save, Settings2, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { Bell, CalendarClock, Check, Layers, Save, Settings2, ShieldCheck, Sparkles, X, Zap } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { Button, PageHeader, Panel, Tabs } from "./DashboardUI";
 import { isProgramAvailable, normalizeCompensationMode } from "@/lib/intern/program-availability.mjs";
@@ -9,6 +9,33 @@ import ui from "./pages.module.css";
 import styles from "./settings.module.css";
 import TemplatesSettings from "./TemplatesSettings";
 import ResourcesSettings from "./ResourcesSettings";
+import { deadlineTime, formatDeadline, fromLocalInputValue, timeRemaining, toLocalInputValue } from "@/lib/intern/application-deadline.mjs";
+import { DEFAULT_INTERNSHIP_DURATION, isInternshipDuration, MAX_DURATION_LENGTH } from "@/lib/intern/opportunities.mjs";
+
+const DEADLINE_PRESETS = [
+  { label: "+7 days", days: 7 },
+  { label: "+14 days", days: 14 },
+  { label: "+30 days", days: 30 },
+  { label: "End of month", endOfMonth: true },
+];
+
+/** The local datetime-input value for a preset, ending at 11:59 PM on that day. */
+function presetValue(preset) {
+  const date = new Date();
+  if (preset.endOfMonth) date.setMonth(date.getMonth() + 1, 0);
+  else date.setDate(date.getDate() + preset.days);
+  date.setHours(23, 59, 0, 0);
+  return toLocalInputValue(date.toISOString());
+}
+
+function deadlineSummary(value, savedIso) {
+  const iso = fromLocalInputValue(value);
+  if (!iso) return { tone: "idle", text: "No deadline set. The careers page shows no countdown and applications stay open while the program is enabled." };
+  const time = deadlineTime(iso), left = timeRemaining(time);
+  if (left.total <= 0) return { tone: "error", text: iso === savedIso ? `Applications closed ${formatDeadline(time)}. Set a new date to reopen intake.` : "Choose a date and time in the future." };
+  const parts = left.days ? `${left.days} day${left.days === 1 ? "" : "s"}, ${left.hours} hr` : `${left.hours} hr ${left.minutes} min`;
+  return { tone: "ok", text: `Closes ${formatDeadline(time)} — ${parts} from now. Applicants see this in their own time zone.` };
+}
 
 const compensationOptions = [
   { value: "free", label: "Free / unpaid", description: "Only tracks with no stipend." },
@@ -66,6 +93,7 @@ export default function SettingsPage() {
   const [tab, setTab] = useState("general");
   const [batch, setBatch] = useState(data.settings.defaultBatch || "");
   const [name, setName] = useState(data.settings.programName || "Olentra Internship Program");
+  const [duration, setDuration] = useState(data.settings.duration || DEFAULT_INTERNSHIP_DURATION);
   const [programEnabled, setProgramEnabled] = useState(Boolean(data.settings.programEnabled));
   const [compensationMode, setCompensationMode] = useState(normalizeCompensationMode(data.settings.compensationMode));
   const [applicationAlerts, setApplicationAlerts] = useState(data.settings.applicationAlerts !== false);
@@ -75,17 +103,23 @@ export default function SettingsPage() {
   const [retentionDays, setRetentionDays] = useState(data.settings.retentionDays ?? null);
   const [rubric, setRubric] = useState(() => data.settings.rubric || DEFAULT_RUBRIC);
   const [checklist, setChecklist] = useState(() => data.settings.onboardingDocuments || []);
+  const [deadline, setDeadline] = useState(() => toLocalInputValue(data.settings.applicationDeadline));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
-  useEffect(() => { setBatch(data.settings.defaultBatch || ""); setName(data.settings.programName || "Olentra Internship Program"); setProgramEnabled(Boolean(data.settings.programEnabled)); setCompensationMode(normalizeCompensationMode(data.settings.compensationMode)); setApplicationAlerts(data.settings.applicationAlerts !== false); setRejectionEmails(data.settings.rejectionEmails === true); setWeeklyDigest(data.settings.weeklyDigest === true); setReviewReminder(data.settings.reviewReminder === true); setRetentionDays(data.settings.retentionDays ?? null); setRubric(data.settings.rubric || DEFAULT_RUBRIC); setChecklist(data.settings.onboardingDocuments || []); }, [data.settings.weeklyDigest, data.settings.reviewReminder, data.settings.onboardingDocuments, data.settings.rubric, data.settings.retentionDays, data.settings.defaultBatch, data.settings.programName, data.settings.programEnabled, data.settings.compensationMode, data.settings.applicationAlerts, data.settings.rejectionEmails]);
+  useEffect(() => { setBatch(data.settings.defaultBatch || ""); setName(data.settings.programName || "Olentra Internship Program"); setDuration(data.settings.duration || DEFAULT_INTERNSHIP_DURATION); setProgramEnabled(Boolean(data.settings.programEnabled)); setCompensationMode(normalizeCompensationMode(data.settings.compensationMode)); setApplicationAlerts(data.settings.applicationAlerts !== false); setRejectionEmails(data.settings.rejectionEmails === true); setWeeklyDigest(data.settings.weeklyDigest === true); setReviewReminder(data.settings.reviewReminder === true); setRetentionDays(data.settings.retentionDays ?? null); setRubric(data.settings.rubric || DEFAULT_RUBRIC); setChecklist(data.settings.onboardingDocuments || []); setDeadline(toLocalInputValue(data.settings.applicationDeadline)); }, [data.settings.applicationDeadline, data.settings.duration, data.settings.weeklyDigest, data.settings.reviewReminder, data.settings.onboardingDocuments, data.settings.rubric, data.settings.retentionDays, data.settings.defaultBatch, data.settings.programName, data.settings.programEnabled, data.settings.compensationMode, data.settings.applicationAlerts, data.settings.rejectionEmails]);
   const availableTracks = data.programs.filter(program => isProgramAvailable(program, { programEnabled: true, compensationMode }));
   async function save(event) {
     event.preventDefault();
     if (tab === "general" && !name.trim()) { setError("Enter a program name."); return; }
+    if (tab === "general" && !isInternshipDuration(duration)) { setError(`Enter an internship duration of 1-${MAX_DURATION_LENGTH} characters.`); return; }
+    const deadlineIso = fromLocalInputValue(deadline);
+    const deadlineChanged = deadlineIso !== (deadlineTime(data.settings.applicationDeadline) === null ? null : new Date(deadlineTime(data.settings.applicationDeadline)).toISOString());
+    if (tab === "general" && deadline && !deadlineIso) { setError("Enter a valid application deadline."); return; }
+    if (tab === "general" && deadlineChanged && deadlineIso && Date.parse(deadlineIso) <= Date.now()) { setError("Choose an application deadline in the future."); return; }
     setBusy(true); setError("");
     try {
-      const result = await updateSettings(tab === "notifications" ? { applicationAlerts, rejectionEmails, weeklyDigest, reviewReminder } : { programName: name.trim(), defaultBatch: batch.trim(), programEnabled, compensationMode, retentionDays, rubric: rubric.filter(criterion => criterion.label.trim()), onboardingDocuments: checklist.filter(item => item.label.trim()) });
+      const result = await updateSettings(tab === "notifications" ? { applicationAlerts, rejectionEmails, weeklyDigest, reviewReminder } : { programName: name.trim(), defaultBatch: batch.trim(), duration: duration.trim(), programEnabled, compensationMode, retentionDays, rubric: rubric.filter(criterion => criterion.label.trim()), onboardingDocuments: checklist.filter(item => item.label.trim()), ...(deadlineChanged ? { applicationDeadline: deadlineIso } : {}) });
       if (result !== false) { setSaved(true); notify("Program settings saved."); }
     } finally { setBusy(false); }
   }
@@ -106,6 +140,19 @@ export default function SettingsPage() {
         </div>
         <p id="compensation-availability" className={styles.availability} role="status">{availableTracks.length ? `${availableTracks.length} enabled ${availableTracks.length === 1 ? "track matches" : "tracks match"} this selection.${programEnabled ? "" : " Enable the program to open applications."}` : "No enabled tracks match this selection. Set the stipend and enable a matching track in Tracks."}</p>
       </fieldset>
+      <div className={styles.divider}/>
+      <section className={styles.deadlineBlock} aria-labelledby="deadline-heading">
+        <div className={styles.deadlineHead}><span><CalendarClock size={18}/></span><div><h3 id="deadline-heading" className={styles.subheading}>Application deadline</h3><p className={styles.helper}>Shown as a live countdown on the public careers page. New applications close automatically at this time.</p></div></div>
+        <div className={styles.deadlineControls}>
+          <label className={ui.field}>Closes on (your local time)<input type="datetime-local" value={deadline} onChange={event => edit(setDeadline, event.target.value)}/></label>
+          <div className={styles.deadlinePresets} role="group" aria-label="Quick deadline presets">
+            {DEADLINE_PRESETS.map(preset => <button type="button" key={preset.label} className={styles.presetChip} onClick={() => edit(setDeadline, presetValue(preset))}>{preset.label}</button>)}
+            {deadline && <button type="button" className={`${styles.presetChip} ${styles.presetClear}`} onClick={() => edit(setDeadline, "")}><X size={13}/> Remove deadline</button>}
+          </div>
+        </div>
+        {(() => { const summary = deadlineSummary(deadline, data.settings.applicationDeadline); return <p className={styles.deadlineStatus} data-tone={summary.tone} role="status">{summary.text}</p>; })()}
+      </section>
+      <div className={styles.divider}/><h3 className={styles.subheading}>Internship duration</h3><p className={styles.helper}>Shown on the public internship page and saved with each new application. Existing applications keep their original duration.</p><label className={ui.field}>Duration<input value={duration} maxLength={MAX_DURATION_LENGTH} onChange={event => edit(setDuration, event.target.value)} required aria-describedby="duration-hint"/></label><p className={styles.helper} id="duration-hint">Enter any duration description, such as “2 months” or “8–12 weeks” (up to {MAX_DURATION_LENGTH} characters).</p>
       <div className={styles.divider}/><h3 className={styles.subheading}>Workspace details</h3><div className={ui.formGrid}><label className={ui.field}>Program name<input value={name} maxLength={100} onChange={event => edit(setName, event.target.value)}/></label><label className={ui.field}>Default batch (optional)<input value={batch} maxLength={40} onChange={event => edit(setBatch, event.target.value)}/></label></div>
       <div className={styles.divider}/><h3 className={styles.subheading}>Scoring criteria</h3>
       <p className={styles.helper}>Reviewers score each applicant 0–5 on these. A higher weight counts for more in the average.</p>

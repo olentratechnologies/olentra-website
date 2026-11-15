@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { MongoClientBulkWriteError, MongoServerError, type ClientBulkWriteModel, type ClientSession, type Collection, type Document } from "mongodb";
 import { validateRubric } from "../reviews/reviews.service";
 import { validateChecklist } from "../onboarding/documents";
+import { parseDeadlinePatch } from "../programs/deadline";
+import { isInternshipDuration, MAX_DURATION_LENGTH } from "../programs/opportunities.mjs";
 import { DomainError } from "../../shared/errors";
 import type { Principal } from "../../shared/principal";
 import { can, isAdmin } from "../access/policy";
@@ -263,6 +265,10 @@ export function createCommunications({ collection, transact }: Options) {
       const account = staff(actor), patch = params.patch;
       if (!patch || typeof patch !== "object" || Array.isArray(patch)) throw new DomainError("INVALID_REQUEST", "Provide valid settings.");
       const values: Document = {};
+      if (patch.duration !== undefined) {
+        if (!isInternshipDuration(patch.duration)) throw new DomainError("INVALID_REQUEST", `Enter an internship duration of 1–${MAX_DURATION_LENGTH} characters on one line.`);
+        values.duration = patch.duration.trim();
+      }
       if (patch.compensationMode !== undefined) {
         if (!isCompensationMode(patch.compensationMode)) throw new DomainError("INVALID_REQUEST", "Choose free, paid, or both internship types.");
         values.compensationMode = patch.compensationMode;
@@ -277,6 +283,7 @@ export function createCommunications({ collection, transact }: Options) {
         if (days !== null && (!Number.isSafeInteger(days) || days < 30 || days > 3650)) throw new DomainError("INVALID_REQUEST", "Keep data for between 30 and 3,650 days, or turn automatic deletion off.");
         values.retentionDays = days;
       }
+      if (patch.applicationDeadline !== undefined) values.applicationDeadline = parseDeadlinePatch(patch.applicationDeadline);
       if (patch.maxStipend !== undefined) { const amount = Number(patch.maxStipend); if (!Number.isSafeInteger(amount) || amount < 0 || amount > 1000000) throw new DomainError("INVALID_REQUEST", "Enter a valid stipend."); values.maxStipend = amount; }
       if (patch.emailNotifications === true || (patch.integrations && Object.values(patch.integrations).some(Boolean))) throw new DomainError("UNAVAILABLE", "Email notifications and external integrations are not configured.");
       return transact(key, account, { method, params }, async session => {

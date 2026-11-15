@@ -1,0 +1,217 @@
+/* Shared by the Intern roles and Prerequisites sections of the careers page.
+   Role-specific layout lives in intern-roles.module.css. */
+.section {
+  margin-top: 80px;
+  color: var(--ink, #080e48);
+}
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 680px;
+}
+.eyebrow {
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: #003bc9;
+  background: #c1d5ffb3;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.header h2 {
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 750;
+  letter-spacing: -1px;
+  text-wrap: balance;
+}
+.header p {
+  color: var(--muted, #46567c);
+  font-size: 15px;
+  line-height: 25px;
+  text-wrap: pretty;
+}
+
+/* Role accents */
+.roleSkill[data-role="build"] {
+  --accent: #0045f8;
+  --accent-soft: #e3ecff;
+  --accent-line: #b9cdfb;
+}
+.roleSkill[data-role="automate"] {
+  --accent: #7425f5;
+  --accent-soft: #efe6ff;
+  --accent-line: #d4c0fb;
+}
+.roleSkill[data-role="grow"] {
+  --accent: #0b8a6a;
+  --accent-soft: #dcf5ec;
+  --accent-line: #a9e2cf;
+}
+
+.roleTag {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Prerequisites */
+.subheading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 32px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.subheading small {
+  color: #5b6b82;
+  font-size: 13px;
+  font-weight: 500;
+}
+.essentials {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.essential {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #d3e1fb;
+  border-radius: 20px;
+  background: #ffffffb3;
+  box-shadow: 0 1px 2px #0a2a8a0d;
+}
+.essentialIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  color: #0045f8;
+  background: #e3ecff;
+}
+.essential strong {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.essential > span:last-child {
+  color: #46567c;
+  font-size: 13px;
+  line-height: 20px;
+  text-wrap: pretty;
+}
+.roleSkills {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+.roleSkill {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 20px 22px;
+  border: 1px solid #d3e1fb;
+  border-left: 4px solid var(--accent);
+  border-radius: 18px;
+  background: #ffffffb3;
+}
+.roleSkill strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+.roleSkill ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.roleSkill li {
+  position: relative;
+  padding-left: 16px;
+  color: #33436a;
+  font-size: 13.5px;
+  line-height: 20px;
+}
+.roleSkill li::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+@media (max-width: 1199px) {
+  .essentials {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1023px) {
+  .roleSkills {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 767px) {
+  .section {
+    margin-top: 56px;
+  }
+  .header h2 {
+    font-size: 27px;
+  }
+  .header p {
+    font-size: 14px;
+    line-height: 23px;
+  }
+  .essentials {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .essential {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 14px;
+    row-gap: 2px;
+    padding: 16px;
+  }
+  .essentialIcon {
+    grid-row: span 2;
+    margin-bottom: 0;
+  }
+}
+/* Tablet: five essentials as 3 + 2, with the last two filling the row. */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .essentials {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .essential {
+    grid-column: span 2;
+  }
+  .essential:nth-child(4),
+  .essential:nth-child(5) {
+    grid-column: span 3;
+  }
+}

@@ -369,6 +369,7 @@ export default function Navbar() {
   const showInternLogin = ready && features.portal;
   const showInternApply = ready && features.internships && features.applications;
   const isInternPage = pathname === "/careers/intern" || pathname === "/intern/login";
+  const isInternLanding = pathname === "/careers/intern";
   const hasInternDock = pathname === "/careers/intern";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
@@ -469,6 +470,10 @@ export default function Navbar() {
     let sampleY = 0;
 
     const updateTheme = () => {
+      if (isInternLanding) {
+        setIsLightSection(true);
+        return;
+      }
       let currentSection;
       for (const target of targets) {
         const bounds = target.getBoundingClientRect();

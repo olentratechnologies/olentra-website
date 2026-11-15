@@ -4,6 +4,16 @@ import { createInternshipMailer } from "../../src/infrastructure/email/mailer";
 
 const hostile = `<img src=x onerror=alert(1)>`;
 
+test("missing production email configuration cannot acknowledge delivery", async () => {
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+  try {
+    const result = await createInternshipMailer("").sendMagicLink({ to: "a@example.test", magicLinkUrl: "https://example.test/verify" });
+    assert.equal(result.ok, false);
+    assert.equal(result.delivered, false);
+  } finally { if (previous === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previous; }
+});
+
 async function capture(send: (mailer: ReturnType<typeof createInternshipMailer>) => Promise<unknown>) {
   const originalFetch = globalThis.fetch;
   const requests: Record<string, unknown>[] = [];

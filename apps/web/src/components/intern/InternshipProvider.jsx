@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { InternClient, internAuth, refreshInternSession, forgetInternToken, internLogoutPending } from "@/lib/intern-client.mjs";
+import { InternClient, internAuth, refreshInternSession, forgetInternToken, internLogoutPending, internCommandFailure } from "@/lib/intern-client.mjs";
 import { createSnapshotRefresh } from "@/lib/intern-snapshot-refresh.mjs";
 import { prepareInternSession } from "@/lib/intern-session-startup.mjs";
 import { createInternQueryCache } from "@/lib/intern-query-cache.mjs";
@@ -19,7 +19,7 @@ const navigation = [{ id:"dashboard",label:"Dashboard",icon:"home" },{ id:"appli
 const dateRanges = [{id:"all",label:"All time",chartPeriod:"1Y"}];
 const chart = { periods: ["30D","7D","3M","1Y"].map(id => ({ id, label:id, growth:0, comparison:"", maxValue:1, points:[{label:"",explorer:0,innovator:0},{label:"",explorer:0,innovator:0}] })) };
 const emptyMy = { application:null, intern:null, offer:null, interview:null, onboarding:{status:"Not started",acknowledged:false}, projects:[],tasks:[],submissions:[],certificates:[],messages:[],notifications:[],resources:[] };
-const blank = { organization:{name:"Olentra",legalName:"Olentra Technologies Pvt. Ltd.",website:"/"}, user:{name:"",firstName:"",initials:"",email:"",role:""}, navigation, dateRanges, chart, quickActions:[], insights:[], programs:[], settings:{programEnabled:false,compensationMode:"both",explorerEnabled:false,innovatorEnabled:false,programName:"Olentra Internship Program",defaultBatch:"",maxStipend:0,rejectionEmails:false,integrations:{}}, applications:[],interns:[],projects:[],tasks:[],submissions:[],offers:[],onboarding:[],certificates:[],interviews:[],messages:[],notifications:[],resources:[],activity:[],metrics:[],analytics:{months:[],previousMonths:[],skills:[]} };
+const blank = { organization:{name:"Olentra",legalName:"Olentra Technologies Pvt. Ltd.",website:"/"}, user:{name:"",firstName:"",initials:"",email:"",role:""}, navigation, dateRanges, chart, quickActions:[], insights:[], programs:[], settings:{programEnabled:false,compensationMode:"both",explorerEnabled:false,innovatorEnabled:false,programName:"Olentra Internship Program",defaultBatch:"",maxStipend:0,rejectionEmails:false,integrations:{},applicationDeadline:null}, applications:[],interns:[],projects:[],tasks:[],submissions:[],offers:[],onboarding:[],certificates:[],interviews:[],messages:[],notifications:[],resources:[],activity:[],metrics:[],analytics:{months:[],previousMonths:[],skills:[]} };
 function mergeApplicationWorkflow(data, applicationId, workflow) {
   const next = { ...data };
   for (const [collection, key] of [["offers", "offer"], ["onboarding", "onboarding"], ["interns", "intern"]]) {
@@ -113,7 +113,7 @@ export function InternshipProvider({ children }) {
         } else await invalidateSnapshot();
       }
       return {ok:true,data};
-    } catch(error) { return {ok:false,error:error?.message || "The internship service is unavailable. Please try again."}; }
+    } catch(error) { return internCommandFailure(error); }
   },[invalidateSnapshot]);
   const queryScope = internQueryScope(snapshot.account);
   const queryCache = useMemo(() => {

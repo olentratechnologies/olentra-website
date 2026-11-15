@@ -39,6 +39,18 @@ The previous `NEXT_PUBLIC_INTERN_BACKEND_URL` and `INTERN_*` names remain
 deprecated fallbacks for one compatibility cycle. Canonical names take
 precedence, and using a deprecated name emits a clear warning.
 
+The public catalog is shared with the website from
+`backend/realtime-server/src/modules/programs/opportunities.mjs` and included as
+`opportunities` in public and authenticated snapshots. New `application.submit`
+commands require `roleId` (`build`, `automate`, or `grow`) and `schedule`
+(`part_time` or `full_time`) separately from `programId`. The service stamps
+`workMode: "remote"` and the configured duration; client values cannot override
+these terms. Administrators can edit the duration as free text in General
+settings, up to 120 characters. New applications keep the duration that was
+active when they applied, while historical applications retain their original
+data and display “Not provided” for missing choices. The choices appear in the
+live internship dashboard, candidate portal and application CSV exports.
+
 The service initializes only the two named programs and keeps them closed with
 no fees or stipends configured. Staff must set the real amounts and enable the
 tracks in `/intern/dashboard/settings` before applicants can submit. Website
@@ -76,20 +88,21 @@ editing its role's permissions signs affected staff out. Staff changes are
 recorded in the internship audit log, and the last active admin cannot be
 disabled or demoted.
 
-These `read` commands use the default macOS zsh shell. Create a test intern by
-submitting a new test application and registering in the same browser tab. The
-claim is short-lived and can be used only once. If the claim is lost or expires,
-an admin can explicitly create an account for that applicant from the applicant's
-page after verifying their identity. There is no OTP or external email delivery.
-For a forgotten intern password, an admin can set a new password from the
-applicant's page; this invalidates that account's existing sessions. Staff-set
-passwords do not expire automatically and there is no self-service password
-change yet, so staff must reset them when a replacement is needed.
+These `read` commands use the default macOS zsh shell. Applicants receive a
+single-use email link after applying; opening it verifies ownership of the
+email and provisions their candidate account. They can set a password from the
+portal and request sign-in or password-reset links from the login page.
+Application confirmation emails use a transactional outbox with retries.
+Configure `RESEND_API_KEY` and the verified sender for delivery. Missing email
+configuration returns a delivery failure in production, allowing the outbox to
+retry; development-only offline emails are logged. An admin can also create an
+account or reset an intern's password after verifying their identity; resetting
+the password invalidates existing sessions.
 
 ## Workflow
 
-1. The applicant submits the application and resume, creates an account, and
-   follows their status in the intern portal.
+1. The applicant submits their track, role, schedule and resume, opens the
+   confirmation email's sign-in link, and follows their status in the portal.
 2. An admin selects the applicant and sends an offer. The applicant accepts it and
    submits their onboarding details. An admin approves onboarding, making them an
    active intern.
@@ -97,8 +110,17 @@ change yet, so staff must reset them when a replacement is needed.
    work; authorized staff can request changes, and an admin approves the latest version.
 4. An admin completes the internship after required tasks are approved and issues
    the certificate. The certificate is created once and appears in the portal.
-5. Each side can use in-app messages and notifications. External delivery and
-   third-party integrations are not configured.
+5. Each side can use in-app messages and notifications. Configured email
+   delivery sends sign-in links and workflow notices; unrelated third-party
+   integrations remain unavailable.
+
+Staff review real applications at `/intern/dashboard`. The separate company
+workspace's `/dashboard/careers` sample screens do not manage these records;
+its “Open live internship dashboard” action links to the real workflow.
+
+Production website feature controls use the realtime service's shared store
+when a backend URL is configured. Development defaults to the shared local
+file; an explicit `OLENTRA_FEATURE_STORE_PATH` override is preserved.
 
 Attachments are streamed through the internship service's small HTTP file
 endpoints to GridFS. Internship commands use WebSockets. Session-cookie
@@ -145,7 +167,10 @@ Internship integration tests and benchmarks require the explicitly isolated
 deprecated fallback). They create unique, prefixed test collections and remove
 only those collections; they never fall back to the runtime database URI. Use
 a dedicated test database and do not run them against production data. The
-benchmark creates synthetic applications and reports latency and process RSS;
+`internship:test` command fails when that isolated URI is absent. The realtime
+deployment workflow provisions a disposable replica set and must pass the full
+integration suite before deployment. Tests use mocked or offline email delivery.
+The benchmark creates synthetic applications and reports latency and process RSS;
 it is a small baseline, not an enterprise capacity guarantee. The latency
 benchmark uses a separate isolated database prefix and a local ephemeral
 service to measure sign-in, WebSocket authentication, snapshot load, and

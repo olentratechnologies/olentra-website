@@ -20,6 +20,8 @@ const REFRESH_ATTEMPT_KEY = "olentra_intern_refresh_attempt_v1";
 const LOGOUT_PENDING_KEY = "olentra_intern_logout_pending_v1";
 const uncertainError = error => !error?.code || ["SERVICE_UNAVAILABLE", "INTERNAL", "UNAUTHENTICATED"].includes(error.code);
 const apiError = (error) => Object.assign(new Error(error?.message || "The internship service is unavailable. Please try again."), { code: error?.code });
+// Keep the message compatible with existing views while retaining the RPC code.
+export const internCommandFailure = error => ({ ok: false, error: error?.message || "The internship service is unavailable. Please try again.", errorCode: error?.code || "SERVICE_UNAVAILABLE" });
 function sessionContext() {
   if (context) return context;
   try {

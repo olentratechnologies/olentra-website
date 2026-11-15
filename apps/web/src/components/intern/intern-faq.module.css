@@ -1,0 +1,248 @@
+.faq {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  align-items: start;
+  gap: 56px;
+  margin-top: 80px;
+}
+
+/* Intro column stays in view while the questions scroll past on desktop. */
+.intro {
+  position: sticky;
+  top: 112px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.eyebrow {
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: #003bc9;
+  background: #c1d5ffb3;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.intro h2 {
+  color: var(--ink, #080e48);
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 750;
+  letter-spacing: -1px;
+  text-wrap: balance;
+}
+.intro > p {
+  color: var(--muted, #46567c);
+  font-size: 15px;
+  line-height: 25px;
+  text-wrap: pretty;
+}
+
+.contact {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid #c9dafa;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffffffd9, #eef4ffcc);
+  box-shadow: 0 10px 24px #7397ce1f, inset 0 1px 0 #ffffff;
+}
+.contactIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(180deg, #0879ff, #0045f7);
+  box-shadow: 0 4px 10px #0054e833;
+}
+.contact > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.contact strong {
+  color: var(--ink, #080e48);
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.contact > div > span {
+  color: var(--muted, #46567c);
+  font-size: 13px;
+  line-height: 20px;
+}
+.contact a {
+  margin-top: 4px;
+  color: #0045f8;
+  font-size: 13.5px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.contact a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  border: 1px solid #d3e1fb;
+  border-radius: 18px;
+  background: #ffffffa6;
+  box-shadow: 0 1px 2px #0a2a8a0d;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.item:hover {
+  border-color: #b5cbf7;
+}
+.item[data-open] {
+  border-color: #a9c2f7;
+  background: #ffffffe6;
+  box-shadow: 0 14px 30px -16px #0a2a8a40, 0 1px 2px #0a2a8a0d;
+}
+.itemHeading {
+  margin: 0;
+}
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 18px 20px;
+  border: 0;
+  background: transparent;
+  color: var(--ink, #080e48);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.trigger:focus-visible {
+  outline: 3px solid #0064ed;
+  outline-offset: 2px;
+  border-radius: 18px;
+}
+.number {
+  flex-shrink: 0;
+  width: 26px;
+  color: #8ea2c9;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s;
+}
+.item[data-open] .number {
+  color: #0045f8;
+}
+.question {
+  flex: 1;
+  min-width: 0;
+  font-size: 15.5px;
+  line-height: 23px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d3e1fb;
+  border-radius: 50%;
+  color: #0045f8;
+  background: #fff;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s, color 0.2s, border-color 0.2s;
+}
+.item[data-open] .icon {
+  transform: rotate(45deg);
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(180deg, #0879ff, #0045f7);
+}
+
+/* Height animates via grid rows, so no measuring is needed. */
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.item[data-open] .panel {
+  grid-template-rows: 1fr;
+}
+.panelInner {
+  min-height: 0;
+  overflow: hidden;
+}
+.panelInner p {
+  padding: 0 64px 20px 62px;
+  color: #33436a;
+  font-size: 14.5px;
+  line-height: 24px;
+  text-wrap: pretty;
+}
+
+@media (max-width: 1023px) {
+  .faq {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .intro {
+    position: static;
+  }
+  .contact {
+    max-width: 480px;
+  }
+}
+
+@media (max-width: 767px) {
+  .faq {
+    margin-top: 56px;
+  }
+  .intro h2 {
+    font-size: 27px;
+  }
+  .intro > p {
+    font-size: 14px;
+    line-height: 23px;
+  }
+  .trigger {
+    gap: 12px;
+    padding: 16px;
+  }
+  .number {
+    display: none;
+  }
+  .question {
+    font-size: 14.5px;
+    line-height: 22px;
+  }
+  .icon {
+    width: 28px;
+    height: 28px;
+  }
+  .panelInner p {
+    padding: 0 16px 18px;
+    font-size: 14px;
+    line-height: 23px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .icon,
+  .item {
+    transition: none;
+  }
+}

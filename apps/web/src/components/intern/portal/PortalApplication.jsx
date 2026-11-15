@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useInternship } from "@/components/intern/InternshipProvider";
+import { applicationDurationLabel, internRoleLabel, internScheduleLabel } from "@/lib/intern/opportunities.mjs";
 import {
   Button,
   EmptyState,
@@ -166,6 +167,15 @@ export default function PortalApplication() {
             Application {application.id} · Applied{" "}
             {formatDate(application.appliedOn)}
           </small>
+        </div>
+      </Panel>
+      <Panel>
+        <h2>Internship details</h2>
+        <div className={styles.offerDetails}>
+          <div><span>Intern role</span><strong>{internRoleLabel(application.roleId)}</strong></div>
+          <div><span>Schedule</span><strong>{internScheduleLabel(application.schedule)}</strong></div>
+          <div><span>Work mode</span><strong>{application.workMode === "remote" ? "100% remote" : "Not provided"}</strong></div>
+          <div><span>Duration</span><strong>{applicationDurationLabel(application)}</strong></div>
         </div>
       </Panel>
       {offer && (

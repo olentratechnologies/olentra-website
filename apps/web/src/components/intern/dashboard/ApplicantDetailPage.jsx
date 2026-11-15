@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { useInternship } from "@/components/intern/InternshipProvider";
+import { applicationDurationLabel, internRoleLabel, internScheduleLabel } from "@/lib/intern/opportunities.mjs";
 import LoadingIndicator from "@olentra/ui/LoadingIndicator";
 import { hasStaffPermission } from "./staffAccess";
 import {
@@ -393,6 +394,10 @@ export default function ApplicantDetailPage({ applicationId }) {
     <Panel className={styles.detailsPanel}>
       <h2 className={styles.panelHeading}>Application Details</h2>
       <dl className={styles.detailsList}>
+        <div><dt>Intern role</dt><dd>{internRoleLabel(application.roleId)}</dd></div>
+        <div><dt>Schedule</dt><dd>{internScheduleLabel(application.schedule)}</dd></div>
+        <div><dt>Work mode</dt><dd>{application.workMode === "remote" ? "100% remote" : "Not provided"}</dd></div>
+        <div><dt>Duration</dt><dd>{applicationDurationLabel(application)}</dd></div>
         <div>
           <dt>Track</dt>
           <dd>

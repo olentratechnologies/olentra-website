@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { createInternshipDomain, type Principal } from "./domain";
 import { acceptsCompensationMode, isCompensationMode, normalizeCompensationMode } from "../../src/modules/programs/compensation";
+import { DEFAULT_INTERNSHIP_DURATION, applicationDurationLabel } from "../../src/modules/programs/opportunities.mjs";
 
 const admin: Principal = { id: "admin", role: "company", staffRole: "admin", name: "Admin", email: "admin@example.test", applicationId: null, sessionVersion: 1 };
 
@@ -89,7 +90,7 @@ test("application submission enforces free, paid and both against the current st
   ];
   for (const { mode, stipend, accepts } of cases) {
     const { domain, inserted } = fixture(mode, stipend);
-    const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
+    const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
     if (accepts) {
       expect(await request).toMatchObject({ received: true });
       const applications = inserted.filter(write => write.collection === "applications");
@@ -100,4 +101,34 @@ test("application submission enforces free, paid and both against the current st
       expect(inserted).toEqual([]);
     }
   }
+});
+
+test("admin duration changes update public data and new applications keep their submission snapshot", async () => {
+  const { domain, config, inserted } = fixture("both", 0);
+  expect((await domain.publicData()).settings.duration).toBe(DEFAULT_INTERNSHIP_DURATION);
+
+  await domain.execute("settings.update", { patch: { duration: "  8-10 weeks  " } }, admin, "duration-save-test");
+  expect(config.duration).toBe("8-10 weeks");
+  expect((await domain.publicData()).opportunities.duration).toBe("8-10 weeks");
+
+  await domain.execute("application.submit", {
+    name: "Test Candidate",
+    email: "duration@example.test",
+    linkedin: "https://www.linkedin.com/in/duration-candidate",
+    programId: "explorer",
+    roleId: "build",
+    schedule: "part_time",
+    duration: "client-value",
+    durationMonths: 99,
+    resumeAttachmentId: "resume",
+    resumeAccessToken: "test-file-token",
+  }, null, "duration-apply-test");
+  const application = inserted.find(write => write.collection === "applications")!.document;
+  expect(application.duration).toBe("8-10 weeks");
+  expect(applicationDurationLabel(application)).toBe("8-10 weeks");
+
+  await domain.execute("settings.update", { patch: { duration: "4-6 months" } }, admin, "duration-change-test");
+  expect((await domain.publicData()).settings.duration).toBe("4-6 months");
+  expect(application.duration).toBe("8-10 weeks");
+  expect(applicationDurationLabel({ durationMonths: 2 })).toBe("2 months");
 });

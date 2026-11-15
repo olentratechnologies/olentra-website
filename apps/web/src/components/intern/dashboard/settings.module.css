@@ -499,3 +499,92 @@
   color: var(--ad-text);
   white-space: nowrap;
 }
+
+/* Application deadline */
+.deadlineBlock {
+  display: grid;
+  gap: 14px;
+}
+.deadlineHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.deadlineHead > span {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--ad-blue-soft, #e5eeff);
+  color: var(--ad-blue, #2876ff);
+}
+.deadlineHead .subheading {
+  margin: 0 0 4px;
+}
+.deadlineHead .helper {
+  margin: 0;
+}
+.deadlineControls {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  align-items: end;
+  gap: 14px 18px;
+}
+.deadlinePresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 2px;
+}
+.presetChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 6px 13px;
+  border: 1px solid var(--ad-border, #c2d3f6);
+  border-radius: 999px;
+  background: var(--ad-panel, #f9fcff);
+  color: var(--ad-muted, #294478);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.presetChip:hover {
+  border-color: var(--ad-blue, #2876ff);
+  color: var(--ad-blue, #2876ff);
+  background: var(--ad-blue-soft, #e5eeff);
+}
+.presetClear:hover {
+  border-color: #e5484d;
+  color: #e5484d;
+  background: color-mix(in srgb, #e5484d 10%, transparent);
+}
+.deadlineStatus {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ad-border, #d8e2fb);
+  background: var(--ad-panel, #f9fcff);
+  color: var(--ad-subtle, #6a80a8);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.deadlineStatus[data-tone="ok"] {
+  border-color: color-mix(in srgb, #12b76a 40%, transparent);
+  background: color-mix(in srgb, #12b76a 9%, transparent);
+  color: var(--ad-text, #263e73);
+}
+.deadlineStatus[data-tone="error"] {
+  border-color: color-mix(in srgb, #e5484d 45%, transparent);
+  background: color-mix(in srgb, #e5484d 9%, transparent);
+  color: var(--ad-text, #263e73);
+}
+@media (max-width: 720px) {
+  .deadlineControls {
+    grid-template-columns: 1fr;
+  }
+}

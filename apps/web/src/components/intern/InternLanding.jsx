@@ -21,8 +21,13 @@ import { isProgramAvailable, matchesCompensationMode, resolveProgramSelection } 
 import styles from "./intern.module.css";
 import InternInsights from "./InternInsights";
 import SuccessStories from "./SuccessStories";
+import InternFaq from "./InternFaq";
+import InternRoles from "./InternRoles";
+import InternPrerequisites from "./InternPrerequisites";
+import ApplicationCountdown, { useDeadlineClosed } from "./ApplicationCountdown";
 import { Feature, useSiteFeatures } from "@olentra/site-features/react";
 import { DRAFT_FIELDS, clearApplyDraft, readApplyDraft, writeApplyDraft } from "@/lib/intern/apply-draft.mjs";
+import { INTERNSHIP_OPPORTUNITIES } from "@/lib/intern/opportunities.mjs";
 
 const ART_SOURCE = "/images/intern/reference-art.png";
 const MAX_RESUME_BYTES = 5 * 1024 * 1024;
@@ -46,11 +51,11 @@ const artwork = {
 };
 
 const commonTrackBenefits = [
-  "Learn from industry experts",
   "Work on real projects",
   "Get mentor guidance and project feedback",
-  "Build practical technical skills",
-  "Create projects for your portfolio",
+  "Learn from industry experts",
+  "Build practical skills for your role",
+  "Access industry-leading AI tools, including Claude, Codex, and Gemini",
 ];
 
 const paidTrackBenefits = [
@@ -80,6 +85,9 @@ const tracks = [
     cta: "Apply for Innovator",
   },
 ];
+const WORK_MODE = "100% remote";
+const SCHEDULE = "Part-time or full-time";
+
 const trackNames = Object.fromEntries(tracks.map((track) => [track.id, track.name]));
 
 const benefits = [
@@ -176,16 +184,22 @@ function BackgroundWaves() {
 export default function InternLanding() {
   const { commands, ready, sessionReady, connected, data, requestMagicLink } = useInternship();
   const { features, ready: featuresReady } = useSiteFeatures();
+  const opportunities = data.opportunities || INTERNSHIP_OPPORTUNITIES;
+  const internshipDuration = data.settings.duration || opportunities.duration || INTERNSHIP_OPPORTUNITIES.duration;
   const visibleTracks = tracks.filter((track) => matchesCompensationMode(data.programs.find((program) => program.id === track.id), data.settings.compensationMode));
   const availablePrograms = useMemo(() => data.programs.filter((program) => isProgramAvailable(program, data.settings)), [data.programs, data.settings]);
   const availableTrackIds = useMemo(() => availablePrograms.map((program) => program.id), [availablePrograms]);
   const soleAvailableProgram = availablePrograms.length === 1 ? availablePrograms[0] : null;
   const availableTrackIdsRef = useRef(availableTrackIds);
   availableTrackIdsRef.current = availableTrackIds;
-  const canApply = Boolean(featuresReady && features.internships && features.applications && connected && availablePrograms.length);
+  const deadlineClosed = useDeadlineClosed(data.settings.applicationDeadline);
+  const canApply = Boolean(featuresReady && features.internships && features.applications && connected && data.opportunities && availablePrograms.length && !deadlineClosed);
   const canApplyRef = useRef(canApply);
   canApplyRef.current = canApply;
   const [trackChoice, setTrackChoice] = useState("");
+  const [roleChoice, setRoleChoice] = useState("");
+  const [scheduleChoice, setScheduleChoice] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
   const selectedTrack = resolveProgramSelection(trackChoice, availableTrackIds);
   const [previewComplete, setPreviewComplete] = useState(false);
   const [launchPhase, setLaunchPhase] = useState("idle");
@@ -208,22 +222,27 @@ export default function InternLanding() {
   // submitted), restored on the next visit and cleared after applying.
   const formRef = useRef(null);
   useEffect(() => {
+    if (!canApply) { setDraftReady(false); return; }
     const draft = readApplyDraft();
     const form = formRef.current;
-    if (!draft || !form) return;
-    for (const field of DRAFT_FIELDS) {
+    if (!form) return;
+    for (const field of draft ? DRAFT_FIELDS : []) {
       const input = form.elements.namedItem(field);
       if (input && "value" in input && !input.value && typeof draft[field] === "string") input.value = draft[field];
     }
-    if (typeof draft.track === "string") setTrackChoice(draft.track);
-  }, []);
-  // The track is state, so save again once a new choice has rendered.
-  useEffect(() => { if (trackChoice) saveDraft(); }, [trackChoice]);
+    if (typeof draft?.track === "string") setTrackChoice(draft.track);
+    setRoleChoice(draft?.roleId || "");
+    setScheduleChoice(draft?.schedule || "");
+    setDraftReady(true);
+  }, [canApply]);
+  // Save controlled choices after rendering, including restored answers.
+  useEffect(() => { if (draftReady) saveDraft(); }, [draftReady, trackChoice, roleChoice, scheduleChoice]);
   function saveDraft() {
     const form = formRef.current;
     if (!form) return;
-    const draft = { track: trackChoice };
-    for (const field of DRAFT_FIELDS) draft[field] = String(form.elements.namedItem(field)?.value || "");
+    if (!draftReady) return;
+    const draft = {};
+    for (const field of [...DRAFT_FIELDS, "track", "roleId", "schedule"]) draft[field] = String(form.elements.namedItem(field)?.value || "");
     writeApplyDraft(draft);
   }
   const resumeInput = useRef(null);
@@ -340,6 +359,8 @@ export default function InternLanding() {
         .trim()
         .toLowerCase(),
       programId: selectedTrack,
+      roleId: roleChoice,
+      schedule: scheduleChoice,
       linkedin: String(formData.get("linkedin") || "").trim(),
       videoUrl: String(formData.get("videoUrl") || "").trim(),
     };
@@ -348,6 +369,8 @@ export default function InternLanding() {
       savedApplication.email?.toLowerCase() === input.email &&
       savedApplication.name === input.name &&
       savedApplication.programId === input.programId &&
+      savedApplication.roleId === input.roleId &&
+      savedApplication.schedule === input.schedule &&
       (savedApplication.linkedin || "") === input.linkedin &&
       (savedApplication.videoUrl || "") === input.videoUrl
     ) {
@@ -382,7 +405,7 @@ export default function InternLanding() {
       if (!result.ok) {
         const msg = typeof result.error === "string" ? result.error : result.error?.message || "Unable to save your application. Please try again.";
         setSubmitError(msg);
-        if (msg.toLowerCase().includes("already exists") || result.error?.code === "ALREADY_APPLIED") {
+        if (msg.toLowerCase().includes("already exists") || result.errorCode === "ALREADY_APPLIED") {
           setAlreadyAppliedEmail(input.email);
         }
         return;
@@ -549,6 +572,7 @@ export default function InternLanding() {
                   <ReferenceArt name="bars" /> View Insights
                 </a>
               </div>
+              <p className={styles.programFacts}>{WORK_MODE} · {internshipDuration} · {SCHEDULE}</p>
             </div>
             <ReferenceArt name="hero" className={styles.heroArt} />
           </div>
@@ -574,9 +598,30 @@ export default function InternLanding() {
                   <div className={styles.trackHeading}>
                     <h2>{track.name}</h2>
                     <dl className={styles.trackDetails}>
-                      <div><dt>Stipend</dt><dd>{program?.stipend == null ? "To be announced" : program.stipend === 0 ? "Unpaid" : <><span>₹{program.stipend.toLocaleString("en-IN")}</span><span className={styles.trackPeriod}> / month</span></>}</dd></div>
-                      <div><dt>Program fee</dt><dd>{program?.fee == null ? "To be announced" : program.fee === 0 ? "Free" : `₹${program.fee.toLocaleString("en-IN")}`}</dd></div>
-                      <div><dt>Certificate</dt><dd>Free</dd></div>
+                      <div>
+                        <dt>Duration</dt>
+                        <dd>{internshipDuration}</dd>
+                      </div>
+                      <div>
+                        <dt>Work mode</dt>
+                        <dd>{WORK_MODE}</dd>
+                      </div>
+                      <div>
+                        <dt>Schedule</dt>
+                        <dd>{SCHEDULE}</dd>
+                      </div>
+                      <div>
+                        <dt>Stipend</dt>
+                        <dd>{program?.stipend == null ? "To be announced" : program.stipend === 0 ? "Unpaid" : <><span>₹{program.stipend.toLocaleString("en-IN")}</span><span className={styles.trackPeriod}>/ month</span></>}</dd>
+                      </div>
+                      <div>
+                        <dt>Program fee</dt>
+                        <dd>{program?.fee == null ? "To be announced" : program.fee === 0 ? "No fee" : `₹${program.fee.toLocaleString("en-IN")}`}</dd>
+                      </div>
+                      <div>
+                        <dt>Certificate</dt>
+                        <dd>Free</dd>
+                      </div>
                     </dl>
                   </div>
                   <p className={styles.trackDescription}>{track.description}</p>
@@ -603,6 +648,14 @@ export default function InternLanding() {
             })}
           </div> : ready ? <p className={styles.tracksEmpty} role="status">Internship opportunities will be announced soon.</p> : <LoadingIndicator label="Loading internship opportunities…" />}
         </section></Feature>
+
+        <Feature name="careers.roles"><div className={styles.container}>
+          <InternRoles roles={opportunities.roles} />
+        </div></Feature>
+
+        <Feature name="careers.prerequisites"><div className={styles.container}>
+          <InternPrerequisites roles={opportunities.roles} />
+        </div></Feature>
 
         <Feature name="careers.insights"><section
           className={`${styles.container} ${styles.insights}`}
@@ -667,15 +720,23 @@ export default function InternLanding() {
             </div>
           </div></Feature>
 
+          <Feature name="careers.faq">
+            <InternFaq
+              duration={internshipDuration}
+              deadline={data.settings.applicationDeadline}
+              tracks={visibleTracks.map((track) => {
+                const program = data.programs.find((item) => item.id === track.id);
+                return { name: track.name, stipend: program?.stipend, fee: program?.fee };
+              })}
+            />
+          </Feature>
+
           {canApply ? <div className={styles.application} id="internship-application">
             <div className={styles.applicationContent}>
               <div className={styles.applicationHeading}>
                 <ReferenceArt name="plane" />
                 <div>
                   <h2>Apply Now</h2>
-                  <p>
-                    Take the first step towards an exciting career with Olentra.
-                  </p>
                 </div>
               </div>
               <form
@@ -787,6 +848,25 @@ export default function InternLanding() {
                         </p>
                       )}
                     </div>
+                    <div className={`${styles.profileField} ${styles.profileFieldWide}`}>
+                      <label htmlFor="intern-role">Intern Role <span className={styles.requiredMark}>*</span></label>
+                      <select id="intern-role" name="roleId" value={roleChoice} onChange={(event) => setRoleChoice(event.target.value)} required aria-describedby="intern-role-hint">
+                        <option value="" disabled>Choose your role</option>
+                        {opportunities.roles.map((role) => <option key={role.id} value={role.id}>{role.title} — {role.tag}</option>)}
+                      </select>
+                      <p className={styles.fieldHint} id="intern-role-hint">Your track defines the program. Your role defines what you will work on.</p>
+                    </div>
+                    <fieldset className={styles.scheduleField}>
+                      <legend>Schedule <span>*</span></legend>
+                      <div className={styles.scheduleOptions}>
+                        {opportunities.schedules.map((schedule) => (
+                          <label className={styles.scheduleOption} key={schedule.id}>
+                            <input type="radio" name="schedule" value={schedule.id} checked={scheduleChoice === schedule.id} onChange={(event) => setScheduleChoice(event.target.value)} required />
+                            <span>{schedule.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
                     <div className={`${styles.profileField} ${styles.profileFieldWide}`}>
                       <label htmlFor="intern-video">
                         Intro Video Link <span className={styles.preferredTag}>Preferred</span>
@@ -1055,11 +1135,14 @@ export default function InternLanding() {
             </aside>
           </div> : featuresReady && <div className={styles.applicationClosed} id="internship-application" role="status">
             <h2>Applications are currently closed</h2>
-            <p>{!connected ? "The internship service is unavailable. Please try again shortly." : "New internship applications and account registration are unavailable at the moment."}</p>
+            <p>{deadlineClosed && connected ? "The application deadline for this internship cycle has passed. Follow Olentra for the next intake." : !connected ? "The internship service is unavailable. Please try again shortly." : !data.opportunities ? "The application form is being updated. Please try again shortly." : "New internship applications and account registration are unavailable at the moment."}</p>
             {features.portal && <Link href="/intern/login?role=intern" className={styles.secondaryButton}>Existing intern? Sign in <ArrowRight size={15} /></Link>}
           </div>}
         </section>
       </main>
+      {data.settings.programEnabled && features.applications && (
+        <ApplicationCountdown deadline={data.settings.applicationDeadline} />
+      )}
       {canApply && launchPhase !== "idle" && (
         <ApplicationLaunch
           phase={launchPhase}

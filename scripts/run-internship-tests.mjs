@@ -4,9 +4,9 @@ const isolatedUri = process.env.INTERNSHIP_TEST_MONGODB_URI || process.env.INTER
 
 if (!isolatedUri) {
   console.warn(
-    "[internship:test] skipped: set INTERNSHIP_TEST_MONGODB_URI to an isolated MongoDB test database before running integration tests.",
+    "[internship:test] cannot verify integration: set INTERNSHIP_TEST_MONGODB_URI to an isolated MongoDB test database before running integration tests.",
   );
-  process.exit(0);
+  process.exit(1);
 }
 
 const result = spawnSync(

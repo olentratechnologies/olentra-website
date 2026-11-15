@@ -332,9 +332,11 @@
   width: 100%;
 }
 .trackHeading {
+  container: track-heading / inline-size;
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 16px;
+  min-width: 0;
   min-height: 136px;
   padding-right: 184px;
 }
@@ -348,25 +350,28 @@
 .trackContent h2:first-child {
   margin-top: 0;
 }
+/* Divider lines come from a 1px gap over a tinted background, so the facts
+   line up cleanly in any number of rows and columns. */
 .trackDetails {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, max-content));
-  justify-content: start;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
   width: 100%;
-  max-width: 480px;
+  max-width: 560px;
   margin: 0;
-  padding: 2px 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #c9d8f0;
+  border-radius: 14px;
+  background: #d9e4f6;
 }
 .trackDetails > div {
   display: grid;
   align-content: start;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
-}
-.trackDetails > div + div {
-  padding-left: 12px;
-  border-left: 1px solid #aebfd566;
+  padding: 14px 18px;
+  background: #fbfdff;
 }
 .trackDetails dt {
   color: #5b6b82;
@@ -376,12 +381,10 @@
 }
 .trackDetails dd {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  align-content: start;
-  gap: 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
   min-width: 0;
-  min-height: 24px;
   margin: 0;
   color: #15213b;
   font-size: 16px;
@@ -389,13 +392,32 @@
   font-weight: 650;
   letter-spacing: -0.3px;
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 .trackDetails .trackPeriod {
   color: #5b6b82;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 400;
   letter-spacing: 0;
-  white-space: nowrap;
+}
+/* Adapt to the card's available space, including cards beside one another. */
+@container track-heading (max-width: 399px) {
+  .trackDetails {
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 12px;
+  }
+  .trackDetails > div {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .trackDetails dd {
+    align-items: flex-end;
+    font-size: 15px;
+    text-align: right;
+  }
 }
 .trackDescription {
   margin-top: 16px;
@@ -583,6 +605,53 @@
   padding: 0;
   border: 0;
 }
+.programFacts {
+  margin-top: 20px;
+  color: #46567c;
+  font-size: 13px;
+  line-height: 22px;
+  font-weight: 600;
+}
+.scheduleField {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.scheduleField legend {
+  color: #23365b;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.scheduleField legend span { color: #426bad; }
+.scheduleOptions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.formFields .scheduleOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 140px;
+  min-height: 50px;
+  padding: 12px 14px;
+  border: 1px solid #bdd2f0;
+  border-radius: 10px;
+  background: #ffffffc4;
+  cursor: pointer;
+}
+.scheduleOption:has(input:checked) { border-color: #0064ed; background: #e8f2ff; }
+.scheduleOption:focus-within { outline: 2px solid #0064ed; outline-offset: 3px; }
+.page .scheduleOption input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+  accent-color: #0064ed;
+}
+.validationAttempted .scheduleField:has(input:invalid) .scheduleOption { border-color: #cf7590; }
 .formFields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -978,19 +1047,6 @@
     width: 140px;
   }
 }
-@media (min-width: 1024px) and (max-width: 1231px) {
-  .trackCard:not(:only-child) .trackDetails {
-    grid-template-columns: repeat(2, minmax(0, max-content));
-  }
-  .trackCard:not(:only-child) .trackDetails > div:last-child {
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    padding: 8px 0 0;
-    border-top: 1px solid #aebfd566;
-    border-left: 0;
-  }
-}
 @media (max-width: 1023px) {
   .trackCard:only-child .trackBenefits {
     grid-template-columns: 1fr;
@@ -1147,17 +1203,6 @@
     line-height: 32px;
     letter-spacing: -0.7px;
   }
-  .trackDetails {
-    gap: 12px;
-    padding: 2px 0;
-  }
-  .trackDetails > div + div {
-    padding-left: 12px;
-  }
-  .trackDetails dd {
-    font-size: 16px;
-    line-height: 22px;
-  }
   .trackArt {
     grid-area: art;
     position: static;
@@ -1285,19 +1330,6 @@
     line-height: 20px;
   }
 }
-@media (max-width: 480px) {
-  .trackDetails {
-    grid-template-columns: repeat(2, minmax(0, max-content));
-  }
-  .trackDetails > div:last-child {
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    padding: 8px 0 0;
-    border-top: 1px solid #aebfd566;
-    border-left: 0;
-  }
-}
 @media (max-width: 359px) {
   .container {
     width: calc(100% - 32px);
@@ -1349,3 +1381,203 @@
 }
 
 .applicationClosed{margin-top:34px;padding:34px;border:1px solid #cbdcf5;border-radius:22px;background:#f6faff;color:#172a49;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}.applicationClosed h2{font-size:25px;line-height:1.3;font-weight:700;letter-spacing:-.5px}.applicationClosed p{max-width:540px;font-size:14px;line-height:1.7;color:#5b6d86}.applicationClosed a{margin-top:4px}@media(max-width:640px){.applicationClosed{padding:26px 20px}.applicationClosed h2{font-size:22px}}
+
+/*
+ * Side-by-side (and stacked tablet) track cards: the artwork gets its own
+ * column beside the title and details, centred on them instead of pinned to
+ * the card's top corner. Phones and the single-card layout keep their own grids.
+ */
+@media (min-width: 768px) {
+  .trackCard:not(:only-child) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas:
+      "heading art"
+      "description description"
+      "benefits benefits"
+      "action action";
+    column-gap: 24px;
+    row-gap: 0;
+  }
+  .trackCard:not(:only-child) .trackContent {
+    display: contents;
+  }
+  .trackCard:not(:only-child) .trackHeading {
+    grid-area: heading;
+    min-height: 0;
+    padding-right: 0;
+  }
+  .trackCard:not(:only-child) .trackArt {
+    grid-area: art;
+    position: static;
+    align-self: center;
+    justify-self: end;
+    margin-right: -10px;
+  }
+  .trackCard:not(:only-child) .trackDescription {
+    grid-area: description;
+  }
+  .trackCard:not(:only-child) .trackBenefits {
+    grid-area: benefits;
+  }
+  .trackCard:not(:only-child) .trackButton {
+    grid-area: action;
+    align-self: end;
+    margin-top: 24px;
+  }
+}
+
+/*
+ * Single track card (e.g. only Tech Explorer open): one content column with a
+ * shared width so every block lines up on both edges, and the artwork in its
+ * own column, centred on the whole card.
+ *   Title → description → key facts → benefits → call to action
+ */
+@media (min-width: 768px) {
+  .trackCard:only-child {
+    grid-template-columns: minmax(0, 680px) minmax(220px, 1fr);
+    grid-template-areas:
+      "title art"
+      "description art"
+      "details art"
+      "benefits art"
+      "action art";
+    grid-template-rows: auto auto auto auto 1fr;
+    column-gap: 56px;
+    row-gap: 0;
+    padding: 44px 48px;
+    align-items: start;
+  }
+  .trackCard:only-child .trackHeading {
+    display: contents;
+  }
+  .trackCard:only-child h2 {
+    grid-area: title;
+    margin: 0;
+    font-size: 34px;
+    line-height: 1.15;
+    letter-spacing: -1px;
+  }
+  .trackCard:only-child .trackDescription {
+    grid-area: description;
+    max-width: none;
+    margin: 12px 0 0;
+    font-size: 15px;
+    line-height: 25px;
+  }
+  .trackCard:only-child .trackDetails {
+    grid-area: details;
+    max-width: none;
+    margin-top: 24px;
+  }
+  .trackCard:only-child .trackDetails > div {
+    padding: 16px 22px;
+  }
+  .trackCard:only-child .trackBenefits {
+    grid-area: benefits;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 28px;
+    margin: 24px 0 0;
+  }
+  /* An odd last benefit gets the full row instead of wrapping in a half column. */
+  .trackCard:only-child .trackBenefits li:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+  .trackCard:only-child .trackButton {
+    grid-area: action;
+    align-self: start;
+    justify-self: start;
+    margin: 32px 0 0;
+  }
+  .trackCard:only-child .trackArt {
+    grid-area: art;
+    align-self: center;
+    justify-self: center;
+    width: 100%;
+    max-width: 300px;
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .trackCard:only-child {
+    grid-template-columns: minmax(0, 1fr) 180px;
+    column-gap: 32px;
+    padding: 36px;
+  }
+  .trackCard:only-child h2 {
+    font-size: 30px;
+  }
+  .trackCard:only-child .trackBenefits {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * Phones: artwork beside the title, then every block full width in the same
+ * order as desktop, with the key facts as a clean stacked list.
+ */
+@media (max-width: 767px) {
+  .trackCard:only-child {
+    grid-template-columns: minmax(0, 1fr) 76px;
+    grid-template-areas:
+      "title art"
+      "description description"
+      "details details"
+      "benefits benefits"
+      "action action";
+    column-gap: 16px;
+    row-gap: 0;
+    padding: 24px 20px;
+    align-items: center;
+  }
+  .trackCard:only-child .trackHeading {
+    display: contents;
+  }
+  .trackCard:only-child h2 {
+    grid-area: title;
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.2;
+  }
+  .trackCard:only-child .trackArt {
+    grid-area: art;
+    position: static;
+    width: 76px;
+    max-width: none;
+    justify-self: end;
+  }
+  .trackCard:only-child .trackDescription {
+    grid-area: description;
+    max-width: none;
+    margin: 14px 0 0;
+  }
+  .trackCard:only-child .trackDetails {
+    grid-area: details;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: none;
+    margin-top: 20px;
+    border-radius: 14px;
+  }
+  .trackCard:only-child .trackDetails > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+  }
+  .trackCard:only-child .trackDetails dt {
+    font-size: 13px;
+  }
+  .trackCard:only-child .trackDetails dd {
+    align-items: flex-end;
+    font-size: 15px;
+    text-align: right;
+  }
+  .trackCard:only-child .trackBenefits {
+    grid-area: benefits;
+    margin: 20px 0 0;
+  }
+  .trackCard:only-child .trackButton {
+    grid-area: action;
+    margin: 24px 0 0;
+  }
+}

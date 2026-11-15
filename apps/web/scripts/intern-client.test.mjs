@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { webcrypto } from "node:crypto";
-import { InternClient, internAuth, internToken, forgetInternToken, refreshInternSession } from "../src/lib/intern-client.mjs";
+import { InternClient, internAuth, internToken, forgetInternToken, refreshInternSession, internCommandFailure } from "../src/lib/intern-client.mjs";
 
 globalThis.crypto ||= webcrypto;
 const storage = new Map();
@@ -15,6 +15,11 @@ class FakeWebSocket {
   close() { if (this.readyState === 3) return; this.readyState = 3; this.onclose?.(); }
 }
 globalThis.WebSocket = FakeWebSocket;
+
+test("command failures preserve RPC codes and a displayable message", () => {
+  assert.deepEqual(internCommandFailure(Object.assign(new Error("Choose a role"), { code: "INVALID_REQUEST" })), { ok: false, error: "Choose a role", errorCode: "INVALID_REQUEST" });
+  assert.equal(internCommandFailure(new Error("Offline")).errorCode, "SERVICE_UNAVAILABLE");
+});
 
 test("write retry preserves its idempotency key after an interrupted connection", async () => {
   forgetInternToken(); const keys = []; let attempts = 0;
