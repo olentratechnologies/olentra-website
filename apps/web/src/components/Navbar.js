@@ -15,6 +15,15 @@ import InternMobileDock from './intern/InternMobileDock';
 import ProductLogo from './products/ProductLogo';
 import { useSiteFeatures } from '@olentra/site-features/react';
 
+// Premium smoked-glass surface for the bar over dark sections: translucent
+// deep navy, heavy blur, a faint top sheen and a soft drop shadow.
+const DARK_GLASS =
+  'bg-[linear-gradient(180deg,rgba(24,30,48,0.62)_0%,rgba(8,11,22,0.58)_100%)] backdrop-blur-xl backdrop-saturate-150 border-white/[0.09] shadow-[inset_0_1px_0_rgba(255,255,255,0.09),0_12px_32px_-8px_rgba(0,0,0,0.55)]';
+// Dropdowns sit inside the blurred bar, where a nested backdrop blur cannot see
+// the page, so they use a near-opaque version of the same glass tone.
+const DARK_GLASS_MENU =
+  'bg-[linear-gradient(180deg,rgba(20,26,42,0.97)_0%,rgba(9,12,23,0.97)_100%)] border-white/[0.09] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_25px_60px_rgba(0,0,0,0.6)]';
+
 function RingingPhoneIcon({ size = 15, active = true, className = "" }) {
   const uniqueId = useId();
   const gradId = `phone-grad-${uniqueId.replace(/:/g, '')}`;
@@ -512,9 +521,8 @@ export default function Navbar() {
         <nav
           data-testid="navbar"
           className={`w-full transition-none border ${isLightSection
-            ? 'bg-white border-slate-200'
-            : 'bg-black border-white/10'
-            } ${scrolled ? 'shadow-lg shadow-black/5' : 'shadow-none'
+            ? `bg-white border-slate-200 ${scrolled ? 'shadow-lg shadow-black/5' : 'shadow-none'}`
+            : DARK_GLASS
             } ${mobileOpen ? 'rounded-xl' : 'rounded-[20px] md:rounded-[28px]'
             } overflow-visible`}
         >
@@ -618,7 +626,7 @@ export default function Navbar() {
                         const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowUp" ? -1 : 1) + items.length) % items.length;
                         items[next]?.focus();
                       }}
-                      className={`absolute top-full left-1/2 w-[210px] p-2 rounded-2xl border z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] ${isLightSection ? 'bg-white border-slate-200 text-slate-900 shadow-xl shadow-slate-300/40' : 'bg-black border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'}`}
+                      className={`absolute top-full left-1/2 w-[210px] p-2 rounded-2xl border z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] ${isLightSection ? 'bg-white border-slate-200 text-slate-900 shadow-xl shadow-slate-300/40' : DARK_GLASS_MENU}`}
                     >{link.children.map((child) => <Link key={child.id} role="menuitem" href={child.href} onClick={() => setIsCareersOpen(false)} className={`block rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-wider ${isLightSection ? 'hover:bg-slate-100 focus-visible:bg-slate-100 text-slate-800' : 'hover:bg-white/5 focus-visible:bg-white/5 text-slate-200'} focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}>{child.label}</Link>)}</motion.div>}</AnimatePresence>}
 
 
@@ -636,7 +644,7 @@ export default function Navbar() {
                             className={`absolute top-full left-1/2 w-[640px] p-4 rounded-2xl border shadow-[0_25px_60px_rgba(0,0,0,0.25)] z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] transition-none ${
                               isLightSection
                                 ? 'bg-white border-slate-200 text-slate-900 shadow-slate-300/50'
-                                : 'bg-black border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'
+                                : DARK_GLASS_MENU
                             }`}
                           >
                             <div className="grid grid-cols-[220px_1fr] gap-3">
@@ -748,7 +756,7 @@ export default function Navbar() {
                             className={`absolute top-full left-1/2 w-[320px] p-4 rounded-2xl border shadow-[0_25px_60px_rgba(0,0,0,0.25)] z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] transition-none ${
                               isLightSection
                                 ? 'bg-white border-slate-200 text-slate-900 shadow-slate-300/50'
-                                : 'bg-black border-white/10 text-white shadow-[0_25px_60px_rgba(0,0,0,0.7)]'
+                                : DARK_GLASS_MENU
                             }`}
                           >
                             <div className={`rounded-xl border p-3 transition-none ${
@@ -864,7 +872,7 @@ export default function Navbar() {
                 className={`${isInternPage ? 'min-[1200px]:hidden' : 'min-[1100px]:hidden'} border-t overflow-hidden rounded-b-xl transition-none ${
                   isLightSection
                     ? 'bg-white border-slate-200 text-slate-900'
-                    : 'bg-black border-white/10 text-white'
+                    : 'bg-transparent border-white/[0.08] text-white'
                 }`}
               >
                 <div className="px-6 pt-4 pb-6 flex flex-col gap-0.5 max-h-[80vh] overflow-y-auto">
