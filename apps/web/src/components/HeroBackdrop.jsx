@@ -291,6 +291,17 @@ export default function HeroBackdrop() {
 
   return (
     <div className={styles.backdrop} aria-hidden="true">
+      {/* Crushes the template's navy sky and corner haze to pure black while
+          bright ribbon pixels keep their colour. */}
+      <svg width="0" height="0" style={{ position: "absolute" }} focusable="false">
+        <filter id="hero-sky-black" colorInterpolationFilters="sRGB">
+          <feComponentTransfer>
+            <feFuncR type="table" tableValues="0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1" />
+            <feFuncG type="table" tableValues="0 0 0.12 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1" />
+            <feFuncB type="table" tableValues="0 0 0 0 0.18 0.42 0.6 0.7 0.8 0.9 1" />
+          </feComponentTransfer>
+        </filter>
+      </svg>
       <div className={styles.stage}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -305,9 +316,6 @@ export default function HeroBackdrop() {
         />
         <canvas ref={canvasRef} className={styles.ribbons} />
       </div>
-      <div className={`${styles.beam} ${styles.beamLeft}`} />
-      <div className={`${styles.beam} ${styles.beamRight}`} />
-      <div className={styles.floor} />
     </div>
   );
 }

@@ -5,7 +5,7 @@
   overflow: hidden;
   pointer-events: none;
   user-select: none;
-  background: #020821;
+  background: #000000;
 }
 
 /* Image + ribbons float together; base scale hides edges while drifting. */
@@ -28,6 +28,7 @@
 
 .image {
   object-fit: cover;
+  filter: url(#hero-sky-black);
   object-position: 50% 50%;
   -webkit-user-drag: none;
   /* Opacity over the dark base reads as a gentle brightness swell, but runs

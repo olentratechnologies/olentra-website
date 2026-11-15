@@ -32,7 +32,8 @@ export default function Hero() {
       <section
         data-testid="hero-section"
         ref={root}
-        className="cc-hero is-entered relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-[#020821] text-white flex flex-col justify-between"
+        className="cc-hero is-entered relative w-full h-[100vh] min-h-[640px] overflow-hidden bg-black text-white flex flex-col justify-between"
+        style={{ "--veil": "0, 0, 0" }}
       >
         {/* Floating ribbon backdrop */}
         <Feature name="home.hero.video"><HeroBackdrop /></Feature>
@@ -47,7 +48,7 @@ export default function Hero() {
             className="pointer-events-none absolute inset-0 max-w-4xl mx-auto rounded-full blur-3xl opacity-80 z-0"
             style={{
               background:
-                "radial-gradient(ellipse 70% 55% at 50% 50%, rgba(2, 6, 23, 0.92) 0%, rgba(2, 6, 23, 0.50) 60%, transparent 100%)",
+                "radial-gradient(ellipse 70% 55% at 50% 50%, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.50) 60%, transparent 100%)",
             }}
             aria-hidden="true"
           />
