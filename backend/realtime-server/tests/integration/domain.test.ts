@@ -135,7 +135,7 @@ test("staff can securely create an account for an unclaimed application", async 
 test("anonymous visitors and interns only see public program settings; staff see all", async () => {
   const anonymous = await domain.execute("intern.public", {}, null, "public-payload-anon") as any;
   expect(Object.keys(anonymous).sort()).toEqual(["opportunities", "organization", "programs", "settings"]);
-  expect(Object.keys(anonymous.settings).sort()).toEqual(["applicationDeadline", "compensationMode", "explorerEnabled", "innovatorEnabled", "programEnabled", "programName"]);
+  expect(Object.keys(anonymous.settings).sort()).toEqual(["applicationDeadline", "compensationMode", "duration", "explorerEnabled", "innovatorEnabled", "programEnabled", "programName"]);
   const internSnapshot = await domain.execute("intern.snapshot", {}, null, "public-payload-snap") as any;
   expect(internSnapshot.data.settings).not.toHaveProperty("rejectionEmails");
   const staffSnapshot = await domain.execute("intern.snapshot", {}, staff, "public-payload-staff") as any;

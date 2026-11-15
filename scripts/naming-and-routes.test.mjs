@@ -221,8 +221,8 @@ test("deleted service paths and old internal filenames are not referenced", () =
 test("public route invariants and normalized route segments are preserved", () => {
   const webRoutes = appRoutes("web"), adminRoutes = appRoutes("admin");
   const routes = new Set([...webRoutes, ...adminRoutes]);
-  // The company workspace is its own app; the website keeps only the read-only feature endpoints.
-  for (const route of adminRoutes) assert.ok(route.startsWith("/dashboard") || route.startsWith("/api/site-features"), `unexpected admin route: ${route}`);
+  // The company workspace is its own app; its API routes are limited to live settings.
+  for (const route of adminRoutes) assert.ok(route.startsWith("/dashboard") || route.startsWith("/api/site-features") || route.startsWith("/api/email-templates"), `unexpected admin route: ${route}`);
   for (const route of webRoutes) assert.equal(route.startsWith("/dashboard"), false, `website must not serve ${route}`);
   for (const removed of ["/api/site-features/session", "/dashboard/verify"]) assert.equal(routes.has(removed), false, `${removed} must stay removed`);
   for (const route of ["/api/site-features", "/api/site-features/stream"]) assert.ok(webRoutes.has(route) && adminRoutes.has(route), `${route} must be served by both apps`);
@@ -231,6 +231,7 @@ test("public route invariants and normalized route segments are preserved", () =
     "/about",
     "/accessibility",
     "/api/contact",
+    "/api/email-templates/signin-link",
     "/api/site-features",
     "/api/site-features/stream",
     "/blogs",
