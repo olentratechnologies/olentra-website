@@ -63,12 +63,11 @@ function OnboardingForm({ application, onboarding }) {
     onboarding?.status === "Approved" && !values.resumeAttachmentId;
   const submitted = ["Submitted", "Approved"].includes(onboarding?.status);
   const steps = [
-    { label: "Accept your internship offer", done: true },
-    { label: "Add your personal details", done: Boolean(values.phone && values.college && values.location) },
-    { label: "Tell us about your skills", done: Boolean(values.skills.trim()) },
-    { label: "Attach your resume", done: Boolean(values.resumeAttachmentId) || reviewedResume },
-    { label: "Confirm program guidelines", done: values.acknowledged },
-    { label: "Submit for review", done: submitted },
+    { label: "Accept your digital internship agreement", done: values.acknowledged },
+    { label: "Confirm your personal details", done: Boolean(values.phone && values.college && values.location) },
+    { label: "Confirm your technical skills", done: Boolean(values.skills.trim()) },
+    { label: "Verify your uploaded resume", done: Boolean(values.resumeAttachmentId) || reviewedResume },
+    { label: "Complete onboarding & unlock workspace", done: submitted },
   ];
   const doneCount = steps.filter((step) => step.done).length;
   const readyToSubmit = !submitted && steps.slice(0, -1).every((step) => step.done);
@@ -288,19 +287,29 @@ function OnboardingForm({ application, onboarding }) {
               </div>
             </div>
           </div>
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              required
-              checked={values.acknowledged}
-              disabled={locked || action.busy}
-              onChange={(event) => update("acknowledged", event.target.checked)}
-            />
-            <span>
-              I confirm that these details are accurate and agree to follow the
-              internship program’s guidelines.
-            </span>
-          </label>
+          <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "16px", margin: "20px 0" }}>
+            <h4 style={{ margin: "0 0 8px", fontSize: "14px", fontWeight: 600, color: "#fff" }}>
+              Olentra Internship Terms &amp; Digital Agreement
+            </h4>
+            <div style={{ maxHeight: "120px", overflowY: "auto", fontSize: "12px", lineHeight: "1.6", color: "#94a3b8", paddingRight: "8px", margin: "0 0 12px" }}>
+              <p style={{ margin: "0 0 6px" }}><strong>1. Remote Professional Conduct:</strong> As a verified Olentra intern, you agree to engage professionally, attend scheduled mentor syncs, and collaborate with integrity.</p>
+              <p style={{ margin: "0 0 6px" }}><strong>2. Confidentiality:</strong> All internal designs, source code, data, and discussions shared during your internship remain strictly confidential and property of Olentra Technologies Pvt. Ltd.</p>
+              <p style={{ margin: "0 0 6px" }}><strong>3. Original Work &amp; IP:</strong> You certify that all deliverables and code submitted are your original work, created for Olentra Technologies.</p>
+              <p style={{ margin: 0 }}><strong>4. Program Milestones:</strong> Completion certificates are awarded upon satisfactory completion of assigned milestones, peer/mentor reviews, and program criteria.</p>
+            </div>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                required
+                checked={values.acknowledged}
+                disabled={locked || action.busy}
+                onChange={(event) => update("acknowledged", event.target.checked)}
+              />
+              <span style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0" }}>
+                I have read and accept the Olentra Digital Internship Agreement and agree to abide by all program guidelines.
+              </span>
+            </label>
+          </div>
           {!locked && (
             <div className={styles.formActions}>
               <Button

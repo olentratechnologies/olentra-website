@@ -6,7 +6,7 @@
 import { isInternRole, isInternSchedule } from "./opportunities.mjs";
 
 export const APPLY_DRAFT_KEY = "olentra_apply_draft_v1";
-export const DRAFT_FIELDS = ["fullName", "email", "linkedin", "videoUrl"];
+export const DRAFT_FIELDS = ["fullName", "email", "linkedin", "github", "videoUrl"];
 const MAX_FIELD = 500;
 /** Drafts older than this are dropped. */
 const MAX_AGE_MS = 14 * 86_400_000;

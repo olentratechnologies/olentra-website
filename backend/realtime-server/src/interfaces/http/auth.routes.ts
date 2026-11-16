@@ -78,8 +78,9 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOr
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Please enter a valid email address.");
       await limiter?.consume("emailLink", clientAddress(request, peerAddress, trustProxy()), email);
       const application = await domain.findApplicationByEmail(email);
-      if (application) await sendSigninLink(application.email, application.name, application._id);
-      return sendJson({ ok: true, data: { message: "If an application exists for this email, a sign-in link has been sent to your inbox." } }, origin);
+      const eligibleForPortal = application && (application.status == null || ["Selected", "Joined"].includes(application.status));
+      if (eligibleForPortal) await sendSigninLink(application.email, application.name, application._id);
+      return sendJson({ ok: true, data: { message: "If an active account exists for this email, a sign-in link has been sent to your inbox." } }, origin);
     },
 
     async verifyMagicLink(request: Request, origin: string | null) {
@@ -104,7 +105,8 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOr
         // An applicant without an account has no password to reset. Send a
         // sign-in link instead; the account is created only when they use it.
         const application = await domain.findApplicationByEmail(email);
-        if (application) await sendSigninLink(application.email, application.name, application._id);
+        const eligibleForPortal = application && (application.status == null || ["Selected", "Joined"].includes(application.status));
+        if (eligibleForPortal) await sendSigninLink(application.email, application.name, application._id);
       } else {
         const token = await auth.generatePasswordResetToken(user.email, user._id, Number(user.sessionVersion) || 1);
         const workspace = input.app === "workspace" && user.role === "company";

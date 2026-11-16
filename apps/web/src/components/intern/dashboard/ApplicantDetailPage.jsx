@@ -23,6 +23,7 @@ import {
   MessageSquare,
   Phone,
   Send,
+  X,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { useInternship } from "@/components/intern/InternshipProvider";
@@ -211,6 +212,30 @@ export default function ApplicantDetailPage({ applicationId }) {
     try {
       if ((await updateApplication(applicationId, { status })) === false) return;
       notify(`${application.name}’s application status updated.`);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function quickApprove() {
+    if (busy || application.status === "Selected" || application.status === "Joined") return;
+    setBusy("status");
+    try {
+      if ((await updateApplication(applicationId, { status: "Selected" })) === false) return;
+      setStatus("Selected");
+      notify(`${application.name} has been approved! Selection email and portal invite sent.`);
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function quickReject() {
+    if (busy || application.status === "Rejected") return;
+    setBusy("status");
+    try {
+      if ((await updateApplication(applicationId, { status: "Rejected" })) === false) return;
+      setStatus("Rejected");
+      notify(`${application.name}’s application marked as not selected.`);
     } finally {
       setBusy("");
     }
@@ -613,10 +638,45 @@ export default function ApplicantDetailPage({ applicationId }) {
           </div>
           <div className={styles.detailColumn}>
             {canReview && (isAdmin || ["Applied", "Under Review", "Shortlisted"].includes(application.status)) && <Panel>
-              <h2 className={styles.panelHeading}>Review Application</h2>
+              <h2 className={styles.panelHeading}>Review & Screen Application</h2>
+              <div style={{ margin: "0 0 16px", padding: "12px", background: "rgba(255,255,255,0.03)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", display: "block", marginBottom: "6px" }}>Admissions Funnel Stage</span>
+                <div style={{ display: "flex", gap: "6px", alignItems: "center", fontSize: "12px", flexWrap: "wrap" }}>
+                  <span style={{ color: application.status === "Applied" ? "#38bdf8" : "#94a3b8", fontWeight: application.status === "Applied" ? 700 : 500 }}>1. Applied</span>
+                  <span style={{ color: "#64748b" }}>&rarr;</span>
+                  <span style={{ color: ["Under Review", "Shortlisted"].includes(application.status) ? "#38bdf8" : "#94a3b8", fontWeight: ["Under Review", "Shortlisted"].includes(application.status) ? 700 : 500 }}>2. Review</span>
+                  <span style={{ color: "#64748b" }}>&rarr;</span>
+                  <span style={{ color: application.status === "Selected" ? "#22c55e" : "#94a3b8", fontWeight: application.status === "Selected" ? 700 : 500 }}>3. Accepted & Invited</span>
+                  <span style={{ color: "#64748b" }}>&rarr;</span>
+                  <span style={{ color: application.status === "Joined" ? "#a855f7" : "#94a3b8", fontWeight: application.status === "Joined" ? 700 : 500 }}>4. Active Intern</span>
+                </div>
+              </div>
               <p className={styles.reviewDescription}>
-                Keep the application status in sync with your review.
+                Review candidate background and choose an admissions decision. Approving immediately triggers an Official Selection & Welcome Email with portal credentials and a LinkedIn announcement share card.
               </p>
+              {["Applied", "Under Review", "Shortlisted"].includes(application.status) && (
+                <div style={{ display: "flex", gap: "8px", margin: "16px 0", flexWrap: "wrap" }}>
+                  <Button
+                    type="button"
+                    onClick={quickApprove}
+                    disabled={Boolean(busy)}
+                    style={{ background: "#16a34a", color: "#ffffff", borderColor: "#15803d" }}
+                  >
+                    <Check size={15} />
+                    Approve & Invite Candidate
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={quickReject}
+                    disabled={Boolean(busy)}
+                    style={{ color: "#ef4444" }}
+                  >
+                    <X size={15} />
+                    Decline
+                  </Button>
+                </div>
+              )}
               <form className={styles.statusForm} onSubmit={saveStatus}>
                 <label htmlFor="applicant-status">
                   Application status

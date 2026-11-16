@@ -51,14 +51,20 @@ test("an application queues exactly one confirmation, sent only by the worker", 
   expect(sent.filter(e => e.to === email)).toHaveLength(1);
 });
 
-test("a repeat application queues one sign-in link and no second confirmation", async () => {
+test("a repeat application queues a confirmation for the existing reference, not a sign-in link", async () => {
   const email = `outbox-dup-${randomUUID()}@example.test`;
   await apply(email, `outbox-first-${randomUUID().slice(0, 8)}`);
-  // A repeat gets the same answer as a first application, and queues a sign-in link instead.
+  await domain.collection("applications").updateOne({ email }, { $set: { status: "Selected" } });
   await expect(apply(email, `outbox-again-${randomUUID().slice(0, 8)}`)).resolves.toMatchObject({ received: true });
   expect(await domain.collection("applications").countDocuments({ email })).toBe(1);
   const rows = await rowsFor(email);
-  expect(rows.map(r => r.type).sort()).toEqual(["applicationConfirmation", "magicLink"]);
+  expect(rows.map(r => r.type)).toEqual(["applicationConfirmation", "applicationConfirmation"]);
+  expect(rows.map(r => r.payload.applicationId).every(id => id === rows[0].payload.applicationId)).toBe(true);
+  await domain.processOutbox();
+  expect(sent.filter(e => e.to === email)).toEqual([
+    { type: "confirmation", to: email },
+    { type: "confirmation", to: email },
+  ]);
 });
 
 test("failed sends are retried with backoff and marked failed after the last attempt", async () => {

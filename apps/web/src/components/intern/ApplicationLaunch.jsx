@@ -105,7 +105,7 @@ export default function ApplicationLaunch({
   phase,
   onDismiss,
   applicationId,
-  accountHref = "/intern/login?role=intern",
+  accountHref = "/",
 }) {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
@@ -199,23 +199,23 @@ export default function ApplicationLaunch({
         aria-atomic="true"
       >
         <h2 id={titleId}>
-          {complete ? "Your next chapter is ready." : "Preparing your launch."}
+          {complete ? "Application Received!" : "Submitting your application…"}
         </h2>
         <p id={descriptionId}>
           {complete
-            ? "Thanks for applying. Check your email for a link to your candidate portal."
-            : "Launching your next chapter with Olentra…"}
+            ? "Thank you for applying to Olentra. We’ve sent a confirmation email to your inbox. Our admissions team reviews applications carefully and will reach out with an update within 3–5 business days."
+            : "Sending your application to the Olentra team…"}
         </p>
         {complete && applicationId && (
           <span className={styles.applicationId}>
-            Application ID: {applicationId}
+            Reference ID: {applicationId}
           </span>
         )}
       </div>
       {complete ? (
         <div className={styles.savedActions}>
           <Link className={styles.backButton} href={accountHref}>
-            Next steps <ArrowRight size={15} aria-hidden="true" />
+            Explore Olentra <ArrowRight size={15} aria-hidden="true" />
           </Link>
           <button
             ref={backRef}
@@ -223,7 +223,7 @@ export default function ApplicationLaunch({
             className={styles.dismissButton}
             onClick={onDismiss}
           >
-            <ArrowLeft size={13} aria-hidden="true" /> Back to application
+            <ArrowLeft size={13} aria-hidden="true" /> Close
           </button>
         </div>
       ) : (

@@ -373,20 +373,30 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const name = str(params.name), email = emailOf(params.email), programId = str(params.programId), fileId = str(params.resumeAttachmentId), fileToken = str(params.resumeAccessToken);
       if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Enter your full name and a valid email address.");
       if (!fileId || !fileToken) throw new DomainError("INVALID_REQUEST", "Attach a resume before applying.");
-      const linkedin = str(params.linkedin), videoUrl = str(params.videoUrl);
+      const linkedin = str(params.linkedin), videoUrl = str(params.videoUrl), github = str(params.github);
       const httpUrl = (v: string) => { try { return ["http:", "https:"].includes(new URL(v).protocol); } catch { return false; } };
       if (linkedin.length > 500 || !httpUrl(linkedin) || !/(^|\.)linkedin\.com$/i.test(new URL(linkedin).hostname)) throw new DomainError("INVALID_REQUEST", "Enter your LinkedIn profile URL.");
+      if (github && (github.length > 500 || !httpUrl(github))) throw new DomainError("INVALID_REQUEST", "Enter a valid http or https GitHub profile or portfolio link.");
       if (videoUrl && (videoUrl.length > 500 || !httpUrl(videoUrl))) throw new DomainError("INVALID_REQUEST", "Enter a valid http or https video link.");
-      // New and repeat applications get the same answer, so the form never
-      // reveals whether an email has applied. Either way, the next step is a
-      // sign-in link in the applicant's inbox.
-      const received = { received: true, message: "Thanks for applying. Check your email for a link to your candidate portal." };
+      // New and repeat applications get confirmation with reference ID.
+      // Sockets and candidate accounts are only provisioned after admin selection.
+      const received = (appId?: string) => ({
+        received: true,
+        message: "Thanks for applying. Check your email for your application reference ID and next steps.",
+        applicationId: appId || undefined,
+      });
       return transact(key, null, { method, params }, async session => {
         if (!(await intakeOpen())) throw new DomainError("CLOSED", "Internship applications are currently closed.");
         const existing = await applications.findOne({ email }, { session });
         if (existing) {
-          await outbox.enqueue("magicLink", { to: String(existing.email), name: String(existing.name || ""), applicationId: String(existing._id) }, session);
-          return received;
+          const programName = String(existing.program || (await programs.findOne({ _id: existing.programId }, { session }))?.name || "Olentra Internship Program");
+          await outbox.enqueue("applicationConfirmation", {
+            to: String(existing.email),
+            name: String(existing.name || name),
+            programName,
+            applicationId: String(existing._id),
+          }, session);
+          return received(String(existing._id));
         }
         const program = await programs.findOne({ _id: programId }, { session });
         const config = await settings.findOne({ _id: "program" }, { session });
@@ -396,7 +406,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (deadline && Date.parse(deadline) <= Date.now()) throw new DomainError("CLOSED", "The application deadline for this internship cycle has passed.");
         if (!file) throw new DomainError("INVALID_REQUEST", "Upload your resume before applying.");
         const applicationId = id("OL"), now = new Date();
-        const row: Row = { _id: applicationId, name, email, programId, roleId, schedule, workMode: INTERNSHIP_OPPORTUNITIES.workMode, duration: normalizeInternshipDuration(config?.duration), program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github: "", bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
+        const row: Row = { _id: applicationId, name, email, programId, roleId, schedule, workMode: INTERNSHIP_OPPORTUNITIES.workMode, duration: normalizeInternshipDuration(config?.duration), program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github, bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
         // Flag likely duplicates: a different email with the same LinkedIn profile.
         const profileKey = linkedinKey(linkedin);
         if (profileKey) {
@@ -414,7 +424,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         await events.insertOne({ _id: id("EVT"), type: "application.created", applicationIds: [applicationId], createdAt: now }, { session });
         // Queued inside the transaction: it is sent only if the application commits.
         await outbox.enqueue("applicationConfirmation", { to: email, name, programName: program.name, applicationId }, session);
-        return received;
+        return received(applicationId);
       });
     }
     if (method === "staff.mentors") {
@@ -514,6 +524,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (status && existing.status !== status) {
           await auditDecision(collection("staff_audit"), session, actor, "application.status", applicationId, { from: existing.status, to: status });
           if (status === "Shortlisted") emailStatus = "shortlisted";
+          else if (status === "Selected") emailStatus = "selected";
           else if (status === "Rejected") emailStatus = "rejected";
         }
         if (status) await collection("notifications").insertOne({ _id: id("NTF"), recipientRole: "intern", applicationId, title: "Application status updated", body: `Your application is now ${status}.`, href: "/intern/portal/application", createdOn: now.toISOString() }, { session });
@@ -619,6 +630,9 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     const app = await applications.findOne({ _id: applicationId });
     if (!app) throw new DomainError("NOT_FOUND", "Application not found.");
     if (emailOf(String(app.email || "")) !== normalized) throw refused();
+    if (!["Selected", "Joined"].includes(app.status)) {
+      throw new DomainError("FORBIDDEN", "Your application is currently under review. Portal access will be granted upon official acceptance.");
+    }
     // Magic links only ever sign in intern accounts. Any other account sharing
     // this email (staff, or a disabled row) must use its own password sign-in.
     const linked = async (): Promise<Principal | null> => {

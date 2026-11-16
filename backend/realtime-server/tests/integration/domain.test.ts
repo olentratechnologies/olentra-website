@@ -83,12 +83,13 @@ test("application claim, registration, status and idempotency persist in Atlas",
   const retry = await domain.execute("application.submit", payload, null, "application-test-0001");
   expect(retry).toEqual(response);
   expect(await domain.collection("applications").countDocuments()).toBe(1);
-  // A repeat application with a new request gets the same answer and creates nothing.
+  // A repeat application gets the existing reference and queues another receipt, but creates nothing.
   const repeat = await domain.execute("application.submit", payload, null, "application-test-0002");
   expect(repeat).toEqual(response);
-  expect(Object.keys(response).sort()).toEqual(["message", "received"]);
+  expect(Object.keys(response).sort()).toEqual(["applicationId", "message", "received"]);
   expect(await domain.collection("applications").countDocuments()).toBe(1);
-  expect(await domain.collection("outbox").countDocuments({ type: "magicLink", "payload.to": "applicant@example.test" })).toBe(1);
+  expect(await domain.collection("outbox").countDocuments({ type: "applicationConfirmation", "payload.to": "applicant@example.test" })).toBe(2);
+  expect(await domain.collection("outbox").countDocuments({ type: "magicLink", "payload.to": "applicant@example.test" })).toBe(0);
   const application = { id: String((await domain.collection("applications").findOne({ email: "applicant@example.test" }))!._id) };
   const linked = await domain.autoProvisionAccount(application.id, "applicant@example.test");
   await domain.changePassword(linked.id, "", "ExamplePassword2026!");

@@ -130,8 +130,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     domain.setHooks({
       // These two are sent by the email outbox, which retries when they throw.
       async sendApplicationConfirmation(to, name, programName, applicationId) {
-        const token = await auth.generateMagicLinkToken(to, applicationId);
-        const result = await mailer.sendApplicationConfirmation({ to, name, programName, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}` });
+        const result = await mailer.sendApplicationConfirmation({ to, name, programName, applicationId });
         if (!result.ok) throw new Error(result.error || "Application confirmation was not delivered.");
       },
       async sendMagicLink(to, name, applicationId) {
@@ -141,22 +140,29 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (!result.ok) throw new Error(result.error || "Sign-in link was not delivered.");
       },
       async sendApplicantStatus(notice) {
-        {
-          const certificateVerifyUrl = notice.certificateNumber
-            ? `${siteOrigin}/certificates/verify/${encodeURIComponent(notice.certificateNumber)}`
-            : undefined;
-          const linkedinShareUrl = certificateVerifyUrl
-            ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificateVerifyUrl)}`
-            : undefined;
-          const result = await mailer.sendApplicantStatus({
-            ...notice,
-            portalUrl: `${siteOrigin}/intern/portal`,
-            certificateVerifyUrl,
-            linkedinShareUrl,
-          });
-          // Throwing lets the email outbox retry; direct callers already catch and log.
-          if (!result.ok) throw new Error(result.error || "Applicant status email was not delivered.");
+        const certificateVerifyUrl = notice.certificateNumber
+          ? `${siteOrigin}/certificates/verify/${encodeURIComponent(notice.certificateNumber)}`
+          : undefined;
+        let linkedinShareUrl = certificateVerifyUrl
+          ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificateVerifyUrl)}`
+          : undefined;
+        let portalUrl = `${siteOrigin}/intern/portal`;
+        if (notice.status === "selected") {
+          const app = await domain.findApplicationByEmail(notice.to);
+          const appId = app ? String(app._id) : "";
+          const token = appId ? await auth.generateMagicLinkToken(notice.to, appId) : "";
+          portalUrl = token ? `${siteOrigin}/intern/verify?token=${token}` : `${siteOrigin}/intern/login?role=intern`;
+          const shareText = `I'm thrilled to share that I have been accepted into the Olentra Internship Program (${notice.programName})! 🚀 Looking forward to building, learning, and growing with Olentra Technologies.\n\n#OlentraInternship #TechCareers #NewBeginnings`;
+          linkedinShareUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(shareText)}`;
         }
+        const result = await mailer.sendApplicantStatus({
+          ...notice,
+          portalUrl,
+          certificateVerifyUrl,
+          linkedinShareUrl,
+        });
+        // Throwing lets the email outbox retry; direct callers already catch and log.
+        if (!result.ok) throw new Error(result.error || "Applicant status email was not delivered.");
       },
       async sendInterviewScheduled(notice) {
         try {

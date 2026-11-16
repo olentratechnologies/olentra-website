@@ -107,6 +107,85 @@ test("interview emails attach a calendar invite, and cancellations a matching ca
   }
 });
 
+test("the seven applicant journey emails share the branded responsive template", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests: Record<string, unknown>[] = [];
+  globalThis.fetch = (async (_input, init) => {
+    requests.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+    return new Response(JSON.stringify({ id: `email-${requests.length}` }), { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    const mailer = createInternshipMailer("test-api-key", "Olentra <test@example.test>");
+    await mailer.sendApplicationConfirmation({
+      to: "intern@example.test",
+      name: "Test Intern",
+      programName: "Tech Explorer",
+      applicationId: "OL-123",
+    });
+    await mailer.sendApplicantStatus({
+      to: "intern@example.test",
+      name: "Test Intern",
+      programName: "Tech Explorer",
+      status: "shortlisted",
+      portalUrl: "https://example.test/intern/portal",
+    });
+    await mailer.sendInterviewScheduled({
+      to: "intern@example.test",
+      name: "Test Intern",
+      programName: "Tech Explorer",
+      scheduledAt: "2026-11-12T10:00:00.000Z",
+      meetingUrl: "https://meet.example.test/room",
+      portalUrl: "https://example.test/intern/portal",
+    });
+    await mailer.sendApplicantStatus({
+      to: "intern@example.test",
+      name: "Test Intern",
+      programName: "Tech Explorer",
+      status: "selected",
+      portalUrl: "https://example.test/intern/verify?token=secure",
+      linkedinShareUrl: "https://www.linkedin.com/feed/?shareActive=true",
+    });
+    await mailer.sendApplicantStatus({
+      to: "intern@example.test",
+      name: "Test Intern",
+      programName: "Tech Explorer",
+      status: "offer",
+      portalUrl: "https://example.test/intern/portal",
+    });
+    await mailer.sendApplicantStatus({
+      to: "intern@example.test",
+      name: "Test Intern",
+      programName: "Tech Explorer",
+      status: "onboarding",
+      portalUrl: "https://example.test/intern/portal",
+    });
+    await mailer.sendApplicantStatus({
+      to: "intern@example.test",
+      name: "Test Intern",
+      programName: "Tech Explorer",
+      status: "certificate",
+      portalUrl: "https://example.test/intern/portal",
+      certificateVerifyUrl: "https://example.test/certificates/verify/OLENTRA-123",
+      linkedinShareUrl: "https://www.linkedin.com/sharing/share-offsite/?url=certificate",
+    });
+
+    assert.equal(requests.length, 7);
+    for (const request of requests) {
+      const html = String(request.html);
+      assert.match(html, /max-width:620px/);
+      assert.match(html, /alt="Olentra Technologies"/);
+      assert.match(html, /Automated message about your internship application or program/);
+      assert.match(html, /background:#f3f6fb/);
+    }
+    assert.match(String(requests[0]?.html), /OL-123/);
+    assert.match(String(requests[3]?.html), /Share on LinkedIn/);
+    assert.match(String(requests[6]?.html), /Verify your certificate/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("reminder emails escape their content and link to the site", async () => {
   const originalFetch = globalThis.fetch;
   const requests: Record<string, any>[] = [];

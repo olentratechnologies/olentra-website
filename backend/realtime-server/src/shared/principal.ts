@@ -15,8 +15,9 @@ export type ApplicantStatusNotice = {
   to: string;
   name: string;
   programName: string;
-  status: "shortlisted" | "offer" | "rejected" | "onboarding" | "certificate";
+  status: "shortlisted" | "selected" | "offer" | "rejected" | "onboarding" | "certificate";
   certificateNumber?: string;
+  roleTitle?: string;
 };
 
 export type InterviewScheduledNotice = {

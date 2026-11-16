@@ -48,7 +48,7 @@ function milestoneContent(item, firstName) {
   const name = firstName ? `, ${firstName}` : "";
   switch (item?.kind) {
     case "welcome":
-      return { icon: Rocket, title: `Your Olentra journey starts now${name}!`, message: "Your account is ready. Track your application, chat with the team and follow every next step right here.", actionLabel: "Explore my workspace", href: "/intern/portal" };
+      return { icon: Rocket, title: `Welcome to the Olentra Internship Program${name}! 🎉`, message: "Congratulations on your selection! Accept your digital agreement and complete your profile to unlock your project workspace.", actionLabel: "Start onboarding", href: "/intern/portal/onboarding" };
     case "offer-received":
       return { title: `You’ve been selected${name}! 🎉`, message: "Congratulations — Olentra has sent you an internship offer. Review the details and accept it to begin onboarding.", actionLabel: "Review my offer", href: "/intern/portal/application" };
     case "onboarding-approved":

@@ -122,17 +122,17 @@ export default function PortalDashboard() {
               ? "Revisit your work, read your feedback, and celebrate your achievement."
               : active
                 ? "Your projects, tasks, and team feedback are ready when you are."
-                : "Track your application, review your offer, and get ready to learn by doing."}
+                : "Complete your digital agreement and profile to unlock your project workspace."}
           </p>
           <Link
             href={
               canViewWork
                 ? "/intern/portal/projects"
-                : "/intern/portal/application"
+                : "/intern/portal/onboarding"
             }
             className={styles.bannerLink}
           >
-            {canViewWork ? "Explore my projects" : "View my application"}
+            {canViewWork ? "Explore my projects" : "Complete onboarding"}
             <ArrowRight size={15} />
           </Link>
         </div>
@@ -151,26 +151,25 @@ export default function PortalDashboard() {
           </Link>
         </Notice>
       )}
-      {my.offer?.status === "Accepted" &&
-        my.onboarding?.status !== "Approved" && (
-          <Notice>
-            <div>
-              <strong>
-                {my.onboarding?.status === "Submitted"
-                  ? "Your onboarding is under review"
-                  : "Let’s get you ready for day one"}
-              </strong>
-              <p>
-                {my.onboarding?.status === "Submitted"
-                  ? "The Olentra team is reviewing your details. We’ll notify you when your workspace opens."
-                  : "Complete your profile and upload your resume to finish onboarding."}
-              </p>
-            </div>
-            <Link href="/intern/portal/onboarding">
-              View onboarding <ArrowRight size={14} />
-            </Link>
-          </Notice>
-        )}
+      {!active && !completed && my.onboarding?.status !== "Approved" && (
+        <Notice>
+          <div>
+            <strong>
+              {my.onboarding?.status === "Submitted"
+                ? "Your onboarding is under review"
+                : "Welcome! Complete your onboarding kickoff"}
+            </strong>
+            <p>
+              {my.onboarding?.status === "Submitted"
+                ? "The Olentra team is reviewing your details. We’ll notify you when your workspace opens."
+                : "Review the digital agreement and complete your profile to unlock your project workspace."}
+            </p>
+          </div>
+          <Link href="/intern/portal/onboarding">
+            Complete onboarding <ArrowRight size={14} />
+          </Link>
+        </Notice>
+      )}
       <div className={styles.summaryGrid}>
         {[
           {

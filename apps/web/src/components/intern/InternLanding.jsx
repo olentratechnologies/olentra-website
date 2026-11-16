@@ -209,6 +209,7 @@ export default function InternLanding() {
   const [resumeError, setResumeError] = useState("");
   const [resumeDragging, setResumeDragging] = useState(false);
   const [linkedInError, setLinkedInError] = useState("");
+  const [githubError, setGithubError] = useState("");
   const [videoError, setVideoError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -247,6 +248,7 @@ export default function InternLanding() {
   }
   const resumeInput = useRef(null);
   const linkedInInput = useRef(null);
+  const githubInput = useRef(null);
   const videoInput = useRef(null);
   const submitButtonRef = useRef(null);
   const previousLaunchPhase = useRef("idle");
@@ -348,6 +350,10 @@ export default function InternLanding() {
       linkedInInput.current.reportValidity();
       return;
     }
+    if (githubInput.current && !validateGitHub(githubInput.current)) {
+      githubInput.current.reportValidity();
+      return;
+    }
     if (videoInput.current && !validateVideo(videoInput.current)) {
       videoInput.current.reportValidity();
       return;
@@ -362,6 +368,7 @@ export default function InternLanding() {
       roleId: roleChoice,
       schedule: scheduleChoice,
       linkedin: String(formData.get("linkedin") || "").trim(),
+      github: String(formData.get("github") || "").trim(),
       videoUrl: String(formData.get("videoUrl") || "").trim(),
     };
     if (
@@ -372,6 +379,7 @@ export default function InternLanding() {
       savedApplication.roleId === input.roleId &&
       savedApplication.schedule === input.schedule &&
       (savedApplication.linkedin || "") === input.linkedin &&
+      (savedApplication.github || "") === input.github &&
       (savedApplication.videoUrl || "") === input.videoUrl
     ) {
       setPreviewComplete(false);
@@ -411,7 +419,7 @@ export default function InternLanding() {
         return;
       }
       // The response is the same for new and repeat emails, so remember what was sent.
-      setSavedApplication({ ...input, message: result.data?.message });
+      setSavedApplication({ ...input, applicationId: result.data?.applicationId, message: result.data?.message });
       clearApplyDraft();
       if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) return;
       setLaunchPhase("launching");
@@ -507,6 +515,23 @@ export default function InternLanding() {
     }
     input.setCustomValidity(message);
     setLinkedInError(message);
+    return !message;
+  }
+
+  function validateGitHub(input) {
+    const value = input.value.trim();
+    let message = "";
+    if (value) {
+      try {
+        const url = new URL(value);
+        if (!["http:", "https:"].includes(url.protocol)) throw new Error();
+      } catch {
+        message =
+          "Enter a valid profile URL, starting with https:// (e.g. https://github.com/your-name).";
+      }
+    }
+    input.setCustomValidity(message);
+    setGithubError(message);
     return !message;
   }
 
@@ -848,6 +873,41 @@ export default function InternLanding() {
                         </p>
                       )}
                     </div>
+                    <div className={styles.profileField}>
+                      <label htmlFor="intern-github">
+                        GitHub Profile / Portfolio
+                      </label>
+                      <input
+                        ref={githubInput}
+                        id="intern-github"
+                        name="github"
+                        type="url"
+                        placeholder="https://github.com/your-username"
+                        autoComplete="url"
+                        maxLength={500}
+                        spellCheck={false}
+                        aria-describedby={
+                          githubError ? "intern-github-error" : undefined
+                        }
+                        aria-invalid={Boolean(githubError)}
+                        onBlur={(event) =>
+                          validateGitHub(event.currentTarget)
+                        }
+                        onInput={(event) => {
+                          event.currentTarget.setCustomValidity("");
+                          setGithubError("");
+                        }}
+                      />
+                      {githubError && (
+                        <p
+                          className={styles.fieldError}
+                          id="intern-github-error"
+                          role="alert"
+                        >
+                          {githubError}
+                        </p>
+                      )}
+                    </div>
                     <div className={`${styles.profileField} ${styles.profileFieldWide}`}>
                       <label htmlFor="intern-role">Intern Role <span className={styles.requiredMark}>*</span></label>
                       <select id="intern-role" name="roleId" value={roleChoice} onChange={(event) => setRoleChoice(event.target.value)} required aria-describedby="intern-role-hint">
@@ -1119,7 +1179,7 @@ export default function InternLanding() {
                       <span>
                         Thanks for applying.
                         <span style={{ display: "block", fontSize: "12px", color: "#94a3b8", margin: "4px 0 8px" }}>
-                          Check {savedApplication.email} for a link to your candidate portal. You can set a password there.
+                          Check {savedApplication.email} for your confirmation email and reference ID. Our team will review your application within 3–5 business days.
                         </span>
                       </span>
                     </span>
@@ -1146,7 +1206,8 @@ export default function InternLanding() {
       {canApply && launchPhase !== "idle" && (
         <ApplicationLaunch
           phase={launchPhase}
-          accountHref="/intern/login?role=intern"
+          applicationId={savedApplication?.applicationId}
+          accountHref="/"
           onDismiss={() => setLaunchPhase("idle")}
         />
       )}
