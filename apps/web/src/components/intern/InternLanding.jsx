@@ -817,30 +817,33 @@ export default function InternLanding() {
                         maxLength={254}
                       />
                     </label>
-                    <label htmlFor="intern-track">
-                      {soleAvailableProgram ? "Internship track" : "Select Internship Track"} <span>*</span>
-                      {soleAvailableProgram ? <>
-                        <input id="intern-track" type="text" value={soleAvailableProgram.name} readOnly/>
-                        <input type="hidden" name="track" value={selectedTrack}/>
-                      </> : <select
-                        id="intern-track"
-                        name="track"
-                        value={selectedTrack}
-                        onChange={(event) =>
-                          setTrackChoice(event.target.value)
-                        }
-                        required
-                      >
-                        <option value="" disabled>
-                          Choose a track
-                        </option>
-                        {tracks.filter((track) => availableTrackIds.includes(track.id)).map((track) => (
-                          <option key={track.id} value={track.id}>
-                            {track.name}
+                    {!soleAvailableProgram ? (
+                      <label htmlFor="intern-track">
+                        Select Internship Track <span>*</span>
+                        <select
+                          id="intern-track"
+                          name="track"
+                          value={selectedTrack}
+                          onChange={(event) =>
+                            setTrackChoice(event.target.value)
+                          }
+                          required
+                        >
+                          <option value="" disabled>
+                            Choose a track
                           </option>
-                        ))}
-                      </select>}
-                    </label>
+                          {tracks
+                            .filter((track) => availableTrackIds.includes(track.id))
+                            .map((track) => (
+                              <option key={track.id} value={track.id}>
+                                {track.name}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                    ) : (
+                      <input type="hidden" name="track" value={selectedTrack} />
+                    )}
                     <div className={styles.profileField}>
                       <label htmlFor="intern-linkedin">
                         LinkedIn Profile <span className={styles.requiredMark}>*</span>
