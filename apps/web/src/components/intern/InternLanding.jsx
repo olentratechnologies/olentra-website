@@ -182,7 +182,7 @@ function BackgroundWaves() {
 }
 
 export default function InternLanding() {
-  const { commands, ready, sessionReady, connected, data, requestMagicLink } = useInternship();
+  const { commands, ready, sessionReady, connected, data } = useInternship();
   const { features, ready: featuresReady } = useSiteFeatures();
   const opportunities = data.opportunities || INTERNSHIP_OPPORTUNITIES;
   const internshipDuration = data.settings.duration || opportunities.duration || INTERNSHIP_OPPORTUNITIES.duration;
@@ -214,7 +214,6 @@ export default function InternLanding() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [alreadyAppliedEmail, setAlreadyAppliedEmail] = useState("");
-  const [resendStatus, setResendStatus] = useState("idle");
   const [savedApplication, setSavedApplication] = useState(null);
   const submissionLock = useRef(false);
   const uploadedResume = useRef(null);
@@ -323,6 +322,27 @@ export default function InternLanding() {
     nameInput.current?.focus({ preventScroll: true });
   }
 
+  function resetApplicationForm() {
+    const form = formRef.current;
+    form?.reset();
+    for (const field of Array.from(form?.elements || [])) field.setCustomValidity?.("");
+    setTrackChoice("");
+    setRoleChoice("");
+    setScheduleChoice("");
+    uploadedResume.current = null;
+    setResumeName("");
+    setResumeError("");
+    setResumeDragging(false);
+    setLinkedInError("");
+    setGithubError("");
+    setVideoError("");
+    setSubmitError("");
+    setAlreadyAppliedEmail("");
+    setShowValidation(false);
+    setValidationAttempt(0);
+    clearApplyDraft();
+  }
+
   async function submitPreview(event) {
     event.preventDefault();
     if (!canApplyRef.current) {
@@ -371,21 +391,6 @@ export default function InternLanding() {
       github: String(formData.get("github") || "").trim(),
       videoUrl: String(formData.get("videoUrl") || "").trim(),
     };
-    if (
-      savedApplication &&
-      savedApplication.email?.toLowerCase() === input.email &&
-      savedApplication.name === input.name &&
-      savedApplication.programId === input.programId &&
-      savedApplication.roleId === input.roleId &&
-      savedApplication.schedule === input.schedule &&
-      (savedApplication.linkedin || "") === input.linkedin &&
-      (savedApplication.github || "") === input.github &&
-      (savedApplication.videoUrl || "") === input.videoUrl
-    ) {
-      setPreviewComplete(false);
-      setLaunchPhase("launching");
-      return;
-    }
     const file = resumeInput.current?.files?.[0];
     if (!file) {
       setResumeError("Please upload your resume.");
@@ -395,7 +400,6 @@ export default function InternLanding() {
     setSubmitting(true);
     setSubmitError("");
     setAlreadyAppliedEmail("");
-    setResendStatus("idle");
     setPreviewComplete(false);
     setShowValidation(false);
     try {
@@ -418,9 +422,9 @@ export default function InternLanding() {
         }
         return;
       }
-      // The response is the same for new and repeat emails, so remember what was sent.
+      // Only a newly accepted application reaches the success screen.
       setSavedApplication({ ...input, applicationId: result.data?.applicationId, message: result.data?.message });
-      clearApplyDraft();
+      resetApplicationForm();
       if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) return;
       setLaunchPhase("launching");
     } catch (error) {
@@ -1111,50 +1115,9 @@ export default function InternLanding() {
                           <p style={{ margin: "4px 0 10px", fontSize: "13px", color: "#cbd5e1" }}>
                             {submitError}
                           </p>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: "10px",
-                              alignItems: "center",
-                            }}
-                          >
-                            <button
-                              type="button"
-                              disabled={resendStatus === "sending"}
-                              onClick={async () => {
-                                setResendStatus("sending");
-                                try {
-                                  await requestMagicLink(alreadyAppliedEmail);
-                                  setResendStatus("sent");
-                                } catch {
-                                  setResendStatus("sent");
-                                }
-                              }}
-                              style={{
-                                background: "#2563eb",
-                                color: "#ffffff",
-                                border: "none",
-                                borderRadius: "6px",
-                                padding: "6px 12px",
-                                fontSize: "12px",
-                                fontWeight: 500,
-                                cursor: "pointer",
-                              }}
-                            >
-                              {resendStatus === "sending"
-                                ? "Sending link…"
-                                : resendStatus === "sent"
-                                  ? "Sign-in link sent! Check inbox"
-                                  : "Resend sign-in link to my email"}
-                            </button>
-                            <Link
-                              href="/intern/login?role=intern"
-                              style={{ fontSize: "12px", color: "#60a5fa" }}
-                            >
-                              Sign in with password <ArrowRight size={11} />
-                            </Link>
-                          </div>
+                          <Link href="/intern/login?role=intern" style={{ fontSize: "12px", color: "#60a5fa" }}>
+                            Already selected? Sign in <ArrowRight size={11} />
+                          </Link>
                         </>
                       ) : (
                         <>

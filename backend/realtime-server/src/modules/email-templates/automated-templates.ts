@@ -1,0 +1,38 @@
+import { DomainError } from "../../shared/errors";
+
+export type EmailTemplate = { subject: string; body: string };
+export const AUTOMATED_EMAILS = [
+  { id: "application-received", name: "Application received", trigger: "Application submitted", placeholders: ["firstName", "fullName", "program", "referenceId"], subject: "Application Received: {program} (Ref: {referenceId})", body: "Hi {fullName},\n\nThank you for applying to the {program} internship at Olentra. We have received your application. Keep your reference ID for future communication. Our team will review your application within 3–5 business days. No portal account or action is required at this stage." },
+  { id: "shortlisted", name: "Shortlisted", trigger: "Status changes to Shortlisted", placeholders: ["firstName", "fullName", "program"], subject: "You’ve been shortlisted at Olentra", body: "Hi {fullName},\n\nYour application to {program} has moved to our shortlist. Our team will contact you about the next steps." },
+  { id: "interview-scheduled", name: "Interview scheduled or updated", trigger: "Interview scheduled or rescheduled", placeholders: ["firstName", "fullName", "program", "interviewTime"], subject: "Interview scheduled for your {program} application", body: "Hi {fullName},\n\nYour interview for {program} is scheduled for {interviewTime}. We look forward to meeting you. A calendar invitation is attached. Portal access becomes available after selection." },
+  { id: "interview-reminder", name: "Interview reminder", trigger: "About 24 hours before the interview", placeholders: ["firstName", "fullName", "program", "interviewTime"], subject: "Reminder: your Olentra interview is coming up", body: "Hi {fullName},\n\nThis is a reminder about your {program} interview at {interviewTime}. Please use the meeting link below to join. Portal access becomes available after selection." },
+  { id: "interview-cancelled", name: "Interview cancelled", trigger: "Interview cancelled", placeholders: ["firstName", "fullName", "program", "interviewTime"], subject: "Your {program} interview was cancelled", body: "Hi {fullName},\n\nYour interview for {program} on {interviewTime} has been cancelled. A calendar cancellation is attached. The team will contact you if it is rescheduled." },
+  { id: "selected", name: "Selected", trigger: "Status changes to Selected", placeholders: ["firstName", "fullName", "program"], subject: "Congratulations! Welcome to the Olentra Internship Program", body: "Hi {fullName},\n\nCongratulations! You have been selected for the {program} internship at Olentra Technologies. Activate your internship portal using the one-time link below, and share your achievement on LinkedIn." },
+  { id: "offer", name: "Formal offer", trigger: "Admin sends an offer", placeholders: ["firstName", "fullName", "program"], subject: "Your Olentra internship offer: {program}", body: "Hi {fullName},\n\nYour offer for {program} is ready. Open your candidate portal to review the details and accept or decline the offer." },
+  { id: "onboarding", name: "Onboarding approved", trigger: "Admin approves onboarding", placeholders: ["firstName", "fullName", "program"], subject: "Your {program} onboarding is approved", body: "Hi {fullName},\n\nYour onboarding for {program} has been approved. Open your candidate portal to get started." },
+  { id: "certificate", name: "Certificate issued", trigger: "Certificate generated for an eligible completed intern", placeholders: ["firstName", "fullName", "program"], subject: "Your Olentra internship certificate is ready", body: "Hi {fullName},\n\nYour {program} internship certificate has been issued. Verify your certificate and share it on LinkedIn using the links below." },
+  { id: "signin", name: "Requested sign-in link", trigger: "Selected or Joined applicant requests a sign-in link", placeholders: ["firstName", "fullName"], subject: "Your Olentra Candidate Portal Sign-In Link", body: "Hi {fullName},\n\nUse this secure sign-in link to open your candidate portal." },
+] as const;
+export type AutomatedEmailId = typeof AUTOMATED_EMAILS[number]["id"];
+export const emailDefinition = (id: string) => {
+  const definition = AUTOMATED_EMAILS.find(item => item.id === id);
+  if (!definition) throw new DomainError("INVALID_REQUEST", "Choose a valid automated email.");
+  return definition;
+};
+export function validateEmailTemplate(id: string, input: Record<string, unknown>): EmailTemplate {
+  const definition = emailDefinition(id);
+  const subject = typeof input.subject === "string" ? input.subject.trim() : "";
+  const body = typeof input.body === "string" ? input.body.trim() : "";
+  if (!subject || subject.length > 160 || /[\r\n]/.test(subject) || !body || body.length > 5000) throw new DomainError("INVALID_REQUEST", "Enter a subject of up to 160 characters and a message of up to 5,000 characters.");
+  if (["application-received", "shortlisted"].includes(id) && /https?:|www\.|\/intern\/|mailto:/i.test(`${subject} ${body}`)) throw new DomainError("INVALID_REQUEST", "Receipt and shortlist emails cannot contain links. Portal access starts after selection.");
+  for (const match of `${subject}\n${body}`.matchAll(/\{([^{}]*)\}/g)) {
+    if (!(definition.placeholders as readonly string[]).includes(match[1]!)) throw new DomainError("INVALID_REQUEST", `Unsupported placeholder: {${match[1]}}.`);
+  }
+  if (/[{}]/.test(`${subject}\n${body}`.replace(/\{[^{}]*\}/g, ""))) throw new DomainError("INVALID_REQUEST", "Use placeholders in the form {firstName}.");
+  if (["application-received", "shortlisted"].includes(id) && /https?:|www\.|\/intern\/|<a\b/i.test(`${subject}\n${body}`)) throw new DomainError("INVALID_REQUEST", "Receipt and shortlist emails cannot include portal or activation links.");
+  return { subject, body };
+}
+export function fillEmailTemplate(template: EmailTemplate, values: Record<string, string>): EmailTemplate {
+  const fill = (text: string) => text.replace(/\{(\w+)\}/g, (_match, key) => values[key] || "");
+  return { subject: fill(template.subject).replace(/[\r\n]/g, " "), body: fill(template.body) };
+}

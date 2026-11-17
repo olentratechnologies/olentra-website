@@ -1,5 +1,6 @@
 "use client";
 
+import AutomatedEmailSettings from "./AutomatedEmailSettings";
 import { useState } from "react";
 import { MessageSquareText } from "lucide-react";
 import { Button, Panel } from "./DashboardUI";
@@ -37,7 +38,7 @@ export default function TemplatesSettings({ commands, notify }) {
     notify("Template deleted.");
     void query.refresh();
   }
-  return <Panel className={`${styles.settingsPanel} ${styles.settingsForm}`}>
+  return <><AutomatedEmailSettings commands={commands} notify={notify}/><Panel className={`${styles.settingsPanel} ${styles.settingsForm}`}>
     <div className={styles.sectionHeading}><span><MessageSquareText size={19}/></span><div><h2>Message templates</h2><p>Reusable messages for applicants and interns. Staff pick one in any message box.</p></div></div>
     {templates.length > 0 && <ul className={styles.templateList}>
       {templates.map((template) => <li key={template.id}>
@@ -57,5 +58,5 @@ export default function TemplatesSettings({ commands, notify }) {
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : form.id ? "Update template" : "Add template"}</Button>
       </div>
     </form>
-  </Panel>;
+  </Panel></>;
 }

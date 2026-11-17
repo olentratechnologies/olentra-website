@@ -13,7 +13,7 @@ import { createAuthRoutes, AUTH_PATHS } from "../interfaces/http/auth.routes";
 import { clientAddress, mongoAttemptStore } from "../modules/auth/login-throttle";
 import { runLeasedJob } from "../modules/outbox/outbox";
 import { SITE_FEATURES_PATH, canControlWebsite, createSiteFeatureStore } from "../modules/site-features/site-features";
-import { createSigninEmailTemplateSettings, SIGNIN_EMAIL_TEMPLATE_PATH } from "../modules/email-templates/signin-template-settings";
+import { createSigninEmailTemplateSettings } from "../modules/email-templates/signin-template-settings";
 import { bearerToken } from "../interfaces/http/middleware";
 import { removeOrphanedUploads } from "../modules/files/cleanup";
 import { createRateLimiter, type RateLimiter } from "../modules/auth/rate-limit";
@@ -122,7 +122,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     return new Response("WebSocket upgrade failed", { status: 400 });
   }
 
-  async function attachInternship({ domain, secret, mailer = createInternshipMailer(), siteOrigin = internshipEnv("INTERNSHIP_SITE_ORIGIN", "INTERN_SITE_ORIGIN") || "http://localhost:3000" }: InternshipAttachOptions) {
+  async function attachInternship({ domain, secret, mailer = createInternshipMailer(undefined, undefined, id => domain.readAutomatedEmailTemplate(id)), siteOrigin = internshipEnv("INTERNSHIP_SITE_ORIGIN", "INTERN_SITE_ORIGIN") || "http://localhost:3000" }: InternshipAttachOptions) {
     if (stopped) throw new Error("Realtime server is stopped.");
     if (runtime) await runtime.close();
     const container = createInternshipContainer({ domain, secret, mailer, siteOrigin });
@@ -150,6 +150,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (notice.status === "selected") {
           const app = await domain.findApplicationByEmail(notice.to);
           const appId = app ? String(app._id) : "";
+          if (!app || !["Selected", "Joined"].includes(String(app.status))) return;
           const token = appId ? await auth.generateMagicLinkToken(notice.to, appId) : "";
           portalUrl = token ? `${siteOrigin}/intern/verify?token=${token}` : `${siteOrigin}/intern/login?role=intern`;
           const shareText = `I'm thrilled to share that I have been accepted into the Olentra Internship Program (${notice.programName})! 🚀 Looking forward to building, learning, and growing with Olentra Technologies.\n\n#OlentraInternship #TechCareers #NewBeginnings`;
@@ -165,26 +166,20 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (!result.ok) throw new Error(result.error || "Applicant status email was not delivered.");
       },
       async sendInterviewScheduled(notice) {
-        try {
-          const result = await mailer.sendInterviewScheduled({
-            ...notice,
-            portalUrl: `${siteOrigin}/intern/portal`,
-          });
-          if (!result.ok) logger.warn("Interview email was not delivered", { to: notice.to, error: result.error });
-        } catch (error) { logger.warn("Failed to send interview email", { error }); }
+        const result = await mailer.sendInterviewScheduled({ ...notice, portalUrl: `${siteOrigin}/intern/portal` });
+        if (!result.ok) throw new Error(result.error || "Interview email was not delivered.");
+      },
+      async sendInterviewReminder(notice) {
+        const result = await mailer.sendInterviewReminder({ ...notice, portalUrl: `${siteOrigin}/intern/portal` });
+        if (!result.ok) throw new Error(result.error || "Interview reminder was not delivered.");
       },
       async sendNotice(notice) {
         const result = await mailer.sendNotice({ ...notice, ctaUrl: `${siteOrigin}${notice.ctaPath}` });
         if (!result.ok) throw new Error(result.error || "Reminder email was not delivered.");
       },
       async sendInterviewCancelled(notice) {
-        try {
-          const result = await mailer.sendInterviewCancelled({
-            ...notice,
-            portalUrl: `${siteOrigin}/intern/portal`,
-          });
-          if (!result.ok) logger.warn("Interview cancellation email was not delivered", { to: notice.to, error: result.error });
-        } catch (error) { logger.warn("Failed to send interview cancellation email", { error }); }
+        const result = await mailer.sendInterviewCancelled({ ...notice, portalUrl: `${siteOrigin}/intern/portal` });
+        if (!result.ok) throw new Error(result.error || "Interview cancellation email was not delivered.");
       },
     });
     await domain.initialize();
@@ -377,16 +372,6 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           const body = await request.json() as { state?: unknown; expectedRevision?: unknown };
           return sendJson({ ok: true, data: await runtime.siteFeatures.write(body.state, Number(body.expectedRevision)) }, origin);
         }
-        if (url.pathname === SIGNIN_EMAIL_TEMPLATE_PATH && (request.method === "GET" || request.method === "PUT")) {
-          const token = bearerToken(request);
-          const account = token ? (await runtime.auth.verify(token)).account : null;
-          if (!account) throw new DomainError("UNAUTHENTICATED", "Sign in to manage email templates.");
-          if (!canControlWebsite(account)) throw new DomainError("FORBIDDEN", "Only workspace owners and administrators can change live email templates.");
-          if (request.method === "GET") return sendJson({ ok: true, data: await runtime.signinEmailTemplates.read() }, origin);
-          if (Number(request.headers.get("content-length") || 0) > 2048) throw new DomainError("INVALID_REQUEST", "The email template selection is too large.");
-          const body = await request.json() as { variantId?: unknown };
-          return sendJson({ ok: true, data: await runtime.signinEmailTemplates.write(body.variantId, account.email) }, origin);
-        }
         if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);
         throw new DomainError("NOT_FOUND", "Endpoint not found.");
@@ -490,7 +475,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
   };
 }
 
-export async function createInternshipServer({ domain, secret, port = 3003, hostname = "127.0.0.1", allowedOrigins = [], mailer = createInternshipMailer(), siteOrigin = internshipEnv("INTERNSHIP_SITE_ORIGIN", "INTERN_SITE_ORIGIN") || "http://localhost:3000" }: { domain: Domain; secret: string; port?: number; hostname?: string; allowedOrigins?: string[]; mailer?: ReturnType<typeof createInternshipMailer>; siteOrigin?: string }) {
+export async function createInternshipServer({ domain, secret, port = 3003, hostname = "127.0.0.1", allowedOrigins = [], mailer = createInternshipMailer(undefined, undefined, id => domain.readAutomatedEmailTemplate(id)), siteOrigin = internshipEnv("INTERNSHIP_SITE_ORIGIN", "INTERN_SITE_ORIGIN") || "http://localhost:3000" }: { domain: Domain; secret: string; port?: number; hostname?: string; allowedOrigins?: string[]; mailer?: ReturnType<typeof createInternshipMailer>; siteOrigin?: string }) {
   const instance = createRealtimeServer({ port, hostname, allowedOrigins });
   const internship = await instance.attachInternship({ domain, secret, mailer, siteOrigin });
   return { ...instance, auth: internship.auth };

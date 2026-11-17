@@ -62,8 +62,8 @@ behavior, authorization, and MongoDB collection names are unchanged.
 | PRESENCE_LOG | false | Presence transport error logging |
 | INTERNSHIP_MONGODB_URI | optional at process start | Runtime MongoDB connection string |
 | INTERNSHIP_JWT_SECRET | auto-generated in development | Production signing secret, at least 32 bytes |
-| RESEND_API_KEY | — | Transactional email API key |
-| INTERNSHIP_SENDER_EMAIL | — | Sender address |
+| EMAIL_SERVER_URL | http://127.0.0.1:3001 | Central email delivery service |
+| EMAIL_DELIVERY_TOKEN | — | Shared server-to-server token; matches email-server |
 | INTERNSHIP_SITE_ORIGIN | http://localhost:3000 | Frontend origin for intake checks and links |
 | INTERNSHIP_WORKSPACE_ORIGIN | http://localhost:3002 | Company workspace origin for staff reset links |
 

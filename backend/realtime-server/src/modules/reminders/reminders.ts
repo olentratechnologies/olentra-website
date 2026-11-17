@@ -1,8 +1,11 @@
+import { createHash } from "node:crypto";
+import type { ClientSession } from "mongodb";
+import type { Principal } from "../../shared/principal";
 import type { Collection, Document } from "mongodb";
 import type { Outbox } from "../outbox/outbox";
 import { isoWeek } from "../checkins/weeks";
-import { interviewTimeLabel } from "../interviews/ics";
 
+type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session: ClientSession) => Promise<T>) => Promise<T>;
 type Row = Document & { _id: string };
 export const REVIEW_AFTER_DAYS = 3;
 const DAY = 86_400_000;
@@ -20,7 +23,7 @@ export function isDigestTime(now: Date) {
  * - review reminders for applications waiting 3+ days (setting: reviewReminder)
  * - Monday digest for admins (setting: weeklyDigest)
  */
-export async function runReminders({ collection, outbox, now = new Date() }: { collection: (name: string) => Collection<Row>; outbox: Outbox; now?: Date }) {
+export async function runReminders({ collection, outbox, transact, now = new Date() }: { collection: (name: string) => Collection<Row>; outbox: Outbox; transact: Tx; now?: Date }) {
   const applications = collection("applications"), interviews = collection("interviews"), accounts = collection("accounts"), settings = collection("settings"), tasks = collection("tasks");
   const config = await settings.findOne({ _id: "program" }, { projection: { reviewReminder: 1, weeklyDigest: 1, lastDigestWeek: 1 } });
   const sent = { interviews: 0, reviews: 0, digests: 0 };
@@ -29,17 +32,16 @@ export async function runReminders({ collection, outbox, now = new Date() }: { c
   // Interview reminders, about a day ahead.
   const soon = await interviews.find({ status: { $ne: "Cancelled" }, reminderSentOn: { $exists: false }, scheduledAt: { $gt: now.toISOString(), $lte: new Date(now.getTime() + DAY).toISOString() } }).limit(100).toArray();
   for (const interview of soon) {
-    const claimed = await interviews.updateOne({ _id: interview._id, reminderSentOn: { $exists: false } }, { $set: { reminderSentOn: now.toISOString() } });
-    if (!claimed.modifiedCount) continue;
-    const application = await applications.findOne({ _id: interview.applicationId }, { projection: { email: 1, name: 1, program: 1 } });
-    if (!application?.email) continue;
-    await outbox.enqueue("notice", {
-      to: String(application.email), subject: "Reminder: your Olentra interview is tomorrow", heading: "Your interview is coming up",
-      intro: `Hi ${String(application.name || "there").split(/\s+/)[0]}, this is a reminder about your ${String(application.program || "internship")} interview.`,
-      items: [`When: ${interviewTimeLabel(String(interview.scheduledAt))}`, `Meeting link: ${String(interview.meetingUrl || "")}`].join("\n"),
-      ctaLabel: "Open your candidate portal", ctaPath: "/intern/portal",
+    const sequence = String(interview.sequence || 0);
+    const key = createHash("sha256").update(`interview-reminder:${interview._id}:${sequence}`).digest("hex");
+    const queued = await transact(key, null, { interviewId: interview._id, sequence }, async session => {
+      const claimed = await interviews.updateOne({ _id: interview._id, scheduledAt: interview.scheduledAt, sequence: interview.sequence ?? { $exists: false }, status: { $ne: "Cancelled" }, reminderSentOn: { $exists: false } }, { $set: { reminderSentOn: now.toISOString() } }, { session });
+      if (!claimed.modifiedCount) return false;
+      await outbox.enqueue("interviewReminder", { applicationId: String(interview.applicationId), interviewId: interview._id, sequence, scheduledAt: String(interview.scheduledAt), meetingUrl: String(interview.meetingUrl || "") }, session);
+      return true;
     });
-    sent.interviews++;
+    if (queued) sent.interviews++;
+
   }
 
   // Review reminders: one email per reviewer listing what's waiting on them.

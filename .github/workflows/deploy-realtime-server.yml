@@ -47,7 +47,7 @@ jobs:
         working-directory: backend/realtime-server
         env:
           INTERNSHIP_TEST_MONGODB_URI: mongodb://localhost:27017/olentra_ci_test?replicaSet=rs0&directConnection=true
-          RESEND_API_KEY: ''
+          EMAIL_DELIVERY_TOKEN: ''
         run: bun run test
 
       - name: Typecheck realtime server
@@ -64,11 +64,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           OLENTRA_REPOSITORY: ${{ github.repository }}
+          EMAIL_SERVER_URL: ${{ vars.EMAIL_SERVER_URL }}
+          EMAIL_DELIVERY_TOKEN: ${{ secrets.EMAIL_DELIVERY_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GITHUB_TOKEN,OLENTRA_REPOSITORY
+          envs: GITHUB_TOKEN,OLENTRA_REPOSITORY,EMAIL_SERVER_URL,EMAIL_DELIVERY_TOKEN
           script: |
             set -Eeuo pipefail
 
@@ -126,6 +128,24 @@ jobs:
             cd "$SERVICE_DIR"
             bun install --frozen-lockfile
             bun run build
+
+            if [ -z "${EMAIL_SERVER_URL:-}" ] || [ -z "${EMAIL_DELIVERY_TOKEN:-}" ]; then
+              echo "Configure EMAIL_SERVER_URL and EMAIL_DELIVERY_TOKEN in GitHub before deploying."
+              exit 1
+            fi
+            export OLENTRA_TARGET_ENV_FILE="$ENV_FILE"
+            bun -e '
+              const file = process.env.OLENTRA_TARGET_ENV_FILE;
+              let text = await Bun.file(file).text();
+              for (const key of ["EMAIL_SERVER_URL", "EMAIL_DELIVERY_TOKEN"]) {
+                const value = process.env[key];
+                const pattern = new RegExp("^" + key + "=.*$", "gm");
+                text = pattern.test(text) ? text.replace(pattern, () => key + "=" + value) : text.trimEnd() + "\n" + key + "=" + value + "\n";
+              }
+              text = text.replace(/^RESEND_API_KEY=.*\r?\n?/gm, "");
+              await Bun.write(file, text);
+            '
+            echo "Configured centralized email delivery."
 
             deploy_user="$(id -un)"
             bun_path="$(command -v bun)"

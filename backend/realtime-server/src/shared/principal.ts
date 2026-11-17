@@ -36,6 +36,7 @@ export type InternshipHooks = {
   sendApplicationConfirmation?: (to: string, name: string, programName: string, applicationId: string) => Promise<unknown>;
   sendApplicantStatus?: (notice: ApplicantStatusNotice) => Promise<unknown>;
   sendInterviewScheduled?: (notice: InterviewScheduledNotice) => Promise<unknown>;
+  sendInterviewReminder?: (notice: InterviewScheduledNotice) => Promise<unknown>;
   sendInterviewCancelled?: (notice: InterviewScheduledNotice) => Promise<unknown>;
   /** A plain reminder or digest email; `ctaPath` is a path on the website. */
   sendNotice?: (notice: { to: string; subject: string; heading: string; intro: string; items: string[]; ctaLabel: string; ctaPath: string }) => Promise<unknown>;

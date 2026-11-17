@@ -64,7 +64,7 @@ jobs:
       - name: Run presence, realtime and internship integration tests
         env:
           INTERNSHIP_TEST_MONGODB_URI: mongodb://localhost:27017/olentra_ci_test?replicaSet=rs0&directConnection=true
-          RESEND_API_KEY: ''
+          EMAIL_DELIVERY_TOKEN: ''
         run: npm run presence:test
 
       - name: Run company workspace tests

@@ -1,7 +1,7 @@
 {
   "name": "@olentra/email-server",
   "version": "1.0.50",
-  "description": "Olentra transactional email backend for contact enquiries – Bun + Elysia + Resend",
+  "description": "Olentra centralized Google SMTP delivery for contact and internship emails",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "build": "bun build --target=bun --minify --outfile=dist/email-server.js src/index.ts",
@@ -12,9 +12,11 @@
     "healthcheck": "bun scripts/healthcheck.ts"
   },
   "dependencies": {
-    "elysia": "latest"
+    "elysia": "latest",
+    "nodemailer": "^10.6.0"
   },
   "devDependencies": {
+    "@types/nodemailer": "^8.0.2",
     "bun-types": "latest",
     "typescript": "^7.0.2"
   },

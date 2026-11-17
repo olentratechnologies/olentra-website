@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Activity, Users, MessageSquare, ClipboardCheck, ChevronRight, FilePenLine, SlidersHorizontal, FileText, Check, Clock3, TriangleAlert, Mail, ArrowUpRight, Rocket } from "lucide-react";
+import { Activity, Users, MessageSquare, ClipboardCheck, ChevronRight, FilePenLine, SlidersHorizontal, FileText, Check, Clock3, TriangleAlert, ArrowUpRight, Rocket } from "lucide-react";
 import { Button, LineChart, MiniMap, Panel, Progress, Select, Stat } from "./ui";
 import { useAdmin } from "./store";
 import { LiveUsersStat } from "./live-user-count";
@@ -70,7 +70,6 @@ export function OverviewPage() {
         <p>{description}</p>
         <div className={hero.heroActions}>
           {can("Website Controls", "view") && <Button href="/dashboard/website-controls" variant="primary" icon={SlidersHorizontal}>Website controls<ChevronRight size={15} aria-hidden="true" /></Button>}
-          {can("Email Templates", "view") && <Button href="/dashboard/email-templates" icon={Mail}>Email templates</Button>}
           {can("Content & Media", "edit") && <Link className={hero.textAction} href="/dashboard/content">Create update<ArrowUpRight size={14} aria-hidden="true" /></Link>}
         </div>
       </div>

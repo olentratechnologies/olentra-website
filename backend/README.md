@@ -6,14 +6,14 @@ tests, scripts, Docker baseline, and deployment boundary.
 
 | Service | Ports | Boundary | Dependencies | Health |
 | --- | --- | --- | --- | --- |
-| `email-server` | 3001 | Contact enquiry email HTTP API | Resend | `GET /health` |
-| `realtime-server` | 3003 | Presence + internship HTTP/WebSocket APIs | In-memory presence, MongoDB replica set/GridFS and optional Resend for internship | `GET /health`, `GET /stats`, `GET /intern/health` |
+| `email-server` | 3001 | Central contact + internship email delivery API | Google SMTP | `GET /health` |
+| `realtime-server` | 3003 | Presence + internship HTTP/WebSocket APIs | In-memory presence, MongoDB replica set/GridFS and email-server HTTP delivery | `GET /health`, `GET /stats`, `GET /intern/health` |
 
 ## Service ownership
 
 - `email-server` validates and rate-limits multipart enquiries, then owns the
-  Resend request. The frontend `/api/contact` route is the caller-facing proxy;
-  the private backend contract is `POST /api/contact`.
+  Google SMTP connection. The frontend `/api/contact` route is the caller-facing proxy;
+  the contact contract is `POST /api/contact`, and realtime uses authenticated `POST /api/email`.
 - `realtime-server` is one Bun process with two isolated protocols:
   - Presence uses `/ws` and `/`, `role=visitor`, `role=dashboard`, `visitorId`,
     snapshots, legacy ping messages, and the `metrics:presence` topic.

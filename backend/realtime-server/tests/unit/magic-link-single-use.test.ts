@@ -53,12 +53,12 @@ test("a reset request for an applicant without an account sends a sign-in link a
     auth,
     domain: {
       findUserByEmail: async () => null,
-      findApplicationByEmail: async () => ({ _id: "OL-2", email: "applicant@example.test", name: "Applicant" }),
+      findApplicationByEmail: async () => ({ _id: "OL-2", status: "Selected", email: "applicant@example.test", name: "Applicant" }),
       autoProvisionAccount: async () => { provisioned++; throw new Error("must not provision"); },
     } as any,
     mailer: {
-      sendMagicLink: async (message: unknown) => { magic.push(message); },
-      sendPasswordResetLink: async (message: unknown) => { resets.push(message); },
+      sendMagicLink: async (message: unknown) => { magic.push(message); return { ok: true }; },
+      sendPasswordResetLink: async (message: unknown) => { resets.push(message); return { ok: true }; },
     } as any,
     siteOrigin: "https://site.example.test",
     signinEmailTemplates: { read: async () => ({ variantId: "warm" }) } as any,
@@ -71,4 +71,20 @@ test("a reset request for an applicant without an account sends a sign-in link a
   expect(magic).toHaveLength(1);
   expect(magic[0].magicLinkUrl).toStartWith("https://site.example.test/intern/verify?token=");
   expect(magic[0].templateVariant).toBe("warm");
+});
+
+test("requested sign-in and no-account reset links are sent only for Selected or Joined applications", async () => {
+  for (const status of [undefined, "Applied", "Under Review", "Shortlisted", "Rejected", "Declined", "Withdrawn", "Selected", "Joined"]) {
+    const { auth } = authWithUseStore();
+    const sent: any[] = [];
+    const routes = createAuthRoutes({
+      auth, domain: { findUserByEmail: async () => null, findApplicationByEmail: async () => ({ _id: "OL-eligible", email: "a@example.test", name: "Alex", status }) } as any,
+      mailer: { sendMagicLink: async (message: any) => { sent.push(message); return { ok: true }; } } as any,
+      siteOrigin: "https://site.example.test", sendJson: (body, _origin, status = 200) => Response.json(body, { status }),
+    });
+    const request = () => new Request("https://api.example.test/intern/auth/magic-link", { method: "POST", body: JSON.stringify({ email: "a@example.test" }) });
+    expect((await routes.magicLink(request(), null)).status).toBe(200);
+    expect((await routes.requestPasswordReset(request(), null)).status).toBe(200);
+    expect(sent).toHaveLength(status === "Selected" || status === "Joined" ? 2 : 0);
+  }
 });

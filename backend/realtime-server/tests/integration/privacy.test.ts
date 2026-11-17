@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
 import { internshipTestMongoUri } from "./config";
-import { connectInternDatabase, createInternshipDomain } from "./domain";
+import { connectInternDatabase, createInternshipDomain, type Principal } from "./domain";
 
 const uri = internshipTestMongoUri();
 if (!uri) throw new Error("Set INTERNSHIP_TEST_MONGODB_URI for isolated internship integration tests.");
@@ -31,7 +31,8 @@ afterAll(async () => {
 async function applicant(status = "Applied", extra: Record<string, unknown> = {}) {
   const applicationId = `OL-${randomUUID()}`, email = `privacy-${randomUUID()}@example.test`;
   await domain.collection("applications").insertOne({ _id: applicationId, name: "Privacy Person", email, programId: "explorer", program: "Tech Explorer", status, appliedOn: "2026-01-01", history: [], notes: [], version: 1, ...extra });
-  const account = await domain.autoProvisionAccount(applicationId, email);
+  const account: Principal = { id: `ACC-${randomUUID()}`, email, name: "Privacy Person", role: "intern", applicationId, sessionVersion: 1 };
+  await domain.collection("accounts").insertOne({ _id: account.id, email, name: account.name, role: "intern", applicationId });
   return { applicationId, email, account };
 }
 

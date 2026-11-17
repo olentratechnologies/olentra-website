@@ -21,7 +21,7 @@ beforeAll(async () => {
   connection = await connectInternDatabase(uri);
   domain = createInternshipDomain({ ...connection, prefix });
   instance = await createInternshipServer({ domain, secret: "opportunities-test-secret-at-least-32-bytes", port: 0, allowedOrigins: [origin], siteOrigin: origin,
-    mailer: { async sendApplicationConfirmation({ to, magicLinkUrl }: any) { confirmations.set(to, magicLinkUrl); return { ok: true, delivered: true }; } } as any });
+    mailer: { async sendApplicationConfirmation({ to, applicationId }: any) { confirmations.set(to, applicationId); return { ok: true, delivered: true }; }, async sendApplicantStatus() { return { ok: true, delivered: true }; } } as any });
   base = `http://127.0.0.1:${instance.server.port}`;
   await domain.createTestStaff("staff@example.test", "OpportunitiesPassword2026!");
   await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
@@ -93,7 +93,10 @@ test("every role and schedule persists through the real socket, resume, email-li
     expect(await admin.request("application.get", { id: stored._id })).toMatchObject(expected);
     expect((await admin.request("application.list", { search: email })).items[0]).toMatchObject(expected);
     await domain.processOutbox();
-    const token = new URL(confirmations.get(email)!).searchParams.get("token");
+    expect(confirmations.get(email)).toBe(stored._id);
+    await expect(domain.autoProvisionAccount(stored._id, email)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await admin.request("application.update", { id: stored._id, status: "Selected", expectedVersion: stored.version }, key());
+    const token = await instance.auth.generateMagicLinkToken(email, stored._id);
     const verified = await fetch(base + "/intern/auth/verify-magic-link", { method: "POST", headers: { origin, "content-type": "application/json", "x-intern-context": key() }, body: JSON.stringify({ token }) });
     expect(verified.status).toBe(200);
     const session = await verified.json() as any;

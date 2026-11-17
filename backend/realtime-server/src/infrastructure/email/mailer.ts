@@ -1,4 +1,4 @@
-import { internshipEnv } from "../../config/env";
+import { emailDefinition, fillEmailTemplate, type AutomatedEmailId, type EmailTemplate } from "../../modules/email-templates/automated-templates";
 import { interviewIcs, interviewTimeLabel } from "../../modules/interviews/ics";
 import type { SigninEmailTemplateVariant } from "../../modules/email-templates/signin-template-settings";
 
@@ -50,10 +50,10 @@ interface PasswordResetEmailOptions {
   resetUrl: string;
 }
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const SENDER_EMAIL = internshipEnv("INTERNSHIP_SENDER_EMAIL", "INTERN_SENDER_EMAIL") || "Olentra Careers <website@olentratechnologies.com>";
+const EMAIL_DELIVERY_TOKEN = process.env.EMAIL_DELIVERY_TOKEN;
+const EMAIL_SERVER_URL = process.env.EMAIL_SERVER_URL || "http://127.0.0.1:3001";
 
-export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_EMAIL) {
+export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, deliveryUrl = EMAIL_SERVER_URL, resolveTemplate?: (id: AutomatedEmailId) => Promise<EmailTemplate>) {
   const escapeHtml = (value: string) =>
     value.replace(/[&<>"']/g, (character) => ({
       "&": "&amp;",
@@ -121,96 +121,71 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
 
   type Attachment = { filename: string; content: string; contentType: string };
   async function sendEmail(to: string, subject: string, html: string, text: string, attachments: Attachment[] = []): Promise<SendResult> {
-    if (!apiKey) {
-      if (process.env.NODE_ENV === "production") return { ok: false, delivered: false, error: "Email delivery is not configured." };
-      console.info(`[mailer:offline] Email to ${to} (Subject: ${subject}):\n${text}`);
-      return { ok: true, delivered: false };
-    }
-
+    if (!deliveryToken) return { ok: false, delivered: false, error: "Central email delivery is not configured." };
     try {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        signal: AbortSignal.timeout(10_000),
-        body: JSON.stringify({
-          from: sender,
-          to: [to],
-          subject,
-          html,
-          text,
-          ...(attachments.length ? { attachments: attachments.map(file => ({ filename: file.filename, content: Buffer.from(file.content).toString("base64"), content_type: file.contentType })) } : {}),
-        }),
+      const response = await fetch(`${deliveryUrl.replace(/\/$/, "")}/api/email`, {
+        method: "POST", headers: { Authorization: `Bearer ${deliveryToken}`, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(45_000),
+        body: JSON.stringify({ to: [to], subject, html, text, ...(attachments.length ? { attachments: attachments.map(file => ({ filename: file.filename, content: Buffer.from(file.content).toString("base64"), contentType: file.contentType })) } : {}) }),
       });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "");
-        console.warn(`[mailer] Resend API error (${response.status}):`, errorText);
-        return { ok: false, delivered: false, error: errorText };
-      }
-
-      const data = await response.json() as { id?: string };
-      return { ok: true, delivered: true, id: data.id };
-    } catch (error: any) {
-      console.warn(`[mailer] Failed to send email to ${to}:`, error?.message || error);
-      return { ok: false, delivered: false, error: error?.message || "Email delivery failed" };
+      if (!response.ok) { await response.body?.cancel().catch(() => {}); return { ok: false, delivered: false, error: `Central email delivery failed (${response.status}).` }; }
+      const result = await response.json() as { success?: boolean; id?: string };
+      if (!result.success || !result.id) return { ok: false, delivered: false, error: "Central email delivery was not acknowledged." };
+      return { ok: true, delivered: true, id: result.id };
+    } catch {
+      return { ok: false, delivered: false, error: "Central email delivery is unavailable." };
     }
   }
 
-  return {
-    async sendInterviewScheduled({
-      to,
-      name,
-      programName,
-      scheduledAt,
-      meetingUrl,
-      portalUrl,
-      interviewId,
-      sequence,
-    }: InterviewScheduledEmailOptions): Promise<SendResult> {
-      const subject = `Interview scheduled for your ${programName} application`;
-      const safeName = escapeHtml(name);
-      const safeProgram = escapeHtml(programName);
-      const safePortalUrl = escapeHtml(portalUrl);
-      const time = interviewTimeLabel(scheduledAt);
-      const text = `Hi ${name},\n\nYour interview for ${programName} is scheduled for ${time}.\n\nMeeting link: ${meetingUrl}\n\nOpen your candidate portal: ${portalUrl}\n\nBest regards,\nThe Olentra Team`;
-      const details = emailPanel(`
-        <p style="margin:0 0 5px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#52627a;">Interview details</p>
-        <p style="margin:0;font-size:16px;line-height:1.5;font-weight:700;color:#14213d;">${escapeHtml(time)}</p>
-        <p style="margin:7px 0 0;font-size:13px;line-height:1.5;color:#52627a;">${safeProgram} internship interview</p>
-      `, "blue");
-      const content = `
-        <p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#43536e;">Hi <strong style="color:#14213d;">${safeName}</strong>, your interview has been scheduled. We look forward to learning more about you.</p>
-        ${details}
-        ${emailButton("Join your interview", meetingUrl)}
-        <p style="margin:12px 0 0;font-size:13px;line-height:1.6;color:#66758b;">Need the rest of your application details? <a href="${safePortalUrl}" style="color:#2563eb;font-weight:600;text-decoration:underline;">Open your candidate portal</a>.</p>
-        <p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#718096;">A calendar invitation is attached. Add it to your calendar so you have the meeting time and link handy.</p>
-      `;
-      const html = emailShell({ subject, preheader: `Your ${programName} interview is scheduled for ${time}.`, eyebrow: "Internship admissions · Interview", heading: "Your interview is scheduled", content });
-      const invite = interviewId ? [{ filename: "interview.ics", contentType: "text/calendar; charset=utf-8; method=REQUEST", content: interviewIcs({ uid: interviewId, sequence: sequence ?? 0, startsAt: scheduledAt, summary: `Olentra interview · ${programName}`, description: `Your Olentra internship interview for ${programName}. Join: ${meetingUrl}`, url: meetingUrl, method: "REQUEST" }) }] : [];
-      return sendEmail(to, subject, html, text, invite);
-    },
+  function renderAutomated(id: AutomatedEmailId, options: Record<string, any>, template: EmailTemplate = emailDefinition(id)) {
+    const definition = emailDefinition(id);
+    const name = String(options.name || "there");
+    const time = options.scheduledAt ? interviewTimeLabel(options.scheduledAt) : "";
+    const { subject, body } = fillEmailTemplate(template, { firstName: name.split(/\s+/)[0] || "there", fullName: name, program: String(options.programName || ""), referenceId: String(options.applicationId || "pending"), interviewTime: time });
+    const details: string[] = [], buttons: { label: string; url: string }[] = [];
+    const attachments: Attachment[] = [];
+    if (id === "application-received") details.push(`Application reference: ${options.applicationId || "pending"}`, "Review estimate: 3–5 business days. No portal account or action is required at this stage.");
+    if (id.startsWith("interview-")) {
+      details.push(`When: ${time}`);
+      if (options.cancelReason) details.push(`Reason: ${options.cancelReason}`);
+      if (id !== "interview-cancelled") buttons.push({ label: "Join your interview", url: options.meetingUrl });
+      if (options.portalUrl) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
+      if (options.interviewId && id !== "interview-reminder") {
+        const method = id === "interview-cancelled" ? "CANCEL" : "REQUEST";
+        attachments.push({ filename: "interview.ics", contentType: `text/calendar; charset=utf-8; method=${method}`, content: interviewIcs({ uid: options.interviewId, sequence: options.sequence ?? 0, startsAt: options.scheduledAt, summary: `Olentra interview · ${options.programName}`, description: method === "CANCEL" ? "This interview was cancelled." : `Join: ${options.meetingUrl}`, url: options.meetingUrl, method }) });
+      }
+    }
+    if (id === "selected") {
+      buttons.push({ label: "Activate your internship portal", url: options.portalUrl });
+      if (options.linkedinShareUrl) buttons.push({ label: "Share on LinkedIn", url: options.linkedinShareUrl });
+      details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
+    }
+    if (["offer", "onboarding", "certificate"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
+    if (id === "certificate") {
+      if (options.certificateVerifyUrl) buttons.push({ label: "Verify your certificate", url: options.certificateVerifyUrl });
+      if (options.linkedinShareUrl) buttons.push({ label: "Share your certificate on LinkedIn", url: options.linkedinShareUrl });
+    }
+    if (id === "signin") {
+      buttons.push({ label: "Open candidate portal", url: options.magicLinkUrl });
+      details.push("Single-use link · Expires in 24 hours", "This single-use link expires in 24 hours. If you didn’t request this link, you can safely ignore this email.");
+    }
+    const content = `<p style="margin:0;font-size:15px;line-height:1.75;color:#43536e;white-space:pre-wrap;">${escapeHtml(body)}</p>`
+      + (details.length ? emailPanel(details.map(item => `<p style="margin:5px 0;font-size:14px;line-height:1.65;">${escapeHtml(item)}</p>`).join("")) : "")
+      + buttons.filter(button => button.url).map(button => emailButton(button.label, button.url)).join("");
+    const html = emailShell({ subject, preheader: body.slice(0, 180), eyebrow: "Olentra Careers · Internship program", heading: definition.name, content });
+    const text = [body, ...details, ...buttons.filter(button => button.url).map(button => `${button.label}: ${button.url}`), "The Olentra Team"].join("\n\n");
+    return { subject, html, text, attachments };
+  }
+  async function automated(id: AutomatedEmailId, options: Record<string, any>) {
+    const rendered = renderAutomated(id, options, await resolveTemplate?.(id));
+    return sendEmail(options.to, rendered.subject, rendered.html, rendered.text, rendered.attachments);
+  }
 
-    async sendInterviewCancelled({ to, name, programName, scheduledAt, meetingUrl, portalUrl, interviewId, sequence, cancelReason }: InterviewScheduledEmailOptions): Promise<SendResult> {
-      const subject = `Your ${programName} interview was cancelled`;
-      const time = interviewTimeLabel(scheduledAt);
-      const reason = cancelReason ? `\n\nReason: ${cancelReason}` : "";
-      const text = `Hi ${name},\n\nYour interview for ${programName} on ${time} has been cancelled.${reason}\n\nThe team will be in touch if it's rescheduled. You can check your candidate portal any time: ${portalUrl}\n\nBest regards,\nThe Olentra Team`;
-      const reasonPanel = cancelReason
-        ? emailPanel(`<p style="margin:0 0 5px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#52627a;">Note from the team</p><p style="margin:0;font-size:14px;line-height:1.65;color:#43536e;">${escapeHtml(cancelReason)}</p>`)
-        : "";
-      const content = `
-        <p style="margin:0;font-size:15px;line-height:1.65;color:#43536e;">Hi <strong style="color:#14213d;">${escapeHtml(name)}</strong>, your interview for <strong style="color:#14213d;">${escapeHtml(programName)}</strong> scheduled for <strong style="color:#14213d;">${escapeHtml(time)}</strong> has been cancelled.</p>
-        ${reasonPanel}
-        <p style="margin:20px 0 0;font-size:14px;line-height:1.65;color:#52627a;">The team will be in touch if it is rescheduled. You can check your application details at any time in your candidate portal.</p>
-        ${emailButton("Open candidate portal", portalUrl, "#344563")}
-      `;
-      const html = emailShell({ subject, preheader: `Your ${programName} interview on ${time} has been cancelled.`, eyebrow: "Internship admissions · Interview update", heading: "Interview update", content });
-      const cancellation = interviewId ? [{ filename: "interview.ics", contentType: "text/calendar; charset=utf-8; method=CANCEL", content: interviewIcs({ uid: interviewId, sequence: sequence ?? 1, startsAt: scheduledAt, summary: `Olentra interview · ${programName}`, description: "This interview was cancelled.", url: meetingUrl, method: "CANCEL" }) }] : [];
-      return sendEmail(to, subject, html, text, cancellation);
-    },
+  return {
+    renderAutomated,
+    async sendInterviewScheduled(options: InterviewScheduledEmailOptions): Promise<SendResult> { return automated("interview-scheduled", options); },
+    async sendInterviewCancelled(options: InterviewScheduledEmailOptions): Promise<SendResult> { return automated("interview-cancelled", options); },
+    async sendInterviewReminder(options: InterviewScheduledEmailOptions): Promise<SendResult> { return automated("interview-reminder", options); },
 
     /** A plain reminder or digest: a heading, an intro, a short list and one button. */
     async sendNotice({ to, subject, heading, intro, items, ctaLabel, ctaUrl }: { to: string; subject: string; heading: string; intro: string; items: string[]; ctaLabel: string; ctaUrl: string }): Promise<SendResult> {
@@ -224,248 +199,15 @@ export function createInternshipMailer(apiKey = RESEND_API_KEY, sender = SENDER_
       return sendEmail(to, subject, html, text);
     },
 
-    async sendApplicantStatus({
-      to,
-      name,
-      programName,
-      status,
-      portalUrl,
-      certificateVerifyUrl,
-      linkedinShareUrl,
-    }: ApplicantStatusEmailOptions): Promise<SendResult> {
-      const messages: Record<ApplicantStatus, { subject: string; heading: string; body: string }> = {
-        shortlisted: {
-          subject: "You’ve been shortlisted at Olentra",
-          heading: "You’ve been shortlisted at Olentra",
-          body: `Your application to ${programName} has successfully moved to our shortlist. Our team will review the next round of details and will keep you updated in your candidate portal.`,
-        },
-        selected: {
-          subject: `Congratulations! Welcome to the Olentra Internship Program (${programName}) 🎉`,
-          heading: "Congratulations! You’re In!",
-          body: `We are thrilled to let you know that you have been selected for the ${programName} internship at Olentra Technologies! We were thoroughly impressed by your background, project experience, and technical potential.`,
-        },
-        offer: {
-          subject: `Your Olentra internship offer: ${programName}`,
-          heading: "Your internship offer is ready",
-          body: `The Olentra team has sent you an offer for ${programName}. Review the details and respond in your candidate portal.`,
-        },
-        rejected: {
-          subject: `Update on your Olentra internship application (${programName})`,
-          heading: "Application Status Update",
-          body: `Thank you for taking the time to apply to Olentra Technologies and sharing your background with us. After careful consideration, we are unable to offer you an internship position for this cohort. We received a tremendous number of outstanding applications and had to make difficult decisions. We truly appreciate your interest in Olentra, wish you continued success in your learning and career, and warmly invite you to stay connected with us on LinkedIn and re-apply in future cohorts.`,
-        },
-        onboarding: {
-          subject: `Your ${programName} onboarding is approved`,
-          heading: "Your onboarding is approved",
-          body: `Your onboarding for ${programName} has been approved. Open your candidate portal to get started.`,
-        },
-        certificate: {
-          subject: `Your Olentra internship certificate is ready`,
-          heading: "Your certificate is ready",
-          body: `Your ${programName} internship certificate has been issued. Verify it or share it on LinkedIn using the links below.`,
-        },
-      };
-      const message = messages[status];
-      const safeName = escapeHtml(name);
-      const safeProgram = escapeHtml(programName);
-      const safePortalUrl = escapeHtml(portalUrl);
-      const certificateLink = certificateVerifyUrl
-        ? `<p style="margin:18px 0 0;font-size:14px;line-height:1.6;"><a href="${escapeHtml(certificateVerifyUrl)}" style="color:#2563eb;font-weight:700;text-decoration:underline;">Verify your certificate</a></p>`
-        : "";
-      const linkedinLink = linkedinShareUrl && status === "certificate"
-        ? `<p style="margin:10px 0 0;font-size:14px;line-height:1.6;"><a href="${escapeHtml(linkedinShareUrl)}" style="color:#0a66c2;font-weight:700;text-decoration:underline;">Share your certificate on LinkedIn</a></p>`
-        : "";
-      const linkedinAnnouncement = linkedinShareUrl && status === "selected"
-        ? emailPanel(`
-            <p style="margin:0 0 5px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#0a66c2;">Share your achievement</p>
-            <p style="margin:0 0 8px;font-size:16px;line-height:1.4;font-weight:700;color:#14213d;">Tell your network the good news</p>
-            <p style="margin:0 0 16px;font-size:13px;line-height:1.6;color:#52627a;">Celebrate this milestone with your professional community.</p>
-            ${emailButton("Share on LinkedIn", linkedinShareUrl, "#0a66c2")}
-          `, "blue")
-        : "";
-      const textLinks = [
-        certificateVerifyUrl ? `Verify your certificate: ${certificateVerifyUrl}` : "",
-        linkedinShareUrl ? `Share on LinkedIn: ${linkedinShareUrl}` : "",
-      ].filter(Boolean).join("\n");
-      const ctaButton = status !== "rejected"
-        ? emailButton(status === "selected" ? "Activate your internship portal" : "Open candidate portal", portalUrl)
-        : "";
-      const text = `Hi ${name},\n\n${message.body}${status !== "rejected" ? `\n\nOpen your portal: ${portalUrl}` : ""}${textLinks ? `\n\n${textLinks}` : ""}\n\nBest regards,\nThe Olentra Team`;
-      const statusBadge = status === "selected" || status === "certificate"
-        ? emailPanel(`<p style="margin:0;font-size:13px;line-height:1.55;font-weight:600;color:${status === "selected" ? "#1d4ed8" : "#16804a"};">${status === "selected" ? "Selection confirmed" : "Certificate issued"} <span style="font-weight:400;color:#52627a;">· ${safeProgram}</span></p>`, status === "selected" ? "blue" : "green")
-        : "";
-      const content = `
-        <p style="margin:0;font-size:15px;line-height:1.7;color:#43536e;">Hi <strong style="color:#14213d;">${safeName}</strong>,</p>
-        <p style="margin:14px 0 0;font-size:15px;line-height:1.7;color:#43536e;">${escapeHtml(message.body)}</p>
-        ${statusBadge}
-        ${linkedinAnnouncement}
-        ${certificateLink}${linkedinLink}
-        ${ctaButton}
-        ${status !== "rejected" ? `<p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#8a96a8;">Program: ${safeProgram}</p>` : ""}
-      `;
-      const html = emailShell({
-        subject: message.subject,
-        preheader: message.body,
-        eyebrow: status === "certificate" ? "Internship program · Achievement" : "Olentra Careers · Internship program",
-        heading: message.heading,
-        content,
-      });
-      return sendEmail(to, message.subject, html, text);
+    async sendApplicantStatus(options: ApplicantStatusEmailOptions): Promise<SendResult> {
+      if (options.status !== "rejected") return automated(options.status, options);
+      const subject = `Update on your Olentra internship application (${options.programName})`;
+      const body = `Hi ${options.name},\n\nThank you for taking the time to apply to Olentra Technologies and sharing your background with us. After careful consideration, we are unable to offer you an internship position for this cohort. We received a tremendous number of outstanding applications and had to make difficult decisions. We truly appreciate your interest in Olentra, wish you continued success in your learning and career, and warmly invite you to stay connected with us on LinkedIn and re-apply in future cohorts.`;
+      const html = emailShell({ subject, preheader: subject, eyebrow: "Olentra Careers · Internship program", heading: "Application Status Update", content: `<p style="white-space:pre-wrap;line-height:1.75;">${escapeHtml(body)}</p>` });
+      return sendEmail(options.to, subject, html, body);
     },
-
-    async sendApplicationConfirmation({ to, name, programName, applicationId, magicLinkUrl }: ApplicationEmailOptions): Promise<SendResult> {
-      const refPart = applicationId ? ` (Ref: ${applicationId})` : "";
-      const subject = `Application Received: ${programName}${refPart}`;
-      const safe = {
-        name: escapeHtml(String(name)),
-        programName: escapeHtml(String(programName)),
-        applicationId: escapeHtml(String(applicationId || "Received")),
-      };
-      const text = `Hi ${name},\n\nThank you for applying to the Olentra Internship Program (${programName}).\n\nWe have received your application and resume. Your unique Reference ID is: ${applicationId || "Pending"}\n\nOur admissions and engineering team reviews applications carefully on a rolling basis. You can expect to hear back with an update within 3 to 5 business days.\n\nNo portal account or password has been created yet. If your profile is selected, you will receive an official congratulations email containing secure access to your internship portal.${magicLinkUrl ? `\n\nUse this secure sign-in link if you need to continue: ${magicLinkUrl}` : ""}\n\nBest regards,\nThe Olentra Admissions Team\nOlentra Technologies Pvt. Ltd.`;
-      const cta = magicLinkUrl
-        ? emailButton("Open your secure portal link", magicLinkUrl)
-        : "";
-      const reference = emailPanel(`
-        <p style="margin:0 0 7px;font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#52627a;">Application reference</p>
-        <p style="margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:21px;line-height:1.4;font-weight:700;letter-spacing:.04em;color:#14213d;">${safe.applicationId}</p>
-        <p style="margin:7px 0 0;font-size:12px;line-height:1.5;color:#718096;">Keep this ID for future communication about your application.</p>
-      `, "blue");
-      const timeline = emailPanel(`
-        <p style="margin:0 0 5px;font-size:13px;font-weight:700;color:#14213d;">What happens next</p>
-        <p style="margin:0;font-size:13px;line-height:1.65;color:#52627a;">Our admissions team reviews applications on a rolling basis. You can expect to hear from us within <strong>3 to 5 business days</strong>. No portal account or action is required at this stage.</p>
-      `, "neutral");
-      const content = `
-        <p style="margin:0;font-size:15px;line-height:1.7;color:#43536e;">Hi <strong style="color:#14213d;">${safe.name}</strong>, thank you for applying to the <strong style="color:#14213d;">${safe.programName}</strong> track at Olentra Technologies. We’ve safely received your submission.</p>
-        ${reference}
-        ${timeline}
-        ${cta}
-      `;
-      const html = emailShell({
-        subject,
-        preheader: `We received your ${programName} application. Your reference ID is ${applicationId || "pending"}.`,
-        eyebrow: "Olentra Careers · Internship admissions",
-        heading: "Application received",
-        content,
-      });
-
-      return sendEmail(to, subject, html, text);
-    },
-
-    async sendMagicLink({ to, name = "there", magicLinkUrl, templateVariant = "professional" }: MagicLinkEmailOptions): Promise<SendResult> {
-      const themes = {
-        professional: {
-          subject: "Your Olentra Candidate Portal Sign-In Link",
-          background: "#f2f5fb",
-          accent: "#1877f2",
-          heading: "Your next step is one click away.",
-          intro: "Use your secure link to open your Olentra candidate portal and follow your application.",
-          panel: "#f5f8ff",
-          panelBorder: "#e1e9f8",
-          cardBorder: "#dfe6f0",
-          radius: "14px",
-          padding: "36px 16px",
-        },
-        warm: {
-          subject: "Your requested Olentra sign-in link",
-          background: "#fbf7f2",
-          accent: "#98633b",
-          heading: "Welcome back.",
-          intro: "We’re glad you’re continuing your journey with Olentra. Use the secure link below to return to your candidate portal.",
-          panel: "#fcf8f3",
-          panelBorder: "#eee2d5",
-          cardBorder: "#e9ded2",
-          radius: "18px",
-          padding: "40px 18px",
-        },
-        minimal: {
-          subject: "Sign-in link for your Olentra account",
-          background: "#ffffff",
-          accent: "#145ddd",
-          heading: "Sign in to your portal",
-          intro: "Your requested secure access link is ready.",
-          panel: "#ffffff",
-          panelBorder: "#e8edf5",
-          cardBorder: "#e8edf5",
-          radius: "4px",
-          padding: "28px 16px",
-        },
-      } satisfies Record<SigninEmailTemplateVariant, {
-        subject: string;
-        background: string;
-        accent: string;
-        heading: string;
-        intro: string;
-        panel: string;
-        panelBorder: string;
-        cardBorder: string;
-        radius: string;
-        padding: string;
-      }>;
-      const theme = themes[templateVariant];
-      const subject = theme.subject;
-      const text = `Hi ${name},\n\n${theme.intro}\n\n${magicLinkUrl}\n\nThis single-use link expires in 24 hours.\n\nIf you did not request this link, you can safely ignore this email.\n\nBest regards,\nThe Olentra Team`;
-
-      const safe = {
-        name: escapeHtml(String(name)),
-        magicLinkUrl: escapeHtml(String(magicLinkUrl)),
-        subject: escapeHtml(String(subject)),
-        heading: escapeHtml(theme.heading),
-        intro: escapeHtml(theme.intro),
-        background: theme.background,
-        accent: theme.accent,
-        panel: theme.panel,
-        panelBorder: theme.panelBorder,
-        cardBorder: theme.cardBorder,
-        radius: theme.radius,
-        padding: theme.padding,
-      };
-      const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${safe.subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: ${safe.background}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #17243d;">
-  <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">Your secure sign-in link for the Olentra Candidate Portal is ready.</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${safe.background}" style="background-color: ${safe.background}; padding: ${safe.padding};">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 600px; background-color: #ffffff; border: 1px solid ${safe.cardBorder}; border-radius: ${safe.radius}; overflow: hidden;">
-          <tr>
-            <td style="padding: 26px 32px 22px; text-align: left; background-color: #ffffff;">
-              <img src="https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png" width="190" alt="Olentra Technologies" style="display: block; width: 190px; max-width: 100%; height: auto; border: 0;">
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 0 32px;"><div style="height: 1px; background-color: #e8edf5; font-size: 1px; line-height: 1px;">&nbsp;</div></td>
-          </tr>
-          <tr>
-            <td style="padding: 30px 32px 32px;">
-              <p style="margin: 0 0 10px; font-size: 11px; line-height: 1.4; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: ${safe.accent};">Candidate portal · Secure sign-in</p>
-              <h1 style="margin: 0; font-size: 26px; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; color: #17243d;">${safe.heading}</h1>
-              <p style="margin: 22px 0 0; font-size: 15px; line-height: 1.65; color: #43536e;">Hi <strong style="color: #17243d;">${safe.name}</strong>,<br><br>${safe.intro}</p>
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${safe.panel}" style="margin-top: 24px; background-color: ${safe.panel}; border: 1px solid ${safe.panelBorder}; border-radius: 12px;">
-                <tr>
-                  <td align="center" style="padding: 22px 16px;">
-                    <a href="${safe.magicLinkUrl}" style="display: inline-block; padding: 14px 24px; border-radius: 8px; background-color: ${safe.accent}; color: #ffffff; text-decoration: none; font-size: 14px; line-height: 1.3; font-weight: 700;">Open candidate portal &rarr;</a>
-                    <p style="margin: 13px 0 0; font-size: 12px; line-height: 1.5; color: #65748c;">Single-use link · Expires in 24 hours</p>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin: 22px 0 0; font-size: 12px; line-height: 1.6; color: #64748b;">Button not working? <a href="${safe.magicLinkUrl}" style="color: ${safe.accent}; font-weight: 600; text-decoration: underline;">Use this secure sign-in link</a>.</p>
-              <p style="margin: 22px 0 0; padding-top: 18px; border-top: 1px solid #e8edf5; font-size: 12px; line-height: 1.65; color: #718096;">If you didn’t request this link, you can safely ignore this email.<br><br>Olentra Technologies · Building intelligent systems</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
-      return sendEmail(to, subject, html, text);
-    },
+    async sendApplicationConfirmation(options: ApplicationEmailOptions): Promise<SendResult> { return automated("application-received", options); },
+    async sendMagicLink(options: MagicLinkEmailOptions): Promise<SendResult> { return automated("signin", options); },
 
     async sendPasswordResetLink({ to, name = "there", resetUrl }: PasswordResetEmailOptions): Promise<SendResult> {
       const subject = "Reset your Olentra Internship Account Password";

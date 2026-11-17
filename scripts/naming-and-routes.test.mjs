@@ -56,7 +56,7 @@ test("layered backend structure and operational files are present", () => {
   const required = {
     "email-server": [
       "src/index.ts", "src/app/create-app.ts", "src/config/env.ts", "src/domain/contact/contact.service.ts",
-      "src/infrastructure/email/resend.client.ts", "src/interfaces/http/contact.route.ts", "src/interfaces/http/health.route.ts",
+      "src/infrastructure/email/smtp.client.ts", "src/interfaces/http/contact.route.ts", "src/interfaces/http/health.route.ts",
       "src/interfaces/http/middleware.ts", "src/observability/logger.ts", "tests/unit", "tests/contract", "scripts/healthcheck.ts", "Dockerfile", ".dockerignore",
     ],
     "realtime-server": [
@@ -222,7 +222,7 @@ test("public route invariants and normalized route segments are preserved", () =
   const webRoutes = appRoutes("web"), adminRoutes = appRoutes("admin");
   const routes = new Set([...webRoutes, ...adminRoutes]);
   // The company workspace is its own app; its API routes are limited to live settings.
-  for (const route of adminRoutes) assert.ok(route.startsWith("/dashboard") || route.startsWith("/api/site-features") || route.startsWith("/api/email-templates"), `unexpected admin route: ${route}`);
+  for (const route of adminRoutes) assert.ok(route.startsWith("/dashboard") || route.startsWith("/api/site-features"), `unexpected admin route: ${route}`);
   for (const route of webRoutes) assert.equal(route.startsWith("/dashboard"), false, `website must not serve ${route}`);
   for (const removed of ["/api/site-features/session", "/dashboard/verify"]) assert.equal(routes.has(removed), false, `${removed} must stay removed`);
   for (const route of ["/api/site-features", "/api/site-features/stream"]) assert.ok(webRoutes.has(route) && adminRoutes.has(route), `${route} must be served by both apps`);
@@ -231,7 +231,6 @@ test("public route invariants and normalized route segments are preserved", () =
     "/about",
     "/accessibility",
     "/api/contact",
-    "/api/email-templates/signin-link",
     "/api/site-features",
     "/api/site-features/stream",
     "/blogs",
@@ -258,7 +257,6 @@ test("public route invariants and normalized route segments are preserved", () =
     "/dashboard/content",
     "/dashboard/content/media",
     "/dashboard/content/pages/:param/edit",
-    "/dashboard/email-templates",
     "/dashboard/enquiries",
     "/dashboard/enquiries/:param",
     "/dashboard/integrations",

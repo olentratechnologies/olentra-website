@@ -23,8 +23,6 @@ test("application through approved work and one certificate, with ownership and 
   await domain.collection("files").insertOne({ _id: "resume", kind: "resume", status: "ready", accessTokenHash: createHash("sha256").update(fileToken).digest("hex") });
   await call("application.submit", { name: "Test Intern", email: "life@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: fileToken }, null);
   const application = { id: String((await domain.collection("applications").findOne({ email: "life@example.test" }))!._id) };
-  const intern: Principal = await domain.autoProvisionAccount(application.id, "life@example.test");
-  const other: Principal = { ...intern, id: "other", applicationId: "other" };
   const statusEmails: string[] = [], interviewEmails: string[] = [];
   domain.setHooks({
     sendApplicantStatus: async notice => {
@@ -43,18 +41,26 @@ test("application through approved work and one certificate, with ownership and 
   });
   await expect(call("offer.send", { applicationId: application.id, startOn: "2026-11-01", endOn: "2026-12-01", stipend: 50 })).rejects.toBeInstanceOf(DomainError);
   await call("application.update", { id: application.id, status: "Shortlisted", expectedVersion: 1 });
+  expect(statusEmails).not.toContain("shortlisted");
+  await domain.processOutbox();
   expect(statusEmails).toContain("shortlisted");
   const scheduledAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
   const interviewKey = key();
   const interview = await call("interview.schedule", { applicationId: application.id, scheduledAt, meetingUrl: "https://meet.example.test/interview" }, staff, interviewKey);
   await call("interview.schedule", { applicationId: application.id, scheduledAt, meetingUrl: "https://meet.example.test/interview" }, staff, interviewKey);
+  expect(interviewEmails).toHaveLength(0);
+  await domain.processOutbox();
   expect(interview.applicationId).toBe(application.id);
   expect(interviewEmails).toEqual(["https://meet.example.test/interview"]);
   const rescheduled = await call("interview.schedule", { applicationId: application.id, scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), meetingUrl: "https://meet.example.test/updated" });
+  await domain.processOutbox();
   expect(rescheduled.id).toBe(interview.id);
   expect(await domain.collection("interviews").countDocuments({ applicationId: application.id })).toBe(1);
   expect(interviewEmails).toEqual(["https://meet.example.test/interview", "https://meet.example.test/updated"]);
   await call("application.update", { id: application.id, status: "Selected", expectedVersion: 2 });
+  const intern: Principal = await domain.autoProvisionAccount(application.id, "life@example.test");
+  const other: Principal = { ...intern, id: "other", applicationId: "other" };
+  await domain.processOutbox();
   const withNote = await call("application.update", { id: application.id, expectedVersion: 3, patch: { notes: [{ text: "Private staff note", author: "forged" }] } });
   expect(withNote.notes[0].author).toBe(staff.name);
   expect((await call("application.get", { id: application.id }, intern)).notes).toBeUndefined();
@@ -63,6 +69,8 @@ test("application through approved work and one certificate, with ownership and 
   const offerKey = key();
   await call("offer.send", offerTerms, staff, offerKey);
   await call("offer.send", offerTerms, staff, offerKey);
+  expect(statusEmails).not.toContain("offer");
+  await domain.processOutbox();
   expect(statusEmails).toContain("offer");
   expect(statusEmails.filter(status => status === "offer")).toHaveLength(1);
   await expect(call("offer.accept", { applicationId: application.id }, other)).rejects.toBeInstanceOf(DomainError);
@@ -77,6 +85,8 @@ test("application through approved work and one certificate, with ownership and 
   const active = await call("onboarding.approve", { applicationId: application.id }, staff, approvalKey);
   await call("onboarding.approve", { applicationId: application.id }, staff, approvalKey);
   expect(active.status).toBe("Active");
+  expect(statusEmails).not.toContain("onboarding");
+  await domain.processOutbox();
   expect(statusEmails).toContain("onboarding");
   expect(statusEmails.filter(status => status === "onboarding")).toHaveLength(1);
   const skillSearch = await call("application.list", { search: "MongoDB" });

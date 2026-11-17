@@ -2,7 +2,6 @@ import { handleContentCommand } from "./content-commands.mjs";
 import { handleOperationsCommand } from "./operations-commands.mjs";
 import { handleGovernanceCommand } from "./governance-commands.mjs";
 import { can, effectiveFeatures, selectInternProgress } from "./selectors.mjs";
-import { EMAIL_TEMPLATE_CATALOG, EMAIL_TEMPLATE_SELECTION_KEY } from "./email-template-catalog.mjs";
 
 export const SCHEMA_VERSION=2;
 export const AUDIT_KEY="olentra-admin-governance-audit-v1";
@@ -21,8 +20,6 @@ export function resolveDataset(state,key,fallback=null){if(own(state.datasets,ke
 export function createInitialState(parts){
   const domains=Array.isArray(parts)?parts:Object.values(parts);const state={meta:{schemaVersion:SCHEMA_VERSION,revision:0,clock:"2026-11-08T12:00:00.000Z"},datasets:{},templates:{},reference:{}};
   for(const [index,part] of domains.entries()){Object.assign(state.meta,part.meta||{});Object.assign(state.datasets,clone(part.datasets||{}));Object.assign(state.templates,clone(part.templates||{}));state.reference[part.domain||["core","content","operations","governance"][index]]=clone(part.reference||{});}
-  state.reference.governance={...state.reference.governance,emailTemplates:EMAIL_TEMPLATE_CATALOG};
-  state.datasets[EMAIL_TEMPLATE_SELECTION_KEY] ??={};
   state.meta.schemaVersion=SCHEMA_VERSION;reconcile(state);return state;
 }
 function assertJson(value,depth=0){assert(depth<60,"JSON is nested too deeply.");if(value===null||typeof value==="string"||typeof value==="boolean")return;if(typeof value==="number"){assert(Number.isFinite(value),"JSON contains an invalid number.");return;}assert(typeof value==="object","Only JSON values are supported.");for(const [key,item]of Object.entries(value)){assert(safeKey(key),"JSON contains an unsafe property name.");assertJson(item,depth+1);}}
@@ -33,24 +30,15 @@ export function migrateSnapshot(value){
   assertJson(value);
   const next=clone(value);
   if(!next||typeof next!=="object"||Array.isArray(next)||next.meta?.schemaVersion!==SCHEMA_VERSION||!next.datasets||typeof next.datasets!=="object"||Array.isArray(next.datasets))return next;
-  if(!own(next.datasets,EMAIL_TEMPLATE_SELECTION_KEY))next.datasets[EMAIL_TEMPLATE_SELECTION_KEY]={};
+  delete next.datasets["olentra-admin-email-template-selections-v1"];
+  if(next.reference?.governance)delete next.reference.governance.emailTemplates;
+  if(Array.isArray(next.reference?.operations?.permissionModules))next.reference.operations.permissionModules=next.reference.operations.permissionModules.filter(name=>name!=="Email Templates");
   for(const key of RETIRED_DEMO_KEYS)delete next.datasets[key];
   if(Array.isArray(next.datasets["auth-accounts"])&&next.datasets["auth-accounts"].some(hasDemoSecrets)){next.datasets["auth-accounts"]=[];next.datasets["auth-session"]={status:"anonymous",userId:null};}
   for(const [key,rows]of Object.entries(next.datasets)){
-    if(!key.startsWith("admin-role-permissions-")||!Array.isArray(rows)||rows.some(row=>row?.id==="Email Templates"||row?.name==="Email Templates"))continue;
-    const administrator=key==="admin-role-permissions-administrator";
-    rows.push({id:"Email Templates",name:"Email Templates",view:administrator,edit:false,publish:false,manage:administrator});
+    if(key.startsWith("admin-role-permissions-")&&Array.isArray(rows))next.datasets[key]=rows.filter(row=>row?.id!=="Email Templates"&&row?.name!=="Email Templates");
   }
   return next;
-}
-
-function validateEmailTemplateSelections(selections){
-  assert(selections!==null&&typeof selections==="object"&&!Array.isArray(selections),"Email template selections must be an object.");
-  for(const [typeId,variantId]of Object.entries(selections)){
-    const type=EMAIL_TEMPLATE_CATALOG.find(item=>item.id===typeId);
-    assert(type,"Unknown email template type: "+typeId);
-    assert(typeof variantId==="string"&&type.variants.some(variant=>variant.id===variantId),"Choose a valid preset for "+type.title+".");
-  }
 }
 
 export function validateSnapshot(value,initial){
@@ -73,19 +61,10 @@ export function validateSnapshot(value,initial){
     assert(own(value.datasets,key),"Missing required dataset: "+key);
     const candidate=value.datasets[key];
     assert(seed===null||candidate!==null&&Array.isArray(seed)===Array.isArray(candidate)&&typeof seed===typeof candidate,"Invalid dataset type: "+key);
-    if(isRecord(seed)&&key!=="auth-session"&&key!==EMAIL_TEMPLATE_SELECTION_KEY)validateRequiredShape(seed,candidate,key);
+    if(isRecord(seed)&&key!=="auth-session")validateRequiredShape(seed,candidate,key);
   }
   for(const [key,items]of Object.entries(value.datasets)){assert(safeKey(key),"Invalid dataset key.");if(Array.isArray(items)){assert(items.length<=20000,"A dataset has too many records: "+key);const ids=items.filter(item=>item&&typeof item==="object"&&own(item,"id")).map(item=>String(item.id));assert(new Set(ids).size===ids.length,"Duplicate record IDs in "+key);}}
   const data=value.datasets;
-  validateEmailTemplateSelections(data[EMAIL_TEMPLATE_SELECTION_KEY]);
-  for(const [key,rows]of Object.entries(data)){
-    if(!key.startsWith("admin-role-permissions-")||!Array.isArray(rows))continue;
-    const permissions=rows.filter(row=>row?.id==="Email Templates"||row?.name==="Email Templates");
-    assert(permissions.length===1,"Email Templates permissions must appear exactly once.");
-    const permission=permissions[0];
-    assert(permission.id==="Email Templates"&&permission.name==="Email Templates"&&["view","edit","publish","manage"].every(action=>typeof permission[action]==="boolean"),"Invalid Email Templates permissions.");
-    assert(permission.view||!(permission.edit||permission.publish||permission.manage),"Email Templates changes require view access.");
-  }
   assert(["Production","Staging"].includes(data.environment),"Choose a valid environment.");assert(["Global","Americas","Europe","Asia Pacific"].includes(data.scope),"Choose a valid region scope.");
   for(const environment of ["Production","Staging"]){for(const key of ["features:","published-features:"]){const flags=data[key+environment];assert(flags&&Object.keys(initial.datasets[key+environment]).every(id=>typeof flags[id]==="boolean"),"Feature switches must be booleans.");}}
   const accounts=data["auth-accounts"],emails=new Set();
@@ -149,23 +128,10 @@ const commandPermission=(type,payload)=>{
   if(/^(locale|regional|translation)\./.test(type))return["Regions & Languages",type==="translation.publish"?"publish":"edit"];
   if(/^(team|role|session)\./.test(type))return["Team & Access","manage"];
   if(type.startsWith("integration."))return["Integrations","manage"];
-  if(type.startsWith("emailTemplate."))return["Email Templates","manage"];
   return["Settings & Backups","manage"];
 };
 function coreCommand(type,payload,ctx){
   const environment=payload.environment||ctx.get("environment","Production");
-  if(type==="emailTemplate.select"){
-    const template=EMAIL_TEMPLATE_CATALOG.find(item=>item.id===payload.typeId);
-    ctx.assert(template,"Choose a valid email template type.");
-    const variant=template.variants.find(item=>item.id===payload.variantId);
-    ctx.assert(variant,"Choose a valid preset for "+template.title+".");
-    const selections=ctx.get(EMAIL_TEMPLATE_SELECTION_KEY,{});
-    if(selections[template.id]===variant.id)return{value:{typeId:template.id,variantId:variant.id}};
-    const next={...selections,[template.id]:variant.id};
-    ctx.set(EMAIL_TEMPLATE_SELECTION_KEY,next);
-    ctx.audit("Selected email template","Email Templates",{resource:template.title,typeId:template.id,before:selections[template.id]||template.id+".professional",after:variant.id,scope:"Global",localOnly:true,restore:{key:EMAIL_TEMPLATE_SELECTION_KEY,before:selections,after:next}});
-    return{value:{typeId:template.id,variantId:variant.id}};
-  }
   if(type==="features.set"){
     const current=ctx.get("features:"+environment,{});ctx.assert(["Production","Staging"].includes(environment)&&own(current,payload.feature)&&typeof payload.enabled==="boolean","Choose a valid feature switch.");const values={...current,[payload.feature]:payload.enabled},before=ctx.get("published-features:"+environment,{});
     ctx.set("features:"+environment,values);ctx.set("published-features:"+environment,values);ctx.update("feature-history",items=>[{id:ctx.id("feature"),feature:payload.feature,action:(payload.enabled?"Enabled ":"Disabled ")+payload.feature,actor:ctx.actor,at:ctx.now,date:ctx.now,scope:"Global",environment,values:clone(values)},...items]);ctx.audit((payload.enabled?"Enabled ":"Disabled ")+payload.feature,"Feature switches",{resource:payload.feature,environment,before,after:values});return{value:values};
@@ -230,13 +196,12 @@ export function executeCommand(state,type,payload={},options={}){
     else if(!type.startsWith("auth.")&&!type.startsWith("clock."))assert(next.datasets["auth-session"]?.status==="authenticated","Sign in before changing workspace data.");
     const result=dispatch(type,payload)||{};
     const session=next.datasets["auth-session"];if(session?.status==="authenticated"&&session.expiresAt&&Date.parse(session.expiresAt)<=Date.parse(next.meta.clock)){next.datasets["auth-session"]={status:"anonymous",userId:null};ctx.notify({title:"Session expired",body:"Sign in to continue.",category:"System",href:"/dashboard/login"});}
-    reconcile(next);validateEmailTemplateSelections(next.datasets[EMAIL_TEMPLATE_SELECTION_KEY]);if(type==="backup.restore")validateSnapshot(next,options.initial||state);next.meta.revision=state.meta.revision+1;next.meta.lastAction=type;
+    reconcile(next);if(type==="backup.restore")validateSnapshot(next,options.initial||state);next.meta.revision=state.meta.revision+1;next.meta.lastAction=type;
     return {ok:result.ok!==false,error:result.error,value:result.value,state:next};
   }catch(error){return{ok:false,error:error.message||"The action could not be completed.",state};}
 }
 export function updateDataset(state,key,value,fallback,options={}){
   assert(safeKey(key),"Invalid dataset key.");assert(state.datasets["auth-session"]?.status==="authenticated","Sign in before changing workspace data.");
-  assert(key!==EMAIL_TEMPLATE_SELECTION_KEY,"Use emailTemplate.select to change email template selections.");
   if(!["scope","environment"].includes(key)){
     let auditModule="Settings & Backups",action="manage";
     if(/^features:|^feature-|^navigation/.test(key)){auditModule="Website Controls";action="edit";}

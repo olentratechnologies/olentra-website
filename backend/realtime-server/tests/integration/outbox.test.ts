@@ -51,18 +51,17 @@ test("an application queues exactly one confirmation, sent only by the worker", 
   expect(sent.filter(e => e.to === email)).toHaveLength(1);
 });
 
-test("a repeat application queues a confirmation for the existing reference, not a sign-in link", async () => {
+test("a repeat application is rejected without queuing another email", async () => {
   const email = `outbox-dup-${randomUUID()}@example.test`;
   await apply(email, `outbox-first-${randomUUID().slice(0, 8)}`);
   await domain.collection("applications").updateOne({ email }, { $set: { status: "Selected" } });
-  await expect(apply(email, `outbox-again-${randomUUID().slice(0, 8)}`)).resolves.toMatchObject({ received: true });
+  await expect(apply(email.toUpperCase(), `outbox-again-${randomUUID().slice(0, 8)}`)).rejects.toMatchObject({ code: "ALREADY_APPLIED" });
   expect(await domain.collection("applications").countDocuments({ email })).toBe(1);
   const rows = await rowsFor(email);
-  expect(rows.map(r => r.type)).toEqual(["applicationConfirmation", "applicationConfirmation"]);
+  expect(rows.map(r => r.type)).toEqual(["applicationConfirmation"]);
   expect(rows.map(r => r.payload.applicationId).every(id => id === rows[0].payload.applicationId)).toBe(true);
   await domain.processOutbox();
   expect(sent.filter(e => e.to === email)).toEqual([
-    { type: "confirmation", to: email },
     { type: "confirmation", to: email },
   ]);
 });

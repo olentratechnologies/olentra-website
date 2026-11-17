@@ -18,21 +18,20 @@ function createRows() {
 }
 
 describe("sign-in email template settings", () => {
-  test("defaults to Clean White and persists the selected variant for workspace delivery", async () => {
+  test("defaults to professional and reads existing selections for workspace delivery", async () => {
     const { rows, records } = createRows();
     const settings = createSigninEmailTemplateSettings(rows);
 
     expect(await settings.read()).toEqual({ variantId: "professional" });
-    expect(await settings.write("warm", "admin@example.test")).toEqual({ variantId: "warm" });
+    records.set("account.signin-link", { _id: "account.signin-link", variantId: "warm" });
     expect(await settings.read()).toEqual({ variantId: "warm" });
-    expect(records.get("account.signin-link")?.updatedBy).toBe("admin@example.test");
+    expect(settings).not.toHaveProperty("write");
   });
 
-  test("rejects unknown variants and malformed saved values", async () => {
+  test("rejects malformed saved values", async () => {
     const { rows, records } = createRows();
     const settings = createSigninEmailTemplateSettings(rows);
 
-    await expect(settings.write("unknown", "admin@example.test")).rejects.toThrow("Choose a valid sign-in email design.");
     records.set("account.signin-link", { _id: "account.signin-link", variantId: "unknown" });
     await expect(settings.read()).rejects.toThrow("The saved sign-in email template setting is invalid.");
   });

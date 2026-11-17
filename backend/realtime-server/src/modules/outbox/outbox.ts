@@ -8,7 +8,7 @@ import type { ClientSession, Collection } from "mongodb";
  * claimed with a short lease, so several server instances can run the worker
  * and still send every email once.
  */
-export type OutboxType = "applicationConfirmation" | "magicLink" | "applicantStatus" | "notice";
+export type OutboxType = "applicationConfirmation" | "magicLink" | "applicantStatus" | "notice" | "interview" | "interviewReminder";
 export type OutboxRow = {
   _id: string;
   type: OutboxType;

@@ -1,4 +1,4 @@
-import type { ContactFields, ResendAttachment } from "./types";
+import type { ContactFields, EmailAttachment } from "./types";
 
 export const MAX_BODY = 6 * 1024 * 1024;
 export const MAX_ATTACHMENT = 5 * 1024 * 1024;
@@ -37,7 +37,7 @@ export function validateContactFields(fields: ContactFields): string | null {
   return null;
 }
 
-export async function readAttachment(form: FormData): Promise<{ attachment?: ResendAttachment; error?: string }> {
+export async function readAttachment(form: FormData): Promise<{ attachment?: EmailAttachment; error?: string }> {
   const value = form.get("attachment");
   if (!(value instanceof File) || !value.size) return {};
   if (value.size > MAX_ATTACHMENT) return { error: "Attachment must be 5 MB or smaller." };

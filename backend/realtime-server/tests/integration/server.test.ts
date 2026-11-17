@@ -80,15 +80,15 @@ test("login, streaming resume, application, registration, live status and refres
   const applicant = await socket();
   await applicant.request("application.submit", { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "submit-application-test-01");
   const application = { id: String((await domain.collection("applications").findOne({ email: "applicant@example.test" }))!._id) };
+  const changed = await admin.request("application.update", { id: application.id, status: "Selected", expectedVersion: 1 }, "update-application-test-01");
+  expect(changed.status).toBe("Selected");
   const linked = await domain.autoProvisionAccount(application.id, "applicant@example.test");
   await domain.changePassword(linked.id, "", "ApplicantPassword2026!");
   const registered = (await domain.account(linked.id))!;
   expect(registered.role).toBe("intern");
   const intern = await login("applicant@example.test", "ApplicantPassword2026!"); expect(intern.response.status).toBe(200);
   await applicant.request("auth.authenticate", { token: intern.body.data.token });
-  const changed = await admin.request("application.update", { id: application.id, status: "Under Review", expectedVersion: 1 }, "update-application-test-01");
-  expect(changed.status).toBe("Under Review");
-  const mine = await applicant.request("application.get", { id: application.id }); expect(mine.status).toBe("Under Review"); expect(mine.claimHash).toBeUndefined(); expect(mine.notes).toBeUndefined();
+  const mine = await applicant.request("application.get", { id: application.id }); expect(mine.status).toBe("Selected"); expect(mine.claimHash).toBeUndefined(); expect(mine.notes).toBeUndefined();
   const resume = await fetch(base + "/intern/files/" + uploaded.id, { headers: { origin, authorization: "Bearer " + intern.body.data.token } }); expect(await resume.text()).toBe("%PDF-1.4 test resume"); expect(resume.headers.get("x-content-type-options")).toBe("nosniff"); expect(resume.headers.get("content-type")).toBe("application/pdf");
   const anonymousWork = await fetch(base + "/intern/files", { method: "POST", headers: { origin, "content-type": "text/plain", "x-file-name": "work.txt", "x-file-kind": "work" }, body: "test work" }); expect(anonymousWork.status).toBe(401);
   const work = await fetch(base + "/intern/files", { method: "POST", headers: { origin, authorization: "Bearer " + intern.body.data.token, "content-type": "text/plain", "x-file-name": "work.txt", "x-file-kind": "work" }, body: "test work" }); expect(work.status).toBe(200);

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createInitialState, executeCommand, updateDataset, validateSnapshot } from "../src/lib/admin/model.mjs";
+import { createInitialState, executeCommand, updateDataset, validateSnapshot, migrateSnapshot, createSnapshot } from "../src/lib/admin/model.mjs";
 import { can, effectiveFeatures } from "../src/lib/admin/selectors.mjs";
 
 const parts = ["core", "content", "operations", "governance"].map((name) => JSON.parse(readFileSync(new URL(`../src/data/admin/${name}.json`, import.meta.url), "utf8")));
@@ -193,4 +193,24 @@ test("manual feature switches apply immediately despite review policy and do not
   assert.ok(state.datasets["olentra-admin-governance-audit-v1"].some(row => row.action === "Disabled services"));
   state = signIn(run(state, "auth.signOut").state, "analyst-01");
   reject(state, "features.set", { environment: "Production", feature: "services", enabled: true }, /role|cannot/i);
+});
+
+
+test("retired email template settings are removed from saved snapshots without changing other data", () => {
+  const state = initial();
+  const snapshot = createSnapshot(state, { all: true });
+  const old = structuredClone(snapshot);
+  old.datasets["olentra-admin-email-template-selections-v1"] = { "account.signin-link": "account.signin-link.warm" };
+  for (const [key, rows] of Object.entries(old.datasets)) {
+    if (key.startsWith("admin-role-permissions-") && Array.isArray(rows)) {
+      rows.push({ id: "Email Templates", name: "Email Templates", view: true, manage: true, edit: false, publish: false });
+    }
+  }
+  const migrated = migrateSnapshot(old);
+  assert.deepEqual(migrated, snapshot);
+  assert.equal(validateSnapshot(migrated, state), true);
+  assert.deepEqual(migrateSnapshot(migrated), migrated);
+  assert.ok(old.datasets["olentra-admin-email-template-selections-v1"]);
+  assert.equal(state.reference.operations.permissionModules.includes("Email Templates"), false);
+  assert.equal(executeCommand(state, "emailTemplate.select", {}).ok, false);
 });

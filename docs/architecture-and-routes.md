@@ -10,17 +10,17 @@ Two independent, dedicated servers. Each has its own directory, `package.json`, 
 
 ```
 backend/
-├── email-server/        Port 3001 — Contact email HTTP REST (Elysia + Resend)
+├── email-server/        Port 3001 — Central email HTTP REST (Elysia + Google SMTP)
 └── realtime-server/     Port 3003 — Presence + internship WebSocket/HTTP (Bun native)
 ```
 
 ### 1. Email Server (`backend/email-server` → `:3001`)
 
-- **What**: Receives contact enquiries from the website form and sends them via Resend.
+- **What**: Receives contact enquiries and authenticated internship email requests, and delivers both through Google SMTP.
 - **Protocol**: HTTP REST only.
-- **Storage**: None (stateless; all state lives in Resend's delivery log).
-- **Key endpoint**: `POST /api/contact`
-- **Called by**: Next.js server-side route `/api/contact/route.js` (never exposed to the browser).
+- **Storage**: None; the realtime service owns the internship outbox.
+- **Key endpoints**: `POST /api/contact` and authenticated internal `POST /api/email`
+- **Called by**: The Next.js contact proxy and the realtime internship mailer; SMTP credentials stay in email-server.
 
 ### 2. Realtime Server (`backend/realtime-server` → `:3003`)
 
@@ -123,7 +123,6 @@ backend/
 /dashboard/content/media       Media management
 /dashboard/content/pages/[pageId]/edit Page editor
 /dashboard/enquiries/[enquiryId] Enquiry detail
-/dashboard/email-templates     Email template catalog and browser-local preset selection
 /dashboard/integrations        Integration settings
 /dashboard/integrations/[integrationId] Integration detail
 /dashboard/localization        Localization management
@@ -252,7 +251,8 @@ presence HTTP routes are `/health` and `/stats`; its WebSocket endpoints are
 | Next.js | `GET`/`PUT` | `/api/site-features` | Read or update live website feature switches |
 | Next.js | `GET` | `/api/site-features/stream` | Server-sent feature updates |
 | Contact | `GET` | `/health` | Contact service liveness |
-| Contact | `POST` | `/api/contact` | Send a contact enquiry through Resend |
+| Email | `POST` | `/api/contact` | Send a contact enquiry through Google SMTP |
+| Email | `POST` | `/api/email` | Authenticated internal delivery of rendered internship emails |
 | Realtime | `GET` | `/health` | Presence/process health |
 | Realtime | `GET` | `/stats` | Presence counters and runtime stats |
 | Realtime | WebSocket | `/ws` or `/` | Presence visitor/dashboard protocol |

@@ -1,8 +1,6 @@
 import type { Collection } from "mongodb";
 import type { InternshipRow } from "../../infrastructure/database/collections";
-import { DomainError } from "../../shared/errors";
 
-export const SIGNIN_EMAIL_TEMPLATE_PATH = "/intern/email-template-selection";
 export const SIGNIN_EMAIL_TEMPLATE_DEFAULT = "professional";
 export const SIGNIN_EMAIL_TEMPLATE_VARIANTS = ["professional", "warm", "minimal"] as const;
 export type SigninEmailTemplateVariant = typeof SIGNIN_EMAIL_TEMPLATE_VARIANTS[number];
@@ -20,15 +18,6 @@ export function createSigninEmailTemplateSettings(rows: Collection<InternshipRow
       if (!row) return { variantId: SIGNIN_EMAIL_TEMPLATE_DEFAULT };
       if (!isVariant(row.variantId)) throw new Error("The saved sign-in email template setting is invalid.");
       return { variantId: row.variantId };
-    },
-    async write(variantId: unknown, actorEmail: string): Promise<{ variantId: SigninEmailTemplateVariant }> {
-      if (!isVariant(variantId)) throw new DomainError("INVALID_REQUEST", "Choose a valid sign-in email design.");
-      await rows.updateOne(
-        { _id: SETTING_ID },
-        { $set: { variantId, updatedAt: new Date(), updatedBy: actorEmail } },
-        { upsert: true },
-      );
-      return { variantId };
     },
   };
 }

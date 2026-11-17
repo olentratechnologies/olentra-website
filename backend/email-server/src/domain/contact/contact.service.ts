@@ -1,12 +1,12 @@
 import { timingSafeEqual } from 'node:crypto';
-import { sendResendEmail } from '../../infrastructure/email/resend.client';
+import { createSmtpSender, EmailNotConfigured, type EmailSender } from "../../infrastructure/email/smtp.client";
 import type { ContactConfig } from './types';
 import { MAX_BODY, jsonError, UNAUTHORIZED, readAttachment, readContactFields, validateContactFields } from './validation';
 
 export { MAX_BODY } from './validation';
 export type { ContactConfig } from './types';
 
-export function createContactHandler(config: ContactConfig, send: typeof fetch = fetch) {
+export function createContactHandler(config: ContactConfig, send: EmailSender = createSmtpSender(config)) {
   // Pre-calculate token buffer once for fast constant-time verification.
   const expectedToken = config.token ? Buffer.from(`Bearer ${config.token}`) : null;
 
@@ -18,7 +18,7 @@ export function createContactHandler(config: ContactConfig, send: typeof fetch =
     const supplied = Buffer.from(authHeader);
     if (!expectedToken || supplied.length !== expectedToken.length ||
       !timingSafeEqual(supplied, expectedToken)) return UNAUTHORIZED.clone();
-    if (!config.apiKey || !config.sender || !config.receiver) return jsonError(503, 'Contact email is not configured. Please email us directly.');
+    if (!config.sender || !config.receiver) return jsonError(503, 'Contact email is not configured. Please email us directly.');
     if (!request.headers.get('content-type')?.startsWith('multipart/form-data')) return jsonError(415, 'Expected a contact form.');
 
     const now = Date.now();
@@ -71,22 +71,17 @@ export function createContactHandler(config: ContactConfig, send: typeof fetch =
       const attachments = parsedAttachment.attachment ? [parsedAttachment.attachment] : [];
       // Reserve before the asynchronous send so concurrent requests cannot exceed the cap.
       daily.push(now);
-      const response = await sendResendEmail(send, config.apiKey, {
-        from: config.sender,
+      const result = await send({
         to: [config.receiver],
-        reply_to: fields.email,
+        replyTo: fields.email,
         subject: `New Olentra project enquiry from ${fields.name}`,
         text: `Name: ${fields.name}\nEmail: ${fields.email}\nPhone: ${fields.phone}\nBudget: ${fields.budget}\n\nProject details:\n${fields.message}`,
         ...(attachments.length ? { attachments } : {}),
       });
-      if (!response.ok) {
-        await response.body?.cancel().catch(() => {});
-        return jsonError(502, 'Unable to send your enquiry. Please try again later or email us directly.');
-      }
-      const result = await response.json() as { id?: string };
       if (!result.id) return jsonError(502, 'Unable to confirm your enquiry. Please email us directly.');
       return Response.json({ success: true, id: result.id }, { status: 201 });
-    } catch {
+    } catch (error) {
+      if (error instanceof EmailNotConfigured) return jsonError(503, "Email delivery is not configured.");
       return jsonError(502, 'Unable to send your enquiry. Please try again later or email us directly.');
     }
   };

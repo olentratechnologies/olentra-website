@@ -1,14 +1,15 @@
 import { describe, expect, test } from 'bun:test';
+import type { EmailSender } from '../../src/infrastructure/email/smtp.client';
 import { createContactHandler } from '../../src/domain/contact/contact.service';
 
-const config = { apiKey: 'test-key', sender: 'website@example.com', receiver: 'contact@example.com', token: 'test-secret' };
+const config = { sender: 'website@example.com', receiver: 'contact@example.com', token: 'test-secret' };
 function request(overrides: Record<string, string> = {}, attachment?: File) {
   const body = new FormData();
   for (const [key, value] of Object.entries({ name: 'A Visitor', email: 'visitor@example.com', phone: '+91 9876543210', budget: 'Still Evaluating', message: 'Please help us build a company website.', ...overrides })) body.set(key, value);
   if (attachment) body.set('attachment', attachment);
   return new Request('http://localhost/api/contact', { method: 'POST', body, headers: { authorization: 'Bearer test-secret' } });
 }
-function mockSend(fn: (input: any, init: any) => Promise<Response>) { return fn as unknown as typeof fetch; }
+function mockSend(fn: (input: any, init: any) => Promise<Response>): EmailSender { return async message => { const response = await fn(undefined, { body: JSON.stringify(message) }); if (!response.ok) throw new Error("Delivery failed"); return await response.json() as { id: string }; }; }
 describe('contact delivery', () => {
   test('sends details, reply-to and actual attachment bytes to fixed recipient', async () => {
     let payload: any;
@@ -20,7 +21,7 @@ describe('contact delivery', () => {
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ success: true, id: 'email-123' });
     expect(payload.to).toEqual(['contact@example.com']);
-    expect(payload.reply_to).toBe('visitor@example.com');
+    expect(payload.replyTo).toBe('visitor@example.com');
     expect(payload.text).toContain('Budget: Still Evaluating');
     expect(Buffer.from(payload.attachments[0].content, 'base64').toString()).toBe('%PDF-test');
   });

@@ -1,11 +1,12 @@
+import type { EmailSender } from "../../infrastructure/email/smtp.client";
 import { createContactHandler } from "../../domain/contact/contact.service";
 import type { ContactConfig } from "../../domain/contact/types";
 import { MAX_BODY } from "../../domain/contact/validation";
 import { logger } from "../../observability/logger";
 import { requestId } from "./middleware";
 
-export function createContactRoute(config: ContactConfig) {
-  const contact = createContactHandler(config);
+export function createContactRoute(config: ContactConfig, send?: EmailSender) {
+  const contact = createContactHandler(config, send);
   return {
     contact,
     async contactWithObservability(request: Request) {

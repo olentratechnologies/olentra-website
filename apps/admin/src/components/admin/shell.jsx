@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Monitor, Image, BriefcaseBusiness, ClipboardList, ChartNoAxesCombined, Bell, Globe2, Users, ListChecks, Plug, Settings, Menu, X, Search, ExternalLink, ChevronDown, ArrowRight, Inbox, Mail } from "lucide-react";
+import { Home, Monitor, Image, BriefcaseBusiness, ClipboardList, ChartNoAxesCombined, Bell, Globe2, Users, ListChecks, Plug, Settings, Menu, X, Search, ExternalLink, ChevronDown, ArrowRight, Inbox } from "lucide-react";
 import { AdminProvider, useAdmin } from "./store";
 import { Button, Modal, SearchInput } from "./ui";
 import { designRoutes } from "./routes";
@@ -16,7 +16,6 @@ const navigation = [
   ["Overview", "/dashboard", Home], ["Website Controls", "/dashboard/website-controls", Monitor],
   ["Content & Media", "/dashboard/content", Image], ["Careers & Internships", "/dashboard/careers", BriefcaseBusiness],
   ["Forms & Enquiries", "/dashboard/enquiries", ClipboardList], ["Analytics & SEO", "/dashboard/analytics", ChartNoAxesCombined],
-  ["Email Templates", "/dashboard/email-templates", Mail],
   ["Monitoring & Alerts", "/dashboard/monitoring", Bell], ["Regions & Languages", "/dashboard/localization", Globe2],
   ["Team & Access", "/dashboard/team", Users], ["Approvals & Audit Log", "/dashboard/approvals", ListChecks],
   ["Integrations", "/dashboard/integrations", Plug], ["Settings & Backups", "/dashboard/settings/company", Settings],

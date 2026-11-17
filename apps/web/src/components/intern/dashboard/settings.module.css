@@ -588,3 +588,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+.emailWorkspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.emailWorkspace form { min-width: 0; }
+.emailActions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+.emailPreview { min-width: 0; padding: 16px; border: 1px solid var(--ad-border); border-radius: 14px; background: var(--ad-panel); }
+.emailPreview h3 { font-size: 15px; line-height: 1.5; margin: 0 0 8px; }
+.emailPreview iframe { width: 100%; min-height: 720px; border: 0; border-radius: 8px; margin-top: 12px; background: #f3f6fb; }
+@media (max-width: 1000px) { .emailWorkspace { grid-template-columns: minmax(0, 1fr); } }
+.emailWorkspace .helper { display: block; grid-column: 1 / -1; margin: 0 !important; overflow-wrap: anywhere; }
+.emailWorkspace .helper code { display: inline; white-space: normal; }

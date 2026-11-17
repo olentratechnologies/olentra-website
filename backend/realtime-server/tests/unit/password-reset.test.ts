@@ -37,7 +37,7 @@ test("workspace recovery targets staff only and passes the signed version to the
       findUserByEmail: async () => ({ _id: "staff", email: "person@example.test", role, sessionVersion: 7 }),
       selfResetPassword: async (...args: any[]) => { resets.push(args); },
     } as any,
-    mailer: { sendPasswordResetLink: async (message: unknown) => { messages.push(message); } } as any,
+    mailer: { sendPasswordResetLink: async (message: unknown) => { messages.push(message); return { ok: true }; } } as any,
     siteOrigin: "https://site.example.test",
     workspaceOrigin: "https://workspace.example.test",
     sendJson: (body, _origin, status = 200) => Response.json(body, { status }),

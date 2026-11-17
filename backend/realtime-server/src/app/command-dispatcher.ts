@@ -1,3 +1,4 @@
+import { isCurrentInterviewEmail } from "../modules/interviews/email-delivery";
 import { createCommunications } from "../modules/communications/communications.service";
 import { createLifecycle } from "../modules/lifecycle/lifecycle.service";
 import { createInternshipQueries } from "../modules/queries/query.service";
@@ -10,7 +11,7 @@ import { MongoClient, type ClientSession, type Db, type Document } from "mongodb
 import type { InternshipRow } from "../infrastructure/database/collections";
 import { DomainError } from "../shared/errors";
 import { logger } from "../infrastructure/observability/logger";
-import type { ApplicantStatusNotice, InternshipHooks, InterviewScheduledNotice, Principal } from "../shared/principal";
+import type { ApplicantStatusNotice, InternshipHooks, Principal } from "../shared/principal";
 import { digest, emailValue as emailOf, id, stringValue as str, token } from "../shared/ids";
 
 export { DomainError } from "../shared/errors";
@@ -34,6 +35,7 @@ import { FINAL_STATUSES, eraseApplicant, expiredApplicationIds } from "../module
 
 type Row = InternshipRow;
 const SNAPSHOT_APPLICATIONS = 100;
+const alreadyApplied = () => new DomainError("ALREADY_APPLIED", "An application already exists for this email address. Please refer to your original confirmation email. Portal access is available only after selection.");
 const publicAccount = (row: Row): Principal => ({ id: row._id, role: row.role, name: row.name, email: row.email, applicationId: row.applicationId ?? null, sessionVersion: row.sessionVersion ?? 1 });
 const publicApplication = (row: Row, staff: boolean) => {
   const { _id, claimHash, claimExpiresAt, communicationFence, ...record } = row;
@@ -189,15 +191,11 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const saved = await commands.findOne({ _id: commandId });
         if (saved && saved.fingerprint === fingerprint) return saved.result as T;
         if (saved) throw new DomainError("CONFLICT", "This request ID was used for a different operation.");
+        if ((input as any)?.method === "application.submit" && error.keyPattern?.email) throw alreadyApplied();
         throw new DomainError("CONFLICT", "A record with these details already exists.");
       }
       throw error;
     } finally { await session.endSession(); }
-  }
-  async function sendApplicantStatusEmail(applicationId: string, status: ApplicantStatusNotice["status"], certificateNumber?: string) {
-    if (!activeHooks?.sendApplicantStatus) return;
-    try { await deliverApplicantStatus(applicationId, status, certificateNumber); }
-    catch (error) { logger.warn("Applicant status email failed after the workflow change committed.", { applicationId, status, error }); }
   }
   /** Builds and sends one status email; throws when it can't be delivered (the outbox retries). */
   async function deliverApplicantStatus(applicationId: string, status: ApplicantStatusNotice["status"], certificateNumber?: string) {
@@ -218,32 +216,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       });
     }
   }
-  async function sendInterviewScheduledEmail(interview: { applicationId: unknown; scheduledAt: unknown; meetingUrl: unknown; id?: unknown; sequence?: unknown; status?: unknown; cancelReason?: unknown }) {
-    const cancelled = interview.status === "Cancelled";
-    const hook = cancelled ? activeHooks?.sendInterviewCancelled : activeHooks?.sendInterviewScheduled;
-    if (!hook) return;
-    try {
-      const applicationId = str(interview.applicationId);
-      const scheduledAt = str(interview.scheduledAt);
-      const meetingUrl = str(interview.meetingUrl);
-      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1 } });
-      if (!application) throw new Error(`Application ${applicationId} was not found after scheduling its interview.`);
-      const notice: InterviewScheduledNotice = {
-        to: str(application.email),
-        name: str(application.name),
-        programName: str(application.program),
-        scheduledAt,
-        meetingUrl,
-        ...(interview.id ? { interviewId: str(interview.id) } : {}),
-        ...(typeof interview.sequence === "number" ? { sequence: interview.sequence } : {}),
-        ...(cancelled && interview.cancelReason ? { cancelReason: str(interview.cancelReason) } : {}),
-      };
-      await hook(notice);
-    } catch (error) {
-      logger.warn("Interview email failed after the schedule was saved.", { applicationId: str(interview.applicationId), error });
-    }
-  }
-  const lifecycle = createLifecycle({ collection, transact });
+  const lifecycle = createLifecycle({ collection, transact, outbox });
   const communications = createCommunications({ collection, transact });
   const queries = createInternshipQueries(collection);
   const stories = createStories({ collection, transact });
@@ -378,7 +351,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       if (linkedin.length > 500 || !httpUrl(linkedin) || !/(^|\.)linkedin\.com$/i.test(new URL(linkedin).hostname)) throw new DomainError("INVALID_REQUEST", "Enter your LinkedIn profile URL.");
       if (github && (github.length > 500 || !httpUrl(github))) throw new DomainError("INVALID_REQUEST", "Enter a valid http or https GitHub profile or portfolio link.");
       if (videoUrl && (videoUrl.length > 500 || !httpUrl(videoUrl))) throw new DomainError("INVALID_REQUEST", "Enter a valid http or https video link.");
-      // New and repeat applications get confirmation with reference ID.
+      // Only a new application receives a confirmation with its reference ID.
       // Sockets and candidate accounts are only provisioned after admin selection.
       const received = (appId?: string) => ({
         received: true,
@@ -388,16 +361,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       return transact(key, null, { method, params }, async session => {
         if (!(await intakeOpen())) throw new DomainError("CLOSED", "Internship applications are currently closed.");
         const existing = await applications.findOne({ email }, { session });
-        if (existing) {
-          const programName = String(existing.program || (await programs.findOne({ _id: existing.programId }, { session }))?.name || "Olentra Internship Program");
-          await outbox.enqueue("applicationConfirmation", {
-            to: String(existing.email),
-            name: String(existing.name || name),
-            programName,
-            applicationId: String(existing._id),
-          }, session);
-          return received(String(existing._id));
-        }
+        if (existing) throw alreadyApplied();
         const program = await programs.findOne({ _id: programId }, { session });
         const config = await settings.findOne({ _id: "program" }, { session });
         const file = await files.findOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken), applicationId: { $exists: false } }, { session });
@@ -504,7 +468,6 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     if (method === "application.update") {
       company(actor); const applicationId = str(params.id), patch = params.patch || {}, status = str(params.status || patch.status), expectedVersion = Number(params.expectedVersion);
       if ((!status && !Array.isArray(patch.notes)) || (status && !["Applied", "Under Review", "Shortlisted", "Selected", "Rejected", "Declined"].includes(status)) || !Number.isSafeInteger(expectedVersion)) throw new DomainError("INVALID_REQUEST", "Choose a valid change and the current application version.");
-      let emailStatus: ApplicantStatusNotice["status"] | null = null;
       const updated = await transact(key, actor, { method, params }, async session => {
         const now = new Date();
         const existing = await applications.findOne({ _id: applicationId, version: expectedVersion }, { session });
@@ -523,15 +486,13 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!changed) throw new DomainError("CONFLICT", "The application changed or is unavailable. Refresh and try again.");
         if (status && existing.status !== status) {
           await auditDecision(collection("staff_audit"), session, actor, "application.status", applicationId, { from: existing.status, to: status });
-          if (status === "Shortlisted") emailStatus = "shortlisted";
-          else if (status === "Selected") emailStatus = "selected";
-          else if (status === "Rejected") emailStatus = "rejected";
+          const emailStatus = ({ Shortlisted: "shortlisted", Selected: "selected", Rejected: "rejected" } as const)[status as "Shortlisted" | "Selected" | "Rejected"];
+          if (emailStatus) await outbox.enqueue("applicantStatus", { applicationId, status: emailStatus }, session);
         }
         if (status) await collection("notifications").insertOne({ _id: id("NTF"), recipientRole: "intern", applicationId, title: "Application status updated", body: `Your application is now ${status}.`, href: "/intern/portal/application", createdOn: now.toISOString() }, { session });
         await events.insertOne({ _id: id("EVT"), type: "application.updated", applicationIds: [applicationId], createdAt: now }, { session });
         return publicApplication(changed, true);
       });
-      if (emailStatus) await sendApplicantStatusEmail(applicationId, emailStatus);
       return updated;
     }
     if (method === "account.createForApplication") {
@@ -572,37 +533,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       if (method === "application.workflow" && actor?.role === "company" && !isAdmin(actor)) return { offer: null, onboarding: null, intern: null };
       return queries.execute(method, params, actor);
     }
-    if (lifecycle.supports(method)) {
-      const previousOffer = method === "offer.send" && actor?.role === "company"
-        ? await collection("offers").findOne({ applicationId: str(params.applicationId) }, { projection: { status: 1, sentOn: 1 } })
-        : null;
-      const previousOnboarding = method === "onboarding.approve" && actor?.role === "company"
-        ? await collection("onboarding").findOne({ applicationId: str(params.applicationId) }, { projection: { status: 1 } })
-        : null;
-      const previousInterview = method === "interview.schedule" && actor?.role === "company"
-        ? await collection("interviews").findOne({ applicationId: str(params.applicationId) }, { projection: { updatedOn: 1 } })
-        : null;
-      const existingCertificateInternIds = method === "certificate.generate" && actor?.role === "company" && Array.isArray(params.internIds)
-        ? new Set((await collection("certificates").find({ internId: { $in: params.internIds.filter((value: unknown) => typeof value === "string") } }, { projection: { internId: 1 } }).toArray()).map((row) => row.internId))
-        : new Set();
-      const result = await lifecycle.execute(method, params, actor, key);
-      if (method === "offer.send" && !Array.isArray(result)) {
-        const offer = result as { applicationId: unknown; sentOn: unknown };
-        if (previousOffer?.status !== "Sent" || previousOffer.sentOn !== offer.sentOn) await sendApplicantStatusEmail(str(offer.applicationId), "offer");
-      }
-      if (method === "onboarding.approve" && !Array.isArray(result) && "applicationId" in result && previousOnboarding?.status !== "Approved") await sendApplicantStatusEmail(str(result.applicationId), "onboarding");
-      if (method === "certificate.generate") {
-        // Queued rather than sent inline, so issuing many certificates stays fast and failed sends are retried.
-        const issued = ((Array.isArray(result) ? result : []) as any[]).filter(certificate => !existingCertificateInternIds.has(certificate.internId));
-        await outbox.enqueueMany(issued.map(certificate => ({ type: "applicantStatus" as const, payload: { applicationId: str(certificate.applicationId), status: "certificate", certificateNumber: str(certificate.certificateNumber) } })));
-      }
-      if (method === "interview.cancel" && !Array.isArray(result)) await sendInterviewScheduledEmail(result as any);
-      if (method === "interview.schedule" && !Array.isArray(result)) {
-        const interview = result as { applicationId: unknown; scheduledAt: unknown; meetingUrl: unknown; updatedOn: unknown };
-        if (previousInterview?.updatedOn !== interview.updatedOn) await sendInterviewScheduledEmail(interview);
-      }
-      return result;
-    }
+    if (lifecycle.supports(method)) return lifecycle.execute(method, params, actor, key);
     if (stories.supports(method)) return stories.execute(method, params, actor, key);
     if (reviews.supports(method)) return reviews.execute(method, params, actor, key);
     if (templates.supports(method)) return templates.execute(method, params, actor, key);
@@ -698,7 +629,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     return erased;
   }
   /** Hourly interview reminders, review reminders and the Monday digest (all via the outbox). */
-  async function remind(now = new Date()) { return runReminders({ collection, outbox, now }); }
+  async function remind(now = new Date()) { return runReminders({ collection, outbox, transact, now }); }
   /** Sends queued emails through the hooks; a hook that throws is retried later. */
   async function processOutbox(limit = 20) {
     return outbox.process(async row => {
@@ -708,7 +639,18 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         await activeHooks.sendApplicationConfirmation(to, name, programName, applicationId);
       } else if (row.type === "magicLink") {
         if (!activeHooks?.sendMagicLink) throw new Error("No email sender is configured.");
-        await activeHooks.sendMagicLink(to, name, applicationId);
+        const application = await applications.findOne({ _id: applicationId });
+        if (application && ["Selected", "Joined"].includes(String(application.status))) await activeHooks.sendMagicLink(to, name, applicationId);
+      } else if (row.type === "interview" || row.type === "interviewReminder") {
+        const p = row.payload;
+        const current = await collection("interviews").findOne({ _id: p.interviewId });
+        // A newer schedule/cancellation supersedes pending deliveries, including retries.
+        if (!isCurrentInterviewEmail(current, p, row.type === "interviewReminder")) return;
+        const application = await applications.findOne({ _id: p.applicationId });
+        if (!application) return;
+        const hook = row.type === "interviewReminder" ? activeHooks?.sendInterviewReminder : p.status === "Cancelled" ? activeHooks?.sendInterviewCancelled : activeHooks?.sendInterviewScheduled;
+        if (!hook) throw new Error("No interview email sender is configured.");
+        await hook({ to: str(application.email), name: str(application.name), programName: str(application.program), scheduledAt: p.scheduledAt!, meetingUrl: p.meetingUrl!, interviewId: p.interviewId, sequence: Number(p.sequence || 0), cancelReason: p.cancelReason });
       } else if (row.type === "notice") {
         if (!activeHooks?.sendNotice) throw new Error("No email sender is configured.");
         const p = row.payload;
@@ -779,5 +721,5 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     const passwordHash = await Bun.password.hash(nextPassword, { algorithm: "argon2id" });
     return savePassword(user, passwordHash, user.sessionVersion ?? 1, "account.passwordChanged");
   }
-  return { db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runRetention, runReminders: remind, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
+  return { readAutomatedEmailTemplate: templates.readAutomated, db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runRetention, runReminders: remind, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
 }

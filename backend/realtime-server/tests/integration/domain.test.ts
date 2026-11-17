@@ -83,14 +83,16 @@ test("application claim, registration, status and idempotency persist in Atlas",
   const retry = await domain.execute("application.submit", payload, null, "application-test-0001");
   expect(retry).toEqual(response);
   expect(await domain.collection("applications").countDocuments()).toBe(1);
-  // A repeat application gets the existing reference and queues another receipt, but creates nothing.
-  const repeat = await domain.execute("application.submit", payload, null, "application-test-0002");
-  expect(repeat).toEqual(response);
+  // A repeat application with a new key is rejected with ALREADY_APPLIED.
+  await expect(domain.execute("application.submit", payload, null, "application-test-0002")).rejects.toMatchObject({ code: "ALREADY_APPLIED" });
   expect(Object.keys(response).sort()).toEqual(["applicationId", "message", "received"]);
   expect(await domain.collection("applications").countDocuments()).toBe(1);
-  expect(await domain.collection("outbox").countDocuments({ type: "applicationConfirmation", "payload.to": "applicant@example.test" })).toBe(2);
+  expect(await domain.collection("outbox").countDocuments({ type: "applicationConfirmation", "payload.to": "applicant@example.test" })).toBe(1);
   expect(await domain.collection("outbox").countDocuments({ type: "magicLink", "payload.to": "applicant@example.test" })).toBe(0);
   const application = { id: String((await domain.collection("applications").findOne({ email: "applicant@example.test" }))!._id) };
+  await expect(domain.autoProvisionAccount(application.id, "applicant@example.test")).rejects.toBeInstanceOf(DomainError);
+  await domain.execute("application.update", { id: application.id, status: "Under Review", expectedVersion: 1 }, staff, "status-update-test-0001");
+  await domain.execute("application.update", { id: application.id, status: "Selected", expectedVersion: 2 }, staff, "status-update-test-0002");
   const linked = await domain.autoProvisionAccount(application.id, "applicant@example.test");
   await domain.changePassword(linked.id, "", "ExamplePassword2026!");
   const registered = (await domain.account(linked.id))!;
@@ -98,19 +100,17 @@ test("application claim, registration, status and idempotency persist in Atlas",
   expect(await domain.login("applicant@example.test", "ExamplePassword2026!")).toMatchObject({ id: registered.id, role: "intern" });
   expect(await domain.login("applicant@example.test", "incorrect")).toBeNull();
   expect((await domain.collection("test_credentials").findOne({ userId: registered.id }))?.passwordHash).not.toContain("ExamplePassword2026!");
-  const updated = await domain.execute("application.update", { id: application.id, status: "Under Review", expectedVersion: 1 }, staff, "status-update-test-0001");
-  expect(updated.version).toBe(2);
-  expect((await domain.execute("application.get", { id: application.id }, registered)).status).toBe("Under Review");
+  expect((await domain.execute("application.get", { id: application.id }, registered)).status).toBe("Selected");
   expect((await domain.execute("application.list", {}, staff)).total).toBe(1);
-  await expect(domain.execute("application.update", { id: application.id, status: "Selected", expectedVersion: 1 }, staff, "status-update-test-0002")).rejects.toBeInstanceOf(DomainError);
+  await expect(domain.execute("application.update", { id: application.id, status: "Selected", expectedVersion: 1 }, staff, "status-update-test-0003")).rejects.toBeInstanceOf(DomainError);
   await expect(domain.execute("application.get", { id: application.id }, { ...registered, applicationId: "different" })).rejects.toBeInstanceOf(DomainError);
   const competing = await Promise.allSettled([
-    domain.execute("application.update", { id: application.id, status: "Selected", expectedVersion: 2 }, staff, "status-update-race-0001"),
-    domain.execute("application.update", { id: application.id, status: "Shortlisted", expectedVersion: 2 }, staff, "status-update-race-0002"),
+    domain.execute("application.update", { id: application.id, status: "Joined", expectedVersion: 3 }, staff, "status-update-race-0001"),
+    domain.execute("application.update", { id: application.id, status: "Declined", expectedVersion: 3 }, staff, "status-update-race-0002"),
   ]);
   expect(competing.filter(result => result.status === "fulfilled")).toHaveLength(1);
   expect(competing.filter(result => result.status === "rejected")).toHaveLength(1);
-  expect((await domain.execute("application.get", { id: application.id }, staff)).version).toBe(3);
+  expect((await domain.execute("application.get", { id: application.id }, staff)).version).toBe(4);
 }, 30000);
 
 test("staff can securely create an account for an unclaimed application", async () => {

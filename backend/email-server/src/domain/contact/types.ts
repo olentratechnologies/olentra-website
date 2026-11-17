@@ -1,9 +1,5 @@
-export type ContactConfig = {
-  apiKey?: string;
-  sender?: string;
-  receiver?: string;
-  token?: string;
-};
+import type { SmtpConfig } from "../../infrastructure/email/smtp.client";
+export type ContactConfig = SmtpConfig & { receiver?: string; token?: string };
 
 export type ContactFields = {
   name: string;
@@ -13,16 +9,4 @@ export type ContactFields = {
   message: string;
 };
 
-export type ResendAttachment = {
-  filename: string;
-  content: string;
-};
-
-export type ResendEmail = {
-  from?: string;
-  to: string[];
-  reply_to: string;
-  subject: string;
-  text: string;
-  attachments?: ResendAttachment[];
-};
+export type EmailAttachment = { filename: string; content: string };

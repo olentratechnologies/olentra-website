@@ -19,7 +19,7 @@ function fixture() {
       return cursor;
     },
   });
-  return { calls, lifecycle: createLifecycle({ collection: collection as any, transact: (async () => { throw new Error("Unexpected write"); }) as any }) };
+  return { calls, lifecycle: createLifecycle({ outbox: { enqueue: async () => {}, enqueueMany: async () => {} }, collection: collection as any, transact: (async () => { throw new Error("Unexpected write"); }) as any }) };
 }
 
 test("summary-only staff do not query private workflow records", async () => {

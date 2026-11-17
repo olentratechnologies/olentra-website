@@ -18,7 +18,7 @@ export default app;
 
 // Preserve the local Bun server for development and standalone hosting.
 if (import.meta.main) {
-  const listener = app.listen({ port: environment.port, hostname: environment.host, maxRequestBodySize: 6 * 1024 * 1024 });
+  const listener = app.listen({ port: environment.port, hostname: environment.host, maxRequestBodySize: 8 * 1024 * 1024 });
   logger.info("Contact server listening", { port: listener.server?.port || environment.port, host: environment.host });
   let stopping: Promise<void> | undefined;
   for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => {

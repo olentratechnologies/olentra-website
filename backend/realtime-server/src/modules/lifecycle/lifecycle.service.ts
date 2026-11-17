@@ -1,3 +1,4 @@
+import type { Outbox } from "../outbox/outbox";
 import { randomUUID } from "node:crypto";
 import type { ClientSession, Collection, Document } from "mongodb";
 import { DomainError } from "../../shared/errors";
@@ -23,7 +24,7 @@ const day = () => new Date().toISOString().slice(0, 10);
 const validDate = (v: unknown) => { const value = text(v), parsed = new Date(value); return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; };
 const validUrl = (value: unknown) => { const v = text(value); if (v) { try { if (!["https:", "http:"].includes(new URL(v).protocol)) throw 0; } catch { throw new DomainError("INVALID_REQUEST", "Use an http or https link."); } } return v; };
 
-export function createLifecycle({ collection, transact }: { collection: (name: string) => Collection<Row>; transact: Tx }) {
+export function createLifecycle({ collection, transact, outbox }: { collection: (name: string) => Collection<Row>; transact: Tx; outbox: Pick<Outbox, "enqueue" | "enqueueMany"> }) {
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
@@ -268,6 +269,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
           created.push(certificate); return plain(certificate);
         });
         if (created.length) await certificates.insertMany(created, opts);
+        await outbox.enqueueMany(created.map(certificate => ({ type: "applicantStatus" as const, payload: { applicationId: String(certificate.applicationId), status: "certificate", certificateNumber: String(certificate.certificateNumber) } })), session);
         for (const certificate of created) await auditDecision(audit, session, actor, "certificate.issued", String(certificate.applicationId), { certificateNumber: certificate.certificateNumber });
         return generated;
       }
@@ -287,7 +289,7 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
           {
             // The sequence goes up on every change so calendar invites update in place.
             $set: { scheduledAt, meetingUrl, updatedOn: now, status: "Scheduled" },
-            $unset: { cancelledOn: "", cancelReason: "" },
+            $unset: { cancelledOn: "", cancelReason: "", reminderSentOn: "" },
             $inc: { sequence: 1 },
             $setOnInsert: { _id: newId("INTV"), applicationId, createdOn: now },
           },
@@ -316,6 +318,13 @@ export function createLifecycle({ collection, transact }: { collection: (name: s
       }
       throw new DomainError("NOT_IMPLEMENTED", "This action is not available.");
       })();
+      if (method === "offer.send" || method === "onboarding.approve") {
+        await outbox.enqueue("applicantStatus", { applicationId: String((result as any).applicationId), status: method === "offer.send" ? "offer" : "onboarding" }, session);
+      }
+      if (method === "interview.schedule" || method === "interview.cancel") {
+        const interview = result as Record<string, any>;
+        await outbox.enqueue("interview", { applicationId: String(interview.applicationId), interviewId: String(interview.id), scheduledAt: String(interview.scheduledAt), meetingUrl: String(interview.meetingUrl), sequence: String(interview.sequence || 0), status: String(interview.status), cancelReason: String(interview.cancelReason || "") }, session);
+      }
       // Decisions are audited in the same transaction as the change itself.
       if (method === "offer.send" && result && !Array.isArray(result)) await auditDecision(audit, session, actor, "offer.sent", String((result as any).applicationId), { startOn: (result as any).startOn, endOn: (result as any).endOn, stipend: (result as any).stipend });
       if (method === "onboarding.approve" && result && !Array.isArray(result)) await auditDecision(audit, session, actor, "onboarding.approved", String((result as any).applicationId));

@@ -19,10 +19,10 @@ async function capture(send: (mailer: ReturnType<typeof createInternshipMailer>)
   const requests: Record<string, unknown>[] = [];
   globalThis.fetch = (async (_input, init) => {
     requests.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
-    return new Response(JSON.stringify({ id: "email-1" }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, id: "email-1" }), { status: 200 });
   }) as typeof fetch;
   try {
-    await send(createInternshipMailer("test-api-key", "Olentra <test@example.test>"));
+    await send(createInternshipMailer("delivery-test-token", "http://email-server.test"));
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -35,13 +35,13 @@ function assertEscaped(html: string) {
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
 }
 
-test("confirmation email escapes the applicant name, track and link", async () => {
+test("confirmation email escapes the applicant name and track and never includes a login link", async () => {
   const { html, text } = await capture(mailer => mailer.sendApplicationConfirmation({
     to: "a@example.test", name: hostile, programName: `Explorer "><script>x</script>`, magicLinkUrl: `https://example.test/v?token=a"b&c=1`,
   }));
   assertEscaped(html);
   assert.ok(!html.includes("<script>x</script>"));
-  assert.match(html, /href="https:\/\/example\.test\/v\?token=a&quot;b&amp;c=1"/);
+  assert.doesNotMatch(html, /example.test\/v|secure portal link/);
   assert.ok(text.includes(hostile), "the plain-text part is not HTML and keeps the original characters");
 });
 
@@ -49,29 +49,26 @@ test("magic-link email escapes the name and link", async () => {
   const { html } = await capture(mailer => mailer.sendMagicLink({ to: "a@example.test", name: hostile, magicLinkUrl: "https://example.test/v?token=a&b", templateVariant: "professional" }));
   assertEscaped(html);
   assert.match(html, /href="https:\/\/example\.test\/v\?token=a&amp;b"/);
-  assert.match(html, /background-color: #f2f5fb/);
+  assert.match(html, /background:#f3f6fb/);
   assert.match(html, /alt="Olentra Technologies"/);
   assert.match(html, /Open candidate portal/);
   assert.match(html, /Single-use link · Expires in 24 hours/);
   assert.match(html, /Use this secure sign-in link/);
 });
 
-test("each selected sign-in design changes the delivered subject and visual theme without losing security copy", async () => {
-  const variants = [
-    { id: "professional", subject: "Your Olentra Candidate Portal Sign-In Link", background: "#f2f5fb" },
-    { id: "warm", subject: "Your requested Olentra sign-in link", background: "#fbf7f2" },
-    { id: "minimal", subject: "Sign-in link for your Olentra account", background: "#ffffff" },
-  ] as const;
-  for (const variant of variants) {
-    const { html, text, subject } = await capture(mailer => mailer.sendMagicLink({
-      to: "a@example.test", name: "Alex", magicLinkUrl: "https://example.test/verify", templateVariant: variant.id,
-    }));
-    assert.equal(subject, variant.subject);
-    assert.ok(html.includes(`background-color: ${variant.background}`));
-    assert.match(html, /Single-use link · Expires in 24 hours/);
-    assert.match(html, /If you didn’t request this link/);
-    assert.match(text, /single-use link expires in 24 hours/);
-  }
+test("saved sign-in copy changes delivery while required security details stay present", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests: any[] = [];
+  globalThis.fetch = (async (_input, init) => { requests.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify({ success: true, id: "email" }), { status: 200 }); }) as typeof fetch;
+  try {
+    const mailer = createInternshipMailer("delivery-test-token", "http://email-server.test", async () => ({ subject: "Welcome back, {fullName}", body: "Your requested access, {fullName}." }));
+    await mailer.sendMagicLink({ to: "a@example.test", name: "Alex", magicLinkUrl: "https://example.test/verify" });
+    assert.equal(requests[0].subject, "Welcome back, Alex");
+    assert.match(requests[0].html, /Your requested access, Alex/);
+    assert.match(requests[0].html, /Single-use link · Expires in 24 hours/);
+    assert.match(requests[0].html, /If you didn’t request this link/);
+    assert.match(requests[0].text, /https:\/\/example.test\/verify/);
+  } finally { globalThis.fetch = originalFetch; }
 });
 
 test("password reset email escapes the name and link", async () => {

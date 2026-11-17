@@ -376,14 +376,6 @@
         "edit": true,
         "publish": true,
         "manage": true
-      },
-      {
-        "id": "Email Templates",
-        "name": "Email Templates",
-        "view": true,
-        "edit": false,
-        "publish": false,
-        "manage": true
       }
     ],
     "admin-role-permissions-editor": [
@@ -486,14 +478,6 @@
       {
         "id": "Settings & Backups",
         "name": "Settings & Backups",
-        "view": false,
-        "edit": false,
-        "publish": false,
-        "manage": false
-      },
-      {
-        "id": "Email Templates",
-        "name": "Email Templates",
         "view": false,
         "edit": false,
         "publish": false,
@@ -604,14 +588,6 @@
         "edit": false,
         "publish": false,
         "manage": false
-      },
-      {
-        "id": "Email Templates",
-        "name": "Email Templates",
-        "view": false,
-        "edit": false,
-        "publish": false,
-        "manage": false
       }
     ],
     "admin-role-permissions-analyst": [
@@ -714,14 +690,6 @@
       {
         "id": "Settings & Backups",
         "name": "Settings & Backups",
-        "view": false,
-        "edit": false,
-        "publish": false,
-        "manage": false
-      },
-      {
-        "id": "Email Templates",
-        "name": "Email Templates",
         "view": false,
         "edit": false,
         "publish": false,
@@ -47187,14 +47155,6 @@
         "edit": false,
         "publish": false,
         "manage": false
-      },
-      {
-        "id": "Email Templates",
-        "name": "Email Templates",
-        "view": false,
-        "edit": false,
-        "publish": false,
-        "manage": false
       }
     ]
   },
@@ -47266,8 +47226,7 @@
       "Team & Access",
       "Approvals & Audit Log",
       "Integrations",
-      "Settings & Backups",
-      "Email Templates"
+      "Settings & Backups"
     ],
     "sourceContent": {
       "homepage": {

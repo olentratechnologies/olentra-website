@@ -88,14 +88,14 @@ editing its role's permissions signs affected staff out. Staff changes are
 recorded in the internship audit log, and the last active admin cannot be
 disabled or demoted.
 
-These `read` commands use the default macOS zsh shell. Applicants receive a
-single-use email link after applying; opening it verifies ownership of the
-email and provisions their candidate account. They can set a password from the
-portal and request sign-in or password-reset links from the login page.
-Application confirmation emails use a transactional outbox with retries.
-Configure `RESEND_API_KEY` and the verified sender for delivery. Missing email
-configuration returns a delivery failure in production, allowing the outbox to
-retry; development-only offline emails are logged. An admin can also create an
+These `read` commands use the default macOS zsh shell. Application receipts contain
+reference IDs and a review estimate, without a portal link. Selection sends a
+single-use activation link. Requested sign-in links require Selected/Joined status.
+Application and workflow emails use a transactional outbox with retries. The realtime
+service renders templates and calls email-server via `EMAIL_SERVER_URL` and
+`EMAIL_DELIVERY_TOKEN`. Only email-server holds `SMTP_USER` and `SMTP_PASS`.
+Missing configuration or failed delivery returns a failure, allowing queued jobs to
+retry; no environment treats missing credentials as a successful send. An admin can also create an
 account or reset an intern's password after verifying their identity; resetting
 the password invalidates existing sessions.
 

@@ -37,7 +37,7 @@ export async function POST(request) {
       method: 'POST',
       headers: { 'Content-Type': contentType, Authorization: `Bearer ${token}` },
       body: Buffer.concat(chunks),
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(45_000),
       cache: 'no-store',
     });
     const result = await response.json();
