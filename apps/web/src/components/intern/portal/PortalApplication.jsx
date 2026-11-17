@@ -180,7 +180,7 @@ export default function PortalApplication() {
         </div>
       </Panel>
       {offer && (
-        <Panel className={styles.offerPanel}>
+        <section id="internship-offer" style={{ scrollMarginTop: 90 }}><Panel className={styles.offerPanel}>
           <div className={styles.panelHeader}>
             <div className={styles.titleWithIcon}>
               <span className={styles.summaryIcon} data-tone="purple">
@@ -288,7 +288,7 @@ export default function PortalApplication() {
               contact the team through Messages if you need help.
             </Notice>
           )}
-        </Panel>
+        </Panel></section>
       )}
       {!offer && application.status === "Selected" && (
         <Notice>
@@ -350,7 +350,7 @@ export default function PortalApplication() {
                     <Check size={13} />
                   </span>
                   <div>
-                    <strong>{entry.title}</strong>
+                    <strong>{entry.title === "Offer sent" ? "Offer received" : entry.title}</strong>
                     <time>{formatDate(entry.date || entry.createdOn)}</time>
                     {entry.detail && <p>{entry.detail}</p>}
                   </div>

@@ -25,6 +25,7 @@ import {
   formatDate,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import { portalJourney } from "@/lib/intern/portal-journey.mjs";
 import LearningResources from "./LearningResources";
 import WeeklyCheckin from "./WeeklyCheckin";
 import badgeStyles from "./badges.module.css";
@@ -79,26 +80,8 @@ export default function PortalDashboard() {
     application?.status === "Joined" && my.intern?.status === "Active";
   const completed = my.intern?.status === "Completed";
   const canViewWork = active || (application?.status === "Joined" && completed);
-  const steps = [
-    { label: "Application", done: Boolean(application) },
-    {
-      label: "Offer accepted",
-      done:
-        my.offer?.status === "Accepted" ||
-        application?.status === "Joined" ||
-        my.onboarding?.status === "Approved",
-    },
-    { label: "Onboarding", done: my.onboarding?.status === "Approved" },
-    {
-      label: "Internship",
-      done: completed,
-      status: active
-        ? "In progress"
-        : my.intern?.status === "Dropped"
-          ? "Ended"
-          : null,
-    },
-  ];
+  const journey = portalJourney(my);
+  const steps = journey.steps;
   return (
     <>
       <Heading
@@ -115,43 +98,49 @@ export default function PortalDashboard() {
               ? "Look at everything you’ve built."
               : active
                 ? "Big ideas. Real-world impact."
-                : "A little closer to what’s next."}
+                : journey.pending ? "Your internship offer is ready." : "A little closer to what’s next."}
           </h2>
           <p>
             {completed
               ? "Revisit your work, read your feedback, and celebrate your achievement."
               : active
                 ? "Your projects, tasks, and team feedback are ready when you are."
-                : "Complete your digital agreement and profile to unlock your project workspace."}
+                : journey.pending
+                  ? "Your internship offer has arrived. Review and accept it in My application before starting onboarding."
+                  : journey.expired
+                    ? "Your offer deadline has passed. Contact the Olentra team to request an extension."
+                    : journey.accepted
+                      ? "Complete your digital agreement and profile to unlock your project workspace."
+                      : "Track your application here. Once your offer arrives, review and accept it in My application."}
           </p>
           <Link
             href={
               canViewWork
                 ? "/intern/portal/projects"
-                : "/intern/portal/onboarding"
+                : journey.accepted ? "/intern/portal/onboarding" : journey.offerHref
             }
             className={styles.bannerLink}
           >
-            {canViewWork ? "Explore my projects" : "Complete onboarding"}
+            {canViewWork ? "Explore my projects" : journey.pending ? "Review and accept offer" : journey.accepted ? "Complete onboarding" : "View my application"}
             <ArrowRight size={15} />
           </Link>
         </div>
         <PlanetArtwork className={styles.bannerPlanet} />
       </section>
-      {my.offer?.status === "Sent" && (
+      {journey.pending && (
         <Notice>
           <div>
             <strong>Your offer is here! 🎉</strong>
             <p>
-              Review the details and take the next step in your Olentra journey.
+              Your offer is ready. Review the terms and accept it in My application to unlock onboarding.
             </p>
           </div>
-          <Link href="/intern/portal/application">
-            Review offer <ArrowRight size={14} />
+          <Link href={journey.offerHref}>
+            Review and accept offer <ArrowRight size={14} />
           </Link>
         </Notice>
       )}
-      {!active && !completed && my.onboarding?.status !== "Approved" && (
+      {journey.accepted && !active && !completed && my.onboarding?.status !== "Approved" && (
         <Notice>
           <div>
             <strong>
@@ -223,6 +212,7 @@ export default function PortalDashboard() {
                   <small>
                     {step.done ? "Complete" : step.status || "Coming up next"}
                   </small>
+                  {step.action && <Link href={step.href} className={styles.textLink}>{step.action} <ArrowRight size={13} /></Link>}
                 </div>
               </li>
             ))}
