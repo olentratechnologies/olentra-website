@@ -35,7 +35,6 @@ import {
 import styles from "./portal.module.css";
 import { useSiteFeatures } from "@olentra/site-features/react";
 import { offerTimeLeft } from "@/lib/intern/offer-deadline.mjs";
-import { downloadOfferLetterPdf } from "@/lib/intern/offer-letter-pdf";
 
 export default function PortalApplication() {
   const { features, ready: featuresReady } = useSiteFeatures();
@@ -249,39 +248,20 @@ export default function PortalApplication() {
               {timeLeft && <small className={timeLeft.urgent || timeLeft.expired ? styles.offerUrgent : ""} role="status">{timeLeft.label}{offer.expiresOn ? ` · until ${new Date(offer.expiresOn).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}` : ""}</small>}
             </div>
           ) : offer.status === "Accepted" ? (
-            <Notice tone="green">
-              <span>
-                <Check size={17} /> Your offer has been accepted.
-              </span>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginTop: "10px" }}>
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    downloadOfferLetterPdf({
-                      name: application.name,
-                      email: application.email,
-                      college: application.college,
-                      program: application.program,
-                      roleTitle: internRoleLabel(application.roleId),
-                      startOn: offer.startOn,
-                      endOn: offer.endOn,
-                      stipend: offer.stipend,
-                      stipendPeriod: offer.stipendPeriod,
-                      applicationId: application.id,
-                      issueDate: offer.decidedOn,
-                    })
-                  }
-                >
-                  <Download size={14} /> Download Offer Letter (PDF)
-                </Button>
-                <Link href="/intern/portal/onboarding">
-                  {my.onboarding?.status === "Approved"
-                    ? "View onboarding"
-                    : "Continue onboarding"}
-                  <ArrowRight size={14} />
-                </Link>
+            <section className={styles.acceptedOffer} aria-labelledby="accepted-offer-title">
+              <div className={styles.acceptedOfferHeading}>
+                <Check size={19} aria-hidden="true" />
+                <h3 id="accepted-offer-title">Offer accepted</h3>
+                {offer.decidedOn && <span>{formatDate(offer.decidedOn)}</span>}
               </div>
-            </Notice>
+              <p>Your official offer letter is available in Certificates &amp; Documents. {my.onboarding?.status === "Approved" ? "Your onboarding has been approved." : "Complete your onboarding checklist to continue."}</p>
+              <nav className={styles.acceptedOfferActions} aria-label="After accepting your offer">
+                <Link href="/intern/portal/onboarding" className={styles.acceptedOfferPrimary}>
+                  {my.onboarding?.status === "Approved" ? "View onboarding" : "Continue onboarding"} <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+                <Link href="/intern/portal/certificates#offer-letter">View offer letter in Documents <ArrowRight size={14} aria-hidden="true" /></Link>
+              </nav>
+            </section>
           ) : (
             <Notice>
               Your decision has been shared with the Olentra team. You can

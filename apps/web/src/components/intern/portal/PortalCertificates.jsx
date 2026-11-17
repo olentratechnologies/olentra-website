@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { offerDocumentState } from "@/lib/intern/offer-document.mjs";
 import CompanyBrand from "@/components/intern/CompanyBrand";
-import { Award, Copy, Download, Eye, Linkedin, Printer, ShieldCheck } from "lucide-react";
+import { Award, Copy, Download, Eye, FileText, Linkedin, Printer, ShieldCheck } from "lucide-react";
 import { linkedInAddUrl, verifyUrl } from "@/lib/intern/certificate-share.mjs";
+import { downloadOfferLetterPdf } from "@/lib/intern/offer-letter-pdf";
+import { internRoleLabel } from "@/lib/intern/opportunities.mjs";
 import PortalStory from "./PortalStory";
 import ExitFeedback from "./ExitFeedback";
 import { useInternship } from "@/components/intern/InternshipProvider";
@@ -43,6 +47,9 @@ export default function PortalCertificates() {
   const action = useAction();
   if (!ready) return <Loading />;
   const certificates = my.certificates || [];
+  const application = my.application;
+  const offer = my.offer;
+  const offerDocument = offerDocumentState(application, offer);
   async function download(certificate) {
     await action.run(async () => {
       if (certificate.status !== "Issued")
@@ -87,13 +94,76 @@ export default function PortalCertificates() {
   return (
     <>
       <Heading
-        title="My Certificates"
-        description="A milestone to be proud of. An achievement to share."
+        title="Certificates & Documents"
+        description="Your internship offer letter and completion certificates, with their issue and acceptance details."
       />
       <ErrorMessage>{action.error}</ErrorMessage>
+      {offerDocument.visible && (
+        <Panel id="offer-letter" className={styles.sectionGap} style={{ scrollMarginTop: 90 }}>
+          <div className={styles.panelHeader}>
+            <h2>Official Documents</h2>
+            <span className={styles.muted}>
+              {offerDocument.downloadable ? "Available to download" : "Awaiting acceptance"}
+            </span>
+          </div>
+          <div className={styles.certificateList}>
+            <article className={styles.certificateCard}>
+              <span
+                className={styles.certificateIcon}
+                style={{
+                  background: "linear-gradient(135deg, #eff6ff, #dbeafe)",
+                  borderColor: "#bfdbfe",
+                  color: "#2563eb",
+                }}
+              >
+                <FileText size={28} />
+              </span>
+              <div>
+                <h3>Internship Offer Letter</h3>
+                <p>
+                  {application?.name || offer.name || "Intern"}
+                  {application?.roleId ? ` · ${internRoleLabel(application.roleId)}` : ""}
+                </p>
+                <small>
+                  {offerDocument.date ? `${offerDocument.dateLabel} ${formatDate(offerDocument.date)}` : "Internship Offer Letter"}
+                </small>
+                <span className={styles.certificateCode}>Ref: {offerDocument.reference}</span>
+                <small>{offerDocument.downloadable ? "Confirms your accepted internship offer. This is separate from your completion certificate." : "Your offer letter becomes available to download after acceptance in My application."}</small>
+              </div>
+              <Status value={offerDocument.status} />
+              <div className={styles.actions}>
+                {offerDocument.downloadable ? <Button
+                  variant="secondary"
+                  onClick={() => action.run(async () => {
+                    downloadOfferLetterPdf({
+                      name: application?.name || offer.name,
+                      email: application?.email || offer.email,
+                      college: application?.college,
+                      program: application?.program || offer.program,
+                      roleTitle: internRoleLabel(application?.roleId),
+                      startOn: offer.startOn,
+                      endOn: offer.endOn,
+                      stipend: offer.stipend,
+                      stipendPeriod: offer.stipendPeriod,
+                      applicationId: application?.id,
+                      issueDate: offer.decidedOn || offer.sentOn,
+                    });
+                    return { ok: true };
+                  })}
+                  busy={action.busy}
+                  disabled={action.busy}
+                >
+                  <Download size={14} />
+                  Download PDF
+                </Button> : <Link href="/intern/portal/application#internship-offer" className={styles.textLink}>{offerDocument.status === "Expired" ? "View offer details" : "Review and accept offer"}</Link>}
+              </div>
+            </article>
+          </div>
+        </Panel>
+      )}
       <Panel>
         <div className={styles.panelHeader}>
-          <h2>Your achievements</h2>
+          <h2>Completion Certificates</h2>
           <span className={styles.muted}>
             {certificates.length}{" "}
             {certificates.length === 1 ? "certificate" : "certificates"}

@@ -77,7 +77,7 @@ const navigation = [
     icon: BriefcaseBusiness,
   },
   { href: "/intern/portal/submissions", label: "Submissions", icon: FileClock },
-  { href: "/intern/portal/certificates", label: "Certificates", icon: Award },
+  { href: "/intern/portal/certificates", label: "Certificates & Documents", icon: Award },
   { href: "/intern/portal/profile", label: "My Profile", icon: UserRound },
 ];
 
