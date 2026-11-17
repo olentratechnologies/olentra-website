@@ -606,11 +606,36 @@
   border: 0;
 }
 .programFacts {
-  margin-top: 20px;
-  color: #46567c;
-  font-size: 13px;
-  line-height: 22px;
-  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+  color: #354b75;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 550;
+}
+.programFacts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid rgba(80, 119, 194, 0.14);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(239, 246, 255, 0.65));
+  box-shadow: 0 2px 6px rgba(42, 75, 142, 0.03);
+}
+.programFacts svg {
+  flex-shrink: 0;
+  color: #3769cb;
+  stroke-width: 1.75;
+}
+@media (max-width: 767px) {
+  .programFacts {
+    justify-content: center;
+  }
 }
 .scheduleField {
   grid-column: 1 / -1;
@@ -1579,5 +1604,57 @@
   .trackCard:only-child .trackButton {
     grid-area: action;
     margin: 24px 0 0;
+  }
+}
+
+.trackTitleBlock {
+  grid-area: title;
+  min-width: 0;
+}
+.trackEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #42639d;
+  font-size: 10px;
+  line-height: 16px;
+  letter-spacing: 1.7px;
+  text-transform: uppercase;
+  font-weight: 650;
+}
+.trackEyebrow > span {
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: #426bea;
+}
+.trackCard .trackTitleBlock h2 {
+  margin: 0;
+  font-size: clamp(30px, 3.7vw, 46px);
+  line-height: 1.12;
+  letter-spacing: -1.6px;
+  font-weight: 650;
+  color: #172b54;
+}
+.trackNameAccent {
+  color: #2859cf;
+}
+.innovator .trackNameAccent {
+  color: #7044c5;
+}
+.innovator .trackEyebrow > span {
+  background: #8256ce;
+}
+@media (max-width: 767px) {
+  .trackCard .trackTitleBlock h2 {
+    font-size: clamp(27px, 7vw, 36px);
+    letter-spacing: -1px;
+  }
+  .trackEyebrow {
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    gap: 6px;
+    margin-bottom: 8px;
   }
 }

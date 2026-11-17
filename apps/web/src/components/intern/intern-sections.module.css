@@ -1,6 +1,7 @@
 /* Shared by the Intern roles and Prerequisites sections of the careers page.
    Role-specific layout lives in intern-roles.module.css. */
 .section {
+  scroll-margin-top: 100px;
   margin-top: 80px;
   color: var(--ink, #080e48);
 }

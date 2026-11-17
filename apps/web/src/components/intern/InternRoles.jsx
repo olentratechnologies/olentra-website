@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bot, Check, Code2, TrendingUp } from "lucide-react";
 import shared from "./intern-sections.module.css";
 import styles from "./intern-roles.module.css";
@@ -19,6 +19,21 @@ export default function InternRoles({ roles = INTERN_ROLES }) {
   const activeIndex = roles.findIndex((role) => role.id === activeId);
   const active = roles[activeIndex];
   const ActiveIcon = ICONS[active.id] || Code2;
+
+  useEffect(() => {
+    const openLinkedRole = () => {
+      const roleIndex = roles.findIndex((role) => window.location.hash === `#role-${role.id}`);
+      if (roleIndex < 0) return;
+      setActiveId(roles[roleIndex].id);
+      requestAnimationFrame(() => {
+        tabRefs.current[roleIndex]?.focus({ preventScroll: true });
+        document.getElementById("internship-roles")?.scrollIntoView({ block: "start" });
+      });
+    };
+    openLinkedRole();
+    window.addEventListener("hashchange", openLinkedRole);
+    return () => window.removeEventListener("hashchange", openLinkedRole);
+  }, [roles]);
 
   // Arrow keys move between tabs, as in the standard tabs pattern.
   const onKeyDown = (event) => {
@@ -39,7 +54,7 @@ export default function InternRoles({ roles = INTERN_ROLES }) {
         <div className={shared.header}>
           <span className={shared.eyebrow}>Intern roles</span>
           <h2 id="internship-roles-title">Choose the role that fits your goals</h2>
-          <p>Three focused roles across engineering, AI automation and business growth.</p>
+          <p>Explore roles in engineering, AI automation, and business growth.</p>
         </div>
       </div>
 

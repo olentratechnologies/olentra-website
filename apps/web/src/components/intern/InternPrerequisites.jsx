@@ -3,11 +3,11 @@ import { INTERN_ROLES } from "@/lib/intern/opportunities.mjs";
 import styles from "./intern-sections.module.css";
 
 const ESSENTIALS = [
-  { icon: Laptop, title: "Your own laptop", text: "A laptop or desktop computer you can use for development and daily work." },
+  { icon: Laptop, title: "Access to a computer", text: "A laptop or desktop computer you can use for development and daily work." },
   { icon: Wifi, title: "Reliable internet", text: "A stable connection for remote collaboration, video calls and online tools." },
-  { icon: CalendarCheck, title: "Two-month commitment", text: "Availability for the full program, part-time or full-time." },
+  { icon: CalendarCheck, title: "Program commitment", text: "Availability for the full program, part-time or full-time." },
   { icon: MessagesSquare, title: "Clear communication", text: "Good written and spoken English for working with a remote team." },
-  { icon: Rocket, title: "Drive to learn", text: "Self-motivation to learn fast, take ownership and meet deadlines." },
+  { icon: Rocket, title: "Drive to learn", text: "Willingness to learn, take ownership, and meet deadlines." },
 ];
 
 
@@ -21,7 +21,7 @@ export default function InternPrerequisites({ roles = INTERN_ROLES }) {
         <p>No prior industry experience is required. Here is what every intern needs, plus the skills that help in each role.</p>
       </div>
 
-      <h3 className={styles.subheading}>Everyone needs</h3>
+      <h3 className={styles.subheading}>Essential requirements</h3>
       <ul className={styles.essentials} role="list">
         {ESSENTIALS.map(({ icon: Icon, title, text }) => (
           <li key={title} className={styles.essential}>
@@ -32,7 +32,7 @@ export default function InternPrerequisites({ roles = INTERN_ROLES }) {
         ))}
       </ul>
 
-      <h3 className={styles.subheading}>Helpful for your role <small>Good to have only</small></h3>
+      <h3 className={styles.subheading}>Helpful for your role <small>Optional skills</small></h3>
       <div className={styles.roleSkills}>
         {roles.map((entry) => (
           <div key={entry.tag} className={styles.roleSkill} data-role={entry.tag.toLowerCase()}>

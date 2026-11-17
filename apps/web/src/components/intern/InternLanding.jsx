@@ -6,9 +6,12 @@ import { useLenis } from "lenis/react";
 import {
   AlertCircle,
   ArrowRight,
+  CalendarDays,
   Check,
   CheckCircle2,
   FileText,
+  Globe2,
+  Clock3,
   Upload,
   X,
 } from "lucide-react";
@@ -51,11 +54,11 @@ const artwork = {
 };
 
 const commonTrackBenefits = [
-  "Work on real projects",
-  "Get mentor guidance and project feedback",
-  "Learn from industry experts",
+  "Gain practical project experience",
+  "Receive mentorship and project feedback",
+  "Learn from experienced professionals",
   "Build practical skills for your role",
-  "Access industry-leading AI tools, including Claude, Codex, and Gemini",
+  "Use AI tools, including Claude, Codex, and Gemini",
 ];
 
 const paidTrackBenefits = [
@@ -71,7 +74,7 @@ const tracks = [
     name: "Tech Explorer",
     subtitle: "Internship program",
     description:
-      "Explore the world of technology with structured learning, mentorship and hands-on projects.",
+      "Build a foundation in technology through structured learning, mentorship, and practical projects.",
     art: "book",
     cta: "Apply for Explorer",
   },
@@ -80,7 +83,7 @@ const tracks = [
     name: "Tech Innovator",
     subtitle: "Internship program",
     description:
-      "Go beyond learning. Contribute, build and innovate alongside the team.",
+      "Develop your skills by contributing to projects and collaborating with our team.",
     art: "trophy",
     cta: "Apply for Innovator",
   },
@@ -91,10 +94,10 @@ const SCHEDULE = "Part-time or full-time";
 const trackNames = Object.fromEntries(tracks.map((track) => [track.id, track.name]));
 
 const benefits = [
-  { art: "benefitRocket", lines: ["Real-World", "Projects"] },
-  { art: "benefitUsers", lines: ["Expert", "Mentorship"] },
-  { art: "chip", lines: ["Cutting-Edge", "AI Tools"] },
-  { art: "growth", lines: ["Career Growth", "Opportunities"] },
+  { art: "benefitRocket", lines: ["Real-world", "projects"] },
+  { art: "benefitUsers", lines: ["Expert", "mentorship"] },
+  { art: "chip", lines: ["AI-powered", "tools"] },
+  { art: "growth", lines: ["Career", "development"] },
 ];
 
 function ReferenceArt({ name, className = "" }) {
@@ -185,7 +188,7 @@ export default function InternLanding() {
   const { commands, ready, sessionReady, connected, data } = useInternship();
   const { features, ready: featuresReady } = useSiteFeatures();
   const opportunities = data.opportunities || INTERNSHIP_OPPORTUNITIES;
-  const internshipDuration = data.settings.duration || opportunities.duration || INTERNSHIP_OPPORTUNITIES.duration;
+  const internshipDuration = (data.settings.duration || opportunities.duration || INTERNSHIP_OPPORTUNITIES.duration).replace(/\bcalendar\s+/gi, "").trim();
   const visibleTracks = tracks.filter((track) => matchesCompensationMode(data.programs.find((program) => program.id === track.id), data.settings.compensationMode));
   const availablePrograms = useMemo(() => data.programs.filter((program) => isProgramAvailable(program, data.settings)), [data.programs, data.settings]);
   const availableTrackIds = useMemo(() => availablePrograms.map((program) => program.id), [availablePrograms]);
@@ -577,7 +580,7 @@ export default function InternLanding() {
               <p className={styles.heroTagline}>Learn. Build. Grow.</p>
               <p className={styles.heroDescription}>
                 Join <strong>Olentra Technologies</strong> and kickstart your
-                career with hands-on experience, mentorship, and real-world
+                career through practical experience, mentorship, and real-world
                 projects.
               </p>
               <div className={styles.heroActions}>
@@ -588,7 +591,7 @@ export default function InternLanding() {
                     scrollToSection(event, "internship-tracks")
                   }
                 >
-                  Explore Opportunities{" "}
+                  Explore opportunities{" "}
                   <ArrowRight size={15} aria-hidden="true" />
                 </a>
                 <a
@@ -598,10 +601,14 @@ export default function InternLanding() {
                     scrollToSection(event, "internship-insights")
                   }
                 >
-                  <ReferenceArt name="bars" /> View Insights
+                  <ReferenceArt name="bars" /> View insights
                 </a>
               </div>
-              <p className={styles.programFacts}>{WORK_MODE} · {internshipDuration} · {SCHEDULE}</p>
+              <ul className={styles.programFacts} aria-label="Internship details">
+                <li><Globe2 size={15} aria-hidden="true" /><span>{WORK_MODE}</span></li>
+                <li><CalendarDays size={15} aria-hidden="true" /><span>{internshipDuration}</span></li>
+                <li><Clock3 size={15} aria-hidden="true" /><span>{SCHEDULE}</span></li>
+              </ul>
             </div>
             <ReferenceArt name="hero" className={styles.heroArt} />
           </div>
@@ -694,15 +701,6 @@ export default function InternLanding() {
         >
           <InternInsights
             trackNames={trackNames}
-            heading={
-              <div className={styles.sectionHeading}>
-                <ReferenceArt name="bars" />
-                <div>
-                  <h2 id="insights-title">Our Internship Insights</h2>
-                  <p>Live numbers from our growing talent community</p>
-                </div>
-              </div>
-            }
           />
         </section></Feature>
 
@@ -713,7 +711,7 @@ export default function InternLanding() {
                 <ReferenceArt name="star" />
                 <div>
                   <h2 id="stories-title">Stories from our interns</h2>
-                  <p>Real words from certified Olentra interns</p>
+                  <p>Experiences shared by interns who completed the program</p>
                 </div>
               </div>
             }
@@ -729,9 +727,9 @@ export default function InternLanding() {
             <div className={styles.sectionHeading}>
               <ReferenceArt name="diamond" />
               <div>
-                <h2>Why Choose Olentra?</h2>
+                <h2>Why choose Olentra?</h2>
                 <p>
-                  More than just an internship — a launchpad for your career.
+                  Build practical skills with projects, mentorship, and collaboration.
                 </p>
               </div>
             </div>
@@ -751,6 +749,7 @@ export default function InternLanding() {
 
           <Feature name="careers.faq">
             <InternFaq
+              roles={opportunities.roles}
               duration={internshipDuration}
               deadline={data.settings.applicationDeadline}
               tracks={visibleTracks.map((track) => {
@@ -765,7 +764,7 @@ export default function InternLanding() {
               <div className={styles.applicationHeading}>
                 <ReferenceArt name="plane" />
                 <div>
-                  <h2>Apply Now</h2>
+                  <h2>Apply for an internship</h2>
                 </div>
               </div>
               <form
@@ -791,7 +790,7 @@ export default function InternLanding() {
                 >
                   <div className={styles.formFields}>
                     <label htmlFor="intern-full-name">
-                      Full Name <span>*</span>
+                      Full name <span>*</span>
                       <input
                         ref={nameInput}
                         id="intern-full-name"
@@ -806,7 +805,7 @@ export default function InternLanding() {
                       />
                     </label>
                     <label htmlFor="intern-email">
-                      Email Address <span>*</span>
+                      Email address <span>*</span>
                       <input
                         id="intern-email"
                         name="email"
@@ -819,7 +818,7 @@ export default function InternLanding() {
                     </label>
                     {!soleAvailableProgram ? (
                       <label htmlFor="intern-track">
-                        Select Internship Track <span>*</span>
+                        Internship track <span>*</span>
                         <select
                           id="intern-track"
                           name="track"
@@ -846,7 +845,7 @@ export default function InternLanding() {
                     )}
                     <div className={styles.profileField}>
                       <label htmlFor="intern-linkedin">
-                        LinkedIn Profile <span className={styles.requiredMark}>*</span>
+                        LinkedIn profile <span className={styles.requiredMark}>*</span>
                       </label>
                       <input
                         ref={linkedInInput}
@@ -882,7 +881,7 @@ export default function InternLanding() {
                     </div>
                     <div className={styles.profileField}>
                       <label htmlFor="intern-github">
-                        GitHub Profile / Portfolio
+                        GitHub profile or portfolio (optional)
                       </label>
                       <input
                         ref={githubInput}
@@ -916,7 +915,7 @@ export default function InternLanding() {
                       )}
                     </div>
                     <div className={`${styles.profileField} ${styles.profileFieldWide}`}>
-                      <label htmlFor="intern-role">Intern Role <span className={styles.requiredMark}>*</span></label>
+                      <label htmlFor="intern-role">Internship role <span className={styles.requiredMark}>*</span></label>
                       <select id="intern-role" name="roleId" value={roleChoice} onChange={(event) => setRoleChoice(event.target.value)} required aria-describedby="intern-role-hint">
                         <option value="" disabled>Choose your role</option>
                         {opportunities.roles.map((role) => <option key={role.id} value={role.id}>{role.title} — {role.tag}</option>)}
@@ -936,14 +935,14 @@ export default function InternLanding() {
                     </fieldset>
                     <div className={`${styles.profileField} ${styles.profileFieldWide}`}>
                       <label htmlFor="intern-video">
-                        Intro Video Link <span className={styles.preferredTag}>Preferred</span>
+                        Introduction video link <span className={styles.preferredTag}>Optional · preferred</span>
                       </label>
                       <input
                         ref={videoInput}
                         id="intern-video"
                         name="videoUrl"
                         type="url"
-                        placeholder="https://youtu.be/… or a Google Drive / Loom link"
+                        placeholder="YouTube, Google Drive, or Loom URL"
                         maxLength={500}
                         spellCheck={false}
                         aria-describedby={`intern-video-hint${videoError ? " intern-video-error" : ""}`}
@@ -955,7 +954,7 @@ export default function InternLanding() {
                         }}
                       />
                       <p className={styles.fieldHint} id="intern-video-hint">
-                        A short 1–2 minute video introducing yourself. Applicants who share one are usually shortlisted first — make sure the link is viewable by anyone.
+                        Share a 1–2 minute introduction to help us get to know you. Applications with a video are usually reviewed for shortlisting first. Ensure the link is accessible without signing in.
                       </p>
                       {videoError && (
                         <p
@@ -970,7 +969,7 @@ export default function InternLanding() {
                   </div>
                   <div className={styles.resumeField}>
                     <label htmlFor="intern-resume">
-                      Upload Resume <span>*</span>
+                      Upload resume <span>*</span>
                     </label>
                     <div
                       className={`${styles.resumeDropzone} ${resumeDragging ? styles.resumeDragging : ""} ${resumeError ? styles.invalidControl : ""}`}
@@ -1072,11 +1071,11 @@ export default function InternLanding() {
                       />
                       {submitting
                         ? "Saving your application…"
-                        : "Preparing your launch…"}
+                        : "Preparing your application…"}
                     </>
                   ) : (
                     <>
-                      Submit Application{" "}
+                      Submit application{" "}
                       <ArrowRight size={14} aria-hidden="true" />
                     </>
                   )}
@@ -1114,7 +1113,7 @@ export default function InternLanding() {
                     <div>
                       {alreadyAppliedEmail ? (
                         <>
-                          <strong style={{ color: "#ffffff" }}>Application already on file!</strong>
+                          <strong style={{ color: "#ffffff" }}>Application already on file</strong>
                           <p style={{ margin: "4px 0 10px", fontSize: "13px", color: "#cbd5e1" }}>
                             {submitError}
                           </p>
@@ -1161,7 +1160,7 @@ export default function InternLanding() {
             </aside>
           </div> : featuresReady && <div className={styles.applicationClosed} id="internship-application" role="status">
             <h2>Applications are currently closed</h2>
-            <p>{deadlineClosed && connected ? "The application deadline for this internship cycle has passed. Follow Olentra for the next intake." : !connected ? "The internship service is unavailable. Please try again shortly." : !data.opportunities ? "The application form is being updated. Please try again shortly." : "New internship applications and account registration are unavailable at the moment."}</p>
+            <p>{deadlineClosed && connected ? "The application deadline for this internship cycle has passed. Follow Olentra for the next intake." : !connected ? "The internship service is unavailable. Please try again shortly." : !data.opportunities ? "The application form is being updated. Please try again shortly." : "Please check back for the next internship intake."}</p>
             {features.portal && <Link href="/intern/login?role=intern" className={styles.secondaryButton}>Existing intern? Sign in <ArrowRight size={15} /></Link>}
           </div>}
         </section>

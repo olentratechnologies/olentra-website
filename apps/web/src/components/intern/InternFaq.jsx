@@ -16,7 +16,7 @@ function stipendAnswer(tracks) {
   if (!priced.length) return "Stipend details for each track will be announced with the next intake.";
   const parts = priced.map((track) => (track.stipend > 0 ? `${track.name} pays a stipend of ${formatMoney(track.stipend)} a month` : `${track.name} is unpaid and learning-focused`));
   const allUnpaid = priced.every((track) => track.stipend === 0);
-  return `${parts.join(", while ")}. ${allUnpaid ? "In return, you gain real project experience, guidance from mentors and a certificate on completion." : "Every track includes real project experience, mentor guidance and a certificate on completion."}`;
+  return `${parts.join(", while ")}. ${allUnpaid ? "Each track includes practical project experience, mentorship, and a certificate on completion." : "Every track includes real project experience, mentor guidance and a certificate on completion."}`;
 }
 
 function feeAnswer(tracks) {
@@ -25,7 +25,7 @@ function feeAnswer(tracks) {
   return `There is no fee to apply. ${charged.map((track) => `${track.name} has a program fee of ${formatMoney(track.fee)}`).join(" and ")}, shown on the track card before you apply.`;
 }
 
-function buildQuestions({ duration, tracks }) {
+function buildQuestions({ duration, tracks, roles }) {
   return [
     {
       id: "duration",
@@ -45,7 +45,7 @@ function buildQuestions({ duration, tracks }) {
     {
       id: "roles",
       question: "Which intern roles are available?",
-      answer: `Three roles: ${INTERN_ROLES.map(role => `${role.title} (${role.tag})`).join(", ")}. Each role tab on this page lists what you will work on.`,
+      answer: `Available roles include ${roles.map(role => role.title).join(", ")}. Explore the role tabs on this page for responsibilities and helpful skills.`,
     },
     {
       id: "eligibility",
@@ -70,17 +70,17 @@ function buildQuestions({ duration, tracks }) {
     {
       id: "work",
       question: "What will I work on?",
-      answer: "Real projects in your chosen role, guided by experienced mentors and using industry-leading AI tools such as Claude, Codex and Gemini. You finish with practical skills and work you can show in your portfolio.",
+      answer: "Real projects in your chosen role, guided by experienced mentors and using AI tools such as Claude, Codex and Gemini. You finish with practical skills and work you can show in your portfolio.",
     },
     {
       id: "apply",
       question: "How do I apply?",
-      answer: "Choose a program track, an intern role and a part-time or full-time schedule. Complete the application form with your resume and LinkedIn profile. A short intro video link is optional but helps us get to know you. It takes only a few minutes.",
+      answer: "Choose a program track, an intern role and a part-time or full-time schedule. Complete the application form with your resume and LinkedIn profile. An introduction video is optional and helps us get to know you.",
     },
     {
       id: "process",
       question: "What happens after I apply?",
-      answer: "You receive an email with a secure link to your candidate portal, where you can follow your application at every stage. Our team reviews each application; shortlisted candidates are invited to an interview, followed by an offer and onboarding.",
+      answer: "You receive an email with a secure link to your candidate portal, where you can follow your application at every stage. Our team checks eligibility and rigorously assesses your skills, experience, and alignment with your chosen role based on your application. There is no interview. Selected candidates receive an offer, followed by onboarding.",
     },
     {
       id: "deadline",
@@ -90,7 +90,7 @@ function buildQuestions({ duration, tracks }) {
     {
       id: "multiple",
       question: "Can I apply for more than one track?",
-      answer: "Each email address can hold one application, so choose the track that best matches your goals. You can follow it, and any next steps, from your candidate portal.",
+      answer: "You can submit one application per email address, so choose the track that best matches your goals. You can follow it, and any next steps, from your candidate portal.",
     },
   ];
 }
@@ -124,12 +124,12 @@ function FaqItem({ item, index, open, onToggle }) {
 }
 
 /** Frequently asked questions for the careers page, with answers drawn from the live program settings. */
-export default function InternFaq({ duration, tracks, deadline }) {
+export default function InternFaq({ duration, tracks, deadline, roles = INTERN_ROLES }) {
   const [openId, setOpenId] = useState("duration");
   const [deadlineText, setDeadlineText] = useState("");
   useEffect(() => { setDeadlineText(deadlineAnswer(deadline)); }, [deadline]);
 
-  const questions = buildQuestions({ duration, tracks }).map((item) => (item.id === "deadline" ? { ...item, answer: deadlineText || "Check the deadline timer on this page for the current closing date." } : item));
+  const questions = buildQuestions({ duration, tracks, roles }).map((item) => (item.id === "deadline" ? { ...item, answer: deadlineText || "Check the deadline timer on this page for the current closing date." } : item));
   // Search engines get the answers that don't depend on the visitor's clock.
   const structured = {
     "@context": "https://schema.org",
@@ -143,7 +143,7 @@ export default function InternFaq({ duration, tracks, deadline }) {
       <div className={styles.intro}>
         <span className={styles.eyebrow}>FAQ</span>
         <h2 id="internship-faq-title">Frequently asked questions</h2>
-        <p>Everything you need to know about the Olentra internship program, from duration and certificates to how we review applications.</p>
+        <p>Find details about the program, eligibility, and application process.</p>
         <div className={styles.contact}>
           <span className={styles.contactIcon} aria-hidden="true"><Mail size={18} /></span>
           <div>

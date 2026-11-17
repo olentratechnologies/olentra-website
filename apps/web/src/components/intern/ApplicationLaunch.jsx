@@ -199,11 +199,11 @@ export default function ApplicationLaunch({
         aria-atomic="true"
       >
         <h2 id={titleId}>
-          {complete ? "Application Received!" : "Submitting your application…"}
+          {complete ? "Application received" : "Submitting your application…"}
         </h2>
         <p id={descriptionId}>
           {complete
-            ? "Thank you for applying to Olentra. We’ve sent a confirmation email to your inbox. Our admissions team reviews applications carefully and will reach out with an update within 3–5 business days."
+            ? "Thank you for applying to Olentra. We’ve sent a confirmation email to your inbox. Our recruitment team reviews applications carefully and will reach out with an update within 3–5 business days."
             : "Sending your application to the Olentra team…"}
         </p>
         {complete && applicationId && (
