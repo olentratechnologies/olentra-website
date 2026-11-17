@@ -105,9 +105,9 @@ export function buildOfferLetterPdfBytes(details) {
   y = ensure(y - 5, 87);
   y = para('We look forward to welcoming you to the team.', 42, y, 511, 10);
   text('For Olentra Technologies Pvt. Ltd.', 42, y - 12, 10, true);
-  commands.push(`q 100 0 0 41.29 42 ${y - 60} cm /Signature Do Q`);
-  text('Authorized Signatory', 42, y - 72, 9, false, gray);
-  text('Admissions & Academic Relations', 42, y - 85, 9, false, gray);
+  commands.push(`q 110 0 0 45.42 372 ${y - 48} cm /Signature Do Q`);
+  text('Authorized Signatory', 389.98, y - 60, 9, false, gray);
+  text('Admissions & Academic Relations', 363.2335, y - 73, 9, false, gray);
   flush();
   const encoder = new TextEncoder(), objects = [];
   const add = (value) => { objects.push(value); return objects.length; };
