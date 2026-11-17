@@ -1,0 +1,125 @@
+// Browser-safe PDF renderer. Keep both copies identical; parity is tested.
+const navy = '0.063 0.149 0.373', blue = '0.145 0.388 0.921', gray = '0.36 0.41 0.49';
+const clean = (value) => String(value ?? '').normalize('NFKD').replace(/[^\x20-\x7e]/g, ' ').replace(/\s+/g, ' ').trim();
+const escape = (value) => clean(value).replace(/[\\()]/g, '\\$&');
+const date = (value) => { const d = value ? new Date(value) : null; return d && Number.isFinite(d.getTime()) ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'As scheduled'; };
+// Standard Helvetica metrics, using the wider of regular and bold per glyph.
+const widths = [278.0, 333.0, 474.00000000000006, 556.0, 556.0, 889.0, 722.0, 238.00000000000003, 333.0, 333.0, 389.0, 584.0, 278.0, 333.0, 278.0, 278.0, 556.0, 556.0, 556.0, 556.0, 556.0, 556.0, 556.0, 556.0, 556.0, 556.0, 333.0, 333.0, 584.0, 584.0, 584.0, 611.0, 1015.0000000000001, 722.0, 722.0, 722.0, 722.0, 667.0, 611.0, 778.0, 722.0, 278.0, 556.0, 722.0, 611.0, 833.0, 722.0, 778.0, 667.0, 778.0, 722.0, 667.0, 611.0, 722.0, 667.0, 944.0000000000001, 667.0, 667.0, 611.0, 333.0, 278.0, 333.0, 584.0, 556.0, 333.0, 556.0, 611.0, 556.0, 611.0, 556.0, 333.0, 611.0, 611.0, 278.0, 278.0, 556.0, 278.0, 889.0, 611.0, 611.0, 611.0, 611.0, 389.0, 556.0, 333.0, 611.0, 556.0, 778.0, 556.0, 556.0, 500.0, 389.0, 280.0, 389.0, 584.0];
+const measure = (value, size) => [...value].reduce((n, char) => n + (widths[char.charCodeAt(0) - 32] || 600) * size / 1000, 0);
+function wrap(value, width, size) {
+  const rows = []; let line = '';
+  for (let word of clean(value).split(' ')) {
+    if (line && measure(`${line} ${word}`, size) > width) { rows.push(line); line = ''; }
+    while (measure(word, size) > width) {
+      let count = 1;
+      while (count < word.length && measure(word.slice(0, count + 1), size) <= width) count++;
+      rows.push(word.slice(0, count)); word = word.slice(count);
+    }
+    line = line ? `${line} ${word}` : word;
+  }
+  if (line) rows.push(line);
+  return rows;
+}
+export function buildOfferLetterPdfBytes(details) {
+  const commands = [], pages = [];
+  const text = (value, x, y, size = 10, bold = false, color = navy) => commands.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${color} rg 1 0 0 1 ${x} ${y} Tm (${escape(value)}) Tj ET`);
+  const rect = (x, y, w, h, color) => commands.push(`${color} rg ${x} ${y} ${w} ${h} re f`);
+  const rule = (y, x = 42, width = 511) => commands.push(`0.84 0.88 0.94 RG .6 w ${x} ${y} m ${x + width} ${y} l S`);
+  const para = (value, x, top, width, size = 10, bold = false, color = navy) => { const rows = wrap(value, width, size); rows.forEach((row, i) => text(row, x, top - i * (size * 1.45), size, bold, color)); return top - rows.length * size * 1.45; };
+  function header() {
+    rect(0, 0, 6, 842, blue);
+    commands.push('q 32 0 0 32 42 767 cm /Logo Do Q');
+    text('Olentra Technologies', 84, 779, 20, true);
+    text('INTERNSHIP PROGRAM', 85, 763, 8, false, gray);
+    rule(748);
+  }
+  function footer() {
+    rule(77);
+    text('Olentra Technologies Pvt. Ltd. | Hyderabad, India | CIN: U72900TG2023PTC176542', 42, 59, 7.5, false, gray);
+    text('support@olentratechnologies.com | www.olentratechnologies.com', 42, 44, 8, false, gray);
+  }
+  const flush = () => { footer(); pages.push(commands.splice(0).join('\n')); };
+  const ensure = (top, height) => { if (top - height >= 103) return top; flush(); header(); return 720; };
+  header();
+  text('Internship Offer Letter', 42, 709, 27, true);
+  rect(42, 695, 72, 3, blue);
+  text(`Ref: OL-OFR-${clean(details.applicationId || 'intern').replace(/^OL-/, '').slice(0, 18)}`, 42, 673, 8.5, true);
+  text(`Issued: ${date(details.issueDate || new Date().toISOString())}`, 390, 673, 8.5, false, gray);
+  let y = 652;
+  y = para(`To: ${details.name || 'Candidate'}`, 42, y, 511, 11, true);
+  y = para(details.email, 42, y - 2, 511, 9.5, false, gray);
+  if (details.college) y = para(details.college, 42, y - 1, 511, 9.5, false, gray);
+  y = para(`Application ID: ${details.applicationId || 'Pending'}`, 42, y - 1, 511, 8.5, false, gray);
+  y = para(`Dear ${details.name || 'Candidate'},`, 42, y - 14, 511, 10.5, true);
+  y = para('We are pleased to offer you an internship at Olentra Technologies Pvt. Ltd. The details of your offer are outlined below.', 42, y - 4, 511, 10);
+  y = ensure(y - 12, 42);
+  text('Internship details', 42, y, 13, true);
+  y -= 15;
+  const cells = [
+    ['PROGRAM TRACK', details.program || 'As specified in your offer'],
+    ['INTERN ROLE', details.roleTitle || 'Engineering Intern'],
+    ['START DATE', date(details.startOn)],
+    ['COMPLETION DATE', date(details.endOn)],
+    ['WORK MODE', details.workMode || 'Remote'],
+    ['STIPEND / HONORARIUM', Number(details.stipend) > 0 ? `INR ${Number(details.stipend).toLocaleString('en-IN')} / ${details.stipendPeriod || 'month'}` : 'Academic / Performance-based'],
+  ];
+  for (let row = 0; row < 2; row++) {
+    const group = cells.slice(row * 3, row * 3 + 3);
+    const height = Math.max(...group.map(([, value]) => wrap(value, 143, 10).length)) * 14.5 + 34;
+    y = ensure(y, height);
+    group.forEach(([label, value], col) => {
+      const x = 42 + col * 172;
+      rect(x, y - height, 167, height - 4, '0.937 0.961 0.992');
+      text(label, x + 12, y - 19, 7.5, true, blue);
+      para(value, x + 12, y - 36, 143, 10, true);
+    });
+    y -= height;
+  }
+  y = ensure(y - 18, 45);
+  text('Internship terms', 42, y, 13, true);
+  y -= 20;
+  // Preserve the existing terms; only layout and document naming change.
+  const clauses = [
+    ['Academic & college validity', 'This document serves as formal confirmation of the internship offer for submission to university authorities, heads of department, and college training cells for NOC, attendance authorization, and academic credits.'],
+    ['Mentorship & deliverables', 'You will be assigned to project tracks and work under the direction of engineering leads. Regular milestones and check-ins will be coordinated via the Olentra candidate portal.'],
+    ['Intellectual property & non-disclosure', 'All architectures, software source code, models, and technical documentation developed during your internship remain the sole intellectual property of Olentra Technologies Pvt. Ltd.'],
+    ['Certificate of completion', 'Upon successful completion of the internship milestones and task evaluation, an official Certificate of Completion with public verification credential ID will be issued.'],
+  ];
+  for (let row = 0; row < 2; row++) {
+    const group = clauses.slice(row * 2, row * 2 + 2);
+    const height = Math.max(...group.map(([title, body]) => wrap(title, 215, 9.5).length * 13.775 + wrap(body, 235, 9).length * 13.05 + 14));
+    y = ensure(y, height);
+    group.forEach(([title, body], col) => {
+      const x = 42 + col * 266;
+      text(String(row * 2 + col + 1).padStart(2, '0'), x, y, 10, true, blue);
+      const bottom = para(title, x + 22, y, 215, 9.5, true);
+      para(body, x, bottom - 6, 235, 9, false, gray);
+    });
+    y -= height;
+  }
+  y = ensure(y - 12, 73);
+  y = para('We look forward to welcoming you to the team.', 42, y, 511, 10);
+  text('For Olentra Technologies Pvt. Ltd.', 42, y - 12, 10, true);
+  text('Authorized Signatory', 42, y - 28, 9, false, gray);
+  text('Admissions & Academic Relations', 42, y - 41, 9, false, gray);
+  flush();
+  const encoder = new TextEncoder(), objects = [];
+  const add = (value) => { objects.push(value); return objects.length; };
+  add('<< /Type /Catalog /Pages 2 0 R >>');
+  add('');
+  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  const logoHex = 'ffd8ffe000104a46494600010100000100010000ffdb004300030202020202030202020303030304060404040404080606050609080a0a090809090a0c0f0c0a0b0e0b09090d110d0e0f101011100a0c12131210130f101010ffdb00430103030304030408040408100b090b1010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010ffc00011080080008003012200021101031101ffc4001f0000010501010101010100000000000000000102030405060708090a0bffc400b5100002010303020403050504040000017d01020300041105122131410613516107227114328191a1082342b1c11552d1f02433627282090a161718191a25262728292a3435363738393a434445464748494a535455565758595a636465666768696a737475767778797a838485868788898a92939495969798999aa2a3a4a5a6a7a8a9aab2b3b4b5b6b7b8b9bac2c3c4c5c6c7c8c9cad2d3d4d5d6d7d8d9dae1e2e3e4e5e6e7e8e9eaf1f2f3f4f5f6f7f8f9faffc4001f0100030101010101010101010000000000000102030405060708090a0bffc400b51100020102040403040705040400010277000102031104052131061241510761711322328108144291a1b1c109233352f0156272d10a162434e125f11718191a262728292a35363738393a434445464748494a535455565758595a636465666768696a737475767778797a82838485868788898a92939495969798999aa2a3a4a5a6a7a8a9aab2b3b4b5b6b7b8b9bac2c3c4c5c6c7c8c9cad2d3d4d5d6d7d8d9dae2e3e4e5e6e7e8e9eaf2f3f4f5f6f7f8f9faffda000c03010002110311003f00fd53a28a2800a28a2800a28a2800a28a2800a28a2800a28a86eaea1b38d659d82ab4891027fbcec147ea454ce71a717293b24349c9d913514515420a28a2800a28a2800a28a2800a2a8eb1ad697a0593ea1abde476f027f131e58fa01d49f615e2be35f8f5aacde65a784adc59c5c8fb4caa1e53ee072abfafe15bd2c355acb9a0b4ee7cfe77c4f96e411ff6b9fbcf68ad64fe5d179bb23dd27b8b7b58ccd733c70c63abc8c140fc4d61cde3ff0004dbb98a4f15699b8750b72adfc89af9075ef11f88759b8373a9eab757526720cb216c7d33d056037886e2d25e6f6004767da6bc9cc2b62b0a9f2413fbcf80a9e29a9ced4285979bbbfb95bf367dc76be35f08deb04b6f12e9cec7a2fda1413f8135b08e922878dc329e410720d7c296bf133ecb84b94d32651d48631b7e79c7e95d7f86fe30c7a6ba4ba4ea975a79272555c4b013ef8e0fe22be42b71a55c04ed8ba1eef78bfd1e8fef47d0e59c7387c659544be4edf9e9f89f5a5fea7a7e97035cea37915bc4a325e46c015e63e33f17b78c7cbd2bc2531305aca2e24ba3f287910e51541e700f393dc0fc743c01f1874af14b45a66acf05bde4b858a58db30dc1f407f85bd8f5faf151fc4bf0336d875bf0a46b677b34f1dadc2c436a48b23050e40ee188e7df9e95e2f1e62736e20e1da95786ab45c2defc6cd54b7549dec9f75cb76b67d1feabc2f8cc0626b466dfbdf65bf853fef2b5fd356bcba9bbe19f893a0eb491d95fddc765aa2e125b790e017ee50f420fa75aeb810c010720f4358fe19f0a68fe15b14b3d36d5049b479d70547993377666ebd7b741dab66bef787e966d47014e19cd48ceb24aee29a57f3bb777dda515d91cb8f9616559bc226a1e7fa765e4db7e61451457b671051451400573de37f1be8be03d11f58d6261927641083879e4eca3fa9ec3f2addb89e1b5824bab9956286143248ec70aaa064927b002be05f8c5f1a5fc7de2ebad60cec9a4d9b1834e87a62207ef63fbce464fe03a015f49c35904f3cc4b4ff871d64ff24bcdfe573e3b8d389970e606f4b5ad3d20bb7793f25f8b6ba5cf40f12fc45d47c5f7efa9eb178a91ae7cb8b7623853d00febd4d703e21f889a4e9f1916ee8ddbcc7e87fdd5ea6bca352f1cea3aa5cc7a569b6f2dcdccf22c705b42a5cb39385000e5989ec2b7fc4569e08f81d1c37df1653fe12af1cdcc625b5f085b5c6d86c7232afa84cbf77b1f25393c64e0f1fa963728cb724c3c6ae64f957d9847e297a2edddbb25d5ea7f3d61b2fcc73eaf3af3979ca727a6bddf7ec95df65646be98be3bf88097179e1dd21ffb32d79bad4af645b6b2b65ee6495cac69eb82d9f6adcf87ff0008f4bf889ab1d3f4af19ea3e28788e2ea5f0e5995d3a0ff7afa731c67fed92499ed9ac7f845f0ebe28fed6fe258351f897ab3da78334765923d2ac6216da75aaff000c505bafc9b88e8cd96c7249e01fd03f0bf857c3fe0bd0edbc39e18d2e0d3f4fb45db1430ae07b93dc93dc9e4d7e478de30799d4952ca28c29518b6b9eca526d6ea2dab3b7592564f45cdab5fa6f0cf87d81c52588c4294e1de575cdfe18a7a2f39395fb23c6b4afd8c3e0ec16c8356b6d62fe62a0c9e76a4d8dddf051533f90ab737ec6ff00040e5ac34bd5b4f971812db6a93061ff007d161fa57b8515e4579cb137559f35fb9fa5d3e16c969479638587fe02aff7ee7cc5ad7ec9fe29f0d96bff0086be3c7be0a777f67eb68017f613c6073e9b93f115ebbf09fc51ad6bfa34be1ef1b69571a7f88b4568d6ea0b91f33a6731caac32b20ca91bd4904afa9c57a0534c719904a6352ea0a86c7201c6467d381f957874323c260f14f15845c8e4ad24be192f35b269ecd79aea7460f27a19756f69846e29ef1bb6be57d535e5a7919cfa98b4d6e3d2ee480b7b1992d98f775fbe9f9608fc7dab4eb8bf8a134965a6586a76e713daddabc67d0805bff6515d0e8babc5a9ab04c8f9239e3cff0014522ee53f81cafe15e5e5d9fc3fb6b1592621fbd071943ce338395bfedd719ffdbbca8fa6ad847f5686260b4774fd53b5fe775f3b9a7451457d69e7851451401e17fb647c436f01fc1db9b5b69fcbbbf10dc2698841e44441794fd0a2953fefd7e6cdf789a7bc916180b31276c6abc924f1f99afa8ffe0a79e269ed751f01f87a394ac7e45f5dbafa9668901ffc75bf3af1efd95fc3da2e9f17887f684f1b5a8b9d03e1f44b2595b3fddbed5df8b7887aed2558fa1287a66bf7de08fab643c36f35aeaf76e56eb2937cb14bd6cbd2f73f18e2ec14f39cf5d393b46092bbd924b9a4dfa5dfdd63a8d4ef21fd94fc256d2b4505cfc60f12da79d109143af862ca41c3ed3c7da5c138cfdde7b7dff15f0ae837be20d5bfb4b57927d42fafae433bccc6492e2791bf898f2c493924d43ac6afaefc41f176a3e30f135d35d6a5aadc3dddd4a7d49e140eca06001d8003b5779f0f67b6d13c59a66a375816ba35e69c662dd3ccb8bb89093f48cc9f957e13e2967d8efabb9d59dab576a2dafb29bb28c7b257b7ceef5bdf9b87f02f8b33fc270f6015a9ce6925d6df6a4fbc9a4dbf44b648fd38f85de04b1f86fe07d33c2b668be65bc41eea451febae180323fe7c0f4000ed5d651457161e853c2d28d1a4ad18a492f247edb4a9c68c15382b25a20a28a2b62c28a29090a0b31000e493da8d80e0be2e5d46ba4c3684fcc44937d30b81fccfe554bc27aa1b49bc2f3c8d817b646cdff091f67ea00ae33e2878ba2d52f6768651e513e44473ff002cd4e4b7e27f9d69eb92be8d0f872d9fe59f4f82d9a45eeb29cc847fe3d5fc9399f157b6e24c7710e1e5fba854a3083e8f9671dbca518547e8d9fa051cb250cbe8e1ea2d67ccff00f257f936be67b5d14515fd6c7e7e145145007e717fc15920b8d3f5ef87daf60f913d95f5aeeec192489b1f949fa5739e3eb293c05fb307c25f86302b4736bf66fe33d5fb1924b9ff008f7ddfeec6c57fe002be85ff00829e7c31b9f1cfecdd71e29d32dccb7de09bd8f55214658da37eee703d806490fb466bc83f6adb04fedaf0725b0ff4583c19a4a5b63eef9603e315fac6478cfed1cb30597df484aa36bce3b7e13bfaa3f32e35a6f0187c4e2a3bd4e48dfc9dafff00a4dbd19e15a2da242aee463381f855fbd5927f857e30d61090ebaed82161d42c7d3f57a8dd1ad447cf1229ae9bc0fa2b7897e1afc45f0c44bba759e3bb897b9631929ff8f46057e35e3be1de030343172f8635217f4e78ff00c01fd1cf134a8789182af59ece4d7fe02eff0085cfd17fd9ebe275afc5cf847e1ff18c73892f1ed96d7515cf2979100b283e992378ff0065d6bd1ebf2c3f643fda0ee3e117882e3c3dab6aad67e1df12058a7b829e62e9d740622bad9fc4a3eec8a304afba8afbab40fda57c2d6daf1f037c4f58fc2fe248d1648cb3992c35185bee5cda4e3efc4e3919c15fba7906bcdc167b869616157112e5e8dbdafe6f657f3b2e87f517881e1be6190e735e381a4e742579c39757c8deaadbbe46eced7b2e593b2923d968ae4af3e2efc2bd3d03ea1f11fc336a18657cfd5208c91ec19866b91f117ed53f03fc3f1b14f1adaea7280488ec0f980ffc0ce13ff1eaeeaf9be030d4fdad5ad151efccb5f4eff23e030bc3f9b6365cb87c35493f284bf3b1eb75e49f15be2b69da7db4fa1e95788dd56eee10e401ff003cd7d49eff0097ae3c47c6bfb5d5ef8c643a2f842de78e198ec486cc34934dec5c0cf3e8a3f1354346f869e32f10f95abfc45ba6f0968a7e658ee07fa7cebfdd8a0eab9e9b9f18f7afc878c78c7199ee1ea65d91c5c28b56a95a5ee2e5ea9376e54f672959f44ba9fa1653c032ca5c7199fc953eb186f26fca2aee4fc927dd9d2fc3e85bc6fe26975bd4559741d0d966bb76fbaec0e63b75ec598e33ed9f6ae93c49adcdac6b28ce7324f2ef20762c781595a9f8af47d2f49b6f0f787ac174ed1ecf3f66b50d9795cf59656fe273dc9fa0a8fe1c5bdc789fc75a6dbe4b059c5ccc474089f31cfa038c7e22bf0bad42966589c364795fbd4d4d5e56b7b4a92b479927af2c5691bebaca4edcd65ece269b9b9e61563c94e117ca9f44b5d7a733eb6f25776bbfa9c0c003d2968a2bfb8f63f0d0a28a280296b5a3e99e22d1efb40d6ace3bbd3f52b696ceeede41949a1914aba30f42a48fc6be47fda9be10dc7877c01e0cb88677bd8bc3d60be1c96e587ced0c6316ceff00ed6d56dc7fbc7debec5ac8f16785f49f1a7872ff00c2fae41e6d96a1098a403ef29eaacbe8ca4020fa815ec6479acb29c653aef58a7aaf26acff0007f7a4785c4993acf32cab834ed26bdd7da49dd7caeacfc9b3f25b5700e9a241c4b6b2648cff0009e0feb8ae93e00f8863b2f89ffd8d7b205b7f12d8bd92963802e63f9e3cfd40651ee4558f8f1f0d3c4df07bc5173a56b96ccf6b265a0b9553e55d43d048bf86032f553f99f126d5e6b6ba8af349ba30dd594c9716b283f347221dca7f315f6be2e709c38d3852afd4df32945b4d6b6d2f7f93b3f95b73f0ce14c562b8573ba38d9c5a9d19eabadbed2f9abfde753f19bc1737c3ef1f5e5a2db94d3f5266bcb338c2ed63f3a0f756c8fa63d6bb6f87df17fc2fadf852dfe147c6db3bad4bc330313a3eb36873a9787a53fc50b1fbf0f4dd11c8c74070057a1eb71e85fb4c7c22835ab130db6b36c7122e79b2d41540746efe5bf1cfa153d457c95791ea7e1ed4ee34ad52d5edaeed64314f04830430ff003c1efd6bf8bf83f3dab2a52c0e315ab52f72a45f9697b754faf9eaba1febef09e719678879051752579c5271945da49dbdd9c5ee9db47f38c938bb3fa6f5ef07fc51f86da4aebfa75fda7c41f004e736daee9cbe74413d2e22e4c2e380430c03c67355740f1ef836665927f0868224ea4be8f6efcffdf15e49f0dbe31f8e3e1a6a4753f01f8a6ef4a96423cfb70c1e0b81fdd9226ca483ea323b62bd6a0f8ebf05bc70dbfe2cfc1d3a4ea4ff007f59f074c2d99c9eacd6b27eec9ee4e7279af531bc3185c5375b2ea9eca4fa5da5f26bf55f333c6e458ec2dd62287d623fcf4ad1a9ff006fd36d45beee12d7a535b1ea1a37c73974ab5169a15d41a54457695d334d86d188f768d149fceab5dfc48bbd4246954c8f239cb4d70fb98fbfd7ea6b8db4b2fd9a3523e6e8dfb425ee920f3f66d63c3b71bd7d8c9112a4fd2af99bf673d0d04fabfed10b7e179f234cf0f5d3c8fec19f0a3f1af8fcc382b38c6b4b1137512db9aac5a5e979687c9cb2bcb695472a585adcef75f57ad7fc29d9faddaf3366db54b9beb8554692e279582a81f31627a0007f215f5b7c0bf86d77e0cd1e4d635e8f6eafa8a8dd19eb6f175087fda3c13f403b1af98be0f7c46b0f1ff8bd7c13fb33780af22b88806d53c6be265499b4c809c178add3f76246e4202724f5054311f71691a645a3e9b6fa6433cf3ac0814cd712192595bbbbb1fbccc7249f535f7dc01c05472bc47f69e29a9d48e91b7c317b37776bbb69a68ba36f6fc9fc4bccebe1211cb393d9396ae2dae7e5e9cc936a09f48b7ccf76a2adcd728a28afd84fc6828a28a0028a28a00e67e207c39f087c4ff0f4be1af196931deda49931b7dd9607c637c6fd55bf43d082322bf35bf68afd82be2f7c36bbb8f137c2bb59bc63a082d2186d1337d6ebd70d00e641ef1e4f7dab5fa9f457d1e45c538fc81b8507cd4def096b1f9754fcd7cee78d98e4382cce5ed2b47dfdb996f6ecfbaf5dba58fc27f865f1c35ff84be2f92e92de48a463f66d5b48bb06217080fdd208cabaf3b5b191d08c122be92f11f87fe1bfed15e1f5f14782f5358b55b78c070547da6dbfe994f1f564f4619f624715fa15f123e03fc1bf8bf098be257c37d0b5e7c6d5b8b9b5517283d1675c48bf830af07bbff8268fc03b4d5175af00f883c73e0abd8ce626d275adea9ed89d24623db762bf38e3ae09c9b8a717fdb5933783c675d39a9cbc9dacd7fe02fb5acac7d6f01f10e6bc015d2c1cf9e85fe16ecd77e57aaf58bd1f96a7e70f8a7c1be29f065cb5bebba6c89186c25c20dd0c9f471fc8e0fb563a6ab3c5c098e3d1b915facf61fb20e96969f63d7fe20ea9ae2edd864bbb1b6595c7fb4635556ffbe6aac3fb04fecfb24c6e357d026be72724065814fd44601fd6be33079167f097b3c4d28dd7da8cf47e7669497dc7f4fe0fc79ca1d052c4c26a5d924dfe76ff00c98fca55d5ae25758e3892477215555492c7d001d6be91f813fb0e7c60f8bb736dacf8cade6f06786188779aee1db79729e90c0df30c8fe37c0e723774afd14f00fecfbf05be184cb75e07f871a2e9b769f76efc8f36e17e92c9b9c7e06bd0abeb707c36a2d4b172bf92dbefdff23e47897c7bc6e329ba1925274eff006e7672f9455d27e6dcbd0e47e17fc2af03fc1ef0adbf83bc05a34761630fcf2393ba6b9971ccb2bf57738ea7a74000000eba8a2bea2108d38a8c15923f00c4e26b632acabe224e5393bb6dddb6fab6c28a28aa310a28a2800a28a2800a28a2800a28a2800a28a2800a28a2800a28a2800a28a2803fffd9';
+  add(`<< /Type /XObject /Subtype /Image /Width 128 /Height 128 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter [/ASCIIHexDecode /DCTDecode] /Length ${logoHex.length + 1} >>\nstream\n${logoHex}>\nendstream`);
+  const pageIds = [];
+  for (const content of pages) {
+    const stream = add(`<< /Length ${encoder.encode(content).length} >>\nstream\n${content}\nendstream`);
+    pageIds.push(add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents ${stream} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Logo 5 0 R >> >> >>`));
+  }
+  objects[1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pages.length} >>`;
+  let pdf = '%PDF-1.4\n', offsets = [0];
+  objects.forEach((object, index) => { offsets.push(encoder.encode(pdf).length); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
+  const start = encoder.encode(pdf).length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map((n) => `${String(n).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${start}\n%%EOF\n`;
+  return encoder.encode(pdf);
+}

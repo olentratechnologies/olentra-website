@@ -7,7 +7,7 @@ import { authorizeStaff, can, isAdmin } from "../modules/access/policy";
 import { acceptsCompensationMode, normalizeCompensationMode, type CompensationMode } from "../modules/programs/compensation";
 import { normalizeDeadline } from "../modules/programs/deadline";
 import { generateOfferLetterPdf } from "../modules/offer-letter/offer-letter-pdf";
-import { INTERNSHIP_OPPORTUNITIES, isInternRole, isInternSchedule, normalizeInternshipDuration } from "../modules/programs/opportunities.mjs";
+import { INTERNSHIP_OPPORTUNITIES, isInternRole, isInternSchedule, internRoleLabel, normalizeInternshipDuration } from "../modules/programs/opportunities.mjs";
 import { MongoClient, type ClientSession, type Db, type Document } from "mongodb";
 import type { InternshipRow } from "../infrastructure/database/collections";
 import { DomainError } from "../shared/errors";
@@ -216,7 +216,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
           email: str(application.email),
           college: str(application.college || ""),
           program: str(application.program),
-          roleTitle: str(application.roleId || "AI Full Stack Engineering Intern"),
+          roleTitle: application.roleId ? internRoleLabel(application.roleId) : "Engineering Intern",
           startOn: offer?.startOn ? str(offer.startOn) : undefined,
           endOn: offer?.endOn ? str(offer.endOn) : undefined,
           stipend: typeof offer?.stipend === "number" ? offer.stipend : 0,
