@@ -244,10 +244,12 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     }
     if (id === "selected") {
       buttons.push({ label: "Activate your internship portal", url: options.portalUrl });
-      if (options.linkedinShareUrl) buttons.push({ label: "Share on LinkedIn", url: options.linkedinShareUrl });
       details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
     }
     if (["offer", "offer-accepted", "onboarding", "certificate"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
+    if (id === "offer-accepted" && options.linkedinShareUrl) {
+      buttons.push({ label: "Share on LinkedIn (optional)", url: options.linkedinShareUrl });
+    }
     if (id === "offer-accepted" && options.pdfAttachment) {
       attachments.push(options.pdfAttachment);
     }

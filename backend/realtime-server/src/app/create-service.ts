@@ -153,6 +153,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           if (!app || !["Selected", "Joined"].includes(String(app.status))) return;
           const token = appId ? await auth.generateMagicLinkToken(notice.to, appId) : "";
           portalUrl = token ? `${siteOrigin}/intern/verify?token=${token}` : `${siteOrigin}/intern/login?role=intern`;
+        }
+        if (notice.status === "offer-accepted") {
           const shareText = `I'm thrilled to share that I have been accepted into the Olentra Internship Program (${notice.programName})! 🚀 Looking forward to building, learning, and growing with Olentra Technologies.\n\n#OlentraInternship #TechCareers #NewBeginnings`;
           linkedinShareUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(shareText)}`;
         }

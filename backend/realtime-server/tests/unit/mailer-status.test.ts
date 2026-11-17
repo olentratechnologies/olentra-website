@@ -182,7 +182,7 @@ test("the seven applicant journey emails share the branded responsive template",
       assert.match(html, /background:#f3f6fb/);
     }
     assert.match(String(requests[0]?.html), /OL-123/);
-    assert.match(String(requests[3]?.html), /Share on LinkedIn/);
+    assert.doesNotMatch(String(requests[3]?.html), /Share on LinkedIn/);
     assert.match(String(requests[6]?.html), /Verify your certificate/);
   } finally {
     globalThis.fetch = originalFetch;

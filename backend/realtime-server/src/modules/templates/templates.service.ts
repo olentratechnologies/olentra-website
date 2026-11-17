@@ -44,7 +44,7 @@ export function createTemplates({ collection, transact }: { collection: (name: s
           name: "Alex Kumar", programName: "Tech Explorer", applicationId: "OL-SAMPLE-123",
           scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/interview", portalUrl: definition.id === "selected" ? "https://example.test/intern/verify?token=sample-only" : "https://example.test/intern/portal",
           magicLinkUrl: "https://example.test/intern/verify?token=sample-only", certificateVerifyUrl: "https://example.test/certificates/verify/SAMPLE",
-          linkedinShareUrl: definition.id === "selected" ? "https://www.linkedin.com/feed/?shareActive=true" : "https://www.linkedin.com/sharing/share-offsite/?url=sample", interviewId: "INTV-SAMPLE", sequence: 1, cancelReason: definition.id === "interview-cancelled" ? "The interviewer is unavailable." : "",
+          linkedinShareUrl: definition.id === "offer-accepted" ? "https://www.linkedin.com/feed/?shareActive=true" : "https://www.linkedin.com/sharing/share-offsite/?url=sample", interviewId: "INTV-SAMPLE", sequence: 1, cancelReason: definition.id === "interview-cancelled" ? "The interviewer is unavailable." : "",
         }, template);
         return preview;
       }

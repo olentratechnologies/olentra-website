@@ -44,7 +44,13 @@ test("all eleven defaults render required links and details, with no portal link
     if (definition.id === "selected") {
       expect(rendered.subject).toBe("Congratulations! Welcome to the Olentra Internship Program");
       expect(rendered.text).toContain("Activate your internship portal");
+      expect(rendered.text).not.toContain(options.linkedinShareUrl);
+      expect(rendered.html).not.toContain("LinkedIn");
+    }
+    if (definition.id === "offer-accepted") {
       expect(rendered.text).toContain(options.linkedinShareUrl);
+      expect(rendered.html).toContain("Share on LinkedIn (optional)");
+      expect(rendered.text).toContain("Internship Offer Letter (PDF)");
     }
     if (definition.id === "certificate") {
       expect(rendered.text).toContain(options.certificateVerifyUrl);
@@ -90,4 +96,15 @@ test("automated templates are admin-only and reject invalid ids, placeholders, l
   for (const input of [{ subject: "", body: "Hello" }, { subject: "Injected\r\nSubject", body: "Hi" }, { subject: "Hi", body: "x".repeat(5001) }, { subject: "Hi {unknown}", body: "Hi" }]) expect(() => validateEmailTemplate("selected", input)).toThrow();
   expect(() => validateEmailTemplate("nonexistent", { subject: "Hi", body: "Hi" })).toThrow();
   for (const id of ["application-received", "shortlisted"]) expect(() => validateEmailTemplate(id, { subject: "Hello", body: "Open https://example.test/intern/portal" })).toThrow();
+});
+
+test("previously saved selection copy loses the stock LinkedIn prompt", () => {
+  const template = validateEmailTemplate("selected", {
+    subject: "Welcome {fullName}",
+    body: "Hi {fullName},\n\nActivate your internship portal using the one-time link below, and share your achievement on LinkedIn.",
+  });
+  const rendered = createInternshipMailer("").renderAutomated("selected", options, template);
+  expect(rendered.text).toContain("using the one-time link below.");
+  expect(rendered.text).not.toContain("LinkedIn");
+  expect(rendered.html).not.toContain(options.linkedinShareUrl);
 });
