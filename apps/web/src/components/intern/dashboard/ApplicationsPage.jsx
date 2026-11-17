@@ -185,9 +185,19 @@ export default function ApplicationsPage() {
   const debouncedQuery = useInternSearch(query);
   const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }) };
   const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction, videosFirst }, { enabled: !invalidDateRange });
+  // Tab-count summary must NOT include programId — otherwise switching tracks
+  // causes the facet response to be scoped to a single program and the other
+  // tabs show stale / zero counts.  Every other filter (status, search, date
+  // range, assignee, video) still applies so the counts stay contextually
+  // accurate; only the program dimension is kept unfiltered for the tab badges.
+  const { programId: _excludeProgram, ...tabSummaryParams } = queryParams;
+  const tabSummaryQuery = useInternQuery("application.list", { ...tabSummaryParams, skill: "all", page: 1, pageSize: 1, facets: true }, { enabled: !invalidDateRange });
+  // Filtered summary: includes the selected programId for stat cards, metric
+  // cards, skill facets, and video counts that should reflect the active tab.
   const summaryQuery = useInternQuery("application.list", { ...queryParams, skill: "all", page: 1, pageSize: 1, facets: true }, { enabled: !invalidDateRange });
-  refreshListsRef.current = () => { void listQuery.refresh(); void summaryQuery.refresh(); };
+  refreshListsRef.current = () => { void listQuery.refresh(); void tabSummaryQuery.refresh(); void summaryQuery.refresh(); };
   const result = listQuery.data || { items: [], total: 0 };
+  const tabSummary = tabSummaryQuery.data;
   const summary = summaryQuery.data;
   useEffect(() => {
     if (!listQuery.data || page <= 1) return;
@@ -198,7 +208,7 @@ export default function ApplicationsPage() {
   const filtered = applications;
   const currentPage = page;
   const displayed = applications;
-  const trackTabs = [{ id: "all", label: "All", count: summary?.total }, ...(data.programs || []).map(program => ({ id: program.id, label: program.name, count: summary ? summary.counts?.programs?.[program.id] || 0 : undefined }))];
+  const trackTabs = [{ id: "all", label: "All", count: tabSummary?.total }, ...(data.programs || []).map(program => ({ id: program.id, label: program.name, count: tabSummary ? tabSummary.counts?.programs?.[program.id] || 0 : undefined }))];
   const metricItems = [applicationMetric(data, "applications", "Total Applications", summary?.total ?? "—", "blue", "users"), applicationMetric(data, "under-review", "Under Review", summary ? summary.counts?.statuses?.["Under Review"] || 0 : "—", "orange", "users"), applicationMetric(data, "shortlisted", "Shortlisted", summary ? summary.counts?.statuses?.Shortlisted || 0 : "—", "green", "check"), applicationMetric(data, "rejected", "Rejected", summary ? summary.counts?.statuses?.Rejected || 0 : "—", "purple", "users")];
 
   function changeSort(key) {
@@ -293,6 +303,7 @@ export default function ApplicationsPage() {
       if (succeeded.length && action.status !== "Rejected") burstFrom(trigger, { count: 60 });
       setSelected(new Set(failed.map(({ item }) => item.id)));
       void listQuery.refresh();
+      void tabSummaryQuery.refresh();
       void summaryQuery.refresh();
     } finally {
       setBulkBusy(false);
@@ -563,7 +574,7 @@ export default function ApplicationsPage() {
           </div>
         )}
         {layout === "board" ? (
-          <ApplicationsBoard key={boardVersion} onDelete={setDeletingApplication} queryParams={queryParams} isAdmin={isAdmin} commands={commands} notify={notify} onChanged={() => { void listQuery.refresh(); void summaryQuery.refresh(); }} />
+          <ApplicationsBoard key={boardVersion} onDelete={setDeletingApplication} queryParams={queryParams} isAdmin={isAdmin} commands={commands} notify={notify} onChanged={() => { void listQuery.refresh(); void tabSummaryQuery.refresh(); void summaryQuery.refresh(); }} />
         ) : filtered.length ? (
           <div className={`${common.tableWrap} ${styles.applicationTableWrap}`}>
             <table className={`${common.table} ${styles.applicationTable}`}>
