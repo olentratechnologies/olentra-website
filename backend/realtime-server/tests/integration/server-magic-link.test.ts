@@ -170,10 +170,15 @@ test("a magic link never signs in to a staff account that shares the applicant's
   await domain.collection("accounts").insertOne({ _id: staffId, role: "company", staffRole: "admin", name: "Staff Person", email, applicationId: null, sessionVersion: 1, createdAt: new Date() });
   await insertApplication(email);
   const res = await verify(await requestLink(email));
-  expect(res.status).toBe(401);
+  expect(res.status).toBe(409);
+  const body = await res.json() as any;
+  expect(body.error.code).toBe("CONFLICT");
+  expect(body.error.message).toContain("already belongs to a staff account");
   expect(res.headers.get("set-cookie")).toBeNull();
   const staff = await domain.collection("accounts").findOne({ _id: staffId });
   expect(staff?.applicationId).toBeNull();
+  expect(staff?.role).toBe("company");
+  expect(staff?.staffRole).toBe("admin");
   expect(await domain.collection("accounts").countDocuments({ email })).toBe(1);
 });
 
