@@ -25,6 +25,7 @@ function VerifyContent() {
 
   const [status, setStatus] = useState("verifying"); // "verifying" | "success" | "error"
   const [errorMessage, setErrorMessage] = useState("");
+  const [accountConflict, setAccountConflict] = useState(false);
   const [resendEmail, setResendEmail] = useState("");
   const [resendBusy, setResendBusy] = useState(false);
   const [resendSent, setResendSent] = useState(false);
@@ -56,6 +57,7 @@ function VerifyContent() {
             router.replace(result.redirect || "/intern/portal");
           }, 800);
         } else {
+          setAccountConflict(result.errorCode === "CONFLICT");
           setStatus("error");
           setErrorMessage(
             result.error ||
@@ -113,7 +115,7 @@ function VerifyContent() {
               ? "Verifying Your Candidate Access"
               : success
                 ? "Access Verified!"
-                : "Sign-In Link Expired or Invalid"}
+                : accountConflict ? "Applicant Email Matches a Staff Account" : "Sign-In Link Expired or Invalid"}
           </h1>
           <p className={styles.verifyDescription}>
             {verifying
@@ -126,7 +128,7 @@ function VerifyContent() {
 
         {status === "error" && (
           <>
-            {resendSent ? (
+            {accountConflict ? (<p className={styles.verifyDescription}>Generating another link will not resolve this email conflict. You can stay signed in to the dashboard while applying with a separate applicant email.</p>) : resendSent ? (
               <p className={styles.verifyResent} role="status">
                 If an application exists for that email, a fresh sign-in link has
                 been sent. Please check your inbox.
@@ -158,9 +160,9 @@ function VerifyContent() {
             )}
 
             <nav className={styles.verifyLinks} aria-label="Candidate access">
-              <Link href="/intern/login?role=intern">
+              {accountConflict ? <a href="mailto:support@olentratechnologies.com">Contact support <ArrowRight size={13} aria-hidden="true" /></a> : <Link href="/intern/login?role=intern">
                 Sign in with password <ArrowRight size={13} aria-hidden="true" />
-              </Link>
+              </Link>}
               <span aria-hidden="true">·</span>
               <Link href="/careers/intern">Apply again</Link>
             </nav>

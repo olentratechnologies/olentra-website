@@ -497,6 +497,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const existing = await applications.findOne({ _id: applicationId, version: expectedVersion }, { session });
         if (!existing || (status && existing.status === "Joined")) throw new DomainError("CONFLICT", "The application changed or is unavailable. Refresh and try again.");
         if (!isAdmin(actor) && status && !["Applied", "Under Review", "Shortlisted"].includes(existing.status)) throw new DomainError("FORBIDDEN", "Only an admin can change a final application decision.");
+        if (status === "Selected" && await users.findOne({ email: emailOf(existing.email), role: "company" }, { session })) throw new DomainError("CONFLICT", "This applicant email belongs to a staff account. Use a separate applicant email before selecting this application.");
         const update: Document = { $inc: { version: 1 } }, values: Document = {};
         if (status) { values.status = status; if (existing.status !== status) values.statusChangedOn = now.toISOString(); update.$push = { history: { id: id("HST"), title: status, detail: `Application moved to ${status.toLowerCase()}.`, date: now.toISOString() } }; }
         if (Array.isArray(patch.notes)) {
@@ -594,6 +595,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const rows = await users.find({ $or: [{ applicationId }, { email: normalized }] }).toArray();
       if (!rows.length) return null;
       const existing = rows.length === 1 ? rows[0] : null;
+      if (rows.some(row => row.role === "company")) throw new DomainError("CONFLICT", "This application uses an email address that already belongs to a staff account. A staff account cannot also be an intern account. Use a separate applicant email, or contact support@olentratechnologies.com to correct the application email.");
       if (!existing || existing.role !== "intern" || existing.disabled === true) throw refused();
       if (existing.applicationId && existing.applicationId !== applicationId) throw refused();
       if (!existing.applicationId) {
