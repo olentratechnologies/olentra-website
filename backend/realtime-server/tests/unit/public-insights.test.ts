@@ -22,6 +22,7 @@ const facets = {
     { _id: "Selected", count: 2 }, { _id: "Joined", count: 5 }, { _id: "Rejected", count: 6 },
   ],
   tracks: [{ _id: "explorer", count: 20 }, { _id: "innovator", count: 10 }, { _id: null, count: 0 }],
+  roles: [{ _id: "build", count: 18 }, { _id: "automate", count: 7 }, { _id: "grow", count: 5 }, { _id: null, count: 2 }, { _id: "intern", count: 1 }],
   monthly: [{ _id: { month, program: "explorer" }, count: 7 }, { _id: { month, program: "innovator" }, count: 2 }],
   skills: [{ name: "React", count: 6 }, { name: "Python", count: 3 }],
 };
@@ -36,9 +37,17 @@ test("public insights compute the selection funnel and monthly totals", async ()
   expect(value.tracks).toEqual([{ id: "explorer", name: "Tech Explorer" }, { id: "innovator", name: "Tech Innovator" }]);
   expect(value.totals).toEqual({ applied: 30, reviewed: 14, shortlisted: 10, selected: 7, onboarded: 5, certified: 3, projects: 4 });
   expect(value.byTrack).toEqual({ explorer: 20, innovator: 10 });
+  expect(value.byRole).toEqual({ build: 18, automate: 7, grow: 5 });
   expect(value.thisMonth).toBe(9);
   expect(value.months).toHaveLength(12);
   expect(value.topSkills).toEqual([{ name: "React", count: 6 }, { name: "Python", count: 3 }]);
+});
+
+test("public insights keep only known intern roles", async () => {
+  const { collection } = stubCollections({ facets, recent });
+  const value = await createPublicInsights({ collection }).calculate();
+  expect(value.byRole).toEqual({ build: 18, automate: 7, grow: 5 });
+  expect(JSON.stringify(value.byRole)).not.toContain("intern");
 });
 
 test("public insights never expose applicant identity and round activity to the minute", async () => {
@@ -80,6 +89,7 @@ test("public insights are empty when every track is disabled", async () => {
   expect(value.tracks).toEqual([]);
   expect(value.totals.applied).toBe(0);
   expect(value.recent).toEqual([]);
+  expect(value.byRole).toEqual({});
   expect(calls.applications).toBeUndefined();
 });
 

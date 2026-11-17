@@ -1,6 +1,7 @@
 import type { Collection } from "mongodb";
 import type { InternshipRow } from "../../infrastructure/database/collections";
 import { acceptsCompensationMode } from "../programs/compensation";
+import { isInternRole } from "../programs/opportunities.mjs";
 
 type Row = InternshipRow;
 
@@ -9,6 +10,7 @@ export type PublicInsights = {
   tracks: { id: string; name: string }[];
   totals: { applied: number; reviewed: number; shortlisted: number; selected: number; onboarded: number; certified: number; projects: number };
   byTrack: Record<string, number>;
+  byRole: Record<string, number>;
   thisMonth: number;
   lastMonth: number;
   months: { label: string; month: string; explorer: number; innovator: number }[];
@@ -54,6 +56,7 @@ export function createPublicInsights({ collection }: { collection: (name: string
           $facet: {
             statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }],
             tracks: [{ $group: { _id: "$programId", count: { $sum: 1 } } }],
+            roles: [{ $group: { _id: "$roleId", count: { $sum: 1 } } }],
             monthly: [
               { $match: { appliedOn: { $type: "string", $gte: firstMonth } } },
               { $group: { _id: { month: { $substrBytes: ["$appliedOn", 0, 7] }, program: "$programId" }, count: { $sum: 1 } } },
@@ -97,6 +100,7 @@ export function createPublicInsights({ collection }: { collection: (name: string
       tracks: enabled,
       totals: { applied, reviewed: sum(REVIEWED), shortlisted: sum(SHORTLISTED), selected: sum(SELECTED), onboarded: statuses.Joined || 0, certified: certificateCount, projects: projectCount },
       byTrack: Object.fromEntries(((facets?.tracks || []) as { _id: unknown; count: number }[]).filter(row => typeof row._id === "string" && ids.includes(row._id)).map(row => [row._id as string, row.count])),
+      byRole: Object.fromEntries(((facets?.roles || []) as { _id: unknown; count: number }[]).filter(row => typeof row._id === "string" && isInternRole(row._id)).map(row => [row._id as string, row.count])),
       thisMonth: monthTotal(months[11]),
       lastMonth: monthTotal(months[10]),
       months,

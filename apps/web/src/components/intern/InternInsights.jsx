@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Award, CheckCheck, FileSearch, FolderKanban, Radio, UserCheck, UserPlus, Sparkles, Users } from "lucide-react";
+import { Award, CheckCheck, FileSearch, Radio, UserCheck, UserPlus, Sparkles, Users } from "lucide-react";
+import { INTERN_ROLES } from "@/lib/intern/opportunities.mjs";
 import useInternInsights from "./useInternInsights";
 import styles from "./intern-insights.module.css";
 
@@ -14,6 +15,32 @@ const FUNNEL = [
   { icon: Award, id: "certified", label: "Certified", hint: "Certificates issued" },
 ];
 const format = new Intl.NumberFormat("en-IN");
+
+function useNow(interval = 30000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), interval);
+    return () => clearInterval(timer);
+  }, [interval]);
+  return now;
+}
+
+function relativeTime(iso, now) {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "";
+  const seconds = Math.max(0, Math.round((now - then) / 1000));
+  if (seconds < 60) return "just now";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return minutes === 1 ? "1 min ago" : `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? "1 day ago" : `${days} days ago`;
+}
+
+function trackName(tracks, id) {
+  return tracks.find((track) => track.id === id)?.name || "Olentra internship";
+}
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -62,8 +89,17 @@ function Skeleton() {
 
 export default function InternInsights() {
   const { insights, live, error } = useInternInsights();
+  const now = useNow();
   const totals = insights?.totals;
   const tracks = insights?.tracks || [];
+  const recent = insights?.recent || [];
+  const byRole = insights?.byRole || {};
+  const roleCounts = INTERN_ROLES.map((role) => byRole[role.id] || 0);
+  const topCount = Math.max(0, ...roleCounts);
+  const secondCount = [...roleCounts].sort((a, b) => b - a)[1] || 0;
+  const leadingRoleId = topCount > 0 && topCount > secondCount
+    ? INTERN_ROLES[roleCounts.indexOf(topCount)]?.id
+    : null;
 
   return (
     <div className={styles.panel}>
@@ -122,32 +158,55 @@ export default function InternInsights() {
             </div>
           </div>
 
-          {totals.applied === 0 && <p className={styles.firstNote}><Sparkles size={15} aria-hidden="true" /> Applications are open — be among the first to apply.</p>}
-
-          <div className={styles.summaryGrid}>
-            <article className={styles.monthlySummary}>
-              <div className={styles.summaryIntro}>
-                <span className={styles.eyebrow}>APPLICATION MOMENTUM</span>
-                <h3>This month at Olentra</h3>
-                <p>New applications across our internship tracks.</p>
-              </div>
-              <div className={styles.monthlyNumbers}>
-                <div className={styles.currentMonth}><LiveNumber value={insights.thisMonth} /><span>This month</span></div>
-                <div className={styles.previousMonth}><LiveNumber value={insights.lastMonth} /><span>Last month</span></div>
-              </div>
-
+          <section className={styles.pulse} aria-label="Live internship pulse">
+            <article className={styles.pulseFeed}>
+              <span className={styles.eyebrow}>HAPPENING NOW</span>
+              <h3>Applications happening now</h3>
+              <p className={styles.pulseIntro}>Live, anonymous activity from people applying this intake.</p>
+              {recent.length ? (
+                <ol className={styles.feed} aria-live="polite">
+                  {recent.map((item, index) => (
+                    <li key={`${item.at}:${item.track}:${index}`} className={styles.feedItem}>
+                      <span className={styles.feedTrack}>Applied to {trackName(tracks, item.track)}</span>
+                      <time className={styles.feedTime} dateTime={item.at}>{relativeTime(item.at, now)}</time>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className={styles.firstNote}><Sparkles size={15} aria-hidden="true" /> Be among the first to apply this intake.</p>
+              )}
             </article>
-            <article className={styles.outcomes}>
-              <span className={styles.eyebrow}>LEARNING INTO PRACTICE</span>
-              <h3>Progress that matters</h3>
-              <p>Practical experience through real project work.</p>
-              <div className={styles.projectMetric}>
-                <LiveNumber value={totals.projects} />
-                <span><FolderKanban size={16} aria-hidden="true" />Projects across the program</span>
-              </div>
-
+            <article className={styles.pulseRoles}>
+              <span className={styles.eyebrow}>WHERE PEOPLE APPLY</span>
+              <h3>Where people are applying</h3>
+              <p className={styles.pulseIntro}>Live demand by intern role — choose the path that fits you.</p>
+              {totals.applied > 0 ? (
+                <ul className={styles.roleList}>
+                  {INTERN_ROLES.map((role) => {
+                    const count = byRole[role.id] || 0;
+                    const share = totals.applied ? Math.min(100, Math.round((count / totals.applied) * 100)) : 0;
+                    return (
+                      <li key={role.id}>
+                        <a className={styles.roleRow} href={`#role-${role.id}`} aria-label={`${role.short}, ${count} ${count === 1 ? "application" : "applications"}${leadingRoleId === role.id ? ", most requested" : ""}`}>
+                          <span className={styles.roleRowTop}>
+                            <span className={styles.roleName}>
+                              {role.short}
+                              {leadingRoleId === role.id && <span className={styles.mostRequested}>Most requested</span>}
+                            </span>
+                            <LiveNumber value={count} className={styles.roleCount} />
+                          </span>
+                          <span className={styles.roleShare} aria-hidden="true"><span style={{ width: `${share}%` }} /></span>
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className={styles.firstNote}><Sparkles size={15} aria-hidden="true" /> Applications are open — be among the first to apply.</p>
+              )}
             </article>
-          </div>
+          </section>
+
           <section className={styles.applicationTimeline} aria-labelledby="application-timeline-title">
             <div className={styles.timelineIntro}>
               <span className={styles.eyebrow}>YOUR NEXT STEPS</span>
