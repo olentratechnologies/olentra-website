@@ -42,6 +42,8 @@ test("browser download and emailed PDF have identical layouts and format ISO iss
   expect(pdf.toString()).toContain("support@olentratechnologies.com");
   expect(pdf.toString()).not.toContain("careers@olentratechnologies.com");
   expect(pdf.toString()).toContain("/Count 1");
+  expect(pdf.toString()).toContain("/Signature 6 0 R");
+  expect(pdf.toString()).toContain("/Signature Do Q");
 });
 
 test("long recipient and offer fields wrap onto additional pages rather than clipping", () => {
