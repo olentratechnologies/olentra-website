@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { useInternship } from "@/components/intern/InternshipProvider";
-import { bulkActionsFor, canBulkUpdate, runBulkRequests } from "@/lib/intern/bulk.mjs";
+import { bulkActionsFor, canBulkUpdate, runBulk, runBulkRequests } from "@/lib/intern/bulk.mjs";
 import { burstFrom } from "@/lib/confetti.mjs";
 import {
   APPLICATION_EXPORT_COLUMNS,
@@ -76,6 +76,11 @@ export default function ApplicationsPage() {
   const { commands, connected, staffEvents } = useInternship();
   const [selected, setSelected] = useState(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkDeletion, setBulkDeletion] = useState(null);
+  const [deletePhrase, setDeletePhrase] = useState("");
+  const [loadingDeletion, setLoadingDeletion] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState(0);
+  const [deleteFailures, setDeleteFailures] = useState([]);
   const [deletingApplication, setDeletingApplication] = useState(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [boardVersion, setBoardVersion] = useState(0);
@@ -259,7 +264,7 @@ export default function ApplicationsPage() {
     }
   }
 
-  const selectable = canReview ? displayed.filter((application) => canBulkUpdate(application, { isAdmin })) : [];
+  const selectable = canReview ? displayed.filter((application) => isAdmin || canBulkUpdate(application, { isAdmin })) : [];
   const selectedRows = selectable.filter((application) => selected.has(application.id));
   const allSelected = selectable.length > 0 && selectedRows.length === selectable.length;
   function toggleRow(id) {
@@ -274,7 +279,7 @@ export default function ApplicationsPage() {
   }
   async function applyBulk(action, trigger) {
     if (bulkBusy || !selectedRows.length) return;
-    const rows = selectedRows.filter((application) => application.status !== action.status);
+    const rows = selectedRows.filter((application) => canBulkUpdate(application, { isAdmin }) && application.status !== action.status);
     const unchanged = selectedRows.length - rows.length;
     setBulkBusy(true);
     try {
@@ -293,6 +298,42 @@ export default function ApplicationsPage() {
       setBulkBusy(false);
       setConfirmReject(null);
     }
+  }
+
+  async function prepareDeletion(all = false) {
+    if (!isAdmin || bulkBusy || loadingDeletion) return;
+    setLoadingDeletion(true);
+    setDeletePhrase("");
+    setDeleteFailures([]);
+    setDeleteProgress(0);
+    try {
+      // Freeze the full unfiltered list before asking for confirmation.
+      const rows = all ? (await fetchAllPages((page) => commands.listApplications({ page, pageSize: 100, sortField: "appliedOn", sortDirection: "asc" }), { max: Infinity })).items : selectedRows;
+      const unique = [...new Map(rows.map((row) => [row.id, row])).values()];
+      if (!unique.length) { notify("No applications to delete."); return; }
+      setBulkDeletion({ all, rows: unique });
+    } catch (error) { notify(error?.message || "Could not load applications for deletion."); }
+    finally { setLoadingDeletion(false); }
+  }
+
+  async function deleteApplications(event) {
+    event.preventDefault();
+    if (!isAdmin || bulkBusy || !bulkDeletion || deletePhrase !== `DELETE ${bulkDeletion.rows.length}`) return;
+    setBulkBusy(true);
+    setDeleteProgress(0);
+    try {
+      const { succeeded, failed } = await runBulk(bulkDeletion.rows, async (application) => {
+        try { return await commands.eraseApplicant(application.id, application.email); }
+        finally { setDeleteProgress((value) => value + 1); }
+      }, 2);
+      setSelected(new Set(failed.map(({ item }) => item.id)));
+      setDeleteFailures(failed);
+      notify(`${succeeded.length} applications permanently deleted. ${failed.length ? `${failed.length} could not be deleted; review the details.` : ""}`);
+      setBoardVersion((value) => value + 1);
+      refreshListsRef.current?.();
+      if (!failed.length) setBulkDeletion(null);
+      else { setBulkDeletion({ all: false, rows: failed.map(({ item }) => item) }); setDeletePhrase(""); }
+    } finally { setBulkBusy(false); }
   }
 
   async function assignSelected(assigneeId) {
@@ -335,6 +376,7 @@ export default function ApplicationsPage() {
           <ArrowDownToLine size={16} />
           {exporting ? "Exporting…" : `Export ${result.total > filtered.length ? `all ${result.total.toLocaleString()}` : "CSV"}`}
         </Button>
+        {isAdmin && <Button variant="danger" disabled={bulkBusy || loadingDeletion} onClick={() => void prepareDeletion(true)}>{loadingDeletion ? "Loading applications…" : "Delete all"}</Button>}
         <FilterMenu>
           <div className={styles.filterFields}>
             <div className={styles.filterHeading}>
@@ -499,6 +541,7 @@ export default function ApplicationsPage() {
                   {action.label}
                 </button>
               ))}
+              {isAdmin && <button type="button" className={`${styles.bulkButton} ${styles.bulkDanger}`} disabled={bulkBusy || loadingDeletion} onClick={() => void prepareDeletion(false)}>Delete selected</button>}
               {reviewers.length > 0 && (
                 <select
                   className={styles.bulkButton}
@@ -617,7 +660,7 @@ export default function ApplicationsPage() {
                           type="checkbox"
                           aria-label={`Select ${application.name}`}
                           checked={selected.has(application.id)}
-                          disabled={bulkBusy || !canBulkUpdate(application, { isAdmin })}
+                          disabled={bulkBusy || (!isAdmin && !canBulkUpdate(application, { isAdmin }))}
                           title={canBulkUpdate(application, { isAdmin }) ? undefined : "Only an admin can change a final decision"}
                           onChange={() => toggleRow(application.id)}
                         />
@@ -702,6 +745,23 @@ export default function ApplicationsPage() {
         </div>}
       </Panel>
 
+      <Modal
+        open={Boolean(bulkDeletion)}
+        onOpenChange={(open) => { if (!open && !bulkBusy) setBulkDeletion(null); }}
+        title={bulkDeletion?.all ? "Delete all applications?" : "Delete selected applications?"}
+        description={`${bulkDeletion?.rows.length || 0} applications and linked accounts, files, messages and internship records will be permanently deleted. ${bulkDeletion?.all ? "Includes all pages, regardless of current filters. Only applications listed below are included." : "Only the listed applications are included."} Active internships are protected and will be skipped. This cannot be undone.`}
+      >
+        <form className={styles.modalForm} onSubmit={deleteApplications}>
+          <details><summary>Review {bulkDeletion?.rows.length || 0} applications</summary><ul style={{ maxHeight: 180, overflowY: "auto" }}>{bulkDeletion?.rows.map((row) => <li key={row.id}>{row.name} — {row.email}</li>)}</ul></details>
+          {deleteFailures.length > 0 && <div role="alert"><p>These applications were not deleted:</p><ul style={{ maxHeight: 180, overflowY: "auto" }}>{deleteFailures.map(({ item, error }) => <li key={item.id}>{item.name}: {error}</li>)}</ul></div>}
+          <label>Type DELETE {bulkDeletion?.rows.length || 0} to confirm<input autoComplete="off" spellCheck={false} value={deletePhrase} disabled={bulkBusy} onChange={(event) => setDeletePhrase(event.target.value)} /></label>
+          {bulkBusy && <p role="status">Processed {deleteProgress} of {bulkDeletion?.rows.length || 0}. Keep this page open until deletion finishes.</p>}
+          <div className={styles.modalActions}>
+            <Button variant="secondary" type="button" disabled={bulkBusy} onClick={() => setBulkDeletion(null)}>Cancel</Button>
+            <Button variant="danger" type="submit" disabled={bulkBusy || deletePhrase !== `DELETE ${bulkDeletion?.rows.length}`}>{bulkBusy ? "Deleting…" : "Delete permanently"}</Button>
+          </div>
+        </form>
+      </Modal>
       <Modal
         open={Boolean(deletingApplication)}
         onOpenChange={(open) => { if (!open && !deleteBusy) setDeletingApplication(null); }}
