@@ -44,7 +44,7 @@ export function buildOfferLetterPdfBytes({
 
   lines.push("BT");
   lines.push("/F1 8.5 Tf 0.4 0.45 0.55 rg");
-  lines.push("50 770 Td (Olentra Technologies Pvt. Ltd. | CIN: U72900TG2023PTC176542 | www.olentratechnologies.com) Tj");
+  lines.push("50 770 Td (Olentra Technologies Pvt. Ltd. | CIN: U72900TG2023PTC176542 | Hyderabad, India | www.olentratechnologies.com) Tj");
   lines.push("ET");
 
   // Divider
