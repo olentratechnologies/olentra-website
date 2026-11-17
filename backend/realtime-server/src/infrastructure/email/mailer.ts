@@ -115,29 +115,32 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     ${escapeHtml(preheader)}
     &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
   </div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f6fb" style="background:#f3f6fb;padding:36px 14px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f6fb" style="background:#f3f6fb;padding:20px 12px;">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:620px;background:#ffffff;border:1px solid #e4eaf3;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(15,23,42,0.03);">
-        <tr><td style="height:5px;background:#2563eb;font-size:1px;line-height:1px;">&nbsp;</td></tr>
-        <tr><td align="center" style="padding:32px 36px 20px;">
-          <a href="https://www.olentratechnologies.com" target="_blank" style="text-decoration:none;">
-            <img src="https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png" width="84" height="84" alt="Olentra Technologies" style="display:block;margin:0 auto;width:84px;height:auto;border:0;">
-          </a>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:640px;background:#ffffff;border:1px solid #e4eaf3;border-radius:2px;">
+        <tr><td style="padding:20px 24px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom:2px solid #2563eb;">
+            <tr>
+              <td width="52" valign="middle" style="width:52px;padding:0 0 16px;">
+                <a href="https://www.olentratechnologies.com" style="text-decoration:none;"><img src="https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png" width="40" height="40" alt="Olentra Technologies" style="display:block;width:40px;height:40px;border:0;"></a>
+              </td>
+              <td valign="middle" style="padding:0 0 16px;font-size:20px;line-height:1.25;font-weight:700;color:#0f172a;">Olentra Technologies</td>
+            </tr>
+          </table>
         </td></tr>
-        <tr><td style="padding:0 36px;"><div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
-        <tr><td style="padding:28px 36px 10px;">
+        <tr><td style="padding:20px 24px 12px;">
           <p style="margin:0 0 10px;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#2563eb;">${escapeHtml(eyebrow)}</p>
           <h1 style="margin:0;font-size:25px;line-height:1.24;font-weight:700;letter-spacing:-.025em;color:#0f172a;">${escapeHtml(heading)}</h1>
         </td></tr>
-        <tr><td style="padding:8px 36px 32px;">${content}</td></tr>
-        <tr><td style="padding:0 36px;"><div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
-        <tr><td style="padding:24px 36px 26px;background:#fafbfd;">
+        <tr><td style="padding:0 24px 20px;">${content}</td></tr>
+        <tr><td style="padding:0 24px;"><div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
+        <tr><td style="padding:16px 24px 18px;background:#ffffff;">
           <p style="margin:0 0 5px;font-size:12px;line-height:1.55;font-weight:600;color:#334155;">Olentra Technologies Pvt. Ltd. · Building intelligent systems</p>
           <p style="margin:0 0 8px;font-size:11px;line-height:1.55;color:#64748b;">CIN: U72900TG2023PTC176542 · Hyderabad, India · <a href="https://www.olentratechnologies.com" style="color:#2563eb;text-decoration:none;">www.olentratechnologies.com</a></p>
-          <p style="margin:0 0 10px;font-size:11px;line-height:1.55;color:#64748b;">Support: <a href="mailto:careers@olentratechnologies.com" style="color:#2563eb;text-decoration:none;">careers@olentratechnologies.com</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/careers/intern" style="color:#2563eb;text-decoration:none;">Careers</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/privacy-policy" style="color:#2563eb;text-decoration:none;">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/terms-of-service" style="color:#2563eb;text-decoration:none;">Terms of Service</a></p>
+          <p style="margin:0 0 10px;font-size:11px;line-height:1.55;color:#64748b;">Support: <a href="mailto:support@olentratechnologies.com" style="color:#2563eb;text-decoration:none;">support@olentratechnologies.com</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/careers/intern" style="color:#2563eb;text-decoration:none;">Careers</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/privacy-policy" style="color:#2563eb;text-decoration:none;">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/terms-of-service" style="color:#2563eb;text-decoration:none;">Terms of Service</a></p>
           <div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;margin:10px 0;">&nbsp;</div>
           <p style="margin:0 0 5px;font-size:11px;line-height:1.55;color:#718096;">Automated message about your internship application or program. Please do not reply directly to this email.</p>
-          <p style="margin:0;font-size:11px;line-height:1.55;color:#94a3b8;">Security notice: Olentra will never request fee payments, banking credentials, or your account password via email.</p>
+          <p style="margin:0;font-size:11px;line-height:1.55;color:#64748b;">Security notice: Olentra will never request fee payments, banking credentials, or your account password via email.</p>
         </td></tr>
       </table>
       <p style="margin:16px 0 0;font-size:11px;line-height:1.5;color:#8a96a8;">© 2026 Olentra Technologies Pvt. Ltd. All rights reserved.</p>
@@ -146,10 +149,10 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
 </body>
 </html>`;
   const emailButton = (label: string, href: string, background = "#2563eb") => `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 8px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 6px;">
       <tr>
-        <td bgcolor="${background}" style="border-radius:8px;background:${background};">
-          <a href="${escapeHtml(href)}" style="display:inline-block;padding:13px 26px;border:1px solid ${background};border-radius:8px;color:#ffffff;text-decoration:none;font-size:14px;line-height:1.2;font-weight:700;letter-spacing:-0.01em;">${escapeHtml(label)} &rarr;</a>
+        <td bgcolor="${background}" style="border-radius:4px;background:${background};">
+          <a href="${escapeHtml(href)}" style="display:inline-block;padding:11px 20px;border:1px solid ${background};border-radius:4px;color:#ffffff;text-decoration:none;font-size:14px;line-height:1.2;font-weight:700;letter-spacing:-0.01em;">${escapeHtml(label)} &rarr;</a>
         </td>
       </tr>
     </table>
@@ -161,7 +164,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       neutral: { background: "#f8fafc", border: "#e2e8f0", accent: "#2563eb" },
       green: { background: "#f0faf5", border: "#d4f0e0", accent: "#16a34a" },
     }[tone];
-    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${palette.background}" style="margin:20px 0 22px;background:${palette.background};border:1px solid ${palette.border};border-radius:10px;"><tr><td style="padding:16px 20px;border-left:4px solid ${palette.accent};">${content}</td></tr></table>`;
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0;border-top:1px solid ${palette.border};border-bottom:1px solid ${palette.border};"><tr><td style="padding:12px 0;color:${palette.accent};">${content}</td></tr></table>`;
   };
 
   type Attachment = { filename: string; content: string | Buffer; contentType: string };
@@ -212,13 +215,14 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
           <tr>
             <td style="padding:2px 0 10px;">
               <span style="display:block;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin-bottom:6px;">Application Reference</span>
-              <span style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.4;font-weight:600;color:#0f172a;background:#eef2f6;border:1px solid #dce4ee;padding:4px 10px;border-radius:6px;letter-spacing:-0.01em;">${escapeHtml(refId)}</span>
+              <span style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.4;font-weight:600;color:#0f172a;background:#eef2f6;border:1px solid #dce4ee;padding:6px 10px;border-radius:4px;letter-spacing:-0.01em;overflow-wrap:anywhere;word-break:break-all;">${escapeHtml(refId)}</span>
             </td>
           </tr>
           <tr>
-            <td style="padding:6px 0 2px;">
-              <span style="display:block;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Review Timeline &amp; Next Steps</span>
-              <span style="font-size:13.5px;line-height:1.55;color:#334155;">Our admissions and engineering team reviews applications within <strong>3–5 business days</strong>. No portal account or action is required at this stage.</span>
+            <td style="padding:10px 0 2px;border-top:1px solid #e2e8f0;">
+              <span style="display:block;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin-bottom:4px;">Review timeline</span>
+              <span style="font-size:13.5px;line-height:1.55;color:#334155;">Our admissions and engineering team reviews applications within <strong style="color:#2563eb;">3–5 business days</strong>.</span>
+              <span style="display:block;margin-top:6px;font-size:13.5px;line-height:1.55;color:#334155;">No portal account or action is required at this stage.</span>
             </td>
           </tr>
         </table>
@@ -261,7 +265,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
           )
         : "";
 
-    const content = `<p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#334155;white-space:pre-wrap;">${escapeHtml(body)}</p>`
+    const content = `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;white-space:pre-wrap;">${escapeHtml(body)}</p>`
       + panelContent
       + buttons.filter(button => button.url).map(button => emailButton(button.label, button.url)).join("");
     const html = emailShell({ subject, preheader: body.slice(0, 180), eyebrow: "Olentra Careers · Internship program", heading: definition.name, content });
@@ -295,7 +299,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       if (options.status !== "rejected") return automated(options.status, options);
       const subject = `Update on your Olentra internship application (${options.programName})`;
       const body = `Hi ${options.name},\n\nThank you for taking the time to apply to Olentra Technologies and sharing your background with us. After careful consideration, we are unable to offer you an internship position for this cohort. We received a tremendous number of outstanding applications and had to make difficult decisions. We truly appreciate your interest in Olentra, wish you continued success in your learning and career, and warmly invite you to stay connected with us on LinkedIn and re-apply in future cohorts.`;
-      const html = emailShell({ subject, preheader: subject, eyebrow: "Olentra Careers · Internship program", heading: "Application Status Update", content: `<p style="white-space:pre-wrap;line-height:1.75;">${escapeHtml(body)}</p>` });
+      const html = emailShell({ subject, preheader: subject, eyebrow: "Olentra Careers · Internship program", heading: "Application Status Update", content: `<p style="margin:0;font-size:15px;white-space:pre-wrap;line-height:1.6;">${escapeHtml(body)}</p>` });
       return sendEmail(options.to, subject, html, body);
     },
     async sendApplicationConfirmation(options: ApplicationEmailOptions): Promise<SendResult> { return automated("application-received", options); },
@@ -307,8 +311,8 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
 
       const safeName = escapeHtml(String(name));
       const content = `
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#334155;">Hi <strong>${safeName}</strong>,</p>
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#334155;">We received a request to reset the password for your Olentra Internship account. Click the button below to choose a new password:</p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">Hi <strong>${safeName}</strong>,</p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">We received a request to reset the password for your Olentra Internship account. Click the button below to choose a new password:</p>
         ${emailButton("Reset My Password", resetUrl)}
         ${emailPanel("<p style=\"margin:0;font-size:13px;line-height:1.6;color:#475569;\"><strong>Security note:</strong> This single-use link is valid for 1 hour. If you did not request a password reset, you can safely ignore this email; your password will remain unchanged.</p>", "blue")}
       `;
