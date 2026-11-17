@@ -35,6 +35,7 @@ import {
 import styles from "./portal.module.css";
 import { useSiteFeatures } from "@olentra/site-features/react";
 import { offerTimeLeft } from "@/lib/intern/offer-deadline.mjs";
+import { downloadOfferLetterPdf } from "@/lib/intern/offer-letter-pdf";
 
 export default function PortalApplication() {
   const { features, ready: featuresReady } = useSiteFeatures();
@@ -252,12 +253,34 @@ export default function PortalApplication() {
               <span>
                 <Check size={17} /> Your offer has been accepted.
               </span>
-              <Link href="/intern/portal/onboarding">
-                {my.onboarding?.status === "Approved"
-                  ? "View onboarding"
-                  : "Continue onboarding"}
-                <ArrowRight size={14} />
-              </Link>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginTop: "10px" }}>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    downloadOfferLetterPdf({
+                      name: application.name,
+                      email: application.email,
+                      college: application.college,
+                      program: application.program,
+                      roleTitle: internRoleLabel(application.roleId),
+                      startOn: offer.startOn,
+                      endOn: offer.endOn,
+                      stipend: offer.stipend,
+                      stipendPeriod: offer.stipendPeriod,
+                      applicationId: application.id,
+                      issueDate: offer.decidedOn,
+                    })
+                  }
+                >
+                  <Download size={14} /> Download Offer Letter (PDF)
+                </Button>
+                <Link href="/intern/portal/onboarding">
+                  {my.onboarding?.status === "Approved"
+                    ? "View onboarding"
+                    : "Continue onboarding"}
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
             </Notice>
           ) : (
             <Notice>

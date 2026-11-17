@@ -6,6 +6,7 @@ import { createStaffManagement } from "../modules/staff/staff.service";
 import { authorizeStaff, can, isAdmin } from "../modules/access/policy";
 import { acceptsCompensationMode, normalizeCompensationMode, type CompensationMode } from "../modules/programs/compensation";
 import { normalizeDeadline } from "../modules/programs/deadline";
+import { generateOfferLetterPdf } from "../modules/offer-letter/offer-letter-pdf";
 import { INTERNSHIP_OPPORTUNITIES, isInternRole, isInternSchedule, normalizeInternshipDuration } from "../modules/programs/opportunities.mjs";
 import { MongoClient, type ClientSession, type Db, type Document } from "mongodb";
 import type { InternshipRow } from "../infrastructure/database/collections";
@@ -201,11 +202,33 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   async function deliverApplicantStatus(applicationId: string, status: ApplicantStatusNotice["status"], certificateNumber?: string) {
     if (!activeHooks?.sendApplicantStatus) throw new Error("No email sender is configured.");
     {
-      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1 } });
+      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1, college: 1, roleId: 1 } });
       if (!application) throw new Error(`Application ${applicationId} was not found after its status changed.`);
       if (status === "rejected") {
         const preferences = await settings.findOne({ _id: "program" }, { projection: { rejectionEmails: 1 } });
         if (preferences?.rejectionEmails !== true) return;
+      }
+      let pdfAttachment: { filename: string; content: Buffer; contentType: string } | undefined;
+      if (status === "offer-accepted") {
+        const offer = await collection("offers").findOne({ applicationId, status: "Accepted" });
+        const pdf = generateOfferLetterPdf({
+          name: str(application.name),
+          email: str(application.email),
+          college: str(application.college || ""),
+          program: str(application.program),
+          roleTitle: str(application.roleId || "AI Full Stack Engineering Intern"),
+          startOn: offer?.startOn ? str(offer.startOn) : undefined,
+          endOn: offer?.endOn ? str(offer.endOn) : undefined,
+          stipend: typeof offer?.stipend === "number" ? offer.stipend : 0,
+          stipendPeriod: offer?.stipendPeriod ? str(offer.stipendPeriod) : "month",
+          applicationId,
+          issueDate: offer?.decidedOn ? new Date(offer.decidedOn).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : undefined,
+        });
+        pdfAttachment = {
+          filename: `Olentra_Offer_Letter_${applicationId.slice(0, 15)}.pdf`,
+          content: pdf,
+          contentType: "application/pdf",
+        };
       }
       await activeHooks.sendApplicantStatus({
         to: str(application.email),
@@ -213,6 +236,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         programName: str(application.program),
         status,
         ...(certificateNumber ? { certificateNumber } : {}),
+        ...(pdfAttachment ? { pdfAttachment } : {}),
       });
     }
   }

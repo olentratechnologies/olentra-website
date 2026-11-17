@@ -318,8 +318,8 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
       }
       throw new DomainError("NOT_IMPLEMENTED", "This action is not available.");
       })();
-      if (method === "offer.send" || method === "onboarding.approve") {
-        await outbox.enqueue("applicantStatus", { applicationId: String((result as any).applicationId), status: method === "offer.send" ? "offer" : "onboarding" }, session);
+      if (method === "offer.send" || method === "offer.accept" || method === "onboarding.approve") {
+        await outbox.enqueue("applicantStatus", { applicationId: String((result as any).applicationId), status: method === "offer.send" ? "offer" : method === "offer.accept" ? "offer-accepted" : "onboarding" }, session);
       }
       if (method === "interview.schedule" || method === "interview.cancel") {
         const interview = result as Record<string, any>;

@@ -3,7 +3,7 @@ import { interviewIcs, interviewTimeLabel } from "../../modules/interviews/ics";
 import type { SigninEmailTemplateVariant } from "../../modules/email-templates/signin-template-settings";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
-type ApplicantStatus = "shortlisted" | "selected" | "offer" | "rejected" | "onboarding" | "certificate";
+type ApplicantStatus = "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
 
 interface ApplicantStatusEmailOptions {
   to: string;
@@ -13,6 +13,7 @@ interface ApplicantStatusEmailOptions {
   portalUrl: string;
   certificateVerifyUrl?: string;
   linkedinShareUrl?: string;
+  pdfAttachment?: { filename: string; content: string | Buffer; contentType: string };
 }
 
 interface InterviewScheduledEmailOptions {
@@ -119,7 +120,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${palette.background}" style="margin:20px 0;background:${palette.background};border:1px solid ${palette.border};border-radius:12px;"><tr><td style="padding:18px 20px;border-left:3px solid ${palette.accent};">${content}</td></tr></table>`;
   };
 
-  type Attachment = { filename: string; content: string; contentType: string };
+  type Attachment = { filename: string; content: string | Buffer; contentType: string };
   async function sendEmail(to: string, subject: string, html: string, text: string, attachments: Attachment[] = []): Promise<SendResult> {
     if (!deliveryToken) return { ok: false, delivered: false, error: "Central email delivery is not configured." };
     try {
@@ -160,7 +161,10 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       if (options.linkedinShareUrl) buttons.push({ label: "Share on LinkedIn", url: options.linkedinShareUrl });
       details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
     }
-    if (["offer", "onboarding", "certificate"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
+    if (["offer", "offer-accepted", "onboarding", "certificate"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
+    if (id === "offer-accepted" && options.pdfAttachment) {
+      attachments.push(options.pdfAttachment);
+    }
     if (id === "certificate") {
       if (options.certificateVerifyUrl) buttons.push({ label: "Verify your certificate", url: options.certificateVerifyUrl });
       if (options.linkedinShareUrl) buttons.push({ label: "Share your certificate on LinkedIn", url: options.linkedinShareUrl });
