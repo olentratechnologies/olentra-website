@@ -45,6 +45,7 @@ import {
 import common from "./pages.module.css";
 import styles from "./applicant.module.css";
 import ApplicationsBoard from "./ApplicationsBoard";
+import EraseApplicantPanel from "./EraseApplicantPanel";
 import { internRoleLabel, internScheduleLabel } from "@/lib/intern/opportunities.mjs";
 
 const STATUSES = [
@@ -75,6 +76,9 @@ export default function ApplicationsPage() {
   const { commands, connected, staffEvents } = useInternship();
   const [selected, setSelected] = useState(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [deletingApplication, setDeletingApplication] = useState(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [boardVersion, setBoardVersion] = useState(0);
   const [confirmReject, setConfirmReject] = useState(null);
   // Rows that just arrived through a live "new application" event get a brief highlight.
   const [freshIds, setFreshIds] = useState(() => new Set());
@@ -516,7 +520,7 @@ export default function ApplicationsPage() {
           </div>
         )}
         {layout === "board" ? (
-          <ApplicationsBoard queryParams={queryParams} isAdmin={isAdmin} commands={commands} notify={notify} onChanged={() => { void listQuery.refresh(); void summaryQuery.refresh(); }} />
+          <ApplicationsBoard key={boardVersion} onDelete={setDeletingApplication} queryParams={queryParams} isAdmin={isAdmin} commands={commands} notify={notify} onChanged={() => { void listQuery.refresh(); void summaryQuery.refresh(); }} />
         ) : filtered.length ? (
           <div className={`${common.tableWrap} ${styles.applicationTableWrap}`}>
             <table className={`${common.table} ${styles.applicationTable}`}>
@@ -657,6 +661,7 @@ export default function ApplicationsPage() {
                             label: "View application",
                             href: `/intern/dashboard/applications/${application.id}`,
                           },
+                          ...(isAdmin ? [{ label: "Delete application", danger: true, onClick: () => setDeletingApplication(application) }] : []),
                           ...(canReview && (isAdmin || ["Applied", "Under Review", "Shortlisted"].includes(application.status)) ? [{
                             label: "Update status",
                             onClick: () => {
@@ -697,6 +702,20 @@ export default function ApplicationsPage() {
         </div>}
       </Panel>
 
+      <Modal
+        open={Boolean(deletingApplication)}
+        onOpenChange={(open) => { if (!open && !deleteBusy) setDeletingApplication(null); }}
+        title="Permanently delete application?"
+        description={deletingApplication ? `Delete ${deletingApplication.name}’s application and linked records. This cannot be undone.` : ""}
+      >
+        {deletingApplication && <EraseApplicantPanel key={deletingApplication.id} application={deletingApplication} commands={commands} notify={notify} onBusyChange={setDeleteBusy} onDeleted={(id) => {
+          setDeletingApplication(null);
+          setSelected((current) => { const next = new Set(current); next.delete(id); return next; });
+          setBoardVersion((value) => value + 1);
+          refreshListsRef.current?.();
+        }} />}
+        <Button variant="secondary" disabled={deleteBusy} onClick={() => setDeletingApplication(null)}>Cancel</Button>
+      </Modal>
       <Modal
         open={Boolean(editingApplication)}
         onOpenChange={(open) => !open && setEditingApplication(null)}

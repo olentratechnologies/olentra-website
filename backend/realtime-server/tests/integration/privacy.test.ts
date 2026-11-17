@@ -55,14 +55,21 @@ test("only the applicant can withdraw their own application", async () => {
 
 test("erasing an applicant removes their data everywhere and audits it without personal details", async () => {
   const { applicationId, email, account } = await applicant("Rejected");
+  for (const name of ["reviews", "checkins", "feedback", "resource_progress"]) {
+    await domain.collection(name).insertOne({ _id: `LINK-${randomUUID()}`, applicationId });
+    await domain.collection(name).insertOne({ _id: `KEEP-${randomUUID()}`, applicationId: "unrelated-applicant" });
+  }
   await domain.collection("messages").insertOne({ _id: `MSG-${randomUUID()}`, applicationId, body: "hello" });
   await domain.collection("projects").insertOne({ _id: `PRJ-${randomUUID()}`, name: "Kept", team: [applicationId, "someone-else"] });
   await expect(domain.execute("applicant.erase", { applicationId, confirmEmail: "wrong@example.test" }, admin, key())).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   await expect(domain.execute("applicant.erase", { applicationId, confirmEmail: email }, recruiter, key())).rejects.toMatchObject({ code: "FORBIDDEN" });
   const result = await domain.execute("applicant.erase", { applicationId, confirmEmail: email.toUpperCase() }, admin, key()) as any;
   expect(result.erased).toBe(true);
-  for (const name of ["applications", "accounts", "messages", "notifications", "outbox", "sessions"]) {
+  for (const name of ["applications", "accounts", "messages", "notifications", "outbox", "sessions", "reviews", "checkins", "feedback", "resource_progress"]) {
     expect(await domain.collection(name).countDocuments({ $or: [{ _id: applicationId }, { applicationId }, { email }, { "payload.to": email }, { userId: account.id }] })).toBe(0);
+  }
+  for (const name of ["reviews", "checkins", "feedback", "resource_progress"]) {
+    expect(await domain.collection(name).countDocuments({ applicationId: "unrelated-applicant" })).toBe(1);
   }
   expect((await domain.collection("projects").findOne({ name: "Kept" }))?.team).toEqual(["someone-else"]);
   const audit = await domain.collection("staff_audit").findOne({ action: "applicant.erased", targetId: applicationId });

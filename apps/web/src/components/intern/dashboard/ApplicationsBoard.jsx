@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { RowMenu } from "./DashboardUI";
 import { Video } from "lucide-react";
 import { useInternQuery } from "../useInternQuery";
 import { BOARD_COLUMNS, canMoveCard } from "@/lib/intern/board.mjs";
@@ -10,7 +11,7 @@ import { internRoleLabel, internScheduleLabel } from "@/lib/intern/opportunities
 
 const PER_COLUMN = 20;
 
-function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, onMove, refreshKey }) {
+function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, onMove, onDelete, refreshKey }) {
   const query = useInternQuery("application.list", { ...queryParams, status, page: 1, pageSize: PER_COLUMN, sortField: "appliedOn", sortDirection: "desc", refreshKey });
   const items = query.data?.items || [];
   const total = query.data?.total ?? 0;
@@ -33,6 +34,7 @@ function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, o
             onDragEnd={() => onDragStart(null)}
           >
             <Link href={`/intern/dashboard/applications/${application.id}`} className={styles.cardName}>{application.name}</Link>
+            {isAdmin && onDelete && <RowMenu items={[{ label: "Delete application", danger: true, onClick: () => onDelete(application) }]} />}
             <small>{application.program}{application.hasVideo ? <span className={styles.video}><Video size={11} aria-hidden="true" /> video</span> : null}</small>
             <small>{internRoleLabel(application.roleId)} · {internScheduleLabel(application.schedule)}</small>
             {typeof application.score === "number" && <small>Score {application.score.toFixed(1)}</small>}
@@ -54,7 +56,7 @@ function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, o
 }
 
 /** Kanban view of the pipeline. Moves use the normal status update and its rules. */
-export default function ApplicationsBoard({ queryParams, isAdmin, commands, notify, onChanged }) {
+export default function ApplicationsBoard({ queryParams, isAdmin, commands, notify, onChanged, onDelete }) {
   const [dragging, setDragging] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   async function move(application, status) {
@@ -69,7 +71,7 @@ export default function ApplicationsBoard({ queryParams, isAdmin, commands, noti
     <div className={styles.board}>
       {BOARD_COLUMNS.map((status) => (
         <Column key={status} status={status} queryParams={queryParams} isAdmin={isAdmin} dragging={dragging} refreshKey={refreshKey}
-          onDragStart={setDragging} onMove={move}
+          onDragStart={setDragging} onMove={move} onDelete={onDelete}
           onDrop={(next) => { const card = dragging; setDragging(null); if (card) void move(card, next); }} />
       ))}
     </div>

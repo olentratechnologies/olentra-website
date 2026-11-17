@@ -10,7 +10,7 @@ import styles from "./applicant.module.css";
  * Admin-only: permanently erases an applicant. The admin types the
  * applicant's email to confirm, because this can't be undone.
  */
-export default function EraseApplicantPanel({ application, commands, notify }) {
+export default function EraseApplicantPanel({ application, commands, notify, onDeleted, onBusyChange }) {
   const router = useRouter();
   const [confirmEmail, setConfirmEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,23 +21,25 @@ export default function EraseApplicantPanel({ application, commands, notify }) {
     event.preventDefault();
     if (!matches || busy) return;
     setBusy(true);
+    onBusyChange?.(true);
     setError("");
     try {
       const result = await commands.eraseApplicant(application.id, confirmEmail.trim());
       if (!result.ok) { setError(typeof result.error === "string" ? result.error : result.error?.message || "Could not erase this applicant."); return; }
       notify("The applicant's data was permanently erased.");
-      router.replace("/intern/dashboard/applications");
+      if (onDeleted) onDeleted(application.id);
+      else router.replace("/intern/dashboard/applications");
     } catch {
       setError("Could not erase this applicant. Please try again.");
-    } finally { setBusy(false); }
+    } finally { setBusy(false); onBusyChange?.(false); }
   }
   return <Panel>
-    <h2 className={styles.panelHeading}>Erase applicant data</h2>
-    <p>Permanently deletes this application, the applicant’s account, files, messages and internship records. Use this when the applicant asks for their data to be removed. It can’t be undone, and active interns must be completed or dropped first.</p>
+    <h2 className={styles.panelHeading}>Delete application</h2>
+    <p>Permanently deletes this application, the applicant’s account, files, messages and internship records. It can’t be undone, and active interns must be completed or dropped first.</p>
     <form className={styles.recoveryForm} onSubmit={erase}>
       <label className={common.field}>Type {application.email} to confirm<input type="email" required value={confirmEmail} onChange={event => setConfirmEmail(event.target.value)} autoComplete="off" spellCheck={false}/></label>
       {error && <p role="alert">{error}</p>}
-      <Button type="submit" variant="danger" disabled={!matches || busy}>{busy ? "Erasing…" : "Erase permanently"}</Button>
+      <Button type="submit" variant="danger" disabled={!matches || busy}>{busy ? "Deleting…" : "Delete permanently"}</Button>
     </form>
   </Panel>;
 }

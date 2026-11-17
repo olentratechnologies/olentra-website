@@ -117,13 +117,13 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f6fb" style="font-family:Arial,Helvetica,sans-serif;background:#f3f6fb;padding:20px 12px;">
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;width:100%;max-width:640px;background:#ffffff;border:1px solid #e4eaf3;border-radius:2px;">
-        <tr><td align="center" style="font-family:Arial,Helvetica,sans-serif;padding:20px 24px 0;border-bottom:2px solid #2563eb;">
+        <tr><td align="center" bgcolor="#10265f" style="font-family:Arial,Helvetica,sans-serif;padding:20px 24px 0;background-color:#10265f;border-bottom:2px solid #2563eb;">
           <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;">
             <tr>
               <td width="52" valign="middle" style="font-family:Arial,Helvetica,sans-serif;width:52px;padding:0 0 16px;">
                 <a href="https://www.olentratechnologies.com" style="font-family:Arial,Helvetica,sans-serif;text-decoration:none;"><img src="https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png" width="40" height="40" alt="Olentra Technologies" style="display:block;width:40px;height:40px;border:0;"></a>
               </td>
-              <td valign="middle" style="font-family:Arial,Helvetica,sans-serif;padding:0 0 16px;font-size:20px;line-height:1.25;font-weight:700;color:#0f172a;">Olentra Technologies</td>
+              <td valign="middle" style="font-family:Arial,Helvetica,sans-serif;padding:0 0 16px;font-size:20px;line-height:1.25;font-weight:700;color:#ffffff;">Olentra Technologies</td>
             </tr>
           </table>
         </td></tr>
