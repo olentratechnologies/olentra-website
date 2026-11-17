@@ -13,3 +13,6 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
+
+# Generated PDF/email previews used for visual verification
+/output/pdf/
