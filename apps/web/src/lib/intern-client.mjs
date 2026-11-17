@@ -82,7 +82,7 @@ export async function refreshInternSession() {
 export function forgetInternToken() { accessToken = null; clearRefreshAttempt(); }
 
 export class InternClient {
-  constructor({ onChange, onConnection, onSessionChanged }) { this.onChange = onChange; this.onConnection = onConnection; this.onSessionChanged = onSessionChanged; this.pending = new Map(); this.retryKeys = new Map(); this.closed = false; this.socket = null; this.opening = null; this.authenticatedToken = null; this.authenticatedAccount = null; this.insightsListeners = new Set(); this.staffListeners = new Set(); }
+  constructor({ onChange, onConnection, onSessionChanged, publicOnly = false }) { this.publicOnly = publicOnly; this.onChange = onChange; this.onConnection = onConnection; this.onSessionChanged = onSessionChanged; this.pending = new Map(); this.retryKeys = new Map(); this.closed = false; this.socket = null; this.opening = null; this.authenticatedToken = null; this.authenticatedAccount = null; this.insightsListeners = new Set(); this.staffListeners = new Set(); }
   /** Staff-only live events, e.g. `intern.application_created` with the applicant's name and track. */
   addStaffListener(listener) { this.staffListeners.add(listener); return () => this.staffListeners.delete(listener); }
   /** Receives pushed public insights (`intern.insights`) and viewer-count (`intern.insights.viewers`) events. */
@@ -96,7 +96,7 @@ export class InternClient {
       const socket = new WebSocket(url); this.socket = socket;
       let settled = false;
       socket.onopen = async () => {
-        try { if (accessToken) { try { const token=accessToken; this.authenticatedAccount=await this.send("auth.authenticate", { token }); this.authenticatedToken=token; } catch (error) { if (error.code !== "UNAUTHENTICATED") throw error; try { await refreshInternSession(); const token=accessToken; this.authenticatedAccount=await this.send("auth.authenticate", { token }); this.authenticatedToken=token; } catch (refreshError) { if (refreshError.code !== "UNAUTHENTICATED") throw refreshError; forgetInternToken(); await this.send("auth.authenticate", { token: null }); this.authenticatedToken=null; this.authenticatedAccount=null; } } } settled = true; this.onConnection?.(true); resolve(); this.onChange?.("connected"); }
+        try { if (!this.publicOnly && accessToken) { try { const token=accessToken; this.authenticatedAccount=await this.send("auth.authenticate", { token }); this.authenticatedToken=token; } catch (error) { if (error.code !== "UNAUTHENTICATED") throw error; try { await refreshInternSession(); const token=accessToken; this.authenticatedAccount=await this.send("auth.authenticate", { token }); this.authenticatedToken=token; } catch (refreshError) { if (refreshError.code !== "UNAUTHENTICATED") throw refreshError; forgetInternToken(); await this.send("auth.authenticate", { token: null }); this.authenticatedToken=null; this.authenticatedAccount=null; } } } settled = true; this.onConnection?.(true); resolve(); this.onChange?.("connected"); }
         catch (error) { settled = true; reject(error); socket.close(); }
       };
       socket.onmessage = (event) => {
@@ -149,7 +149,7 @@ export class InternClient {
       let value;
       try { value = await this.send(method, params, key); }
       catch (error) {
-        if (error.code === "UNAUTHENTICATED" && accessToken) { await refreshInternSession(); await this.authenticate(); value = await this.send(method, params, key); }
+        if (!this.publicOnly && error.code === "UNAUTHENTICATED" && accessToken) { await refreshInternSession(); await this.authenticate(); value = await this.send(method, params, key); }
         else if (!error.code && write) { await this.connect(); value = await this.send(method, params, key); }
         else throw error;
       }
@@ -162,6 +162,6 @@ export class InternClient {
       throw error;
     }
   }
-  async authenticate() { await this.connect(); const token=accessToken; if(this.authenticatedToken===token)return this.authenticatedAccount; const account=await this.send("auth.authenticate", { token }); this.authenticatedToken=token; this.authenticatedAccount=account; return account; }
+  async authenticate() { if (this.publicOnly) return null; await this.connect(); const token=accessToken; if(this.authenticatedToken===token)return this.authenticatedAccount; const account=await this.send("auth.authenticate", { token }); this.authenticatedToken=token; this.authenticatedAccount=account; return account; }
   close() { this.closed = true; this.retryKeys.clear(); clearTimeout(this.retryTimer); this.socket?.close(); }
 }

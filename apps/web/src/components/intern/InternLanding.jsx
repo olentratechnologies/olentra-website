@@ -182,7 +182,7 @@ function BackgroundWaves() {
 }
 
 export default function InternLanding() {
-  const { commands, ready, sessionReady, connected, data, account, signOut } = useInternship();
+  const { commands, ready, sessionReady, connected, data } = useInternship();
   const { features, ready: featuresReady } = useSiteFeatures();
   const opportunities = data.opportunities || INTERNSHIP_OPPORTUNITIES;
   const internshipDuration = data.settings.duration || opportunities.duration || INTERNSHIP_OPPORTUNITIES.duration;
@@ -212,7 +212,6 @@ export default function InternLanding() {
   const [githubError, setGithubError] = useState("");
   const [videoError, setVideoError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [alreadyAppliedEmail, setAlreadyAppliedEmail] = useState("");
   const [savedApplication, setSavedApplication] = useState(null);
@@ -344,24 +343,8 @@ export default function InternLanding() {
     clearApplyDraft();
   }
 
-  async function signOutToApply() {
-    if (signingOut) return;
-    setSigningOut(true);
-    try {
-      await signOut();
-      uploadedResume.current = null;
-      setSubmitError("");
-      setAlreadyAppliedEmail("");
-    } catch { setSubmitError("Could not sign out. Please try again."); }
-    finally { setSigningOut(false); }
-  }
-
   async function submitPreview(event) {
     event.preventDefault();
-    if (account) {
-      setSubmitError("Sign out of the current account before submitting a new internship application. Your form entries will stay here.");
-      return;
-    }
     if (!canApplyRef.current) {
       setSubmitError("New internship applications are currently closed.");
       return;
@@ -420,7 +403,7 @@ export default function InternLanding() {
     setPreviewComplete(false);
     setShowValidation(false);
     try {
-      const attachment = uploadedResume.current || await saveAttachment(file, "resume");
+      const attachment = uploadedResume.current || await saveAttachment(file, "resume", { publicUpload: true });
       uploadedResume.current = attachment;
       if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) {
         setSubmitError("That track is no longer accepting applications. Choose an available track.");
@@ -1067,13 +1050,6 @@ export default function InternLanding() {
                     )}
                   </div>
                 </fieldset>
-                {account && <div className={styles.applicationError} role="status">
-                  <div>
-                    <strong>You’re signed in as {account.email || account.name}.</strong>
-                    <p>{account.role === "company" ? "This browser is using a staff session. The email entered in the application is separate from this signed-in account." : "You already have an active account session."} Sign out before submitting a new application. Your form entries will stay here.</p>
-                    <button type="button" className={styles.primaryButton} disabled={signingOut} onClick={() => void signOutToApply()}>{signingOut ? "Signing out…" : "Sign out to apply"}</button>
-                  </div>
-                </div>}
                 <button
                   ref={submitButtonRef}
                   className={`${styles.primaryButton} ${styles.submitButton}`}
@@ -1081,8 +1057,6 @@ export default function InternLanding() {
                   disabled={
                     !ready ||
                     !sessionReady ||
-                    Boolean(account) ||
-                    signingOut ||
                     submitting ||
                     launchPhase === "launching"
                   }
@@ -1148,10 +1122,10 @@ export default function InternLanding() {
                       ) : (
                         <>
                           {submitError}
-                          {!account && <Link href="/intern/login?role=intern">
+                          <Link href="/intern/login?role=intern">
                             Already applied? Sign in to your account{" "}
                             <ArrowRight size={12} />
-                          </Link>}
+                          </Link>
                         </>
                       )}
                     </div>

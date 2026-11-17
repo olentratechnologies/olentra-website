@@ -2,13 +2,13 @@ import { internEndpoint, internToken } from "./intern-client.mjs";
 const MEBIBYTE = 1024 * 1024;
 function fileName(value) { return String(value || "").split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g, "").trim(); }
 async function result(response) { const body = await response.json().catch(()=>null); if (!response.ok || !body?.ok) throw new Error(body?.error?.message || "The internship service is unavailable. Please try again."); return body.data; }
-export async function saveAttachment(file, kind="resume") {
+export async function saveAttachment(file, kind="resume", { publicUpload = false } = {}) {
   if (!file || typeof file.name !== "string" || typeof file.size !== "number") throw new Error("Choose a file to upload.");
   const name=fileName(file.name), resume=kind==="resume", maximum=(resume?5:10)*MEBIBYTE;
   if (!name || !file.size || file.size>maximum || (resume && !/\.(pdf|doc|docx)$/i.test(name))) throw new Error(resume ? "Choose a PDF, DOC, or DOCX resume up to 5 MB." : "Choose a non-empty work attachment up to 10 MB.");
   // HTTP headers may not contain non-Latin characters; keep a safe display name.
   const headerName=name.replace(/[^\x20-\x7e]/g,"_");
-  return result(await fetch(`${internEndpoint()}/intern/files`,{method:"POST",headers:{"Content-Type":file.type || "application/octet-stream","X-File-Name":headerName,"X-File-Kind":resume?"resume":"work",...(internToken()?{Authorization:`Bearer ${internToken()}`}:{})},body:file}));
+  return result(await fetch(`${internEndpoint()}/intern/files`,{method:"POST",headers:{"Content-Type":file.type || "application/octet-stream","X-File-Name":headerName,"X-File-Kind":resume?"resume":"work",...(!publicUpload && internToken()?{Authorization:`Bearer ${internToken()}`}:{})},credentials:publicUpload?"omit":"same-origin",body:file}));
 }
 function triggerDownload(blob,name){ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=fileName(name)||"olentra-attachment";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000); }
 export async function downloadAttachment(id){if(!id)throw new Error("This record does not have an attachment.");const response=await fetch(`${internEndpoint()}/intern/files/${encodeURIComponent(id)}`,{headers:{...(internToken()?{Authorization:`Bearer ${internToken()}`}:{})}});if(!response.ok){await result(response);return}const blob=await response.blob(),name=response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] || "olentra-attachment";triggerDownload(blob,name);return{id,name,type:blob.type,size:blob.size};}

@@ -188,3 +188,29 @@ test("connection and change events are distinguishable for snapshot coalescing",
   assert.deepEqual(reasons, ["connected", "changed"]);
   client.close();
 });
+
+test("public application and resume upload leave a signed-in staff session intact", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, json: async () => ({ ok: true, data: url.endsWith("login") ? { token: "staff-session" } : { id: "resume", accessToken: "upload-proof" } }) };
+  };
+  const client = new InternClient({ publicOnly: true });
+  try {
+    await internAuth("login", { email: "admin@example.test", password: "test" });
+    const methods = [];
+    handler = (socket, request) => { methods.push(request.method); socket.reply(request, { ok: true, data: { received: true } }); };
+    assert.deepEqual(await client.request("application.submit", { email: "candidate@example.test" }, true), { received: true });
+    assert.deepEqual(methods, ["application.submit"]);
+    assert.equal(await client.authenticate(), null);
+    const { saveAttachment } = await import("../src/lib/intern-attachments.mjs");
+    const file = { name: "resume.pdf", size: 100, type: "application/pdf" };
+    await saveAttachment(file, "resume", { publicUpload: true });
+    assert.equal(requests.at(-1).options.headers.Authorization, undefined);
+    assert.equal(requests.at(-1).options.credentials, "omit");
+    await saveAttachment(file, "work");
+    assert.equal(requests.at(-1).options.headers.Authorization, "Bearer staff-session");
+    assert.equal(internToken(), "staff-session");
+  } finally { client.close(); forgetInternToken(); globalThis.fetch = originalFetch; }
+});
