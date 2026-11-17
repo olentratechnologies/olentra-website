@@ -84,40 +84,63 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
   <meta name="supported-color-schemes" content="light">
   <title>${escapeHtml(subject)}</title>
 </head>
-<body style="margin:0;padding:0;background:#f3f6fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#14213d;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
+<body style="margin:0;padding:0;background:#f3f6fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;color:#14213d;">
+  <div style="display:none;font-size:1px;color:#f3f6fb;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+    ${escapeHtml(preheader)}
+    &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+  </div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f6fb" style="background:#f3f6fb;padding:36px 14px;">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:620px;background:#ffffff;border:1px solid #e4eaf3;border-radius:18px;overflow:hidden;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:620px;background:#ffffff;border:1px solid #e4eaf3;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(15,23,42,0.03);">
         <tr><td style="height:5px;background:#2563eb;font-size:1px;line-height:1px;">&nbsp;</td></tr>
-        <tr><td style="padding:25px 34px 22px;">
-          <img src="https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png" width="158" alt="Olentra Technologies" style="display:block;width:158px;max-width:100%;height:auto;border:0;">
+        <tr><td style="padding:28px 36px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td align="left" style="vertical-align:middle;">
+                <img src="https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png" width="158" alt="Olentra Technologies" style="display:block;width:158px;max-width:100%;height:auto;border:0;">
+              </td>
+              <td align="right" style="vertical-align:middle;">
+                <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#8a96a8;">Official Notice</span>
+              </td>
+            </tr>
+          </table>
         </td></tr>
-        <tr><td style="padding:0 34px;"><div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
-        <tr><td style="padding:30px 34px 12px;">
-          <p style="margin:0 0 11px;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:#2563eb;">${escapeHtml(eyebrow)}</p>
-          <h1 style="margin:0;font-size:28px;line-height:1.22;font-weight:700;letter-spacing:-.025em;color:#14213d;">${escapeHtml(heading)}</h1>
+        <tr><td style="padding:0 36px;"><div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
+        <tr><td style="padding:28px 36px 10px;">
+          <p style="margin:0 0 10px;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#2563eb;">${escapeHtml(eyebrow)}</p>
+          <h1 style="margin:0;font-size:26px;line-height:1.24;font-weight:700;letter-spacing:-.025em;color:#0f172a;">${escapeHtml(heading)}</h1>
         </td></tr>
-        <tr><td style="padding:8px 34px 32px;">${content}</td></tr>
-        <tr><td style="padding:0 34px;"><div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
-        <tr><td style="padding:20px 34px 25px;">
-          <p style="margin:0;font-size:12px;line-height:1.65;color:#718096;">Olentra Technologies · Building intelligent systems<br>Automated message about your internship application or program. Please do not reply to this email.</p>
+        <tr><td style="padding:8px 36px 32px;">${content}</td></tr>
+        <tr><td style="padding:0 36px;"><div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
+        <tr><td style="padding:24px 36px 26px;background:#fafbfd;">
+          <p style="margin:0 0 5px;font-size:12px;line-height:1.55;font-weight:600;color:#334155;">Olentra Technologies Pvt. Ltd. · Building intelligent systems</p>
+          <p style="margin:0 0 8px;font-size:11px;line-height:1.55;color:#64748b;">CIN: U72900TG2023PTC176542 · Bengaluru &amp; Hyderabad, India · <a href="https://www.olentratechnologies.com" style="color:#2563eb;text-decoration:none;">www.olentratechnologies.com</a></p>
+          <p style="margin:0 0 5px;font-size:11px;line-height:1.55;color:#718096;">Automated message about your internship application or program. Please do not reply to this email.</p>
+          <p style="margin:0;font-size:11px;line-height:1.55;color:#94a3b8;">Security notice: Olentra will never request fee payments, banking credentials, or your account password via email.</p>
         </td></tr>
       </table>
-      <p style="margin:16px 0 0;font-size:11px;line-height:1.5;color:#8a96a8;">© Olentra Technologies Pvt. Ltd.</p>
+      <p style="margin:16px 0 0;font-size:11px;line-height:1.5;color:#8a96a8;">© 2026 Olentra Technologies Pvt. Ltd. All rights reserved.</p>
     </td></tr>
   </table>
 </body>
 </html>`;
-  const emailButton = (label: string, href: string, background = "#2563eb") =>
-    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 8px;"><tr><td bgcolor="${background}" style="border-radius:8px;background:${background};"><a href="${escapeHtml(href)}" style="display:inline-block;padding:14px 22px;border:1px solid ${background};border-radius:8px;color:#ffffff;text-decoration:none;font-size:14px;line-height:1.2;font-weight:700;">${escapeHtml(label)}</a></td></tr></table>`;
+  const emailButton = (label: string, href: string, background = "#2563eb") => `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 8px;">
+      <tr>
+        <td bgcolor="${background}" style="border-radius:8px;background:${background};">
+          <a href="${escapeHtml(href)}" style="display:inline-block;padding:13px 26px;border:1px solid ${background};border-radius:8px;color:#ffffff;text-decoration:none;font-size:14px;line-height:1.2;font-weight:700;letter-spacing:-0.01em;">${escapeHtml(label)} &rarr;</a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:4px 0 16px;font-size:11px;line-height:1.5;color:#8a96a8;word-break:break-all;">If the button doesn&#39;t work, copy and paste this link into your browser:<br><a href="${escapeHtml(href)}" style="color:#2563eb;text-decoration:underline;">${escapeHtml(href)}</a></p>
+  `;
   const emailPanel = (content: string, tone: "blue" | "neutral" | "green" = "neutral") => {
     const palette = {
       blue: { background: "#f2f7ff", border: "#dce9ff", accent: "#2563eb" },
-      neutral: { background: "#f7f9fc", border: "#e7edf5", accent: "#52627a" },
-      green: { background: "#f0faf5", border: "#d4f0e0", accent: "#16804a" },
+      neutral: { background: "#f8fafc", border: "#e2e8f0", accent: "#475569" },
+      green: { background: "#f0faf5", border: "#d4f0e0", accent: "#16a34a" },
     }[tone];
-    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${palette.background}" style="margin:20px 0;background:${palette.background};border:1px solid ${palette.border};border-radius:12px;"><tr><td style="padding:18px 20px;border-left:3px solid ${palette.accent};">${content}</td></tr></table>`;
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${palette.background}" style="margin:20px 0;background:${palette.background};border:1px solid ${palette.border};border-radius:10px;"><tr><td style="padding:16px 20px;border-left:4px solid ${palette.accent};">${content}</td></tr></table>`;
   };
 
   type Attachment = { filename: string; content: string | Buffer; contentType: string };
@@ -173,8 +196,8 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       buttons.push({ label: "Open candidate portal", url: options.magicLinkUrl });
       details.push("Single-use link · Expires in 24 hours", "This single-use link expires in 24 hours. If you didn’t request this link, you can safely ignore this email.");
     }
-    const content = `<p style="margin:0;font-size:15px;line-height:1.75;color:#43536e;white-space:pre-wrap;">${escapeHtml(body)}</p>`
-      + (details.length ? emailPanel(details.map(item => `<p style="margin:5px 0;font-size:14px;line-height:1.65;">${escapeHtml(item)}</p>`).join("")) : "")
+    const content = `<p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#334155;white-space:pre-wrap;">${escapeHtml(body)}</p>`
+      + (details.length ? emailPanel(details.map(item => `<p style="margin:4px 0;font-size:14px;line-height:1.65;color:#1e293b;">${escapeHtml(item)}</p>`).join(""), ["selected", "offer-accepted", "certificate"].includes(id) ? "green" : "neutral") : "")
       + buttons.filter(button => button.url).map(button => emailButton(button.label, button.url)).join("");
     const html = emailShell({ subject, preheader: body.slice(0, 180), eyebrow: "Olentra Careers · Internship program", heading: definition.name, content });
     const text = [body, ...details, ...buttons.filter(button => button.url).map(button => `${button.label}: ${button.url}`), "The Olentra Team"].join("\n\n");
@@ -217,48 +240,20 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       const subject = "Reset your Olentra Internship Account Password";
       const text = `Hi ${name},\n\nWe received a request to reset the password for your Olentra Internship account.\n\nClick the link below to set a new password:\n\n${resetUrl}\n\nThis secure link is valid for 1 hour and can be used once.\n\nIf you did not request this password reset, you can safely ignore this email; your password will remain unchanged.\n\nBest regards,\nThe Olentra Team`;
 
-      const safe = { name: escapeHtml(String(name)), resetUrl: escapeHtml(String(resetUrl)), subject: escapeHtml(String(subject)) };
-      const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${safe.subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #0c0f17; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f1f5f9;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0c0f17; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; background-color: #131926; border: 1px solid #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-          <tr>
-            <td style="padding: 32px 32px 20px; text-align: left; border-bottom: 1px solid #1e293b; background: linear-gradient(135deg, rgba(37,99,235,0.1) 0%, rgba(15,23,42,0) 100%);">
-              <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #60a5fa; display: block; margin-bottom: 8px;">Olentra Careers · Password Recovery</span>
-              <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #ffffff;">Reset your Account Password</h1>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 32px;">
-              <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">Hi <strong>${safe.name}</strong>,</p>
-              <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #cbd5e1;">We received a request to reset the password for your Olentra Internship account. Click the button below to choose a new password:</p>
-              
-              <div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin: 0 0 28px; text-align: center;">
-                <a href="${safe.resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; text-decoration: none; padding: 13px 28px; font-size: 14px; font-weight: 600; border-radius: 8px; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Reset My Password &rarr;</a>
-                <p style="margin: 16px 0 0; font-size: 11px; color: #64748b;">This secure link is valid for 1 hour.</p>
-              </div>
-
-              <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Or copy and paste this link into your browser:</p>
-              <p style="margin: 0 0 24px; font-size: 12px; word-break: break-all; color: #60a5fa;">${safe.resetUrl}</p>
-
-              <hr style="border: none; border-top: 1px solid #1e293b; margin: 24px 0;" />
-              <p style="margin: 0; font-size: 12px; color: #64748b;">If you didn't request a password reset, you can safely ignore this email; your password will remain unchanged.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+      const safeName = escapeHtml(String(name));
+      const content = `
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#334155;">Hi <strong>${safeName}</strong>,</p>
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#334155;">We received a request to reset the password for your Olentra Internship account. Click the button below to choose a new password:</p>
+        ${emailButton("Reset My Password", resetUrl)}
+        ${emailPanel("<p style=\"margin:0;font-size:13px;line-height:1.6;color:#475569;\"><strong>Security note:</strong> This single-use link is valid for 1 hour. If you did not request a password reset, you can safely ignore this email; your password will remain unchanged.</p>", "blue")}
+      `;
+      const html = emailShell({
+        subject,
+        preheader: "Reset your Olentra Internship account password. This secure link is valid for 1 hour.",
+        eyebrow: "Olentra Careers · Password Recovery",
+        heading: "Reset your Account Password",
+        content,
+      });
 
       return sendEmail(to, subject, html, text);
     },
