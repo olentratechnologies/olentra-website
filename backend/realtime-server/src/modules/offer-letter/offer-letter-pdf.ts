@@ -12,6 +12,8 @@ export type OfferLetterDetails = {
   stipendPeriod?: string;
   applicationId: string;
   issueDate?: string;
+  durationLabel?: string;
+  offerVersion?: number;
 };
 
 export function generateOfferLetterPdf(details: OfferLetterDetails): Buffer {

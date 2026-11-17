@@ -18,7 +18,7 @@ afterAll(async () => { if (!connection) return; for (const { name } of await con
 
 test("application through approved work and one certificate, with ownership and replay protections", async () => {
   await call("program.configure", { programId: "explorer", fee: 0, stipend: 100, enabled: true });
-  await call("settings.update", { patch: { programEnabled: true } });
+  await call("settings.update", { patch: { programEnabled: true, durationSpec:{quantity:1,unit:"months"} } });
   const fileToken = "test-token";
   await domain.collection("files").insertOne({ _id: "resume", kind: "resume", status: "ready", accessTokenHash: createHash("sha256").update(fileToken).digest("hex") });
   await call("application.submit", { name: "Test Intern", email: "life@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: fileToken }, null);
@@ -65,7 +65,8 @@ test("application through approved work and one certificate, with ownership and 
   expect(withNote.notes[0].author).toBe(staff.name);
   expect((await call("application.get", { id: application.id }, intern)).notes).toBeUndefined();
   await expect(call("offer.send", { applicationId: application.id, startOn: "2026-02-31", endOn: "2026-12-01", stipend: 50 })).rejects.toBeInstanceOf(DomainError);
-  const offerTerms = { applicationId: application.id, startOn: "2026-11-01", endOn: "2026-12-01", stipend: 50 };
+  const preview = await call("offer.preview", {applicationId:application.id,startOn:"2030-11-24"});
+  const offerTerms = { ...preview, stipend: 50 };
   const offerKey = key();
   await call("offer.send", offerTerms, staff, offerKey);
   await call("offer.send", offerTerms, staff, offerKey);
@@ -73,8 +74,8 @@ test("application through approved work and one certificate, with ownership and 
   await domain.processOutbox();
   expect(statusEmails).toContain("offer");
   expect(statusEmails.filter(status => status === "offer")).toHaveLength(1);
-  await expect(call("offer.accept", { applicationId: application.id }, other)).rejects.toBeInstanceOf(DomainError);
-  await call("offer.accept", { applicationId: application.id }, intern);
+  await expect(call("offer.accept", { applicationId: application.id, version:1 }, other)).rejects.toBeInstanceOf(DomainError);
+  await call("offer.accept", { applicationId: application.id, version:1 }, intern);
   const acceptedActivity = await domain.collection("activity").findOne({ title: "Internship offer accepted", applicationId: application.id });
   expect(acceptedActivity?.detail).toContain("Test Intern accepted the Tech Explorer offer");
   expect(acceptedActivity?.detail).not.toBe(acceptedActivity?.title);

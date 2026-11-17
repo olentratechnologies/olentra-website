@@ -85,12 +85,13 @@ export function buildOfferLetterPdfBytes(details) {
   path('32 723 59 4 re',blue);
   text(`Ref: OL-OFR-${clean(details.applicationId||'intern').replace(/^OL-/,'').slice(0,18)}`,32,696,10,true,'0.02 0.04 0.07');
   panel(425,687,143,25,9);icon('calendar',435,693,14,navy);text(`Issued: ${date(details.issueDate||new Date().toISOString())}`,457,695,10,false,'0.02 0.04 0.07');
-  let y=672;
+  if(details.durationLabel)text(`Duration: ${details.durationLabel} | Offer version: ${details.offerVersion||1}`,32,682,8,false,gray);
+  let y=details.durationLabel?670:672;
   y=para(`To: ${details.name||'Candidate'}`,32,y,530,11.5,true,navy);
   icon('mail',33,y-10,13,navy);y=para(details.email,57,y-7,506,10,false,'0.02 0.04 0.07');
   if(details.college)y=para(details.college,57,y-3,506,9.5);
   icon('file-text',33,y-13,13,navy);y=para(`Application ID: ${details.applicationId||'Pending'}`,57,y-10,506,10,false,'0.02 0.04 0.07');
-  y-=9;
+  y-=5;
   const intro='We are pleased to offer you an internship at Olentra Technologies Pvt. Ltd. The details of your offer are outlined below.';
   const greetingHeight=wrap(`Dear ${details.name||'Candidate'},`,467,12).length*15.84;
   const introHeight=greetingHeight+wrap(intro,467,10.5).length*13.86+20;

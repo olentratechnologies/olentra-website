@@ -1,3 +1,4 @@
+import { parseDuration, durationLabel, legacyDuration } from "../modules/programs/schedule.mjs";
 import { isCurrentInterviewEmail } from "../modules/interviews/email-delivery";
 import { createCommunications } from "../modules/communications/communications.service";
 import { createLifecycle } from "../modules/lifecycle/lifecycle.service";
@@ -138,14 +139,14 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     opportunities: typeof INTERNSHIP_OPPORTUNITIES;
     organization: { name: string; legalName: string; website: string };
     programs: { id: string; name: string; fee: number | null; stipend: number | null; enabled: boolean }[];
-    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; rubric: Criterion[]; onboardingDocuments: { id: string; label: string; required: boolean }[]; emailNotifications: boolean; integrations: Record<string, unknown>; applicationDeadline: string | null; duration: string };
+    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; rubric: Criterion[]; onboardingDocuments: { id: string; label: string; required: boolean }[]; emailNotifications: boolean; integrations: Record<string, unknown>; applicationDeadline: string | null; duration: string; durationSpec: any; scheduleRevision: string };
   };
   let cachedPublicData: PublicData | null = null;
   function invalidatePublicData() { cachedPublicData = null; }
   async function fetchPublicData(): Promise<PublicData> {
     const [rows, config] = await Promise.all([programs.find({}).sort({ _id: 1 }).toArray(), settings.findOne({ _id: "program" })]);
     const duration = normalizeInternshipDuration(config?.duration);
-    return { opportunities: { ...INTERNSHIP_OPPORTUNITIES, duration }, organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, rubric: Array.isArray(config?.rubric) && config.rubric.length ? config.rubric : DEFAULT_RUBRIC, onboardingDocuments: Array.isArray(config?.onboardingDocuments) ? config.onboardingDocuments : [], emailNotifications: false, integrations: {}, applicationDeadline: normalizeDeadline(config?.applicationDeadline), duration } };
+    return { opportunities: { ...INTERNSHIP_OPPORTUNITIES, duration }, organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, rubric: Array.isArray(config?.rubric) && config.rubric.length ? config.rubric : DEFAULT_RUBRIC, onboardingDocuments: Array.isArray(config?.onboardingDocuments) ? config.onboardingDocuments : [], durationSpec:parseDuration(config?.durationSpec||config?.duration), scheduleRevision:String(config?.scheduleRevision||config?.duration||""), emailNotifications: false, integrations: {}, applicationDeadline: normalizeDeadline(config?.applicationDeadline), duration } };
   }
   /**
    * What anonymous visitors and interns may see: tracks and whether they are
@@ -199,30 +200,47 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     } finally { await session.endSession(); }
   }
   /** Builds and sends one status email; throws when it can't be delivered (the outbox retries). */
-  async function deliverApplicantStatus(applicationId: string, status: ApplicantStatusNotice["status"], certificateNumber?: string) {
+  async function deliverApplicantStatus(applicationId: string, status: ApplicantStatusNotice["status"], certificateNumber?: string, offerSnapshot?: string) {
     if (!activeHooks?.sendApplicantStatus) throw new Error("No email sender is configured.");
     {
-      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1, college: 1, roleId: 1 } });
+      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1, college: 1, roleId: 1, duration: 1 } });
       if (!application) throw new Error(`Application ${applicationId} was not found after its status changed.`);
+      const currentOffer = await collection("offers").findOne({applicationId});
+      let pinned = offerSnapshot ? JSON.parse(offerSnapshot) : null;
+      if(!pinned && currentOffer?.currentVersion>1 && ["offer","offer-accepted"].includes(status)) {
+        if(status==="offer")return {suppressed:true};
+        pinned=await collection("offer_versions").findOne({applicationId,version:1});
+      }
+      if(pinned && ["offer","offer-revised"].includes(status)) {
+        const expected=currentOffer?.pendingRevision?.version || currentOffer?.currentVersion || 1;
+        if(Number(expected)!==Number(pinned.version))return {suppressed:true};
+        const deadline=currentOffer?.pendingRevision?.expiresOn||currentOffer?.expiresOn;
+        if(pinned.expiresOn && pinned.expiresOn!==deadline)return {suppressed:true};
+        if(status==="offer"&&currentOffer?.status!=="Sent")return {suppressed:true};
+        if(status==="offer-revised"&&currentOffer?.status==="Accepted"&& !currentOffer.pendingRevision)return {suppressed:true};
+      }
+      const schedule = pinned || currentOffer;
       if (status === "rejected") {
         const preferences = await settings.findOne({ _id: "program" }, { projection: { rejectionEmails: 1 } });
         if (preferences?.rejectionEmails !== true) return;
       }
       let pdfAttachment: { filename: string; content: Buffer; contentType: string } | undefined;
-      if (status === "offer-accepted") {
-        const offer = await collection("offers").findOne({ applicationId, status: "Accepted" });
+      if (["offer-accepted","offer-revision-accepted"].includes(status)) {
+        const offer = schedule;
         const pdf = generateOfferLetterPdf({
-          name: str(application.name),
-          email: str(application.email),
-          college: str(application.college || ""),
-          program: str(application.program),
-          roleTitle: application.roleId ? internRoleLabel(application.roleId) : "Engineering Intern",
+          name: str(offer?.name||application.name),
+          email: str(offer?.email||application.email),
+          college: str(offer?.college ?? application.college ?? ""),
+          program: str(offer?.program||application.program),
+          roleTitle: offer?.roleTitle || (application.roleId ? internRoleLabel(application.roleId) : "Engineering Intern"),
+          durationLabel: offer?.durationLabel,
+          offerVersion: offer?.version || offer?.currentVersion,
+          issueDate: offer?.issueDate || offer?.sentOn,
           startOn: offer?.startOn ? str(offer.startOn) : undefined,
           endOn: offer?.endOn ? str(offer.endOn) : undefined,
           stipend: typeof offer?.stipend === "number" ? offer.stipend : 0,
           stipendPeriod: offer?.stipendPeriod ? str(offer.stipendPeriod) : "month",
           applicationId,
-          issueDate: offer?.decidedOn ? new Date(offer.decidedOn).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : undefined,
         });
         pdfAttachment = {
           filename: `Olentra_Offer_Letter_${applicationId.slice(0, 15)}.pdf`,
@@ -231,10 +249,11 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         };
       }
       await activeHooks.sendApplicantStatus({
-        to: str(application.email),
-        name: str(application.name),
-        programName: str(application.program),
+        to: str(schedule?.email||application.email),
+        name: str(schedule?.name||application.name),
+        programName: str(schedule?.program||application.program),
         status,
+        schedule: schedule ? { ...schedule, historical:Boolean(pinned && currentOffer?.currentVersion && Number(currentOffer.currentVersion)!==Number(pinned.version) && !["offer","offer-revised"].includes(status)), durationLabel:schedule.durationLabel||(schedule.duration?durationLabel(schedule.duration):legacyDuration(schedule.startOn,schedule.endOn)), workMode:schedule.workMode||"remote" } : {durationLabel: String((application as any).duration||"To be confirmed" )},
         ...(certificateNumber ? { certificateNumber } : {}),
         ...(pdfAttachment ? { pdfAttachment } : {}),
       });
@@ -662,7 +681,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const { to = "", name = "", programName = "", applicationId = "" } = row.payload;
       if (row.type === "applicationConfirmation") {
         if (!activeHooks?.sendApplicationConfirmation) throw new Error("No email sender is configured.");
-        await activeHooks.sendApplicationConfirmation(to, name, programName, applicationId);
+        const application=await applications.findOne({_id:applicationId});
+        await activeHooks.sendApplicationConfirmation(to, name, programName, applicationId, String(application?.duration||"As described in the program"));
       } else if (row.type === "magicLink") {
         if (!activeHooks?.sendMagicLink) throw new Error("No email sender is configured.");
         const application = await applications.findOne({ _id: applicationId });
@@ -682,7 +702,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const p = row.payload;
         await activeHooks.sendNotice({ to: p.to || "", subject: p.subject || "", heading: p.heading || "", intro: p.intro || "", items: (p.items || "").split("\n").filter(Boolean), ctaLabel: p.ctaLabel || "", ctaPath: p.ctaPath || "/" });
       } else if (row.type === "applicantStatus") {
-        await deliverApplicantStatus(String(row.payload.applicationId), row.payload.status as ApplicantStatusNotice["status"], row.payload.certificateNumber || undefined);
+        return deliverApplicantStatus(String(row.payload.applicationId), row.payload.status as ApplicantStatusNotice["status"], row.payload.certificateNumber || undefined, row.payload.offerSnapshot);
       } else throw new Error(`Unknown outbox type ${String(row.type)}`);
     }, limit);
   }

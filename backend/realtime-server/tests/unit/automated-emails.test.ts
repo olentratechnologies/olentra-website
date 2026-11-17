@@ -18,11 +18,11 @@ function fixture() {
   const transact = async (_key: string, _actor: any, _input: any, run: any) => run(session);
   return { service: () => createTemplates({ collection: collection as any, transact: transact as any }), records, writes, session };
 }
-const options = { to: "intern@example.test", name: "Alex <Kumar>", programName: "Tech Explorer", applicationId: "OL-123", scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/meeting", portalUrl: "https://example.test/intern/portal", magicLinkUrl: "https://example.test/intern/verify?token=one-time", linkedinShareUrl: "https://www.linkedin.com/feed/?shareActive=true", certificateVerifyUrl: "https://example.test/certificates/verify/CERT-123", interviewId: "INTV-123", sequence: 2 };
+const options = { schedule: {durationLabel:"1 calendar month",startOn:"2030-01-24",endOn:"2030-02-23",workMode:"Remote",schedule:"Part-time"}, to: "intern@example.test", name: "Alex <Kumar>", programName: "Tech Explorer", applicationId: "OL-123", scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/meeting", portalUrl: "https://example.test/intern/portal", magicLinkUrl: "https://example.test/intern/verify?token=one-time", linkedinShareUrl: "https://www.linkedin.com/feed/?shareActive=true", certificateVerifyUrl: "https://example.test/certificates/verify/CERT-123", interviewId: "INTV-123", sequence: 2 };
 
-test("all eleven defaults render required links and details, with no portal links before selection", () => {
+test("all fifteen defaults render required links and details, with no portal links before selection", () => {
   const mailer = createInternshipMailer("");
-  expect(AUTOMATED_EMAILS).toHaveLength(11);
+  expect(AUTOMATED_EMAILS).toHaveLength(15);
   for (const definition of AUTOMATED_EMAILS) {
     const template = validateEmailTemplate(definition.id, definition);
     const rendered = mailer.renderAutomated(definition.id, options, template);
@@ -107,4 +107,14 @@ test("previously saved selection copy loses the stock LinkedIn prompt", () => {
   expect(rendered.text).toContain("using the one-time link below.");
   expect(rendered.text).not.toContain("LinkedIn");
   expect(rendered.html).not.toContain(options.linkedinShareUrl);
+});
+
+
+test("confirmed schedule is in both email bodies even when customized text omits date placeholders", () => {
+  const rendered=createInternshipMailer("").renderAutomated("offer", {...options,schedule:{durationLabel:"1 calendar month",startOn:"2026-11-24",endOn:"2026-12-23",workMode:"Remote",schedule:"Part-time"}}, {subject:"Your internship offer",body:"Hi {fullName}, please review the offer."});
+  for(const content of [rendered.html,rendered.text]) {
+    expect(content).toContain("Tuesday, 24 November 2026");
+    expect(content).toContain("Wednesday, 23 December 2026");
+    expect(content).toContain("1 calendar month");
+  }
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { offerDocumentState } from "@/lib/intern/offer-document.mjs";
 import CompanyBrand from "@/components/intern/CompanyBrand";
@@ -42,9 +42,11 @@ function certificateHtml(certificate, organization) {
 }
 
 export default function PortalCertificates() {
-  const { ready, my, data, notify } = useInternship();
+  const { ready, my, data, notify, commands } = useInternship();
   const [selected, setSelected] = useState(null);
+  const [offerVersions,setOfferVersions] = useState([]);
   const action = useAction();
+  useEffect(()=>{let live=true;if(my.application?.id)commands.listOfferVersions(my.application.id).then(result=>{if(live&&result.ok)setOfferVersions(result.data);});return()=>{live=false;};},[commands,my.application?.id,my.offer?.currentVersion]);
   if (!ready) return <Loading />;
   const certificates = my.certificates || [];
   const application = my.application;
@@ -136,17 +138,20 @@ export default function PortalCertificates() {
                   variant="secondary"
                   onClick={() => action.run(async () => {
                     downloadOfferLetterPdf({
-                      name: application?.name || offer.name,
-                      email: application?.email || offer.email,
-                      college: application?.college,
-                      program: application?.program || offer.program,
-                      roleTitle: internRoleLabel(application?.roleId),
+                      ...offer,
+                      name: offer.name || application?.name,
+                      email: offer.email || application?.email,
+                      college: offer.college ?? application?.college,
+                      program: offer.program || application?.program,
+                      roleTitle: offer.roleTitle || internRoleLabel(application?.roleId),
                       startOn: offer.startOn,
                       endOn: offer.endOn,
                       stipend: offer.stipend,
                       stipendPeriod: offer.stipendPeriod,
                       applicationId: application?.id,
-                      issueDate: offer.decidedOn || offer.sentOn,
+                      durationLabel: offer.durationLabel,
+                      offerVersion: offer.currentVersion || 1,
+                      issueDate: offer.issueDate || offer.sentOn || offer.decidedOn,
                     });
                     return { ok: true };
                   })}
@@ -159,6 +164,7 @@ export default function PortalCertificates() {
               </div>
             </article>
           </div>
+          {offerVersions.some(v=>(v.decision==="Accepted"||v.status==="Accepted")&&v.version!==(offer.currentVersion||1))&&<details><summary>Previous accepted offer letters</summary>{offerVersions.filter(v=>(v.decision==="Accepted"||v.status==="Accepted")&&v.version!==(offer.currentVersion||1)).map(v=><p key={v.version}>Version {v.version} · {formatDate(v.startOn)} – {formatDate(v.endOn)} <Button variant="secondary" onClick={()=>downloadOfferLetterPdf({...v,applicationId:application.id,offerVersion:v.version})}>Download previous version</Button></p>)}</details>}
         </Panel>
       )}
       <Panel>

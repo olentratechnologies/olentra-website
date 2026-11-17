@@ -1,3 +1,4 @@
+import { parseDuration, durationLabel } from "../programs/schedule.mjs";
 import { randomUUID } from "node:crypto";
 import { MongoClientBulkWriteError, MongoServerError, type ClientBulkWriteModel, type ClientSession, type Collection, type Document } from "mongodb";
 import { validateRubric } from "../reviews/reviews.service";
@@ -265,9 +266,16 @@ export function createCommunications({ collection, transact }: Options) {
       const account = staff(actor), patch = params.patch;
       if (!patch || typeof patch !== "object" || Array.isArray(patch)) throw new DomainError("INVALID_REQUEST", "Provide valid settings.");
       const values: Document = {};
-      if (patch.duration !== undefined) {
+      if (patch.durationSpec !== undefined) {
+        const parsed=parseDuration(patch.durationSpec);
+        if(!parsed)throw new DomainError("INVALID_REQUEST","Choose a positive duration and months, weeks or days.");
+        values.durationSpec=parsed;values.duration=durationLabel(parsed);values.scheduleRevision=randomUUID();
+      }
+      if (patch.duration !== undefined && patch.durationSpec === undefined) {
         if (!isInternshipDuration(patch.duration)) throw new DomainError("INVALID_REQUEST", `Enter an internship duration of 1–${MAX_DURATION_LENGTH} characters on one line.`);
         values.duration = patch.duration.trim();
+        values.durationSpec = parseDuration(patch.duration);
+        values.scheduleRevision = randomUUID();
       }
       if (patch.compensationMode !== undefined) {
         if (!isCompensationMode(patch.compensationMode)) throw new DomainError("INVALID_REQUEST", "Choose free, paid, or both internship types.");

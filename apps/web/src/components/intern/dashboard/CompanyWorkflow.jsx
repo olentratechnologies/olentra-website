@@ -19,6 +19,8 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+import { completionDate, displayDate, durationLabel, civilToday } from "@/lib/intern/schedule.mjs";
+import OfferScheduleRevision from "../OfferScheduleRevision";
 import { useInternship } from "@/components/intern/InternshipProvider";
 import { downloadAttachment } from "@/lib/intern-attachments.mjs";
 import {
@@ -152,17 +154,27 @@ export function ApplicantWorkflow({ applicationId }) {
   const [tab, setTab] = useState(isAdmin ? "offer" : "messages");
   const [busy, setBusy] = useState(false);
   const [offerForm, setOfferForm] = useState({
-    startOn: localDate(7),
-    endOn: localDate(97),
+    startOn: "",
+    endOn: "",
     stipend: 0,
     expiresInDays: 7,
     message:
       "We’re excited to welcome you to the Olentra internship program. Review your offer and take the next step in your journey.",
   });
+  const [offerPreview, setOfferPreview] = useState(null);
+  const [durationException,setDurationException]=useState(false);
+  const [exceptionQuantity,setExceptionQuantity]=useState(1),[exceptionUnit,setExceptionUnit]=useState("months"),[exceptionReason,setExceptionReason]=useState("");
+  useEffect(()=>{
+    setOfferPreview(null);
+    setOfferForm(previous=>{let endOn="";try{endOn=completionDate(previous.startOn,durationException?{quantity:Number(exceptionQuantity),unit:exceptionUnit}:data.settings.durationSpec||data.settings.duration);}catch{}return {...previous,endOn};});
+  },[offerForm.startOn,data.settings.durationSpec,data.settings.duration,data.settings.scheduleRevision,durationException,exceptionQuantity,exceptionUnit,exceptionReason]);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   useEffect(() => {
     setTab(isAdmin ? "offer" : "messages");
+    setOfferPreview(null);
+    setDurationException(false);setExceptionReason("");
+    setOfferForm(previous=>({...previous,startOn:"",endOn:""}));
     setSubject("");
     setBody("");
   }, [applicationId, isAdmin]);
@@ -193,10 +205,17 @@ export function ApplicantWorkflow({ applicationId }) {
     }
     setBusy(true);
     try {
+      if(!offerPreview) {
+        const preview=await commands.previewOffer({applicationId,startOn:offerForm.startOn,...(durationException?{durationOverride:{quantity:Number(exceptionQuantity),unit:exceptionUnit},reason:exceptionReason}:{})});
+        if(!preview.ok){notify(preview.error);return;}
+        setOfferPreview(preview.data);return;
+      }
       const sent = await perform(
         () =>
           commands.sendOffer(applicationId, {
             ...offerForm,
+            configRevision: offerPreview.configRevision,
+            ...(durationException?{durationOverride:{quantity:Number(exceptionQuantity),unit:exceptionUnit},reason:exceptionReason}:{}),
             stipend: Number(offerForm.stipend),
             expiresInDays: Number(offerForm.expiresInDays),
             message: offerForm.message.trim(),
@@ -311,12 +330,14 @@ export function ApplicantWorkflow({ applicationId }) {
               )}
             </div>
           )}
+          {offer && isAdmin && <OfferScheduleRevision application={application} offer={offer} admin />}
           {canOffer ? (
             <form className={styles.form} onSubmit={sendOffer}>
               <div className={styles.formGrid}>
                 <label>
                   Start date
                   <input
+                    min={civilToday()}
                     required
                     type="date"
                     value={offerForm.startOn}
@@ -335,9 +356,8 @@ export function ApplicantWorkflow({ applicationId }) {
                     type="date"
                     min={offerForm.startOn}
                     value={offerForm.endOn}
-                    onChange={(event) =>
-                      setOfferForm({ ...offerForm, endOn: event.target.value })
-                    }
+                    readOnly
+                    aria-describedby="calculated-offer-dates"
                   />
                 </label>
                 <label className={styles.fullWidth}>
@@ -378,10 +398,14 @@ export function ApplicantWorkflow({ applicationId }) {
                   />
                 </label>
               </div>
+              <label><input type="checkbox" checked={durationException} onChange={event=>setDurationException(event.target.checked)}/>Use a duration exception for this student</label>
+              {durationException&&<div className={styles.formGrid}><label>Duration quantity<input type="number" min="1" step="1" required value={exceptionQuantity} onChange={event=>setExceptionQuantity(event.target.value)}/></label><label>Unit<select value={exceptionUnit} onChange={event=>setExceptionUnit(event.target.value)}><option value="months">Calendar months</option><option value="weeks">Weeks</option><option value="days">Days</option></select></label><label>Reason for exception<textarea required value={exceptionReason} onChange={event=>setExceptionReason(event.target.value)}/></label></div>}
+              <p id="calculated-offer-dates">Duration: {durationLabel(data.settings.durationSpec||data.settings.duration)}. Completion is calculated from the program settings.</p>
+              {offerPreview && <div role="status"><strong>Confirm the schedule before sending</strong><p>{offerPreview.durationLabel} · {displayDate(offerPreview.startOn)} to {displayDate(offerPreview.endOn)}</p><p>Application originally recorded: {application.duration || "Not recorded"}. This offer uses the current configured duration.</p></div>}
               <div className={styles.formActions}>
                 <Button type="submit" disabled={busy}>
                   <Send size={15} />
-                  {busy ? "Sending…" : "Send offer"}
+                  {busy ? "Preparing…" : offerPreview ? "Confirm and send offer" : "Review offer schedule"}
                 </Button>
               </div>
             </form>

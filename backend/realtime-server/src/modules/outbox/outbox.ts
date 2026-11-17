@@ -13,7 +13,7 @@ export type OutboxRow = {
   _id: string;
   type: OutboxType;
   payload: Record<string, string>;
-  status: "pending" | "sent" | "failed";
+  status: "pending" | "sent" | "failed" | "superseded";
   attempts: number;
   nextAttemptAt: Date;
   leaseUntil?: Date | null;
@@ -48,7 +48,7 @@ export function createOutbox(rows: Collection<OutboxRow>, now: () => number = Da
       await rows.insertMany(items.map(({ type, payload }) => ({ _id: `MAIL-${randomUUID()}`, type, payload, status: "pending" as const, attempts: 0, nextAttemptAt: at, leaseUntil: null, createdAt: at })), session ? { session } : undefined);
     },
     /** Sends up to `limit` due rows through `send`, which must throw when delivery fails. */
-    async process(send: (row: OutboxRow) => Promise<void>, limit = 20) {
+    async process(send: (row: OutboxRow) => Promise<void | {suppressed:boolean}>, limit = 20) {
       let handled = 0;
       while (handled < limit) {
         const at = new Date(now());
@@ -60,8 +60,8 @@ export function createOutbox(rows: Collection<OutboxRow>, now: () => number = Da
         if (!row) break;
         handled++;
         try {
-          await send(row);
-          await rows.updateOne({ _id: row._id, leaseUntil: row.leaseUntil }, { $set: { status: "sent", sentAt: new Date(now()), leaseUntil: null, expiresAt: new Date(now() + WEEK_MS) } });
+          const delivery=await send(row);
+          await rows.updateOne({ _id: row._id, leaseUntil: row.leaseUntil }, { $set: { status: delivery?.suppressed ? "superseded" : "sent", sentAt: new Date(now()), leaseUntil: null, expiresAt: new Date(now() + WEEK_MS) } });
         } catch (error) {
           const lastError = String((error as Error)?.message || error).slice(0, 300);
           const failed = row.attempts >= OUTBOX_MAX_ATTEMPTS;

@@ -129,8 +129,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const auth = container.auth;
     domain.setHooks({
       // These two are sent by the email outbox, which retries when they throw.
-      async sendApplicationConfirmation(to, name, programName, applicationId) {
-        const result = await mailer.sendApplicationConfirmation({ to, name, programName, applicationId });
+      async sendApplicationConfirmation(to, name, programName, applicationId, duration) {
+        const result = await mailer.sendApplicationConfirmation({ to, name, programName, applicationId, schedule:{durationLabel:duration} });
         if (!result.ok) throw new Error(result.error || "Application confirmation was not delivered.");
       },
       async sendMagicLink(to, name, applicationId) {
@@ -146,7 +146,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         let linkedinShareUrl = certificateVerifyUrl
           ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificateVerifyUrl)}`
           : undefined;
-        let portalUrl = `${siteOrigin}/intern/portal`;
+        let portalUrl = `${siteOrigin}/intern/portal${notice.status.startsWith("offer-revi")?"/application#schedule-revision":""}`;
         if (notice.status === "selected") {
           const app = await domain.findApplicationByEmail(notice.to);
           const appId = app ? String(app._id) : "";

@@ -1,3 +1,4 @@
+import { createOfferSchedules } from "./offer-schedules";
 import type { Outbox } from "../outbox/outbox";
 import { randomUUID } from "node:crypto";
 import type { ClientSession, Collection, Document } from "mongodb";
@@ -28,9 +29,11 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
-  const names = new Set(["intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const schedules = createOfferSchedules(collection);
+  const names = new Set(["offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
+      schedules.initialize(),
       offers.createIndex({ applicationId: 1 }, { unique: true }),
       onboarding.createIndex({ applicationId: 1 }, { unique: true }),
       interns.createIndex({ applicationId: 1 }, { unique: true }),
@@ -64,23 +67,11 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
     return ids;
   }
   async function execute(method: string, p: Record<string, any>, actor: Principal | null, key: string) {
+    if (["offer.preview", "offer.versions"].includes(method)) return schedules.execute(method, p, actor);
     return transact(key, actor, { method, params: p }, async session => {
       const result = await (async () => {
       const opts = { session }, now = new Date().toISOString();
-      if (method === "offer.send") {
-        staff(actor); const applicationId = required(p.applicationId, "application");
-        const app = await applications.findOne({ _id: applicationId, status: "Selected" }, opts);
-        if (!app) throw new DomainError("CONFLICT", "Select this applicant before sending an offer.");
-        if (!validDate(p.startOn) || !validDate(p.endOn) || p.endOn < p.startOn) throw new DomainError("INVALID_REQUEST", "Choose a valid start and end date.");
-        const program = await programs.findOne({ _id: app.programId }, opts); const stipend = Number(p.stipend);
-        if (!program || program.stipend == null || !Number.isSafeInteger(stipend) || stipend < 0 || stipend > program.stipend) throw new DomainError("INVALID_REQUEST", "The stipend must be within the configured program limit.");
-        const old = await offers.findOne({ applicationId }, opts); if (old?.status === "Accepted") throw new DomainError("CONFLICT", "The offer was already accepted.");
-        // Offers expire after a few days (default 7) unless an admin extends them.
-        const expiresInDays = p.expiresInDays === undefined ? 7 : Number(p.expiresInDays);
-        if (!Number.isInteger(expiresInDays) || expiresInDays < 1 || expiresInDays > 30) throw new DomainError("INVALID_REQUEST", "Offers can stay open for 1 to 30 days.");
-        const offer: Row = { _id: old?._id || newId("OFFER"), applicationId, status: "Sent", startOn: p.startOn, endOn: p.endOn, stipend, message: text(p.message).slice(0, 2000), sentOn: now, expiresOn: offerDeadline(now, expiresInDays) };
-        await offers.replaceOne({ applicationId }, offer, { ...opts, upsert: true }); await applications.updateOne({ _id: applicationId, status: "Selected" }, { $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: "Offer sent", detail: "Your offer is ready for review.", date: now } } as any }, opts); return plain(offer);
-      }
+      if (schedules.supports(method)) return schedules.execute(method, p, actor, session);
       if (method === "offer.extend") {
         staff(actor); const applicationId = required(p.applicationId, "application");
         const days = Number(p.days ?? 7);
@@ -88,7 +79,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         const offer = await offers.findOneAndUpdate({ applicationId, status: "Sent" }, { $set: { expiresOn: offerDeadline(now, days), extendedOn: now } }, { ...opts, returnDocument: "after" });
         if (!offer) throw new DomainError("CONFLICT", "Only an open offer can be extended.");
         await applications.updateOne({ _id: applicationId }, { $push: { history: { id: newId("HST"), title: "Offer extended", detail: `You now have until ${offer.expiresOn.slice(0, 10)} to decide.`, date: now } } as any }, opts);
-        return plain(offer);
+        return {...plain(offer),emailSnapshot:{...offer,version:offer.currentVersion||1},emailStatus:"offer"};
       }
       if (method === "application.withdraw") {
         // Applicants can step back at any point before they join. An open
@@ -104,18 +95,6 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         if (!updated) throw new DomainError("CONFLICT", "This application can no longer be withdrawn.");
         await offers.updateOne({ applicationId, status: "Sent" }, { $set: { status: "Withdrawn", decidedOn: now } }, opts);
         return { id: applicationId, applicationId, status: "Withdrawn" };
-      }
-      if (method === "offer.accept" || method === "offer.decline") {
-        const applicationId = required(p.applicationId, "application"); own(actor, applicationId);
-        const app = await applications.findOne({ _id: applicationId, status: "Selected" }, opts); if (!app) throw new DomainError("CONFLICT", "This offer is no longer awaiting a decision.");
-        if (method === "offer.accept") {
-          const pending = await offers.findOne({ applicationId, status: "Sent" }, opts);
-          if (pending && isOfferExpired(pending, now)) throw new DomainError("OFFER_EXPIRED", "This offer has expired. Contact the Olentra team if you'd still like to join.");
-        }
-        const offer = await offers.findOneAndUpdate({ applicationId, status: "Sent" }, { $set: { status: method === "offer.accept" ? "Accepted" : "Declined", decidedOn: now, reason: text(p.reason).slice(0, 2000) } }, { ...opts, returnDocument: "after" });
-        if (!offer) throw new DomainError("CONFLICT", "This offer is no longer awaiting a decision.");
-        await applications.updateOne({ _id: applicationId, status: "Selected" }, { ...(method === "offer.decline" ? { $set: { status: "Declined", statusChangedOn: now } } : {}), $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: method === "offer.accept" ? "Offer accepted" : "Offer declined", detail: method === "offer.accept" ? "Onboarding is now available." : "Offer declined.", date: now } } as any }, opts);
-        return plain(offer);
       }
       if (method === "onboarding.save" || method === "onboarding.submit") {
         const applicationId = required(p.applicationId, "application"); own(actor, applicationId);
@@ -180,7 +159,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         const updated = await onboarding.findOneAndUpdate({ applicationId, status: "Submitted" }, { $set: { status: "Approved", approvedOn: now } }, { ...opts, returnDocument: "after" }); if (!updated) throw new DomainError("CONFLICT", "The applicant must submit onboarding before approval.");
         await applications.updateOne({ _id: applicationId, status: "Selected" }, { $set: { status: "Joined" }, $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: "Intern onboarded", detail: "Onboarding approved. Your internship workspace is ready.", date: now } } as any }, opts);
         const config = await settings.findOne({ _id: "program" }, opts);
-        const intern: Row = { _id: newId("INT"), applicationId, batch: config?.defaultBatch || "", joinedOn: day(), status: "Active", projectIds: [], revision: 1 };
+        const intern: Row = { _id: newId("INT"), applicationId, batch: config?.defaultBatch || "", joinedOn: day(), startOn: offer.startOn, endOn: offer.endOn, offerVersion: offer.currentVersion || 1, duration: offer.duration, durationLabel: offer.durationLabel, status: "Active", projectIds: [], revision: 1 };
         await interns.insertOne(intern, opts); return plain(intern);
       }
       if (method === "profile.update") {
@@ -318,20 +297,24 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
       }
       throw new DomainError("NOT_IMPLEMENTED", "This action is not available.");
       })();
-      if (method === "offer.send" || method === "offer.accept" || method === "onboarding.approve") {
-        await outbox.enqueue("applicantStatus", { applicationId: String((result as any).applicationId), status: method === "offer.send" ? "offer" : method === "offer.accept" ? "offer-accepted" : "onboarding" }, session);
+      const scheduledResult = result as any;
+      if (scheduledResult.emailStatus) await outbox.enqueue("applicantStatus", { applicationId: scheduledResult.applicationId, status: scheduledResult.emailStatus, offerVersion: String(scheduledResult.emailSnapshot.version), offerSnapshot: JSON.stringify(scheduledResult.emailSnapshot) }, session);
+      if (method === "onboarding.approve") {
+        const offer = await offers.findOne({applicationId:scheduledResult.applicationId}, {session});
+        await outbox.enqueue("applicantStatus", { applicationId: scheduledResult.applicationId, status: "onboarding", ...(offer ? {offerVersion:String(offer.currentVersion||1),offerSnapshot:JSON.stringify(offer)} : {}) }, session);
       }
       if (method === "interview.schedule" || method === "interview.cancel") {
         const interview = result as Record<string, any>;
         await outbox.enqueue("interview", { applicationId: String(interview.applicationId), interviewId: String(interview.id), scheduledAt: String(interview.scheduledAt), meetingUrl: String(interview.meetingUrl), sequence: String(interview.sequence || 0), status: String(interview.status), cancelReason: String(interview.cancelReason || "") }, session);
       }
+      if (method.startsWith("offer.revi")) await auditDecision(audit, session, actor, method, String(scheduledResult.applicationId), {version: p.version||scheduledResult.emailSnapshot?.version, reason: String(p.reason||""), startOn:scheduledResult.emailSnapshot?.startOn, endOn:scheduledResult.emailSnapshot?.endOn});
       // Decisions are audited in the same transaction as the change itself.
       if (method === "offer.send" && result && !Array.isArray(result)) await auditDecision(audit, session, actor, "offer.sent", String((result as any).applicationId), { startOn: (result as any).startOn, endOn: (result as any).endOn, stipend: (result as any).stipend });
       if (method === "onboarding.approve" && result && !Array.isArray(result)) await auditDecision(audit, session, actor, "onboarding.approved", String((result as any).applicationId));
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);
-      const labels: Record<string, string> = { "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "intern.assignMentor": "Your mentor was updated", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
+      const labels: Record<string, string> = { "offer.revise": "Internship schedule revision awaiting your decision", "offer.revision.accept": "Schedule revision accepted", "offer.revision.decline": "Schedule revision declined", "offer.revision.withdraw": "Schedule revision withdrawn", "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "intern.assignMentor": "Your mentor was updated", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
       const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
       const label = labels[method];
       if (label && actor) {
@@ -355,6 +338,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         await activity.insertOne({ _id: newId("ACT"), title: label, detail, applicationId: applicationIds.length === 1 ? applicationIds[0] : null, icon: "briefcase", tone: "blue", occurredOn: new Date().toISOString() }, { session });
       }
       await events.insertOne({ _id: newId("EVT"), type: method, applicationIds, createdAt: new Date() }, { session });
+      if (scheduledResult.emailSnapshot) { const {emailSnapshot: _snapshot, emailStatus: _status, ...response}=scheduledResult; return response; }
       return result;
     });
   }

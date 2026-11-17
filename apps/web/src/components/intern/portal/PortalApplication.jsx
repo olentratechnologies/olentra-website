@@ -1,5 +1,7 @@
 "use client";
 
+import OfferScheduleRevision from "../OfferScheduleRevision";
+import { displayDate } from "@/lib/intern/schedule.mjs";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -72,7 +74,7 @@ export default function PortalApplication() {
 
   async function accept() {
     await action.run(
-      () => commands.acceptOffer(application.id),
+      () => commands.acceptOffer(application.id, offer.currentVersion || 1),
       () => setCelebrating(true),
     );
   }
@@ -80,7 +82,7 @@ export default function PortalApplication() {
     event.preventDefault();
     const reason = new FormData(event.currentTarget).get("reason");
     await action.run(
-      () => commands.declineOffer(application.id, String(reason || "").trim()),
+      () => commands.declineOffer(application.id, String(reason || "").trim(), offer.currentVersion || 1),
       () => {
         setDeclining(false);
         notify("Your decision has been saved.");
@@ -175,9 +177,10 @@ export default function PortalApplication() {
           <div><span>Intern role</span><strong>{internRoleLabel(application.roleId)}</strong></div>
           <div><span>Schedule</span><strong>{internScheduleLabel(application.schedule)}</strong></div>
           <div><span>Work mode</span><strong>{application.workMode === "remote" ? "100% remote" : "Not provided"}</strong></div>
-          <div><span>Duration</span><strong>{applicationDurationLabel(application)}</strong></div>
+          <div><span>Duration</span><strong>{offer?.durationLabel || applicationDurationLabel(application)}</strong></div>
         </div>
       </Panel>
+      {offer && <OfferScheduleRevision application={application} offer={offer} />}
       {offer && (
         <section id="internship-offer" style={{ scrollMarginTop: 90 }}><Panel className={styles.offerPanel}>
           <div className={styles.panelHeader}>
@@ -209,11 +212,11 @@ export default function PortalApplication() {
             </div>
             <div>
               <span>Start date</span>
-              <strong>{formatDate(offer.startOn)}</strong>
+              <strong>{displayDate(offer.startOn)}</strong>
             </div>
             <div>
               <span>End date</span>
-              <strong>{formatDate(offer.endOn)}</strong>
+              <strong>{displayDate(offer.endOn)}</strong>
             </div>
             <div>
               <span>Stipend</span>

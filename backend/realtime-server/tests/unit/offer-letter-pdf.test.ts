@@ -53,3 +53,12 @@ test("long recipient and offer fields wrap onto additional pages rather than cli
   expect(match).not.toBeNull();
   expect(pdf.slice(Number(match![1]), Number(match![1]) + 4)).toBe("xref");
 });
+
+
+test("one-month letters retain the approved one-page design and show their confirmed version", () => {
+  const pdf=generateOfferLetterPdf({name:"China Chin",email:"candidate@example.test",program:"Tech Explorer",roleTitle:"Agentic AI Engineer Intern",applicationId:"OL-SCHEDULE",durationLabel:"1 calendar month",offerVersion:2,startOn:"2026-11-24",endOn:"2026-12-23",issueDate:"2026-11-17"}).toString();
+  expect(pdf).toContain("Duration: 1 calendar month | Offer version: 2");
+  expect(pdf).toContain("24 Nov 2026");
+  expect(pdf).toContain("23 Dec 2026");
+  expect(pdf).toContain("/Count 1");
+});

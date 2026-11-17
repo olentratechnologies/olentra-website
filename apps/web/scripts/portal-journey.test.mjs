@@ -35,3 +35,8 @@ test("expired and declined offers never offer an acceptance action", () => {
     assert.equal(state.steps[1].done, true);
   }
 });
+
+test("onboarding before the scheduled start does not claim the internship has started", () => {
+  const state = portalJourney({ application:{status:"Joined"}, offer:{status:"Accepted",startOn:"2026-11-24"}, intern:{status:"Active"} }, now);
+  assert.match(state.steps[4].status, /Starts Tuesday, 24 November 2026/);
+});

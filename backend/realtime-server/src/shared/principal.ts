@@ -15,8 +15,9 @@ export type ApplicantStatusNotice = {
   to: string;
   name: string;
   programName: string;
-  status: "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
+  status: "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
   certificateNumber?: string;
+  schedule?: Record<string, any>;
   roleTitle?: string;
   pdfAttachment?: { filename: string; content: Buffer; contentType: string };
 };
@@ -34,7 +35,7 @@ export type InterviewScheduledNotice = {
 
 export type InternshipHooks = {
   sendMagicLink?: (to: string, name: string, applicationId: string) => Promise<unknown>;
-  sendApplicationConfirmation?: (to: string, name: string, programName: string, applicationId: string) => Promise<unknown>;
+  sendApplicationConfirmation?: (to: string, name: string, programName: string, applicationId: string, duration?: string) => Promise<unknown>;
   sendApplicantStatus?: (notice: ApplicantStatusNotice) => Promise<unknown>;
   sendInterviewScheduled?: (notice: InterviewScheduledNotice) => Promise<unknown>;
   sendInterviewReminder?: (notice: InterviewScheduledNotice) => Promise<unknown>;

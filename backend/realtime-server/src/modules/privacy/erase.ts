@@ -36,7 +36,7 @@ export async function eraseApplicant({ db, client, prefix, applicationId, before
       await wipe("test_credentials", { userId: { $in: accountIds } });
       await wipe("sessions", { userId: { $in: accountIds } });
       await wipe("notification_reads", { accountId: { $in: accountIds } });
-      for (const name of ["offers", "onboarding", "interns", "tasks", "submissions", "messages", "notifications", "stories", "interviews", "activity", "reviews", "checkins", "feedback", "resource_progress"]) await wipe(name, { applicationId });
+      for (const name of ["offers", "offer_versions", "onboarding", "interns", "tasks", "submissions", "messages", "notifications", "stories", "interviews", "activity", "reviews", "checkins", "feedback", "resource_progress"]) await wipe(name, { applicationId });
       await wipe("certificates", { $or: [{ applicationId }, { internId: { $in: internIds } }] });
       await wipe("files", { _id: { $in: uploads.map(row => row._id) } });
       await wipe("outbox", { $or: [{ "payload.applicationId": applicationId }, ...(email ? [{ "payload.to": email }] : [])] });

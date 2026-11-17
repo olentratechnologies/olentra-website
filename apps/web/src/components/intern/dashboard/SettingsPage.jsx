@@ -10,7 +10,8 @@ import styles from "./settings.module.css";
 import TemplatesSettings from "./TemplatesSettings";
 import ResourcesSettings from "./ResourcesSettings";
 import { deadlineTime, formatDeadline, fromLocalInputValue, timeRemaining, toLocalInputValue } from "@/lib/intern/application-deadline.mjs";
-import { DEFAULT_INTERNSHIP_DURATION, isInternshipDuration, MAX_DURATION_LENGTH } from "@/lib/intern/opportunities.mjs";
+import { parseDuration, durationLabel } from "@/lib/intern/schedule.mjs";
+import { DEFAULT_INTERNSHIP_DURATION } from "@/lib/intern/opportunities.mjs";
 
 const DEADLINE_PRESETS = [
   { label: "+7 days", days: 7 },
@@ -112,14 +113,14 @@ export default function SettingsPage() {
   async function save(event) {
     event.preventDefault();
     if (tab === "general" && !name.trim()) { setError("Enter a program name."); return; }
-    if (tab === "general" && !isInternshipDuration(duration)) { setError(`Enter an internship duration of 1-${MAX_DURATION_LENGTH} characters.`); return; }
+    if (tab === "general" && !parseDuration(duration)) { setError("Choose a positive duration in months, weeks or days."); return; }
     const deadlineIso = fromLocalInputValue(deadline);
     const deadlineChanged = deadlineIso !== (deadlineTime(data.settings.applicationDeadline) === null ? null : new Date(deadlineTime(data.settings.applicationDeadline)).toISOString());
     if (tab === "general" && deadline && !deadlineIso) { setError("Enter a valid application deadline."); return; }
     if (tab === "general" && deadlineChanged && deadlineIso && Date.parse(deadlineIso) <= Date.now()) { setError("Choose an application deadline in the future."); return; }
     setBusy(true); setError("");
     try {
-      const result = await updateSettings(tab === "notifications" ? { applicationAlerts, rejectionEmails, weeklyDigest, reviewReminder } : { programName: name.trim(), defaultBatch: batch.trim(), duration: duration.trim(), programEnabled, compensationMode, retentionDays, rubric: rubric.filter(criterion => criterion.label.trim()), onboardingDocuments: checklist.filter(item => item.label.trim()), ...(deadlineChanged ? { applicationDeadline: deadlineIso } : {}) });
+      const result = await updateSettings(tab === "notifications" ? { applicationAlerts, rejectionEmails, weeklyDigest, reviewReminder } : { programName: name.trim(), defaultBatch: batch.trim(), durationSpec: parseDuration(duration), programEnabled, compensationMode, retentionDays, rubric: rubric.filter(criterion => criterion.label.trim()), onboardingDocuments: checklist.filter(item => item.label.trim()), ...(deadlineChanged ? { applicationDeadline: deadlineIso } : {}) });
       if (result !== false) { setSaved(true); notify("Program settings saved."); }
     } finally { setBusy(false); }
   }
@@ -152,7 +153,14 @@ export default function SettingsPage() {
         </div>
         {(() => { const summary = deadlineSummary(deadline, data.settings.applicationDeadline); return <p className={styles.deadlineStatus} data-tone={summary.tone} role="status">{summary.text}</p>; })()}
       </section>
-      <div className={styles.divider}/><h3 className={styles.subheading}>Internship duration</h3><p className={styles.helper}>Shown on the public internship page and saved with each new application. Existing applications keep their original duration.</p><label className={ui.field}>Duration<input value={duration} maxLength={MAX_DURATION_LENGTH} onChange={event => edit(setDuration, event.target.value)} required aria-describedby="duration-hint"/></label><p className={styles.helper} id="duration-hint">Enter any duration description, such as “2 months” or “8–12 weeks” (up to {MAX_DURATION_LENGTH} characters).</p>
+      <div className={styles.divider}/><h3 className={styles.subheading}>Internship duration</h3>
+      <p className={styles.helper}>New offers use this duration. Each student's start date is chosen when preparing their offer. Issued offers keep their confirmed dates.</p>
+      {!parseDuration(duration) && <p role="alert">The previous duration “{duration}” needs review. Choose a precise quantity and unit before sending new offers.</p>}
+      <div className={ui.formGrid}>
+        <label className={ui.field}>Quantity<input type="number" min="1" step="1" required value={parseDuration(duration)?.quantity || ""} onChange={event=>edit(setDuration, `${event.target.value} ${parseDuration(duration)?.unit||duration.match(/weeks|days|months/)?.[0]||"months"}`)} /></label>
+        <label className={ui.field}>Unit<select value={parseDuration(duration)?.unit||duration.match(/weeks|days|months/)?.[0]||"months"} onChange={event=>edit(setDuration,`${parseDuration(duration)?.quantity||1} ${event.target.value}`)}><option value="months">Calendar months</option><option value="weeks">Weeks</option><option value="days">Days</option></select></label>
+      </div>
+      <p className={styles.helper}>Dates are inclusive. One calendar month from 24 November completes on 23 December. At month end, the next anniversary is clamped to the last day of that month, then one day is subtracted. {parseDuration(duration)?`Configured: ${durationLabel(duration)}.`:""}</p>
       <div className={styles.divider}/><h3 className={styles.subheading}>Workspace details</h3><div className={ui.formGrid}><label className={ui.field}>Program name<input value={name} maxLength={100} onChange={event => edit(setName, event.target.value)}/></label><label className={ui.field}>Default batch (optional)<input value={batch} maxLength={40} onChange={event => edit(setBatch, event.target.value)}/></label></div>
       <div className={styles.divider}/><h3 className={styles.subheading}>Scoring criteria</h3>
       <p className={styles.helper}>Reviewers score each applicant 0–5 on these. A higher weight counts for more in the average.</p>

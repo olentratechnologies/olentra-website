@@ -1,9 +1,10 @@
+import { scheduleDisplay, displayDate } from "../../modules/programs/schedule.mjs";
 import { emailDefinition, fillEmailTemplate, type AutomatedEmailId, type EmailTemplate } from "../../modules/email-templates/automated-templates";
 import { interviewIcs, interviewTimeLabel } from "../../modules/interviews/ics";
 import type { SigninEmailTemplateVariant } from "../../modules/email-templates/signin-template-settings";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
-type ApplicantStatus = "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
+type ApplicantStatus = "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
 
 interface ApplicantStatusEmailOptions {
   to: string;
@@ -13,6 +14,7 @@ interface ApplicantStatusEmailOptions {
   portalUrl: string;
   certificateVerifyUrl?: string;
   linkedinShareUrl?: string;
+  schedule?: Record<string, any>;
   pdfAttachment?: { filename: string; content: string | Buffer; contentType: string };
 }
 
@@ -31,6 +33,7 @@ interface InterviewScheduledEmailOptions {
 }
 
 interface ApplicationEmailOptions {
+  schedule?: Record<string, any>;
   to: string;
   name: string;
   programName: string;
@@ -193,12 +196,23 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       program: String(options.programName || ""),
       referenceId: String(options.applicationId || "pending"),
       interviewTime: time,
+      ...scheduleDisplay(options.schedule),
     });
     if (resolved.greeting === "Hello,") {
       body = body.replace(/^(Hi\s+[^\n,]+,|Hello,)/, "Hello,");
     }
     const details: string[] = [], buttons: { label: string; url: string }[] = [];
     const attachments: Attachment[] = [];
+    if(!id.startsWith("interview-") && id!=="signin") {
+      const schedule=options.schedule;
+      if(schedule?.startOn && schedule?.endOn) {
+        details.push(`Offer version: ${schedule.version||schedule.currentVersion||1}`);
+        if(schedule.historical)details.push("This message records an earlier offer version. Your current accepted terms are available in Certificates & Documents.");
+        details.push(`Duration: ${schedule.durationLabel||scheduleDisplay(schedule).duration}`, `Start date: ${displayDate(schedule.startOn)}`, `Completion date: ${displayDate(schedule.endOn)}`, `Work arrangement: ${schedule.workMode||"Remote"}${schedule.schedule?` · ${schedule.schedule}`:""}`);
+        if(["offer","offer-revised"].includes(id)&&schedule.expiresOn)details.push(`Decision deadline: ${new Date(schedule.expiresOn).toLocaleString("en-GB",{timeZone:"Asia/Kolkata",dateStyle:"long",timeStyle:"short"})} IST (separate from the internship completion date)`);
+        if(schedule.reason)details.push(`Revision reason: ${schedule.reason}`);
+      } else if(["application-received","shortlisted","selected"].includes(id)) details.push(`Duration: ${schedule?.durationLabel||"As described in the program"}`,"Start date to be confirmed in your offer.");
+    }
     let customPanelHtml: string | null = null;
 
     if (id === "application-received") {
@@ -230,6 +244,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
             </td>
           </tr>
         </table>
+        <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Duration: ${escapeHtml(options.schedule?.durationLabel||"As described in the program")}. Start date to be confirmed in your offer.</p>
       `.trim();
     }
     if (id.startsWith("interview-")) {
@@ -246,11 +261,11 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       buttons.push({ label: "Activate your internship portal", url: options.portalUrl });
       details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
     }
-    if (["offer", "offer-accepted", "onboarding", "certificate"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
+    if (["offer", "offer-accepted", "onboarding", "certificate", "offer-revised", "offer-revision-accepted", "offer-revision-declined", "offer-revision-withdrawn"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
     if (id === "offer-accepted" && options.linkedinShareUrl) {
       buttons.push({ label: "Share on LinkedIn (optional)", url: options.linkedinShareUrl });
     }
-    if (id === "offer-accepted" && options.pdfAttachment) {
+    if (["offer-accepted","offer-revision-accepted"].includes(id) && options.pdfAttachment) {
       attachments.push(options.pdfAttachment);
     }
     if (id === "certificate") {

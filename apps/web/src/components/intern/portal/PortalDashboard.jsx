@@ -25,6 +25,7 @@ import {
   formatDate,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import { displayDate } from "@/lib/intern/schedule.mjs";
 import { portalJourney } from "@/lib/intern/portal-journey.mjs";
 import LearningResources from "./LearningResources";
 import WeeklyCheckin from "./WeeklyCheckin";
@@ -127,6 +128,7 @@ export default function PortalDashboard() {
         </div>
         <PlanetArtwork className={styles.bannerPlanet} />
       </section>
+      {my.offer?.pendingRevision && <Notice><div><strong>Internship schedule revision {Date.parse(my.offer.pendingRevision.expiresOn)<=Date.now()?"deadline passed":"awaiting your decision"}</strong><p>Your currently accepted dates remain effective. Review the proposed correction and its reason in My application.</p></div><Link href="/intern/portal/application#schedule-revision">Review schedule revision <ArrowRight size={14}/></Link></Notice>}
       {journey.pending && (
         <Notice>
           <div>
@@ -265,7 +267,7 @@ export default function PortalDashboard() {
               {my.offer?.startOn && (
                 <span>
                   <CalendarDays size={15} /> Starts{" "}
-                  {formatDate(my.offer.startOn)}
+                  {displayDate(my.offer.startOn)}{my.offer.endOn ? ` · Completes ${displayDate(my.offer.endOn)}` : ""}
                 </span>
               )}
             </div>
