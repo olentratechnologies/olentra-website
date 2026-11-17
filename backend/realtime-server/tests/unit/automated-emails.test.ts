@@ -27,6 +27,10 @@ test("all eleven defaults render required links and details, with no portal link
     const template = validateEmailTemplate(definition.id, definition);
     const rendered = mailer.renderAutomated(definition.id, options, template);
     expect(rendered.html).toContain("Alex &lt;Kumar&gt;");
+    expect(rendered.html).toContain('align="center" style="font-family:Arial,Helvetica,sans-serif;padding:20px 24px 16px;text-align:center;"');
+    expect(rendered.html).toContain('<h1 style="font-family:Arial,Helvetica,sans-serif;');
+    expect(rendered.html).toContain('>Olentra Technologies</td>');
+    expect(rendered.html).toContain('mailto:support@olentratechnologies.com');
     expect(rendered.html).not.toContain("Alex <Kumar>");
     expect(rendered.text).not.toMatch(/\{\w+\}/);
     if (["application-received", "shortlisted"].includes(definition.id)) {
