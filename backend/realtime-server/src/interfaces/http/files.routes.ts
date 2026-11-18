@@ -91,10 +91,11 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
         activePublicUploads++;
       }
       try {
-        if (directRequest && !account && !resumeGrants) throw new DomainError("SERVICE_UNAVAILABLE", "Public uploads require resume verification.");
         if (resumeGrants && !account) {
           const draftId = await resumeGrants.draftId(request.headers.get("x-resume-grant") || "");
           await limiter?.consume("verifiedResume", null, draftId);
+        } else if (!account) {
+          await limiter?.consume("upload", addressFor(request, peerAddress));
         }
         if (directRequest) return sendJson({ ok: true, data: await direct!.begin({ name, kind, type: type.mime, size: declared, ...(account?.applicationId ? { ownerApplicationId: account.applicationId } : {}) }) }, origin, 201);
         const gridId = new ObjectId();

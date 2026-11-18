@@ -22,7 +22,7 @@ INTERNSHIP_FILE_SCAN_MODE=disabled
 
 To enable scanning later, change the mode to `clamav`, configure `CLAMAV_HOST=127.0.0.1` and `CLAMAV_PORT=3310`, update signatures, start the private scanner, and verify clean-file acceptance and antivirus-test-file rejection before restarting the backend. Never expose the scanner port publicly.
 
-Anonymous resume uploads separately require the Cloudflare Turnstile site key in the web deployment and its matching secret in `INTERNSHIP_TURNSTILE_SECRET_KEY` on the backend. Missing credentials leave that route unavailable; disabling malware scanning does not bypass bot verification.
+Anonymous resume uploads work directly without a bot challenge when Turnstile credentials are unset. Upload rate limits, file size/type validation, and private object access still apply. To opt into bot verification later, configure the matching frontend site key and backend `INTERNSHIP_TURNSTILE_SECRET_KEY` together.
 
 ## Deploy and verify
 

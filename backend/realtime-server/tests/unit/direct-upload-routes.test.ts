@@ -13,11 +13,14 @@ function setup(account: any = null, verified = true) {
   const request = (size: string, kind = "resume", token = account ? "user" : "") => new Request("https://api.test/intern/files/uploads", { method: "POST", headers: { "x-file-name": "cv.pdf", "x-file-kind": kind, "x-file-size": size, "x-resume-grant": "verified", ...(token ? { authorization: `Bearer ${token}` } : {}) } });
   return { api, calls, request };
 }
-test("anonymous direct resumes require verification and preserve rate limiting", async () => {
+test("anonymous direct resumes upload without a challenge and preserve rate limiting", async () => {
   const f = setup(); expect((await f.api.upload(f.request("20"), null)).status).toBe(201);
   expect(f.calls[0]).toEqual(["verifiedResume", null, "draft"]);
   expect(f.calls[1]).toMatchObject({ kind: "resume", size: 20, type: "application/pdf" });
-  const disabled = setup(null, false); await expect(disabled.api.upload(disabled.request("20"), null)).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+  const disabled = setup(null, false);
+  expect((await disabled.api.upload(disabled.request("20"), null)).status).toBe(201);
+  expect(disabled.calls[0]).toEqual(["upload", "direct"]);
+  expect(disabled.calls[1]).toMatchObject({ kind: "resume", size: 20, type: "application/pdf" });
 });
 test("direct work uploads require an intern and record application ownership", async () => {
   const anonymous = setup(); await expect(anonymous.api.upload(anonymous.request("20", "work"), null)).rejects.toMatchObject({ code: "UNAUTHENTICATED" });
