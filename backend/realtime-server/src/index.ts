@@ -42,8 +42,10 @@ async function initializeInternship() {
   }
 
   attachInFlight = true;
+  let stage = "MongoDB connection";
   try {
     connection = await connectInternDatabase(environment.mongodbUri);
+    stage = "internship module setup (including file storage)";
     const site = environment.siteOrigin;
     const domain = createInternshipDomain({ ...connection, intakeOpen: async () => {
       try {
@@ -56,7 +58,7 @@ async function initializeInternship() {
     retryDelay = 1000;
     logger.info("Internship modules attached", { mongodb: "connected" });
   } catch (error) {
-    logger.warn("Internship modules unavailable; retrying MongoDB initialization", { error, retryMs: retryDelay });
+    logger.warn("Internship modules unavailable; retrying initialization", { stage, error, retryMs: retryDelay });
     await connection?.client.close().catch(() => {});
     connection = null;
     scheduleInternshipRetry(retryDelay);

@@ -1,5 +1,6 @@
 import { InstancePrincipalsAuthenticationDetailsProviderBuilder, SessionAuthDetailProvider, Region, MaxAttemptsTerminationStrategy } from "oci-common";
 import { ObjectStorageClient, models } from "oci-objectstorage";
+import { createApiKeyProvider } from "./oci-auth";
 
 export interface ObjectStore {
   issue(key: string, expires: Date): Promise<{ id: string; url: string }>;
@@ -17,9 +18,21 @@ export async function createOciStore(): Promise<ObjectStore> {
   const cleanBucket = required("OCI_STORAGE_BUCKET");
   if (bucketName === cleanBucket) throw new Error("Use separate quarantine and clean buckets");
   const region = required("OCI_STORAGE_REGION");
-  const session = process.env.OCI_AUTH_MODE === "session";
-  if (session && process.env.NODE_ENV === "production") throw new Error("Production uploads require instance principals");
-  const provider = session ? new SessionAuthDetailProvider(undefined, process.env.OCI_CLI_PROFILE || "OLENTRA") : await new InstancePrincipalsAuthenticationDetailsProviderBuilder().build();
+  const mode = process.env.OCI_AUTH_MODE || "instance_principal";
+  if (!["session", "api_key", "instance_principal"].includes(mode)) throw new Error("OCI_AUTH_MODE must be api_key, session, or instance_principal.");
+  const session = mode === "session";
+  if (session && process.env.NODE_ENV === "production") throw new Error("Production uploads require instance principals or API key authentication");
+  const provider = mode === "api_key" ? createApiKeyProvider() : session ? new SessionAuthDetailProvider(undefined, process.env.OCI_CLI_PROFILE || "OLENTRA") : await new InstancePrincipalsAuthenticationDetailsProviderBuilder().build();
+  if (provider instanceof SessionAuthDetailProvider) {
+    const token = await provider.getSecurityToken();
+    let expiresAt = 0;
+    try {
+      expiresAt = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()).exp;
+    } catch { /* Missing or malformed tokens require a new CLI session. */ }
+    if (!Number.isFinite(expiresAt) || expiresAt * 1000 <= Date.now()) {
+      throw new Error(`OCI session is missing, invalid, or expired. Run oci session authenticate --profile-name ${process.env.OCI_CLI_PROFILE || "OLENTRA"} and restart the realtime server.`);
+    }
+  }
   const client = new ObjectStorageClient({ authenticationDetailsProvider: provider }, { httpOptions: { get signal() { return AbortSignal.timeout(30_000); } }, retryConfiguration: { terminationStrategy: new MaxAttemptsTerminationStrategy(2) } });
   client.region = Region.fromRegionId(region);
   const base = { namespaceName, bucketName };

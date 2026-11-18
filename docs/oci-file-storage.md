@@ -24,7 +24,7 @@ Created and verified in Hyderabad (`ap-hyderabad-1`):
 
 The storage smoke script verifies both buckets remain private at initialization. The native OCI endpoint returns fixed CORS headers; there are no editable bucket CORS rules for this API. Preflight with PUT and Content-Type was verified against the real upload endpoint. Application origins are still restricted by `REALTIME_ALLOWED_ORIGINS`; CORS is not a replacement for authorization.
 
-For production, create a dynamic group matching the exact Bun Compute instance OCID. Apply the bucket-scoped policy in `backend/realtime-server/deploy/storage-iam.policy.example`, replacing its two placeholders. Do not match all tenancy instances. If running Bun in Docker, verify access to the instance metadata endpoint from that container. The SDK defaults to instance principals; user session credentials are rejected when NODE_ENV=production. The local OLENTRA CLI profile is only for development and transport smoke checks.
+For production, create a dynamic group matching the exact Bun Compute instance OCID. Apply the bucket-scoped policy in `backend/realtime-server/deploy/storage-iam.policy.example`, replacing its two placeholders. Do not match all tenancy instances. If running Bun in Docker, verify access to the instance metadata endpoint from that container. The SDK defaults to instance principals; user session credentials are rejected when NODE_ENV=production. API signing keys are also supported for backends outside OCI Compute. The local OLENTRA CLI profile is only for development and transport smoke checks.
 
 Two running Compute instances were found. No workload IAM policy has been applied because the deployment instance has not been identified. No new Compute resources were created.
 
@@ -50,6 +50,8 @@ Deploy the scanner first, verify fresh signatures and EICAR rejection in an isol
 
 For local transport verification use `OCI_AUTH_MODE=session`, `OCI_CLI_PROFILE=OLENTRA` and the four OCI variables above, then run `bun run scripts/storage-smoke.ts` from the backend directory. The script creates uniquely named synthetic objects, verifies preflight/direct upload/revocation/read/clean write/download, and deletes them. It does not certify malware scanning.
 
+Local CLI session tokens expire. If startup reports an expired OCI session or OCI returns `401 NotAuthenticated`, run `oci session authenticate --profile-name OLENTRA`, complete the browser sign-in, and restart the realtime server so it loads the new token. Internship initialization includes storage checks as well as MongoDB; a storage authentication failure prevents the internship modules from attaching.
+
 Rollback new uploads by setting `INTERNSHIP_FILE_STORAGE=gridfs`, keeping all OCI and scanner settings: existing OCI reads, cleanup and pending scans remain active. Do not remove OCI settings or IAM while OCI attachments exist.
 
 ## Cleanup, monitoring and validation
@@ -61,3 +63,19 @@ Monitor counts/oldest age of pending and processing rows, rejected counts, expir
 Verification performed: backend TypeScript, upload/queue/scanner protocol unit tests, frontend transport and existing WebSocket client tests, and live OCI transport smoke test. Local Docker is not running, so a real ClamAV scan and MongoDB-backed end-to-end activation have not been verified. Existing email-template suite failures are unrelated to storage changes. This implementation remains disabled by default until deployment prerequisites and acceptance checks are complete.
 
 Official references: [OCI PARs](https://docs.oracle.com/en-us/iaas/Content/Object/Tasks/usingpreauthenticatedrequests.htm), [OCI Object Storage FAQ (CORS)](https://www.oracle.com/cloud/storage/object-storage/faq/), [TypeScript SDK](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/typescriptsdk.htm).
+
+## Persistent API key authentication
+
+Create an API signing key under your OCI user’s **API keys** and register its public key. Use the tenancy, user OCID, and fingerprint shown in Oracle’s configuration preview. Keep the corresponding private key on the backend, outside source control. The user must have IAM access to the storage buckets.
+
+Set these in `backend/realtime-server/.env` (retain the existing storage variables):
+
+```dotenv
+OCI_AUTH_MODE=api_key
+OCI_TENANCY_OCID=ocid1.tenancy.oc1...
+OCI_USER_OCID=ocid1.user.oc1...
+OCI_FINGERPRINT=aa:bb:...
+OCI_PRIVATE_KEY_FILE=/absolute/path/to/oci_api_key.pem
+```
+
+Alternatively set `OCI_PRIVATE_KEY` to the PEM text, with actual newlines or escaped `\n` newlines, for hosting secret stores. Set only one private key source. Encrypted private keys additionally need `OCI_PRIVATE_KEY_PASSPHRASE`. These are backend-only variables; never use a `NEXT_PUBLIC_` prefix. Restart the backend after changing credentials. API keys avoid CLI session expiration but still require rotation and can be revoked. Existing CLI session key files are not registered API signing keys.
