@@ -12,7 +12,7 @@ async function testFullUploadFlow() {
   const configRes = await fetch(`${BASE_URL}/intern/files/config`, {
     headers: { Origin: ORIGIN }
   });
-  const config = await configRes.json();
+  const config = await configRes.json() as { data?: { directUploads?: boolean } };
   console.log("   Response:", JSON.stringify(config, null, 2));
   if (!config.data?.directUploads) {
     console.error("   ❌ Direct uploads not enabled");
@@ -34,10 +34,10 @@ async function testFullUploadFlow() {
       "x-file-size": "1024"
     }
   });
-  const initData = await initRes.json();
+  const initData = await initRes.json() as { error?: { code?: string; message?: string } };
   console.log("   Response:", JSON.stringify(initData, null, 2));
 
-  if (initData.error?.code === "SERVICE_UNAVAILABLE" && initData.error.message.includes("resume verification")) {
+  if (initData.error?.code === "SERVICE_UNAVAILABLE" && initData.error.message?.includes("resume verification")) {
     console.log("   ✅ Endpoint correctly requires Turnstile verification for public uploads\n");
   } else if (initData.error?.code === "UNAUTHENTICATED") {
     console.log("   ✅ Endpoint correctly requires authentication for work uploads\n");

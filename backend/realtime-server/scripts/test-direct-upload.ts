@@ -12,7 +12,7 @@ async function testDirectUpload() {
   const configRes = await fetch(`${BASE_URL}/intern/files/config`, {
     headers: { Origin: ORIGIN }
   });
-  const config = await configRes.json();
+  const config = await configRes.json() as { data?: { directUploads?: boolean } };
   console.log("   Config:", config);
   if (!config.data?.directUploads) {
     console.error("   ❌ Direct uploads not enabled");

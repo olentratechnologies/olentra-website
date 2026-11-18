@@ -176,7 +176,7 @@ test("the seven applicant journey emails share the branded responsive template",
       assert.match(html, /max-width:640px/);
       assert.match(html, /alt="Olentra Technologies"/);
       assert.match(html, />Olentra Technologies<\/td>/);
-      assert.match(html, /mailto:support@olentratechnologies.com/);
+      assert.match(html, /mailto:intern.support@olentratechnologies.com/);
       assert.doesNotMatch(html, /careers@olentratechnologies.com/);
       assert.match(html, /Automated message about your internship application or program/);
       assert.match(html, /background:#f3f6fb/);
