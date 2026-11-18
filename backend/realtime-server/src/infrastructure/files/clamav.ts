@@ -1,13 +1,23 @@
 import { connect } from "node:net";
 
+export function fileScanMode(value?: string): "clamav" | "disabled" {
+  if (!value || value === "clamav") return "clamav";
+  if (value === "disabled") return "disabled";
+  throw new Error("INTERNSHIP_FILE_SCAN_MODE must be clamav or disabled.");
+}
+
+export function createFileScanner(env: NodeJS.ProcessEnv = process.env): (bytes: Uint8Array) => Promise<boolean> {
+  if (fileScanMode(env.INTERNSHIP_FILE_SCAN_MODE) === "disabled") return async () => true;
+  const port = Number(env.CLAMAV_PORT || 3310);
+  if (!env.CLAMAV_HOST || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("Configure CLAMAV_HOST and CLAMAV_PORT, or explicitly set INTERNSHIP_FILE_SCAN_MODE=disabled.");
+  }
+  return bytes => scanWithClamAv(bytes, env.CLAMAV_HOST, port);
+}
+
 /** Fail closed: only an explicit clamd OK permits publishing bytes. */
 export function scanWithClamAv(bytes: Uint8Array, host = process.env.CLAMAV_HOST, port = Number(process.env.CLAMAV_PORT || 3310)): Promise<boolean> {
   if (!host || !Number.isInteger(port) || port < 1 || port > 65535) {
-    // In development/testing without ClamAV, skip scanning (NOT PRODUCTION SAFE)
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("[security] ClamAV scanning disabled - files are not being scanned for malware. This is NOT safe for production.");
-      return Promise.resolve(true);
-    }
     return Promise.reject(new Error("Configure a private CLAMAV_HOST and valid port"));
   }
   return new Promise((resolve, reject) => {

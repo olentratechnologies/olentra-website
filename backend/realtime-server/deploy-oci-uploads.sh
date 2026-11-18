@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 echo "🚀 Deploying OCI Direct Upload Configuration to Production"
 echo "============================================================"
@@ -9,12 +9,16 @@ cd /home/ubuntu/olentra-website
 echo ""
 echo "1️⃣  Pulling latest changes from git..."
 git fetch origin main
-git reset --hard origin/main
+if [ -n "$(git status --porcelain)" ]; then
+    echo "Refusing deployment: checkout has local changes"
+    exit 1
+fi
+git merge --ff-only origin/main
 
 echo ""
 echo "2️⃣  Installing dependencies for realtime-server..."
 cd /home/ubuntu/olentra-website/backend/realtime-server
-/usr/bin/bun install
+/usr/bin/bun install --frozen-lockfile
 
 echo ""
 echo "3️⃣  Building realtime-server..."
@@ -47,7 +51,7 @@ else
 fi
 
 if grep -q "OCI_AUTH_MODE" .env; then
-    echo "   ⚠️  Warning: OCI_AUTH_MODE set (should be unset for instance principals)"
+    echo "   ⚠️  OCI_AUTH_MODE explicitly configured; use instance_principal on OCI Compute"
 else
     echo "   ✅ OCI_AUTH_MODE not set (will use instance principals)"
 fi
@@ -80,6 +84,13 @@ else
 fi
 
 echo ""
+echo "Checking internship readiness..."
+for attempt in $(seq 1 30); do
+    if curl -sf http://127.0.0.1:3003/intern/health > /dev/null; then break; fi
+    sleep 2
+done
+curl -fsS http://127.0.0.1:3003/intern/health > /dev/null
+
 echo "9️⃣  Checking direct upload configuration..."
 UPLOAD_CONFIG=$(curl -s http://127.0.0.1:3003/intern/files/config)
 echo "   Config: $UPLOAD_CONFIG"

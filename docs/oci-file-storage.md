@@ -1,5 +1,7 @@
 # OCI attachment uploads
 
+Malware scanning can be explicitly disabled with `INTERNSHIP_FILE_SCAN_MODE=disabled`. In this mode the backend still validates file signatures, sizes, ownership, and upload capabilities, but accepts files without malware inspection. The default mode is `clamav`; missing scanner configuration then prevents storage initialization.
+
 The implementation plan is in [plans/oci-uploads.md](plans/oci-uploads.md). New uploads are opt-in; existing GridFS attachments remain readable. No existing data is migrated.
 
 ## Flow and API
@@ -9,7 +11,7 @@ The implementation plan is in [plans/oci-uploads.md](plans/oci-uploads.md). New 
 - Browser PUTs bytes to `uploadUrl` with only Content-Type and no application credentials. It then sends `POST /intern/files/uploads/:id/complete` with `X-File-Token: accessToken`.
 - `GET /intern/files/uploads/:id` with that capability or the owning application session returns current status. Completion is idempotent. Browser polling recovers missed notifications; an intent becomes eligible for reconciliation 30 seconds after URL expiry even without completion.
 - WebSocket `files.subscribe` accepts `{id,accessToken}` and returns current status. `intern.file_status` events contain only `{id,status}`; subscriptions are private, capability-authorized, and limited to eight per connection. MongoDB event change streams deliver updates across backend replicas. The browser uses a short-lived dedicated connection per upload and HTTP as the authoritative recovery path.
-- Statuses are `uploading`, `pending`, `processing`, `ready`, `rejected`, and `deleting`. Six attempts with exponential backoff reject permanently failing scans. Scanner errors never mark a file ready. Existing application commands accept only ready attachments.
+- Statuses are `uploading`, `pending`, `processing`, `ready`, `rejected`, and `deleting`. Six attempts with exponential backoff reject permanently failing scans. Scanner errors never mark a file ready. Existing application commands accept only ready attachments. In disabled scan mode, ready means the file passed the remaining validation checks without malware inspection.
 - Downloads retain `GET /intern/files/:id`, existing owner/staff permission checks and attachment response headers. Bun streams approved OCI bytes; quarantine is never served. Download traffic still traverses Bun; signed downloads/CDN are a separate future optimization.
 
 The MongoDB file record is also the durable processing queue, so there is no queue/database dual-write gap. Workers claim records atomically with five-minute leases and unique fencing tokens. Each attempt publishes to a fresh clean key, using the exact bounded buffer scanned by ClamAV. A stale worker cannot overwrite a published object. Pending work survives process restarts. Worker loops run inside the Bun service; a separate worker deployment is not required for this version.
@@ -30,7 +32,7 @@ Two running Compute instances were found. No workload IAM policy has been applie
 
 ## Scanner and activation
 
-Use an approved digest of the official `clamav/clamav` image with `deploy/compose.scanner.yml` and `deploy/clamd.conf`. Set `BACKEND_DOCKER_NETWORK` to Bun's private network. Port 3310 must never be exposed publicly: clamd TCP is unencrypted and unauthenticated. The scanner needs outbound access to update signatures. Keep signatures current and monitor update failures. The configuration rejects encrypted archives and scan-limit violations rather than silently permitting them. Allow roughly 2 GiB RAM for signatures and scanning; benchmark before scaling concurrency.
+When scanning is enabled, use an approved digest of the official `clamav/clamav` image with `deploy/compose.scanner.yml` and `deploy/clamd.conf`. Set `BACKEND_DOCKER_NETWORK` to Bun's private network. Port 3310 must never be exposed publicly: clamd TCP is unencrypted and unauthenticated. The scanner needs outbound access to update signatures. Keep signatures current and monitor update failures. The configuration rejects encrypted archives and scan-limit violations rather than silently permitting them. Allow roughly 2 GiB RAM for signatures and scanning; benchmark before scaling concurrency.
 
 Set these in the deployment environment, not committed secrets:
 
@@ -46,7 +48,7 @@ CLAMAV_PORT=3310
 
 Anonymous resume uploads additionally require the existing `INTERNSHIP_TURNSTILE_SECRET_KEY` and frontend site key. Missing verification configuration fails closed in OCI mode. Existing per-account/draft rate limits apply. Post-upload validation enforces actual bytes and declared size: resume limit 5 MiB, work limit 10 MiB. A PAR cannot enforce this size before storage receives bytes; if a hard transfer-byte budget is required, use an enforcing upload gateway. Signature checks recognize the existing file allowlist; Office ZIP/compound-container checks are not a substitute for document sanitization. Malware scanning cannot guarantee that every malicious document is detected.
 
-Deploy the scanner first, verify fresh signatures and EICAR rejection in an isolated test, then deploy/restart Bun with this configuration. Deploy the web helper with Bun; it discovers the transport at runtime. Before production activation, run isolated MongoDB integration tests, a real browser upload/resume submission/download, an unauthorized download, and restart recovery. Never enable a mock scanner in production.
+When scanning is enabled, deploy the scanner first, verify fresh signatures and EICAR rejection in an isolated test, then deploy/restart Bun with this configuration. Deploy the web helper with Bun; it discovers the transport at runtime. Before production activation, run isolated MongoDB integration tests, a real browser upload/resume submission/download, an unauthorized download, and restart recovery. Never enable a mock scanner in production.
 
 For local transport verification use `OCI_AUTH_MODE=session`, `OCI_CLI_PROFILE=OLENTRA` and the four OCI variables above, then run `bun run scripts/storage-smoke.ts` from the backend directory. The script creates uniquely named synthetic objects, verifies preflight/direct upload/revocation/read/clean write/download, and deletes them. It does not certify malware scanning.
 

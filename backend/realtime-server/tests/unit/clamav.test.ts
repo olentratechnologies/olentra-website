@@ -1,6 +1,13 @@
 import { expect, test } from "bun:test";
 import { createServer } from "node:net";
-import { scanWithClamAv } from "../../src/infrastructure/files/clamav";
+import { scanWithClamAv, createFileScanner } from "../../src/infrastructure/files/clamav";
+
+test("skipping scanning requires an explicit mode, including in production", async () => {
+  expect(() => createFileScanner({ NODE_ENV: "production" })).toThrow("CLAMAV_HOST");
+  expect(() => createFileScanner({ INTERNSHIP_FILE_SCAN_MODE: "typo" })).toThrow("must be");
+  expect(() => createFileScanner({ CLAMAV_HOST: "127.0.0.1", CLAMAV_PORT: "0" })).toThrow("CLAMAV_PORT");
+  expect(await createFileScanner({ NODE_ENV: "production", INTERNSHIP_FILE_SCAN_MODE: "disabled" })(new Uint8Array([1]))).toBe(true);
+});
 
 async function scanner(verdict: string | null, run: (port: number, received: () => Buffer) => Promise<void>) {
   let received = Buffer.alloc(0);

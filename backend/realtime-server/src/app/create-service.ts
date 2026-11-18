@@ -6,7 +6,7 @@ import { createInternshipMailer } from "../infrastructure/email/mailer";
 import { can, isAdmin } from "../modules/access/policy";
 import { logger } from "../infrastructure/observability/logger";
 import { createOciStore } from "../infrastructure/files/oci.store";
-import { scanWithClamAv } from "../infrastructure/files/clamav";
+import { createFileScanner, fileScanMode } from "../infrastructure/files/clamav";
 import { createDirectUploads, uploadTopic, type DirectUploads } from "../modules/files/direct-uploads";
 import { createGridFsStore } from "../infrastructure/files/gridfs.store";
 import { createInternshipContainer } from "./container";
@@ -196,8 +196,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const directEnabled = process.env.INTERNSHIP_FILE_STORAGE === "oci";
     // Keep OCI reads and pending jobs available when rolling new uploads back to GridFS.
     const objectStore = directEnabled && process.env.OCI_STORAGE_BUCKET ? await createOciStore() : undefined;
-    if (objectStore && !process.env.CLAMAV_HOST && process.env.NODE_ENV === "production") throw new Error("OCI uploads require CLAMAV_HOST in production");
-    const directUploads = objectStore ? createDirectUploads({ files, store: objectStore, scan: scanWithClamAv,
+    if (objectStore && fileScanMode(process.env.INTERNSHIP_FILE_SCAN_MODE) === "disabled") logger.warn("Uploaded files will not be scanned for malware", { scanMode: "disabled" });
+    const directUploads = objectStore ? createDirectUploads({ files, store: objectStore, scan: createFileScanner(),
       notify: async (id, status) => {
         await domain.collection("events").insertOne({ _id: crypto.randomUUID(), type: "file.status", uploadId: id, status, public: false, applicationIds: [], createdAt: new Date() });
       },
