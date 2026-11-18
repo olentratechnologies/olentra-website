@@ -38,6 +38,7 @@ const slugify = (value) =>
 export const serviceGroups = [
     {
         category: 'Platform Engineering',
+        Icon: Layers3,
         icon: '🧩',
         services: [
             {
@@ -76,6 +77,7 @@ export const serviceGroups = [
     },
     {
         category: 'Data & AI',
+        Icon: Brain,
         icon: '🤖',
         services: [
             {
@@ -114,6 +116,7 @@ export const serviceGroups = [
     },
     {
         category: 'Cloud & Security',
+        Icon: ShieldCheck,
         icon: '☁️',
         services: [
             {
@@ -136,6 +139,7 @@ export const serviceGroups = [
     },
     {
         category: 'Product Engineering',
+        Icon: Code2,
         icon: '🧑‍💻',
         services: [
             {
@@ -174,6 +178,7 @@ export const serviceGroups = [
     },
     {
         category: 'SEO & Organic Growth',
+        Icon: LineChart,
         icon: '📈',
         services: [
             {
@@ -196,6 +201,7 @@ export const serviceGroups = [
     },
     {
         category: 'Branding & Creative',
+        Icon: Palette,
         icon: '🎨',
         services: [
             {
@@ -218,6 +224,7 @@ export const serviceGroups = [
     },
     {
         category: 'Sales Growth',
+        Icon: Megaphone,
         icon: '💼',
         services: [
             {

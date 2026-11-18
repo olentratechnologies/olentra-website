@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useId, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ChevronDown, Calendar } from 'lucide-react';
+import { Menu, X, ChevronDown, Calendar, GraduationCap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -633,7 +633,7 @@ export default function Navbar() {
                         items[next]?.focus();
                       }}
                       className={`absolute top-full left-1/2 w-[210px] p-2 rounded-2xl border z-[110] mt-3.5 before:absolute before:-top-5 before:left-0 before:right-0 before:h-5 before:content-[''] ${isLightSection ? 'bg-white border-slate-200 text-slate-900 shadow-xl shadow-slate-300/40' : DARK_GLASS_MENU}`}
-                    >{link.children.map((child) => <Link key={child.id} role="menuitem" href={child.href} onClick={() => setIsCareersOpen(false)} className={`block rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-wider ${isLightSection ? 'hover:bg-slate-100 focus-visible:bg-slate-100 text-slate-800' : 'hover:bg-white/5 focus-visible:bg-white/5 text-slate-200'} focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}>{child.label}</Link>)}</motion.div>}</AnimatePresence>}
+                    >{link.children.map((child) => <Link key={child.id} role="menuitem" href={child.href} onClick={() => setIsCareersOpen(false)} className={`flex items-center gap-2 rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-wider ${isLightSection ? 'hover:bg-slate-100 focus-visible:bg-slate-100 text-slate-800' : 'hover:bg-white/5 focus-visible:bg-white/5 text-slate-200'} focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}><GraduationCap size={16} strokeWidth={1.75} className="shrink-0" aria-hidden="true" /><span>{child.label}</span></Link>)}</motion.div>}</AnimatePresence>}
 
 
                     {/* Desktop Mega Menu Dropdown - Centered Precisely to Link */}
@@ -692,7 +692,7 @@ export default function Navbar() {
                                           style={{ background: accentGradient }}
                                         />
                                         <span className="flex items-center gap-2">
-                                          <span className="text-sm leading-none">{group.icon}</span>
+                                          <group.Icon size={16} strokeWidth={1.75} className="shrink-0" aria-hidden="true" />
                                           <span className="text-[10px] font-bold uppercase tracking-wider">
                                             {group.category}
                                           </span>
@@ -935,7 +935,7 @@ export default function Navbar() {
                           </Link>
                         )}
 
-                        {isCareers && <AnimatePresence>{mobileCareersOpen && <motion.div id={`${careersMenuId}-mobile`} role="region" aria-label="Careers" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1 pl-4 pt-1">{link.children.map((child) => <Link key={child.id} href={child.href} onClick={() => { setMobileCareersOpen(false); setMobileOpen(false); }} className={`relative pl-4 pr-5 py-3 rounded-lg border-l-2 border-transparent hover:border-primary/50 text-[10px] font-bold uppercase tracking-wider ${isLightSection ? 'text-slate-900 hover:bg-slate-50' : 'text-white hover:bg-white/5'}`}>{child.label}</Link>)}</motion.div>}</AnimatePresence>}
+                        {isCareers && <AnimatePresence>{mobileCareersOpen && <motion.div id={`${careersMenuId}-mobile`} role="region" aria-label="Careers" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1 pl-4 pt-1">{link.children.map((child) => <Link key={child.id} href={child.href} onClick={() => { setMobileCareersOpen(false); setMobileOpen(false); }} className={`relative flex items-center gap-2 pl-4 pr-5 py-3 rounded-lg border-l-2 border-transparent hover:border-primary/50 text-[10px] font-bold uppercase tracking-wider ${isLightSection ? 'text-slate-900 hover:bg-slate-50' : 'text-white hover:bg-white/5'}`}><GraduationCap size={16} strokeWidth={1.75} className="shrink-0" aria-hidden="true" /><span>{child.label}</span></Link>)}</motion.div>}</AnimatePresence>}
 
                         {/* Mobile Services Sub-menu */}
                         <AnimatePresence>
@@ -957,7 +957,7 @@ export default function Navbar() {
                                     className={`w-full flex items-center justify-between gap-3 py-2 ${isLightSection ? 'text-slate-600' : 'text-slate-300'}`}
                                   >
                                     <span className="flex items-center gap-2">
-                                      <span className="text-sm leading-none">{group.icon}</span>
+                                      <group.Icon size={16} strokeWidth={1.75} className="shrink-0" aria-hidden="true" />
                                       <span className="text-[10px] font-black uppercase tracking-[0.22em]">
                                         {group.category}
                                       </span>
@@ -1022,7 +1022,7 @@ export default function Navbar() {
                                       setMobileOpen(false);
                                       setMobileProductsOpen(false);
                                     }}
-                                    className={`relative pl-4 pr-5 py-3 rounded-lg transition-[transform,opacity,box-shadow] border-l-2 border-transparent hover:border-primary/50 ${isLightSection
+                                    className={`relative flex items-center gap-2 pl-4 pr-5 py-3 rounded-lg transition-[transform,opacity,box-shadow] border-l-2 border-transparent hover:border-primary/50 ${isLightSection
                                       ? 'text-slate-900 hover:text-slate-950 hover:bg-slate-50'
                                       : 'text-white hover:bg-white/5'
                                       }`}
