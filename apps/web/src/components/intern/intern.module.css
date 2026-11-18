@@ -864,8 +864,32 @@
     line-height: 25px;
   }
   .heroActions {
-    justify-content: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 360px;
+    margin-inline: auto;
     margin-top: 26px;
+  }
+  .heroActions :is(.primaryButton, .secondaryButton) {
+    width: 100%;
+    min-height: 48px;
+  }
+  .programFacts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    max-width: 360px;
+    margin-inline: auto;
+    gap: 10px;
+  }
+  .programFacts li {
+    justify-content: center;
+    min-width: 0;
+    padding: 10px 8px;
+  }
+  .programFacts li:last-child {
+    grid-column: 1 / -1;
   }
   .heroArt {
     justify-self: center;
