@@ -11,8 +11,10 @@ export const contactInfo = {
         }
     ],
     socials: [
+        { label: 'YouTube', href: 'https://www.youtube.com/@OlentraTechnologies' },
+        { label: 'Instagram', href: 'https://www.instagram.com/olentratechnologies/' },
         { label: 'LinkedIn', href: 'https://www.linkedin.com/company/olentra-technologies/' },
-        { label: 'Twitter', href: 'https://x.com/olentra' },
-        { label: 'Instagram', href: 'https://www.instagram.com/olentra' },
+        { label: 'X', href: 'https://x.com/olentraTech' },
+        { label: 'Facebook', href: 'https://www.facebook.com/people/Olentra-Technologies' },
     ],
 };
