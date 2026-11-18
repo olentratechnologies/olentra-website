@@ -63,7 +63,7 @@ export function buildOfferLetterPdfBytes(details) {
     path('482 842 m 515 799 551 801 595.28 781 c 595.28 842 l h','0.02 0.20 0.55');
     commands.push('q 36 0 0 36 32 790 cm /Logo Do Q');
     text('Olentra Technologies',80,809,22,true);
-    commands.push(`BT /F1 8.8 Tf 0.02 0.055 0.17 rg 4 Tc 1 0 0 1 81 794 Tm (${escape('I N T E R N S H I P  P R O G R A M')}) Tj ET`);
+    text('I N T E R N S H I P            P R O G R A M',81,794,8.8,false);
   }
   function footer() {
     path('0 60 m 55 56 66 20 144 32 c 300 65 487 45 595.28 60 c 595.28 0 l 0 0 l h','0.79 0.89 1');
