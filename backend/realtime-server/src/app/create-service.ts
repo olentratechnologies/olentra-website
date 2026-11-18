@@ -195,7 +195,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const files = domain.collection("files");
     const directEnabled = process.env.INTERNSHIP_FILE_STORAGE === "oci";
     // Keep OCI reads and pending jobs available when rolling new uploads back to GridFS.
-    const objectStore = directEnabled || process.env.OCI_STORAGE_BUCKET ? await createOciStore() : undefined;
+    const objectStore = directEnabled && process.env.OCI_STORAGE_BUCKET ? await createOciStore() : undefined;
     if (objectStore && !process.env.CLAMAV_HOST && process.env.NODE_ENV === "production") throw new Error("OCI uploads require CLAMAV_HOST in production");
     const directUploads = objectStore ? createDirectUploads({ files, store: objectStore, scan: scanWithClamAv,
       notify: async (id, status) => {
@@ -399,10 +399,12 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           return sendJson({ ok: true, data: await runtime.siteFeatures.write(body.state, Number(body.expectedRevision)) }, origin);
         }
         if (url.pathname === RESUME_GRANT_PATH && request.method === "POST") return await runtime.fileRoutes.authorizeResume(request, origin);
-        if (url.pathname === "/intern/files/config" && request.method === "GET") return runtime.fileRoutes.config(origin);
-        if (url.pathname === "/intern/files/uploads" && request.method === "POST") return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
-        const uploadRoute = /^\/intern\/files\/uploads\/([a-f0-9-]{36})(\/complete)?$/.exec(url.pathname);
-        if (uploadRoute && ((uploadRoute[2] && request.method === "POST") || (!uploadRoute[2] && request.method === "GET"))) return await runtime.fileRoutes.uploadStatus(request, origin, uploadRoute[1]!, Boolean(uploadRoute[2]));
+        if (url.pathname === "/intern/files/config" && request.method === "GET") return sendJson({ ok: true, data: { directUploads: Boolean(runtime.directUploads) } }, origin);
+        if (runtime.directUploads) {
+          if (url.pathname === "/intern/files/uploads" && request.method === "POST") return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
+          const uploadRoute = /^\/intern\/files\/uploads\/([a-f0-9-]{36})(\/complete)?$/.exec(url.pathname);
+          if (uploadRoute && ((uploadRoute[2] && request.method === "POST") || (!uploadRoute[2] && request.method === "GET"))) return await runtime.fileRoutes.uploadStatus(request, origin, uploadRoute[1]!, Boolean(uploadRoute[2]));
+        }
         if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);
         throw new DomainError("NOT_FOUND", "Endpoint not found.");

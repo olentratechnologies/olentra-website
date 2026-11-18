@@ -10,6 +10,8 @@ import { bearerToken } from "./middleware";
 import { clientAddress } from "../../modules/auth/login-throttle";
 import type { RateLimiter } from "../../modules/auth/rate-limit";
 import type { createResumeGrants } from "../../modules/files/resume-grant";
+import type { DirectUploads } from "../../modules/files/direct-uploads";
+import type { ObjectStore } from "../../infrastructure/files/oci.store";
 import { SIGNATURE_BYTES, allowedType, matchesSignature } from "../../modules/files/file-types";
 
 export const FILES_PATH = "/intern/files";
@@ -27,8 +29,11 @@ const MAX_CONCURRENT_PUBLIC_UPLOADS = 16;
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
-/** GridFS-backed file transport adapter. */
-export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter, resumeGrants }: {
+/** Authorized legacy GridFS transport and OCI upload control plane. */
+export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter, resumeGrants, direct, directEnabled = Boolean(direct), objectStore }: {
+  direct?: DirectUploads;
+  directEnabled?: boolean;
+  objectStore?: ObjectStore;
   auth: Auth;
   bucket: GridFSBucket;
   files: Collection<FileRow>;
@@ -37,6 +42,7 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
   limiter?: RateLimiter;
   resumeGrants?: ReturnType<typeof createResumeGrants>;
 }) {
+  const hasDirectUploads = direct && directEnabled;
   const authenticate = async (request: Request) => {
     const value = bearerToken(request);
     return value ? (await auth.verify(value)).account : null;
@@ -47,6 +53,13 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
   let activePublicUploads = 0;
 
   return {
+    config(origin: string | null) { return sendJson({ ok: true, data: { directUploads: hasDirectUploads } }, origin); },
+    async uploadStatus(request: Request, origin: string | null, id: string, complete = false) {
+      if (!direct) throw new DomainError("NOT_FOUND", "Direct uploads are unavailable.");
+      const account = await authenticate(request);
+      const data = await direct[complete ? "complete" : "status"](id, request.headers.get("x-file-token") || "", account?.applicationId || undefined);
+      return sendJson({ ok: true, data }, origin);
+    },
     async authorizeResume(request: Request, origin: string | null) {
       if (!resumeGrants || !origin) throw new DomainError("FORBIDDEN", "Resume verification is unavailable for this request.");
       const challenge = request.headers.get("x-resume-challenge") || "";
@@ -64,8 +77,11 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
       if (kind === "work" && !account) throw new DomainError("UNAUTHENTICATED", "Sign in to upload work.");
       if (account?.role === "company") throw new DomainError("FORBIDDEN", "Staff accounts cannot upload intern attachments.");
       const maximum = (kind === "resume" ? 5 : 10) * 1024 * 1024;
-      const declared = Number(request.headers.get("content-length") || 0);
-      if (declared > maximum || !request.body) throw new DomainError("INVALID_REQUEST", "The file is too large or empty.");
+      const directRequest = new URL(request.url).pathname.endsWith("/uploads");
+      if (directRequest && (!direct || !directEnabled)) throw new DomainError("NOT_FOUND", "Direct uploads are unavailable.");
+      if (direct && directEnabled && !directRequest) throw new DomainError("INVALID_REQUEST", "Use the direct upload workflow.");
+      const declared = Number(request.headers.get(directRequest ? "x-file-size" : "content-length") || 0);
+      if (!Number.isSafeInteger(declared) || declared < 0 || declared > maximum || (directRequest ? !declared : !request.body)) throw new DomainError("INVALID_REQUEST", "The file is too large or empty.");
       if (account) {
         await limiter?.consume("upload", addressFor(request, peerAddress), account.id);
       } else {
@@ -75,10 +91,12 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
         activePublicUploads++;
       }
       try {
+        if (directRequest && !account && !resumeGrants) throw new DomainError("SERVICE_UNAVAILABLE", "Public uploads require resume verification.");
         if (resumeGrants && !account) {
           const draftId = await resumeGrants.draftId(request.headers.get("x-resume-grant") || "");
           await limiter?.consume("verifiedResume", null, draftId);
         }
+        if (directRequest) return sendJson({ ok: true, data: await direct!.begin({ name, kind, type: type.mime, size: declared, ...(account?.applicationId ? { ownerApplicationId: account.applicationId } : {}) }) }, origin, 201);
         const gridId = new ObjectId();
         const attachmentId = randomUUID();
         const accessToken = randomBytes(32).toString("base64url");
@@ -121,7 +139,10 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
       const ownerAccess = account?.role === "intern" && account.applicationId && account.applicationId === (file.applicationId || file.ownerApplicationId);
       const pendingUploadAccess = !account && !file.applicationId && !file.ownerApplicationId && accessToken && file.accessTokenHash === hash(accessToken);
       if (!(staffAccess || ownerAccess || pendingUploadAccess)) throw new DomainError("FORBIDDEN", "File access denied.");
-      const stream = Readable.toWeb(bucket.openDownloadStream(file.gridId)) as ReadableStream;
+      const stream = file.storage === "oci"
+        ? objectStore && file.cleanKey ? await objectStore.download(file.cleanKey) : null
+        : Readable.toWeb(bucket.openDownloadStream(file.gridId)) as ReadableStream;
+      if (!stream) throw new DomainError("SERVICE_UNAVAILABLE", "Object storage is unavailable.");
       return new Response(stream, { headers: withCors(origin, { "Content-Type": file.type, "Content-Disposition": `attachment; filename="${file.name.replace(/["\\]/g, "_")}"`, "Content-Length": String(file.size), "Access-Control-Expose-Headers": "Content-Disposition", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox" }) });
     },
   };
