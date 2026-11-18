@@ -9,6 +9,7 @@ export const ORPHAN_AGE_MS = 24 * 60 * 60_000;
  */
 export async function removeOrphanedUploads(files: Collection<Document & { _id: string }>, bucket: GridFSBucket, now = Date.now(), limit = 200) {
   const orphans = await files.find({
+    storage: { $ne: "oci" },
     applicationId: { $exists: false },
     ownerApplicationId: { $exists: false },
     createdAt: { $lt: new Date(now - ORPHAN_AGE_MS) },

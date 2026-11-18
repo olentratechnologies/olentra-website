@@ -82,7 +82,8 @@ export async function refreshInternSession() {
 export function forgetInternToken() { accessToken = null; clearRefreshAttempt(); }
 
 export class InternClient {
-  constructor({ onChange, onConnection, onSessionChanged, publicOnly = false }) { this.publicOnly = publicOnly; this.onChange = onChange; this.onConnection = onConnection; this.onSessionChanged = onSessionChanged; this.pending = new Map(); this.retryKeys = new Map(); this.closed = false; this.socket = null; this.opening = null; this.authenticatedToken = null; this.authenticatedAccount = null; this.insightsListeners = new Set(); this.staffListeners = new Set(); }
+  constructor({ onChange, onConnection, onSessionChanged, publicOnly = false }) { this.publicOnly = publicOnly; this.onChange = onChange; this.onConnection = onConnection; this.onSessionChanged = onSessionChanged; this.pending = new Map(); this.retryKeys = new Map(); this.closed = false; this.socket = null; this.opening = null; this.authenticatedToken = null; this.authenticatedAccount = null; this.fileListeners = new Set(); this.insightsListeners = new Set(); this.staffListeners = new Set(); }
+  addFileListener(listener) { this.fileListeners.add(listener); return () => this.fileListeners.delete(listener); }
   /** Staff-only live events, e.g. `intern.application_created` with the applicant's name and track. */
   addStaffListener(listener) { this.staffListeners.add(listener); return () => this.staffListeners.delete(listener); }
   /** Receives pushed public insights (`intern.insights`) and viewer-count (`intern.insights.viewers`) events. */
@@ -102,6 +103,7 @@ export class InternClient {
       socket.onmessage = (event) => {
         let message; try { message = JSON.parse(event.data); } catch { return; }
         if (message.type === "event" && message.event === "intern.session_changed") { forgetInternToken(); this.onSessionChanged?.(); socket.close(); return; }
+        if (message.type === "event" && message.event === "intern.file_status") { for (const listener of this.fileListeners) listener(message.data); return; }
         if (message.type === "event" && message.event === "intern.changed") this.onChange?.("changed");
         if (message.type === "event" && (message.event === "intern.insights" || message.event === "intern.insights.viewers")) { for (const listener of this.insightsListeners) listener(message); return; }
         if (message.type === "event" && (message.event === "intern.application_created" || message.event === "intern.assigned")) { for (const listener of this.staffListeners) listener(message); return; }

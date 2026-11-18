@@ -1,4 +1,5 @@
-import { internEndpoint, internToken } from "./intern-client.mjs";
+import { transferDirectUpload } from "./direct-upload.mjs";
+import { InternClient, internEndpoint, internToken } from "./intern-client.mjs";
 const MEBIBYTE = 1024 * 1024;
 function fileName(value) { return String(value || "").split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g, "").trim(); }
 async function result(response) {
@@ -24,6 +25,15 @@ export async function saveAttachment(file, kind="resume", { publicUpload = false
   // HTTP headers may not contain non-Latin characters; keep a safe display name.
   const headerName=name.replace(/[^\x20-\x7e]/g,"_");
   const token = publicUpload ? null : internToken();
+  const config = await result(await fetch(`${internEndpoint()}/intern/files/config`, { credentials: "omit" }));
+  if (config.directUploads) {
+    const headers = {
+      "X-File-Name": headerName, "X-File-Kind": resume ? "resume" : "work", "X-File-Size": String(file.size),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(resumeGrant ? { "X-Resume-Grant": resumeGrant } : {}),
+    };
+    const intent = await result(await fetch(`${internEndpoint()}/intern/files/uploads`, { method: "POST", credentials: "omit", headers }));
+    return transferDirectUpload({ file, intent, endpoint: internEndpoint(), headers: token ? { Authorization: `Bearer ${token}` } : {}, readResult: result, client: new InternClient({ publicOnly: true }) });
+  }
   return result(await fetch(`${internEndpoint()}/intern/files`, {
     method: "POST",
     headers: {

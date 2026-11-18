@@ -28,7 +28,7 @@ export async function eraseApplicant({ db, client, prefix, applicationId, before
       const email = String(application.email || "").toLowerCase();
       const accountIds = (await c("accounts").find({ applicationId, role: "intern" }, { ...opts, projection: { _id: 1 } }).toArray()).map(row => row._id);
       const internIds = (await c("interns").find({ applicationId }, { ...opts, projection: { _id: 1 } }).toArray()).map(row => row._id);
-      const uploads = await c("files").find({ $or: [{ applicationId }, { ownerApplicationId: applicationId }] }, { ...opts, projection: { gridId: 1 } }).toArray();
+      const uploads = await c("files").find({ $or: [{ applicationId }, { ownerApplicationId: applicationId }] }, { ...opts, projection: { gridId: 1, storage: 1 } }).toArray();
       gridIds = uploads.map(row => row.gridId).filter(Boolean);
       const wipe = async (name: string, filter: Record<string, unknown>) => { removed[name] = (await c(name).deleteMany(filter, opts)).deletedCount; };
       await wipe("applications", { _id: applicationId });
@@ -38,7 +38,9 @@ export async function eraseApplicant({ db, client, prefix, applicationId, before
       await wipe("notification_reads", { accountId: { $in: accountIds } });
       for (const name of ["offers", "offer_versions", "onboarding", "interns", "tasks", "submissions", "messages", "notifications", "stories", "interviews", "activity", "reviews", "checkins", "feedback", "resource_progress"]) await wipe(name, { applicationId });
       await wipe("certificates", { $or: [{ applicationId }, { internId: { $in: internIds } }] });
-      await wipe("files", { _id: { $in: uploads.map(row => row._id) } });
+      // OCI bytes are deleted by the durable cleanup worker after commit.
+      await c("files").updateMany({ _id: { $in: uploads.filter(row => row.storage === "oci").map(row => row._id) } }, { $set: { status: "deleting" }, $unset: { applicationId: "", ownerApplicationId: "", accessTokenHash: "", name: "", type: "", size: "" } }, opts);
+      await wipe("files", { _id: { $in: uploads.filter(row => row.storage !== "oci").map(row => row._id) } });
       await wipe("outbox", { $or: [{ "payload.applicationId": applicationId }, ...(email ? [{ "payload.to": email }] : [])] });
       await wipe("events", { applicationIds: applicationId });
       // Saved request results (kept a week for safe retries) can echo the application.
