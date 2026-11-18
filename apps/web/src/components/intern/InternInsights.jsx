@@ -42,6 +42,21 @@ function trackName(tracks, id) {
   return tracks.find((track) => track.id === id)?.name || "Olentra internship";
 }
 
+function skillName(value) {
+  const name = String(value || "").trim();
+  return name ? name.charAt(0).toUpperCase() + name.slice(1) : "";
+}
+
+function monthlyTotals(months) {
+  return months.map((month) => (month.explorer || 0) + (month.innovator || 0));
+}
+
+/** Matches the server's public rule: a first name plus a last initial. */
+function initials(name) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  return parts.slice(0, 2).map((part) => part.charAt(0)).join("").toUpperCase();
+}
+
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -94,6 +109,21 @@ export default function InternInsights() {
   const tracks = insights?.tracks || [];
   const recent = insights?.recent || [];
   const byRole = insights?.byRole || {};
+  const months = insights?.months || [];
+  const monthly = monthlyTotals(months);
+  const peakMonth = Math.max(1, ...monthly);
+  const topSkill = insights?.topSkills?.[0];
+  const certified = Number(totals?.certified) || 0;
+  const completion = totals?.onboarded ? Math.min(100, Math.round((certified / totals.onboarded) * 100)) : null;
+  const updatedLabel = insights?.updatedAt
+    ? `Updated ${relativeTime(insights.updatedAt, now) || "just now"}`
+    : "Live program data";
+  const trendMonths = months
+    .map((month, index) => ({ label: month.label, count: monthly[index] }))
+    .filter((month) => month.count > 0);
+  const trendSummary = trendMonths.length
+    ? `Applications per month over the last 12 months: ${trendMonths.map((month) => `${month.label} ${month.count}`).join(", ")}.`
+    : "No applications in the last 12 months.";
   const roleCounts = INTERN_ROLES.map((role) => byRole[role.id] || 0);
   const topCount = Math.max(0, ...roleCounts);
   const secondCount = [...roleCounts].sort((a, b) => b - a)[1] || 0;
@@ -129,7 +159,7 @@ export default function InternInsights() {
         <p className={styles.firstNote}><Sparkles size={15} aria-hidden="true" /> Insights will appear here once an internship track opens.</p>
       ) : (
         <div className={styles.body}>
-          <p className={styles.srOnly} aria-live="polite">{`${totals.applied} applications, ${totals.shortlisted} shortlisted, ${totals.onboarded} onboarded.`}</p>
+          <p className={styles.srOnly} aria-live="polite">{`${totals.applied} applications, ${totals.shortlisted} shortlisted, ${totals.onboarded} onboarded, ${totals.certified} certified.`}</p>
           <div className={styles.overview}>
             <article className={styles.spotlight}>
               <div>
@@ -140,22 +170,74 @@ export default function InternInsights() {
               <div className={styles.spotlightFooter}><span>Olentra Launchpad</span><span aria-hidden="true">↗</span></div>
             </article>
             <div className={styles.journey}>
-              <div className={styles.overviewHeading}><h3>From application to achievement</h3><span>Program overview</span></div>
-              <ol className={styles.funnel} aria-label="Internship selection funnel">
-                {FUNNEL.slice(1).map((step, index) => {
-                  const Icon = step.icon;
-                  const value = totals[step.id] || 0;
-                  const share = totals.applied ? Math.min(100, Math.round((value / totals.applied) * 100)) : 0;
-                  return (
-                    <li key={step.id} className={styles.funnelStep}>
-                      <div className={styles.stepTop}><span className={styles.stepIcon}><Icon size={13} aria-hidden="true" /></span><span className={styles.stepIndex}>{String(index + 2).padStart(2, "0")}</span></div>
-                      <span className={styles.stepLabel}>{step.label}</span>
-                      <LiveNumber value={value} className={styles.stepValue} />
-                      <span className={styles.meter} aria-hidden="true"><span style={{ width: `${share}%` }} /></span>
-                    </li>
-                  );
-                })}
-              </ol>
+              <div className={styles.overviewHeading}>
+                <h3>From application to achievement</h3>
+                <span>{updatedLabel}</span>
+              </div>
+              <div className={styles.journeyBody}>
+                <ol className={styles.funnel} aria-label="Internship selection funnel">
+                  {FUNNEL.slice(1).map((step) => {
+                    const Icon = step.icon;
+                    const value = totals[step.id] || 0;
+                    const share = totals.applied ? Math.min(100, Math.round((value / totals.applied) * 100)) : 0;
+                    return (
+                      <li key={step.id} className={styles.funnelStep}>
+                        <span className={styles.stepIcon}><Icon size={13} aria-hidden="true" /></span>
+                        <span className={styles.stepMain}>
+                          <span className={styles.stepLabel}>{step.label}</span>
+                          <span className={styles.meter} aria-hidden="true"><span style={{ width: `${share}%` }} /></span>
+                        </span>
+                        <LiveNumber value={value} className={styles.stepValue} />
+                      </li>
+                    );
+                  })}
+                </ol>
+                <aside className={styles.rail} aria-labelledby="insights-trend-title">
+                  <div className={styles.railHead}>
+                    <h4 id="insights-trend-title">Applications · last 12 months</h4>
+                    <span>{format.format(insights.thisMonth || 0)} this month</span>
+                  </div>
+                  <div className={styles.chartBlock}>
+                    <div className={styles.chart} role="img" aria-label={trendSummary}>
+                      {months.map((month, index) => (
+                        <span
+                          key={month.month}
+                          className={styles.chartBar}
+                          data-current={index === months.length - 1 ? "true" : undefined}
+                        >
+                          <i style={{ height: `${Math.max(6, Math.round((monthly[index] / peakMonth) * 100))}%` }} />
+                        </span>
+                      ))}
+                    </div>
+                    <div className={styles.chartAxis} aria-hidden="true">
+                      {months.map((month) => <span key={month.month}>{month.label}</span>)}
+                    </div>
+                  </div>
+                  <dl className={styles.railStats}>
+                    <div>
+                      <dt>Completion</dt>
+                      <dd>
+                        {completion === null ? "—" : `${completion}%`}
+                        <span>{completion === null ? "No interns yet" : `${certified} of ${totals.onboarded} certified`}</span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Top skill</dt>
+                      <dd>
+                        {topSkill ? skillName(topSkill.name) : "—"}
+                        <span>{topSkill ? `${topSkill.count} ${topSkill.count === 1 ? "applicant" : "applicants"}` : "No skills yet"}</span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Intern projects</dt>
+                      <dd>
+                        {format.format(totals.projects || 0)}
+                        <span>in the program</span>
+                      </dd>
+                    </div>
+                  </dl>
+                </aside>
+              </div>
             </div>
           </div>
 
@@ -163,12 +245,15 @@ export default function InternInsights() {
             <article className={styles.pulseFeed}>
               <span className={styles.eyebrow}>Happening now</span>
               <h3>Applications happening now</h3>
-              <p className={styles.pulseIntro}>Live, anonymous activity from people applying this intake.</p>
+              <p className={styles.pulseIntro}>Live activity from people applying this intake — first name and last initial only.</p>
               {recent.length ? (
                 <ol className={styles.feed} aria-live="polite">
                   {recent.map((item, index) => (
                     <li key={`${item.at}:${item.track}:${index}`} className={styles.feedItem}>
-                      <span className={styles.feedTrack}>Applied to {trackName(tracks, item.track)}</span>
+                      {item.name && <span className={styles.feedAvatar} aria-hidden="true">{initials(item.name)}</span>}
+                      <span className={styles.feedText}>
+                        {item.name ? <><b>{item.name}</b> applied to {trackName(tracks, item.track)}</> : <>Applied to {trackName(tracks, item.track)}</>}
+                      </span>
                       <time className={styles.feedTime} dateTime={item.at}>{relativeTime(item.at, now)}</time>
                     </li>
                   ))}

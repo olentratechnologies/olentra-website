@@ -158,7 +158,7 @@ test("concurrent retries share one rotation and an expired retry window revokes 
   expect((await fetch(base + "/intern/auth/refresh", { method: "POST", headers: { ...headers, cookie: rotated, "x-intern-refresh-request": "expired-followup-request-0001" } })).status).toBe(401);
 }, 30000);
 
-test("anonymous careers page receives live aggregate insights without applicant identity", async () => {
+test("anonymous careers page receives live aggregate insights without contact details or full names", async () => {
   const viewer = await socket();
   const pushes: any[] = [];
   viewer.ws.addEventListener("message", event => { const frame = JSON.parse(String(event.data)); if (frame.type === "event" && String(frame.event).startsWith("intern.insights")) pushes.push(frame); });
@@ -175,7 +175,7 @@ test("anonymous careers page receives live aggregate insights without applicant 
   while (!pushes.some(frame => frame.event === "intern.insights" && frame.data.totals.applied === before + 1) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));
   const update = pushes.find(frame => frame.event === "intern.insights" && frame.data.totals.applied === before + 1);
   expect(update).toBeDefined();
-  expect(update.data.recent[0]).toEqual({ track: "explorer", at: expect.any(String) });
+  expect(update.data.recent[0]).toEqual({ track: "explorer", at: expect.any(String), name: "Insights A." });
   expect(JSON.stringify(update.data)).not.toContain("insights-applicant@example.test");
   expect(JSON.stringify(update.data)).not.toContain("Insights Applicant");
   await viewer.request("insights.unsubscribe");

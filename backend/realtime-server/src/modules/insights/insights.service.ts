@@ -15,7 +15,7 @@ export type PublicInsights = {
   lastMonth: number;
   months: { label: string; month: string; explorer: number; innovator: number }[];
   topSkills: { name: string; count: number }[];
-  recent: { track: string; at: string }[];
+  recent: { track: string; at: string; name: string }[];
   viewers: number;
   updatedAt: string;
 };
@@ -34,8 +34,23 @@ const minute = (value: unknown) => {
 };
 
 /**
- * Aggregate-only internship numbers for the public careers page. The payload
- * never carries names, emails, application IDs or free-text beyond common skills.
+ * Public feeds never carry a full applicant name or contact detail. Keep the
+ * first name (capped) and the last initial so the activity reads like a person
+ * without identifying them; the safety story is enforced by tests.
+ */
+export function publicApplicantName(value: unknown) {
+  const parts = String(value ?? "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "";
+  const chars = Array.from(parts[0]).slice(0, 32);
+  const name = chars[0]?.toUpperCase() + chars.slice(1).join("");
+  const initial = parts.length > 1 ? Array.from(parts[parts.length - 1])[0]?.toUpperCase() ?? "" : "";
+  return initial ? `${name} ${initial}.` : name;
+}
+
+/**
+ * Public internship numbers for the careers page. Applicant activity carries a
+ * shortened display name (first name plus last initial) but never a full name,
+ * email, application ID or free text beyond common skills.
  */
 export function createPublicInsights({ collection }: { collection: (name: string) => Collection<Row> }) {
   const programs = collection("programs"), settings = collection("settings"), applications = collection("applications"), events = collection("events"), projects = collection("projects"), certificates = collection("certificates");
@@ -77,8 +92,8 @@ export function createPublicInsights({ collection }: { collection: (name: string
         { $match: { type: "application.created" } },
         { $sort: { createdAt: -1, _id: -1 } },
         { $limit: 50 },
-        { $lookup: { from: applications.collectionName, localField: "applicationIds", foreignField: "_id", as: "app", pipeline: [{ $project: { _id: 0, programId: 1 } }] } },
-        { $project: { _id: 0, createdAt: 1, programId: { $first: "$app.programId" } } },
+        { $lookup: { from: applications.collectionName, localField: "applicationIds", foreignField: "_id", as: "app", pipeline: [{ $project: { _id: 0, programId: 1, name: 1 } }] } },
+        { $project: { _id: 0, createdAt: 1, programId: { $first: "$app.programId" }, name: { $first: "$app.name" } } },
         { $match: { programId: { $in: ids } } },
         { $limit: 8 },
       ]).toArray(),
@@ -105,7 +120,7 @@ export function createPublicInsights({ collection }: { collection: (name: string
       lastMonth: monthTotal(months[10]),
       months,
       topSkills: ((facets?.skills || []) as { name: string; count: number }[]).map(row => ({ name: String(row.name).slice(0, 40), count: row.count })),
-      recent: recentRows.flatMap(row => { const at = minute(row.createdAt); return at && typeof row.programId === "string" && ids.includes(row.programId) ? [{ track: row.programId, at }] : []; }),
+      recent: recentRows.flatMap(row => { const at = minute(row.createdAt); return at && typeof row.programId === "string" && ids.includes(row.programId) ? [{ track: row.programId, at, name: publicApplicantName(row.name) }] : []; }),
       updatedAt: new Date().toISOString(),
     };
   }

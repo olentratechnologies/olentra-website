@@ -410,6 +410,10 @@ export default function InternLanding() {
     try {
       let attachment = uploadedResume.current;
       if (!attachment) {
+        if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) {
+          setSubmitError("That track is no longer accepting applications. Choose an available track.");
+          return;
+        }
         if (resumeSecuritySiteKey && (!resumeGrant.current || resumeGrant.current.expiresAt <= Date.now())) {
           const challenge = String(formData.get("cf-turnstile-response") || "");
           if (!challenge) throw new Error("Complete the security check before uploading your resume.");

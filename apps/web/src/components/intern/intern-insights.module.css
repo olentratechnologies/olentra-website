@@ -221,16 +221,14 @@
 .funnel { margin: 0; padding: 0; list-style: none; }
 .funnelStep {
   display: grid;
-  grid-template-columns: 28px 1fr 40px;
+  grid-template-columns: 26px minmax(0, 1fr) 44px;
   gap: 10px;
   align-items: center;
   padding: 9px 0;
-  border-bottom: 1px solid #eef2f8;
   transition: background 0.2s;
 }
-.funnelStep:last-child { border-bottom: 0; }
 .funnelStep:hover { background: #f8fafd; margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 8px; }
-.stepTop { display: flex; align-items: center; }
+.stepMain { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .stepIcon {
   display: grid;
   place-items: center;
@@ -246,11 +244,11 @@
   background: linear-gradient(135deg, #dce6ff, #ebf1ff);
   border-color: #c4d4f4;
 }
-.stepIndex { display: none; }
 .stepLabel {
   font-size: 11px;
   font-weight: 550;
   color: #1a2d50;
+  line-height: 1.2;
 }
 .stepValue {
   font-size: 16px;
@@ -260,7 +258,128 @@
   font-variant-numeric: tabular-nums;
   color: #0f1d38;
 }
-.meter { display: none; }
+.meter {
+  display: block;
+  height: 4px;
+  border-radius: 100px;
+  background: #eef2f8;
+  overflow: hidden;
+}
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, #3b5fcc, #7ba2ff);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Live rail (trend + program facts) ─────────────────────────────── */
+.journeyBody {
+  display: grid;
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  gap: 22px;
+  padding-top: 6px;
+}
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding-left: 22px;
+  border-left: 1px solid #eef2f8;
+}
+.chartBlock { display: flex; flex-direction: column; gap: 4px; }
+.railHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.railHead h4 {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  color: #526480;
+}
+.railHead > span {
+  font-size: 9px;
+  font-weight: 600;
+  color: #2d52b5;
+  white-space: nowrap;
+}
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 88px;
+  padding: 4px 0 0;
+  border-bottom: 1px solid #eef2f8;
+}
+.chartBar {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  height: 100%;
+  min-width: 0;
+}
+.chartBar i {
+  display: block;
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background: #e3eaf6;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.chartBar[data-current] i {
+  background: linear-gradient(180deg, #4d74e0, #3b5fcc);
+  box-shadow: 0 2px 6px rgba(59, 95, 204, 0.22);
+}
+.chartAxis { display: flex; gap: 4px; }
+.chartAxis > span {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 7.5px;
+  letter-spacing: 0.1px;
+  color: #8b9ab3;
+}
+.railStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: auto 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid #f0f4fa;
+}
+.railStats > div { min-width: 0; }
+.railStats dt {
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #7a8ca5;
+}
+.railStats dd {
+  margin: 3px 0 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.4px;
+  line-height: 1.15;
+  color: #0f1d38;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.railStats dd span {
+  display: block;
+  margin-top: 2px;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #7a8ca5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ─── Skeleton ──────────────────────────────────────────────────────── */
 .skeleton { }
@@ -346,23 +465,33 @@
   border-radius: 8px 8px 0 0;
 }
 .feedItem:hover { background: #f6f8fd; }
-.feedTrack {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  font-weight: 550;
-  color: #1a2d50;
-}
-.feedTrack::before {
-  content: "";
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #3bcc6e;
-  box-shadow: 0 0 4px rgba(59, 204, 110, 0.4);
+.feedAvatar {
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #dbe4f5;
+  background: linear-gradient(135deg, #eef3ff, #f8faff);
+  color: #3b5fcc;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.feedText {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #4a5b78;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.feedText b {
+  color: #0f1d38;
+  font-weight: 650;
 }
 .feedTime {
   font-size: 10px;
@@ -535,10 +664,23 @@
 /* ─── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 1023px) {
   .overview { grid-template-columns: 180px 1fr; gap: 14px; }
-  .funnelStep { grid-template-columns: 26px 1fr 36px; gap: 8px; }
+  .funnelStep { grid-template-columns: 26px minmax(0, 1fr) 40px; gap: 8px; }
+  .journeyBody { grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); gap: 16px; }
+  .rail { padding-left: 16px; gap: 7px; }
+  .chart { height: 74px; }
   .spotlight { padding: 16px 18px; }
   .journey { padding: 14px 16px; }
   .header { align-items: flex-start; }
+}
+/* The funnel and its rail sit side by side only while both stay readable. */
+@media (max-width: 900px) {
+  .journeyBody { grid-template-columns: 1fr; gap: 14px; }
+  .rail {
+    border-left: 0;
+    border-top: 1px solid #eef2f8;
+    padding-left: 0;
+    padding-top: 12px;
+  }
 }
 @media (max-width: 767px) {
   .header { flex-direction: column; gap: 12px; margin-bottom: 18px; }
@@ -547,7 +689,9 @@
   .heroNumber { font-size: 42px; margin: 10px 0 6px; }
   .spotlightFooter { margin-top: 14px; }
   .spotlight p br { display: none; }
-  .funnelStep { grid-template-columns: 26px 1fr 36px; }
+  .funnelStep { grid-template-columns: 26px minmax(0, 1fr) 40px; }
+  .chart { height: 64px; }
+  .railStats dd { font-size: 14px; }
   .overviewHeading > span { display: none; }
   .card { padding: 14px; }
   .card:last-child { display: flex; }

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { affectsInsights, createPublicInsights, throttle } from "../../src/modules/insights/insights.service";
+import { affectsInsights, createPublicInsights, publicApplicantName, throttle } from "../../src/modules/insights/insights.service";
 
 const BOTH = [{ _id: "explorer", name: "Tech Explorer", enabled: true, fee: 0, stipend: 0 }, { _id: "innovator", name: "Tech Innovator", enabled: true, fee: 0, stipend: 15000 }];
 
@@ -50,13 +50,22 @@ test("public insights keep only known intern roles", async () => {
   expect(JSON.stringify(value.byRole)).not.toContain("intern");
 });
 
-test("public insights never expose applicant identity and round activity to the minute", async () => {
+test("public insights shorten applicant names and round activity to the minute", async () => {
   const { collection } = stubCollections({ facets, recent });
   const value = await createPublicInsights({ collection }).calculate();
-  expect(value.recent).toEqual([{ track: "explorer", at: "2026-11-12T10:15:00.000Z" }]);
+  expect(value.recent).toEqual([{ track: "explorer", at: "2026-11-12T10:15:00.000Z", name: "Priya S." }]);
   const json = JSON.stringify(value);
   expect(json).not.toContain("@");
-  expect(json).not.toContain("Priya");
+  expect(json).not.toContain("Sharma");
+});
+
+test("public applicant names keep a first name and last initial only", () => {
+  expect(publicApplicantName("Priya Sharma")).toBe("Priya S.");
+  expect(publicApplicantName("  aarav ")).toBe("Aarav");
+  expect(publicApplicantName("bethi manideep kumar")).toBe("Bethi K.");
+  expect(publicApplicantName("")).toBe("");
+  expect(publicApplicantName(undefined)).toBe("");
+  expect(publicApplicantName("A".repeat(80)).length).toBe(32);
 });
 
 test("public insights cover only tracks enabled in program settings", async () => {

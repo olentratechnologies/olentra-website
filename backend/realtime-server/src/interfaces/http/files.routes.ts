@@ -23,6 +23,8 @@ type FileRow = Document & { _id: string };
 type SendJson = (body: unknown, origin: string | null, status?: number, extra?: Record<string, string>) => Response;
 type Cors = (origin: string | null, extra?: Record<string, string>) => Headers;
 
+const MAX_CONCURRENT_PUBLIC_UPLOADS = 16;
+
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
 /** GridFS-backed file transport adapter. */
@@ -42,10 +44,11 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
   const addressFor = (request: Request, peerAddress?: string) =>
     clientAddress(request, peerAddress, /^(true|1)$/i.test(process.env.REALTIME_TRUST_PROXY || ""));
 
+  let activePublicUploads = 0;
+
   return {
-    async authorizeResume(request: Request, origin: string | null, peerAddress?: string) {
+    async authorizeResume(request: Request, origin: string | null) {
       if (!resumeGrants || !origin) throw new DomainError("FORBIDDEN", "Resume verification is unavailable for this request.");
-      await limiter?.consume("resumeGrant", addressFor(request, peerAddress));
       const challenge = request.headers.get("x-resume-challenge") || "";
       const grant = await resumeGrants.verifyChallenge(challenge, new URL(origin).hostname);
       return sendJson({ ok: true, data: grant }, origin);
@@ -63,41 +66,50 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
       const maximum = (kind === "resume" ? 5 : 10) * 1024 * 1024;
       const declared = Number(request.headers.get("content-length") || 0);
       if (declared > maximum || !request.body) throw new DomainError("INVALID_REQUEST", "The file is too large or empty.");
-      const address = addressFor(request, peerAddress);
-      if (resumeGrants && !account) {
-        const draftId = await resumeGrants.draftId(request.headers.get("x-resume-grant") || "");
-        await limiter?.consume("verifiedResume", address, draftId);
+      if (account) {
+        await limiter?.consume("upload", addressFor(request, peerAddress), account.id);
       } else {
-        await limiter?.consume("upload", address, account?.id);
-      }
-      const gridId = new ObjectId();
-      const attachmentId = randomUUID();
-      const accessToken = randomBytes(32).toString("base64url");
-      const upload = bucket.openUploadStreamWithId(gridId, name);
-      let size = 0, head = new Uint8Array(0);
-      const limit = new Transform({ transform(chunk, _encoding, callback) {
-        if (head.length < SIGNATURE_BYTES) head = Uint8Array.from([...head, ...chunk.subarray(0, SIGNATURE_BYTES - head.length)]);
-        size += chunk.length;
-        callback(size > maximum ? new Error("LIMIT") : null, chunk);
-      } });
-      try {
-        await pipeline(Readable.fromWeb(request.body as any), limit, upload);
-        if (!size) throw new Error("EMPTY");
-      } catch {
-        try { await bucket.delete(gridId); } catch {}
-        throw new DomainError("INVALID_REQUEST", "The file is too large, empty, or could not be uploaded.");
-      }
-      if (!matchesSignature(name, kind, head)) {
-        try { await bucket.delete(gridId); } catch {}
-        throw new DomainError("UNSUPPORTED_MEDIA_TYPE", "This file's contents don't match its type. Save it again as a real ." + type.extension + " file.");
+        if (activePublicUploads >= MAX_CONCURRENT_PUBLIC_UPLOADS) {
+          throw new DomainError("SERVICE_UNAVAILABLE", "Resume uploads are busy. Please retry in a moment.");
+        }
+        activePublicUploads++;
       }
       try {
-        await files.insertOne({ _id: attachmentId, gridId, kind, name, type: type.mime, size, status: "ready", accessTokenHash: hash(accessToken), ...(account?.applicationId ? { ownerApplicationId: account.applicationId } : {}), createdAt: new Date() });
-      } catch (error) {
-        try { await bucket.delete(gridId); } catch {}
-        throw error;
+        if (resumeGrants && !account) {
+          const draftId = await resumeGrants.draftId(request.headers.get("x-resume-grant") || "");
+          await limiter?.consume("verifiedResume", null, draftId);
+        }
+        const gridId = new ObjectId();
+        const attachmentId = randomUUID();
+        const accessToken = randomBytes(32).toString("base64url");
+        const upload = bucket.openUploadStreamWithId(gridId, name);
+        let size = 0, head = new Uint8Array(0);
+        const limit = new Transform({ transform(chunk, _encoding, callback) {
+          if (head.length < SIGNATURE_BYTES) head = Uint8Array.from([...head, ...chunk.subarray(0, SIGNATURE_BYTES - head.length)]);
+          size += chunk.length;
+          callback(size > maximum ? new Error("LIMIT") : null, chunk);
+        } });
+        try {
+          await pipeline(Readable.fromWeb(request.body as any), limit, upload);
+          if (!size) throw new Error("EMPTY");
+        } catch {
+          try { await bucket.delete(gridId); } catch {}
+          throw new DomainError("INVALID_REQUEST", "The file is too large, empty, or could not be uploaded.");
+        }
+        if (!matchesSignature(name, kind, head)) {
+          try { await bucket.delete(gridId); } catch {}
+          throw new DomainError("UNSUPPORTED_MEDIA_TYPE", "This file's contents don't match its type. Save it again as a real ." + type.extension + " file.");
+        }
+        try {
+          await files.insertOne({ _id: attachmentId, gridId, kind, name, type: type.mime, size, status: "ready", accessTokenHash: hash(accessToken), ...(account?.applicationId ? { ownerApplicationId: account.applicationId } : {}), createdAt: new Date() });
+        } catch (error) {
+          try { await bucket.delete(gridId); } catch {}
+          throw error;
+        }
+        return sendJson({ ok: true, data: { id: attachmentId, name, type: type.mime, size, accessToken } }, origin);
+      } finally {
+        if (!account) activePublicUploads--;
       }
-      return sendJson({ ok: true, data: { id: attachmentId, name, type: type.mime, size, accessToken } }, origin);
     },
 
     async download(request: Request, origin: string | null) {

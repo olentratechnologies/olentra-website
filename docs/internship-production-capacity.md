@@ -8,18 +8,20 @@ The application code now has a protected upload mode. The browser presents a Tur
 
 Protected mode requires the matching Cloudflare widget site key in `NEXT_PUBLIC_INTERNSHIP_TURNSTILE_SITE_KEY` at web build time and the secret in `INTERNSHIP_TURNSTILE_SECRET_KEY` on the backend. The keys were not present in the local environment and the new code has not been deployed to production. Release both settings and code together after staging verification, with intake paused during the rollout if needed. Test a real challenge on the production hostname before reopening intake. Production currently uses the per-IP limits after the proxy fix. No database tier or storage provider was changed.
 
-## Limits per public client IP
+## Public intake limits
 
-| Operation | Current production | Protected mode |
+The current code does not impose a per-IP quota on public resume authorization, resume uploads, or application submission. The Oracle deployment described above still uses its earlier limits until the updated backend is released.
+
+| Operation | Earlier production release | Updated code |
 |---|---:|---:|
-| Grant requests | Not applicable | 240 per rolling hour |
-| Public resume uploads | 10 attempts per rolling hour | 360 attempts per rolling hour, plus 3 per grant |
-| Application submits | 20 attempts per rolling hour | 240 attempts per rolling hour |
-| Application submits to one email | 5 attempts per rolling hour | 5 attempts per rolling hour |
-| Resume file size | 5 MiB | 5 MiB |
-| Signed-in work file size | 10 MiB | 10 MiB |
+| Public resume upload attempts per IP per hour | 10 | No per-IP quota |
+| Application submission attempts per IP per hour | 20 | No per-IP quota |
+| Application submission attempts per email per hour | 5 | 5 |
+| Upload attempts per verified draft | Not enabled | 3 within the grant's 15-minute lifetime |
+| Simultaneous public uploads per service instance | No explicit cap | 16 |
+| Maximum resume size | 5 MiB | 5 MiB |
 
-Limits count attempts. On one public IP, protected mode allows at most 240 unique drafts per hour if each uses one grant and one submit. If every applicant uses two upload attempts, the upload limit reduces that ceiling to 180. These are admission ceilings for one network. They do not measure backend throughput or guarantee completion.
+The form uploads only after submission and reuses a successfully uploaded resume if the submission needs a retry. At the concurrency cap, the server requests a retry with HTTP 503. This is a per-instance burst guard, not a storage or throughput guarantee. Enable protected mode for public intake to require a verified grant before upload.
 
 ## Isolated upload, submit, and live feed benchmark
 

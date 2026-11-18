@@ -41,7 +41,6 @@ type InternshipRuntime = {
   authRoutes: ReturnType<typeof createAuthRoutes>;
   fileRoutes: ReturnType<typeof createFilesRoutes>;
   limiter: RateLimiter;
-  verifiedResumeUploads: boolean;
   siteFeatures: ReturnType<typeof createSiteFeatureStore>;
   signinEmailTemplates: ReturnType<typeof createSigninEmailTemplateSettings>;
   staffSockets: StaffSocketRegistry;
@@ -317,7 +316,6 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       authRoutes,
       fileRoutes,
       limiter,
-      verifiedResumeUploads: Boolean(resumeGrants),
       siteFeatures,
       signinEmailTemplates,
       staffSockets,
@@ -379,7 +377,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           const body = await request.json() as { state?: unknown; expectedRevision?: unknown };
           return sendJson({ ok: true, data: await runtime.siteFeatures.write(body.state, Number(body.expectedRevision)) }, origin);
         }
-        if (url.pathname === RESUME_GRANT_PATH && request.method === "POST") return await runtime.fileRoutes.authorizeResume(request, origin, instance.requestIP(request)?.address);
+        if (url.pathname === RESUME_GRANT_PATH && request.method === "POST") return await runtime.fileRoutes.authorizeResume(request, origin);
         if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);
         throw new DomainError("NOT_FOUND", "Endpoint not found.");
@@ -443,10 +441,9 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           } else if (request.method === "certificate.verify" && !allowVerify(socket as ServerWebSocket<InternSocketData>)) {
             throw new DomainError("RATE_LIMITED", "Too many certificate checks. Please wait a minute and try again.");
           } else if (request.method === "application.submit" && !socket.data.token) {
-            // Applying sends email and stores data, so anonymous applies are
-            // limited per client address and per email, shared across sockets.
+            // A shared campus network must not exhaust a quota for other applicants.
             const email = typeof request.params?.email === "string" ? request.params.email : null;
-            await runtime.limiter.consume(runtime.verifiedResumeUploads ? "verifiedApply" : "apply", (socket.data as InternSocketData).address || "unknown", email);
+            await runtime.limiter.consume("apply", null, email);
             result = await runtime.domain.execute(request.method, request.params || {}, null, request.idempotencyKey);
           } else if (request.method === "intern.insights") {
             result = { ...(await runtime.insights.get()), viewers: runtime.insightsViewers() };
