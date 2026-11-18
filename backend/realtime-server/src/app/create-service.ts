@@ -5,6 +5,9 @@ import { internshipEnv } from "../config/env";
 import { createInternshipMailer } from "../infrastructure/email/mailer";
 import { can, isAdmin } from "../modules/access/policy";
 import { logger } from "../infrastructure/observability/logger";
+import { createOciStore } from "../infrastructure/files/oci.store";
+import { scanWithClamAv } from "../infrastructure/files/clamav";
+import { createDirectUploads, uploadTopic, type DirectUploads } from "../modules/files/direct-uploads";
 import { createGridFsStore } from "../infrastructure/files/gridfs.store";
 import { createInternshipContainer } from "./container";
 import { createCorsHeaders, errorResult, sendJson as sendJsonResponse, statusFor } from "../interfaces/http/router";
@@ -40,6 +43,7 @@ type InternshipRuntime = {
   domain: Domain;
   authRoutes: ReturnType<typeof createAuthRoutes>;
   fileRoutes: ReturnType<typeof createFilesRoutes>;
+  directUploads?: DirectUploads;
   limiter: RateLimiter;
   siteFeatures: ReturnType<typeof createSiteFeatureStore>;
   signinEmailTemplates: ReturnType<typeof createSigninEmailTemplateSettings>;
@@ -189,6 +193,16 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     await auth.initialize();
     const bucket = createGridFsStore(domain.db, domain.prefix + "uploads").bucket;
     const files = domain.collection("files");
+    const directEnabled = process.env.INTERNSHIP_FILE_STORAGE === "oci";
+    // Keep OCI reads and pending jobs available when rolling new uploads back to GridFS.
+    const objectStore = directEnabled || process.env.OCI_STORAGE_BUCKET ? await createOciStore() : undefined;
+    if (objectStore && !process.env.CLAMAV_HOST && process.env.NODE_ENV === "production") throw new Error("OCI uploads require CLAMAV_HOST in production");
+    const directUploads = objectStore ? createDirectUploads({ files, store: objectStore, scan: scanWithClamAv,
+      notify: async (id, status) => {
+        await domain.collection("events").insertOne({ _id: crypto.randomUUID(), type: "file.status", uploadId: id, status, public: false, applicationIds: [], createdAt: new Date() });
+      },
+    }) : undefined;
+    await directUploads?.initialize();
     const staffSockets = new StaffSocketRegistry();
     const openChanges = () => domain.collection("events").watch([{ $match: { operationType: "insert" } }], { maxAwaitTimeMS: 1000 });
     let changes = openChanges();
@@ -223,6 +237,10 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const publishChange = (change: any) => {
       if (change?.operationType !== "insert") return;
       const record = change.fullDocument;
+      if (record.type === "file.status") {
+        server?.publish(uploadTopic(record.uploadId), JSON.stringify({ type: "event", event: "intern.file_status", data: { id: record.uploadId, status: record.status } }), false);
+        return;
+      }
       if (["application.created", "application.updated", "onboarding.save", "onboarding.submit", "onboarding.approve", "offer.decline", "profile.update"].includes(record.type)) domain.invalidateAnalytics();
       if (record.public === true || record.type === "program.configure") (domain as any).invalidatePublicData?.();
       // Public events include program/track toggles, which change which tracks insights cover.
@@ -298,6 +316,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
 
     const workspaceOrigin = (process.env.INTERNSHIP_WORKSPACE_ORIGIN || "http://localhost:3002").replace(/\/$/, "");
     const jobLeases = domain.collection("job_leases") as any;
+    const stopDirectWorker = directUploads ? runLeasedJob(jobLeases, "oci-upload-worker", 2000, () => directUploads.process(), error => logger.error("Upload worker failed", { error })) : () => {};
+    const stopDirectCleanup = directUploads ? runLeasedJob(jobLeases, "oci-upload-cleanup", 60_000, () => directUploads.cleanup(), error => logger.error("Upload cleanup failed", { error })) : () => {};
     const stopUploadCleanup = runLeasedJob(jobLeases, "orphaned-upload-cleanup", 60 * 60_000, () => removeOrphanedUploads(files as any, bucket), error => logger.error("Orphaned upload cleanup failed", { error }));
     const stopRetention = runLeasedJob(jobLeases, "applicant-retention", 6 * 60 * 60_000, () => domain.runRetention(), error => logger.error("Applicant retention run failed", { error }));
     const stopReminders = runLeasedJob(jobLeases, "reminders", 60 * 60_000, () => domain.runReminders(), error => logger.error("Reminder run failed", { error }));
@@ -308,13 +328,14 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const authRoutes = createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin, sendJson, limiter, signinEmailTemplates });
     const turnstileSecret = process.env.INTERNSHIP_TURNSTILE_SECRET_KEY;
     const resumeGrants = turnstileSecret ? createResumeGrants(secret, turnstileSecret) : undefined;
-    const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter, resumeGrants });
+    const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter, resumeGrants, direct: directUploads, directEnabled, objectStore });
     const siteFeatures = createSiteFeatureStore(domain.collection("site_features") as any);
     const nextRuntime: InternshipRuntime = {
       auth,
       domain,
       authRoutes,
       fileRoutes,
+      directUploads,
       limiter,
       siteFeatures,
       signinEmailTemplates,
@@ -325,7 +346,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       broadcastViewers,
       async close() {
         localStopped = true;
-        stopOutbox(); stopUploadCleanup(); stopRetention(); stopReminders();
+        stopDirectWorker(); stopDirectCleanup(); stopOutbox(); stopUploadCleanup(); stopRetention(); stopReminders();
         broadcastInsights.cancel(); broadcastViewers.cancel();
         await changes.close().catch(() => {});
         if (runtime === nextRuntime) runtime = null;
@@ -378,6 +399,10 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           return sendJson({ ok: true, data: await runtime.siteFeatures.write(body.state, Number(body.expectedRevision)) }, origin);
         }
         if (url.pathname === RESUME_GRANT_PATH && request.method === "POST") return await runtime.fileRoutes.authorizeResume(request, origin);
+        if (url.pathname === "/intern/files/config" && request.method === "GET") return runtime.fileRoutes.config(origin);
+        if (url.pathname === "/intern/files/uploads" && request.method === "POST") return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
+        const uploadRoute = /^\/intern\/files\/uploads\/([a-f0-9-]{36})(\/complete)?$/.exec(url.pathname);
+        if (uploadRoute && ((uploadRoute[2] && request.method === "POST") || (!uploadRoute[2] && request.method === "GET"))) return await runtime.fileRoutes.uploadStatus(request, origin, uploadRoute[1]!, Boolean(uploadRoute[2]));
         if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);
         throw new DomainError("NOT_FOUND", "Endpoint not found.");
@@ -416,7 +441,14 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (!request || request.type !== "request" || typeof request.id !== "string" || typeof request.method !== "string") return;
         try {
           let result: unknown;
-          if (request.method === "auth.authenticate") {
+          if (request.method === "files.subscribe") {
+            if (!runtime.directUploads) throw new DomainError("NOT_FOUND", "Uploads unavailable.");
+            const id = String(request.params?.id || ""), token = String(request.params?.accessToken || "");
+            const subscriptions = (socket.data as InternSocketData).uploadSubscriptions ||= new Set();
+            if (subscriptions.size >= 8) throw new DomainError("RATE_LIMITED", "Too many upload subscriptions.");
+            result = await runtime.directUploads.status(id, token);
+            socket.subscribe(uploadTopic(id)); subscriptions.add(id);
+          } else if (request.method === "auth.authenticate") {
             runtime.staffSockets.remove(socket as ServerWebSocket<InternSocketData>);
             clearSubscriptions(socket as ServerWebSocket<InternSocketData>);
             socket.data.token = null;
