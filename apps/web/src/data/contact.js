@@ -6,8 +6,12 @@ export const contactInfo = {
     calendlyUrl: 'https://calendly.com/admin-olentratechnologies',
     addresses: [
         {
-            label: 'Hyderabad',
-            value: 'Hyderabad, India',
+            label: 'Remote operations',
+            value: 'Remote operations: Hyderabad, India',
+        },
+        {
+            label: 'Registered office',
+            value: 'Registered office: Warangal, Telangana, India',
         }
     ],
     socials: [

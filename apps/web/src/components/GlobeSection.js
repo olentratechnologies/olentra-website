@@ -7,7 +7,7 @@ const Globe = dynamic(() => import('react-globe.gl'), { ssr: false });
 
 // Globe data: only India location with prominent red marker
 const globeData = [
-  { lat: 17.3850, lng: 78.4867, size: 0.5, color: '#ef4444', label: 'Hyderabad, India (HQ)' },
+  { lat: 17.3850, lng: 78.4867, size: 0.5, color: '#ef4444', label: 'Hyderabad, India · Remote operations' },
 ];
 
 const ringsData = [
@@ -62,7 +62,7 @@ export default function GlobeSection() {
             el.innerHTML = `
               <div style="display:flex;align-items:center;gap:6px;transform:translate(-50%, -140%);pointer-events:none;">
                 <div style="background:#ef4444;color:#ffffff;font-size:11px;font-weight:800;letter-spacing:0.05em;padding:3px 8px;border-radius:4px;box-shadow:0 4px 12px rgba(239,68,68,0.45);font-family:sans-serif;white-space:nowrap;border:1px solid #ffffff;">
-                  📍 HYDERABAD, INDIA
+                  HYDERABAD, INDIA<br /><span style="font-size:10px;font-weight:500;letter-spacing:0.02em;">REMOTE OPERATIONS</span>
                 </div>
               </div>
             `;

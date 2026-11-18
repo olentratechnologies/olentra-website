@@ -65,20 +65,17 @@ export default function HomePage() {
       <Feature name="home.blogs"><Blogs /></Feature>
       <Feature name="home.testimonials"><Testimonials /></Feature>
       
-      {/* Global Presence Section - White Theme */}
+      {/* Operating Base Section - White Theme */}
       <Feature name="home.globe"><section className="bg-white py-12 md:py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.03] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
           <div className="text-center mb-8">
             <div className="inline-block px-3 py-1 rounded-full bg-slate-100 border border-slate-200 mb-3 font-black text-[9px] tracking-[0.3em] text-primary uppercase">
-              GLOBAL PRESENCE
+              OUR OPERATING BASE
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Global Product Engineering
+              Engineering Excellence. Based in Hyderabad.
             </h2>
-            <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
-              With teams across continents, we deliver enterprise solutions worldwide, ensuring seamless collaboration and 24/7 support for your global ambitions.
-            </p>
           </div>
 
           {/* Globe Section - White Theme */}

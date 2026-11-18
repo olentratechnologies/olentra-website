@@ -51,7 +51,7 @@ export default function Footer() {
               </h3>
             </div>
             <p className="text-xs text-muted-foreground font-medium leading-relaxed max-w-xs">
-              Global digital product, marketing, and engineering partner for ambitious teams. Multi-lingual, multi-timezone delivery.
+              Enterprise product engineering and digital growth. Operating remotely from Hyderabad, India.
             </p>
           </div>
 
