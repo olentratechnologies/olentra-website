@@ -8,7 +8,7 @@ export const siteConfig = {
   description: companyInfo.description,
   defaultTitle: `${companyInfo.name} | Enterprise Engineering, AI, and Digital Product Delivery`,
   titleTemplate: `%s | ${companyInfo.name}`,
-  ogImage: "/images/branding/og/olentra-og.jpg",
+  ogImage: companyInfo.defaultOgImage,
   locale: "en_US",
 };
 

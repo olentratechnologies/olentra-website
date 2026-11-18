@@ -26,7 +26,6 @@ export const metadata = buildMetadata({
   description:
     "Olentra Technologies delivers enterprise software engineering, cloud systems, data and AI platforms, and high-performance digital product execution.",
   path: "/",
-  image: "/images/branding/og/og-home.jpg",
   keywords: [
     "enterprise software engineering",
     "ai product development company",

@@ -5,7 +5,6 @@ const pageMetadata = buildMetadata({
   description:
     "Discover Daily Supply: connecting neighborhood retailers, daily essentials vendors, and residential communities. In collaboration with VitaTech Solutions and BYP Capital.",
   path: "/products/dailysupply",
-  image: "/images/products/dailysupply.png",
   keywords: [
     "dailysupply",
     "Daily Supply",

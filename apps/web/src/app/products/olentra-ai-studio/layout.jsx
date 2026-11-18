@@ -5,7 +5,6 @@ export const metadata = buildMetadata({
   description:
     "Olentra AI Studio is an AI video generator that turns a creative brief into publish-ready cinematic video with consistent characters, multi-model generation and safe social publishing.",
   path: "/products/olentra-ai-studio",
-  image: "/images/branding/og/og-product-ai-studio.jpg",
   keywords: [
     "olentra ai studio",
     "ai video generator",

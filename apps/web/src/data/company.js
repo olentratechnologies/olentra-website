@@ -11,7 +11,7 @@ export const companyInfo = {
   emailHref: contactInfo.emailFull,
   calendlyUrl: contactInfo.calendlyUrl,
   logo: "/images/branding/Logo/Olentra-Logo-Without-Background.png",
-  defaultOgImage: "/images/products/ai-studio-new.png",
+  defaultOgImage: "/images/branding/og/olentra-logo-share.png",
   foundedLabel: "2026",
   tagline: "Enterprise engineering, AI systems, and launch-ready digital products.",
   description:

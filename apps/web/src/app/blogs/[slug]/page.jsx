@@ -31,7 +31,6 @@ export async function generateMetadata({ params }) {
     title: blog.seoTitle || blog.title,
     description: blog.metaDescription || blog.excerpt,
     path: `/blogs/${blog.slug}`,
-    image: blog.image,
     keywords: [blog.category.toLowerCase(), "enterprise insights", "olentra blog"],
   });
 }

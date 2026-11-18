@@ -5,7 +5,6 @@ export const metadata = buildMetadata({
   description:
     "Olenbot is an AI-powered outbound calling and lead intelligence platform for scalable conversion and outreach operations.",
   path: "/products/olenbot",
-  image: "/images/branding/og/og-product-olenbot.jpg",
   keywords: [
     "olenbot",
     "ai outbound calling platform",

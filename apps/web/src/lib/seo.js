@@ -5,9 +5,10 @@ export function buildMetadata({
   title,
   description,
   path = "/",
-  image = siteConfig.ogImage,
   keywords = [],
 }) {
+  // Every page shares the same company card, including articles and products.
+  const image = siteConfig.ogImage;
   const canonical = absoluteUrl(path);
   const resolvedTitle = title ? `${title} | ${companyInfo.name}` : siteConfig.defaultTitle;
 
