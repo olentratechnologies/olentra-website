@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, GripHorizontal, Lock, Timer } from "lucide-react";
+import { useSiteFeatures } from "@olentra/site-features/react";
 import { deadlineTime, formatDeadline, timeRemaining } from "@/lib/intern/application-deadline.mjs";
 import styles from "./application-countdown.module.css";
 
@@ -78,12 +79,14 @@ function Unit({ value, label }) {
  * it snaps to the nearer side on release.
  */
 export default function ApplicationCountdown({ deadline }) {
+  const { features } = useSiteFeatures();
   const time = deadlineTime(deadline);
   const [now, setNow] = useState(null);
   const [side, setSide] = useState("right");
   const [ratio, setRatio] = useState(0.5);
   const [collapsed, setCollapsed] = useState(false);
   const [drag, setDrag] = useState(null); // { x, y } while dragging freely
+  const [footerVisible, setFooterVisible] = useState(false);
   const [, forceLayout] = useState(0);
   const tabRef = useRef(null);
   const pointer = useRef(null);
@@ -106,6 +109,19 @@ export default function ApplicationCountdown({ deadline }) {
 
   const visible = time !== null && now !== null;
   const expired = visible && now >= time;
+
+  useEffect(() => {
+    const footer = features.footer && document.querySelector("footer");
+    if (!visible || !footer) {
+      setFooterVisible(false);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      setFooterVisible(entry.isIntersecting);
+    });
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, [visible, features.footer]);
 
   // Recompute the pixel position after resizes and size changes.
   const relayout = useCallback(() => forceLayout((n) => n + 1), []);
@@ -218,6 +234,7 @@ export default function ApplicationCountdown({ deadline }) {
       data-state={state}
       data-collapsed={collapsed || undefined}
       data-dragging={drag ? true : undefined}
+      data-footer-visible={footerVisible || undefined}
       style={style}
       aria-label="Application deadline"
       title={closed ? `Applications closed ${when}` : `Applications close ${when}`}

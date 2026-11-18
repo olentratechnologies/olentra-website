@@ -105,18 +105,18 @@ export default function InternInsights() {
     <div className={styles.panel}>
       <div className={styles.header}>
         <div className={styles.intro}>
-          <span className={styles.eyebrow}>THE PROGRAM IN NUMBERS</span>
+          <span className={styles.eyebrow}>The program in numbers</span>
           <h2 id="insights-title">Internship insights<span>.</span></h2>
           <p>A closer look at the people, progress, and possibilities at Olentra.</p>
         </div>
         <div className={styles.status} aria-live="polite">
           <span className={`${styles.livePill} ${live ? styles.isLive : ""}`}>
-            <Radio size={13} aria-hidden="true" />
+            <Radio size={11} aria-hidden="true" />
             {live ? "Live" : error ? "Unavailable" : "Connecting…"}
           </span>
           {live && insights.viewers > 0 && (
             <span className={styles.viewers}>
-              <Users size={13} aria-hidden="true" />
+              <Users size={11} aria-hidden="true" />
               <b>{format.format(insights.viewers)}</b> viewing now
             </span>
           )}
@@ -132,35 +132,36 @@ export default function InternInsights() {
           <p className={styles.srOnly} aria-live="polite">{`${totals.applied} applications, ${totals.shortlisted} shortlisted, ${totals.onboarded} onboarded.`}</p>
           <div className={styles.overview}>
             <article className={styles.spotlight}>
-              <span className={styles.spotlightLabel}><Users size={18} aria-hidden="true" /> Total applications</span>
-              <LiveNumber value={totals.applied} className={styles.heroNumber} />
-              <p>Every application is the start<br />of a new possibility.</p>
+              <div>
+                <span className={styles.spotlightLabel}><Users size={13} aria-hidden="true" /> Total applications</span>
+                <LiveNumber value={totals.applied} className={styles.heroNumber} />
+                <p>Every application is the start<br />of a new possibility.</p>
+              </div>
               <div className={styles.spotlightFooter}><span>Olentra Launchpad</span><span aria-hidden="true">↗</span></div>
             </article>
             <div className={styles.journey}>
-          <div className={styles.overviewHeading}><h3>From application to achievement</h3><span>Program overview</span></div>
-          <ol className={styles.funnel} aria-label="Internship selection funnel">
-            {FUNNEL.slice(1).map((step, index) => {
-              const Icon = step.icon;
-              const value = totals[step.id] || 0;
-              const share = totals.applied ? Math.min(100, Math.round((value / totals.applied) * 100)) : 0;
-              return (
-                <li key={step.id} className={styles.funnelStep}>
-                  <div className={styles.stepTop}><span className={styles.stepIcon}><Icon size={17} aria-hidden="true" /></span><span className={styles.stepIndex}>{String(index + 2).padStart(2, "0")}</span></div>
-                  <span className={styles.stepLabel}>{step.label}</span>
-                  <LiveNumber value={value} className={styles.stepValue} />
-                  <span className={styles.meter} aria-hidden="true"><span style={{ width: `${share}%` }} /></span>
-                  <span className={styles.stepHint}>{`${share}% of applicants`}</span>
-                </li>
-              );
-            })}
-          </ol>
+              <div className={styles.overviewHeading}><h3>From application to achievement</h3><span>Program overview</span></div>
+              <ol className={styles.funnel} aria-label="Internship selection funnel">
+                {FUNNEL.slice(1).map((step, index) => {
+                  const Icon = step.icon;
+                  const value = totals[step.id] || 0;
+                  const share = totals.applied ? Math.min(100, Math.round((value / totals.applied) * 100)) : 0;
+                  return (
+                    <li key={step.id} className={styles.funnelStep}>
+                      <div className={styles.stepTop}><span className={styles.stepIcon}><Icon size={13} aria-hidden="true" /></span><span className={styles.stepIndex}>{String(index + 2).padStart(2, "0")}</span></div>
+                      <span className={styles.stepLabel}>{step.label}</span>
+                      <LiveNumber value={value} className={styles.stepValue} />
+                      <span className={styles.meter} aria-hidden="true"><span style={{ width: `${share}%` }} /></span>
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
           </div>
 
           <section className={styles.pulse} aria-label="Live internship pulse">
             <article className={styles.pulseFeed}>
-              <span className={styles.eyebrow}>HAPPENING NOW</span>
+              <span className={styles.eyebrow}>Happening now</span>
               <h3>Applications happening now</h3>
               <p className={styles.pulseIntro}>Live, anonymous activity from people applying this intake.</p>
               {recent.length ? (
@@ -177,7 +178,7 @@ export default function InternInsights() {
               )}
             </article>
             <article className={styles.pulseRoles}>
-              <span className={styles.eyebrow}>WHERE PEOPLE APPLY</span>
+              <span className={styles.eyebrow}>Where people apply</span>
               <h3>Where people are applying</h3>
               <p className={styles.pulseIntro}>Live demand by intern role — choose the path that fits you.</p>
               {totals.applied > 0 ? (
@@ -209,7 +210,7 @@ export default function InternInsights() {
 
           <section className={styles.applicationTimeline} aria-labelledby="application-timeline-title">
             <div className={styles.timelineIntro}>
-              <span className={styles.eyebrow}>YOUR NEXT STEPS</span>
+              <span className={styles.eyebrow}>Your next steps</span>
               <h3 id="application-timeline-title">From application to onboarding</h3>
               <p>Follow your progress in your candidate portal.</p>
             </div>

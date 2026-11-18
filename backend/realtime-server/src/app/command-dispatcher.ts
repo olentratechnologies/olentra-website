@@ -614,7 +614,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const rows = await users.find({ $or: [{ applicationId }, { email: normalized }] }).toArray();
       if (!rows.length) return null;
       const existing = rows.length === 1 ? rows[0] : null;
-      if (rows.some(row => row.role === "company")) throw new DomainError("CONFLICT", "This application uses an email address that already belongs to a staff account. A staff account cannot also be an intern account. Use a separate applicant email, or contact support@olentratechnologies.com to correct the application email.");
+      if (rows.some(row => row.role === "company")) throw new DomainError("CONFLICT", "This application uses an email address that already belongs to a staff account. A staff account cannot also be an intern account. Use a separate applicant email, or contact intern.support@olentratechnologies.com to correct the application email.");
       if (!existing || existing.role !== "intern" || existing.disabled === true) throw refused();
       if (existing.applicationId && existing.applicationId !== applicationId) throw refused();
       if (!existing.applicationId) {

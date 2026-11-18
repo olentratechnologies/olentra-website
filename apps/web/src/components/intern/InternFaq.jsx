@@ -3,7 +3,6 @@
 import { useEffect, useId, useState } from "react";
 import { Mail, Plus } from "lucide-react";
 import JsonLd from "@/components/JsonLd";
-import { contactInfo } from "@/data/contact";
 import { deadlineTime, formatDeadline } from "@/lib/intern/application-deadline.mjs";
 import styles from "./intern-faq.module.css";
 import { INTERN_ROLES } from "@/lib/intern/opportunities.mjs";
@@ -39,8 +38,8 @@ function buildQuestions({ duration, tracks, roles }) {
     },
     {
       id: "schedule",
-      question: "Can I join part-time or full-time?",
-      answer: "Both. You can intern part-time alongside your studies or work, or full-time if you can commit more hours. Choose what fits your schedule for the full program.",
+      question: "What scheduling options are available?",
+      answer: "The program offers both part-time and full-time options to accommodate academic and professional commitments. Select a schedule that allows you to participate consistently throughout the program.",
     },
     {
       id: "roles",
@@ -149,8 +148,8 @@ export default function InternFaq({ duration, tracks, deadline, roles = INTERN_R
           <div>
             <strong>Still have a question?</strong>
             <span>Write to our team and we’ll be glad to help.</span>
-            <a href={contactInfo.emailFull}>{contactInfo.email}</a>
           </div>
+          <a href="mailto:intern.support@olentratechnologies.com">intern.support@<wbr />olentratechnologies.com</a>
         </div>
       </div>
       <ul className={styles.list} role="list">

@@ -160,7 +160,7 @@ function VerifyContent() {
             )}
 
             <nav className={styles.verifyLinks} aria-label="Candidate access">
-              {accountConflict ? <a href="mailto:support@olentratechnologies.com">Contact support <ArrowRight size={13} aria-hidden="true" /></a> : <Link href="/intern/login?role=intern">
+              {accountConflict ? <a href="mailto:intern.support@olentratechnologies.com">Contact support <ArrowRight size={13} aria-hidden="true" /></a> : <Link href="/intern/login?role=intern">
                 Sign in with password <ArrowRight size={13} aria-hidden="true" />
               </Link>}
               <span aria-hidden="true">·</span>

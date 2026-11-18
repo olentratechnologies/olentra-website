@@ -1,10 +1,11 @@
-// Generates the Olentra AI Studio "Spark O, film swirl" logo: an Olentra-colour
+// Generates the legacy Olentra AI Studio "Spark O, film swirl" logo: an Olentra-colour
 // swirl ring with film sprocket holes, a warm play mark, closed by the Olentra star.
 // Usage: node scripts/generate-ai-studio-logo.mjs  → writes the SVG and a 1254px transparent PNG.
 import { writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
-const OUT = "apps/web/public/images/products/branding/olentra-ai-studio-film-transparent";
+// The approved metallic logo is a generated image; do not overwrite it here.
+const OUT = "apps/web/public/images/products/branding/olentra-ai-studio-film-legacy";
 const STOPS = [[-24, [255, 226, 90]], [30, [255, 166, 77]], [95, [255, 99, 110]], [138, [240, 110, 180]], [175, [77, 150, 255]], [220, [110, 220, 255]], [262, [110, 225, 150]], [294, [175, 230, 110]]];
 const color = angle => {
   for (let i = 0; i < STOPS.length - 1; i++) {

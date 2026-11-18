@@ -338,6 +338,12 @@
   }
 }
 
+@media (max-width: 1199px) {
+  .tab[data-footer-visible] {
+    visibility: hidden;
+  }
+}
+
 @media (max-width: 639px) {
   .tab {
     width: min(224px, calc(100vw - 32px));

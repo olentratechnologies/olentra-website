@@ -4,9 +4,6 @@ import { motion } from "framer-motion";
 import {
   CheckCircle2,
   ArrowUpRight,
-  ShieldCheck,
-  Layers,
-  Cpu,
   Sparkles,
   Terminal,
   Cloud,
@@ -39,9 +36,9 @@ const staggerContainer = {
 export default function OlentraAIStudioPage() {
   const {
     hero, overview, featuresIntro, features, pipelineIntro, aiPipeline, microservices, confidenceBlurb, security,
-    stackIntro, techStack, stackColumns, roadmapIntro, roadmap, pricingIntro, pricing, cta,
+    stackIntro, creatorTypes, creativeOutcomes, roadmapIntro, roadmap, pricingIntro, pricing, cta,
   } = olentraAiStudio;
-  const statIcons = [Activity, Cpu, Layers, Cloud];
+  const statIcons = [Activity, Cloud, Sparkles, Terminal];
 
   return (
     <main className="relative bg-[#020617] text-white font-sans selection:bg-primary/30 selection:text-white">
@@ -143,7 +140,7 @@ export default function OlentraAIStudioPage() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 group-hover:bg-primary/15 transition-colors" />
                 <div className="relative z-10 space-y-6">
                   <div className="p-3 w-fit rounded-xl bg-primary/10 text-primary border border-primary/20">
-                    {[<Sparkles key="s" size={20} />, <Layers key="l" size={20} />, <Lock key="k" size={20} />, <Activity key="a" size={20} />, <Terminal key="t" size={20} />, <Cloud key="c" size={20} />][idx % 6]}
+                    {[<Sparkles key="s" size={20} />, <Terminal key="t" size={20} />, <Lock key="k" size={20} />, <Activity key="a" size={20} />, <Cloud key="c" size={20} />, <ArrowUpRight key="r" size={20} />][idx % 6]}
                   </div>
                   <h3 className="text-xl font-black uppercase tracking-tight text-white group-hover:text-primary transition-colors">{item.title}</h3>
                   <p className="text-[14px] text-slate-400 leading-relaxed font-medium uppercase tracking-tight">{item.description}</p>
@@ -225,8 +222,8 @@ export default function OlentraAIStudioPage() {
         </div>
       </section>
 
-      {/* --- 5. TECH STACK (DARK) --- */}
-      <section className="relative py-24 md:py-32 bg-[#020617]" id="tech-stack">
+      {/* --- 5. CREATOR TYPES & OUTCOMES (DARK) --- */}
+      <section className="relative py-24 md:py-32 bg-[#020617]" id="creators">
         <div className="absolute inset-0 bg-[url('/images/ui/grid.svg')] opacity-[0.05] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 md:px-12 relative">
           <div className="flex flex-col items-center text-center mb-20">
@@ -236,10 +233,46 @@ export default function OlentraAIStudioPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <StackColumn title={stackColumns[0]} icon={<Layers className="w-5 h-5" />} items={techStack.frontend} theme="dark" />
-            <StackColumn title={stackColumns[1]} icon={<Cpu className="w-5 h-5" />} items={techStack.backend} theme="dark" />
-            <StackColumn title={stackColumns[2]} icon={<ShieldCheck className="w-5 h-5" />} items={techStack.infra} theme="dark" />
+          {/* Creator Types */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            {creatorTypes.map((type, idx) => (
+              <motion.div
+                key={type.title}
+                {...fadeInUp}
+                transition={{ delay: idx * 0.1 }}
+                className="group relative overflow-hidden rounded-2xl border border-white/5 bg-slate-900/20 p-8 hover:border-primary/40 transition-all duration-500"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 group-hover:bg-primary/15 transition-colors" />
+                <div className="relative z-10 space-y-6">
+                  <h3 className="text-2xl font-black uppercase tracking-tight text-white group-hover:text-primary transition-colors">{type.title}</h3>
+                  <p className="text-[14px] text-slate-400 leading-relaxed font-medium uppercase tracking-tight">{type.description}</p>
+                  <ul className="space-y-3">
+                    {type.outcomes.map((outcome) => (
+                      <li key={outcome} className="flex items-center gap-3 text-[13px] font-bold text-slate-300 group-hover:text-white transition-colors">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                        {outcome}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Creative Outcomes */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {creativeOutcomes.map((outcome, idx) => (
+              <motion.div
+                key={outcome.metric}
+                {...fadeInUp}
+                transition={{ delay: 0.3 + idx * 0.05 }}
+                className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 hover:border-primary/40 hover:bg-white/[0.04] transition-all duration-300"
+              >
+                <div className="text-3xl md:text-4xl font-black text-primary mb-2">{outcome.metric}</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">{outcome.label}</div>
+                <div className="text-[11px] font-bold text-slate-500 leading-snug">{outcome.detail}</div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -353,30 +386,5 @@ export default function OlentraAIStudioPage() {
 
       <Footer />
     </main>
-  );
-}
-
-function StackColumn({ title, icon, items, theme = "dark" }) {
-  const isDark = theme === "dark";
-
-  return (
-    <div className={`p-10 rounded-[2.5rem] border transition-all hover:-translate-y-2 hover:shadow-2xl flex flex-col ${isDark
-      ? "bg-white/[0.02] border-white/5 hover:border-primary/40 text-white"
-      : "bg-slate-50 border-slate-100 hover:border-primary/20 text-slate-900 shadow-sm"
-      }`}>
-      <div className="flex items-center gap-4 mb-10">
-        <div className={`p-3 rounded-2xl ${isDark ? "bg-primary/10 text-primary border border-primary/20" : "bg-white border border-slate-200 text-primary shadow-sm"}`}>
-          {icon}
-        </div>
-        <h3 className="text-2xl font-[900] uppercase tracking-tighter leading-none italic">{title}</h3>
-      </div>
-      <ul className="space-y-6 flex-1">
-        {items.map((item) => (
-          <li key={item} className="flex items-center gap-4">
-            <span className="text-[14px] font-[900] uppercase tracking-tight leading-none italic">{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }

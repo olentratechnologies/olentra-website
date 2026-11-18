@@ -165,33 +165,70 @@ export const olentraAiStudio = {
     },
   ],
   stackIntro: {
-    eyebrow: "Tech Stack",
-    heading: ["Under The", "Hood"],
+    eyebrow: "Built For",
+    heading: ["Creator Types", "& Outcomes"],
   },
-  techStack: {
-    frontend: [
-      "Google Veo 3.1 · Runway Gen-4.5 · Seedance 2.0 · Kling",
-      "Gemini 3.1 Flash Image and FLUX.2 storyboards",
-      "Gemini 3.1 Pro, GPT-5.4 and Claude for scripts",
-      "ElevenLabs voice and music",
-      "Deepgram / Whisper captions",
-    ],
-    backend: [
-      "Next.js editor with Remotion Player",
-      "Hono + Bun TypeScript API",
-      "Temporal durable workflows",
-      "FFmpeg + Remotion rendering workers",
-      "Mux private previews",
-    ],
-    infra: [
-      "Cloudflare R2 asset storage",
-      "Supabase Postgres, Auth and RLS",
-      "Stripe credit ledger and subscriptions",
-      "OpenTelemetry, Sentry and Grafana",
-      "Official YouTube, Meta and TikTok APIs",
-    ],
-  },
-  stackColumns: ["Generation", "Production", "Platform"],
+  creatorTypes: [
+    {
+      title: "Brands",
+      description: "Product videos, ads and social content at scale",
+      outcomes: [
+        "Launch campaigns in hours",
+        "Brand-consistent output",
+        "Multi-format exports"
+      ]
+    },
+    {
+      title: "Agencies",
+      description: "Faster client turnarounds with reusable assets",
+      outcomes: [
+        "Rapid iterations",
+        "Template libraries",
+        "Client portals"
+      ]
+    },
+    {
+      title: "Creators",
+      description: "Professional output without production overhead",
+      outcomes: [
+        "Broadcast-ready quality",
+        "Licensed audio included",
+        "One-click publishing"
+      ]
+    }
+  ],
+  creativeOutcomes: [
+    {
+      metric: "Hours",
+      label: "Brief to video",
+      detail: "From days to hours"
+    },
+    {
+      metric: "80%",
+      label: "Cost reduction",
+      detail: "vs traditional production"
+    },
+    {
+      metric: "1080p",
+      label: "Broadcast quality",
+      detail: "With licensed audio"
+    },
+    {
+      metric: "3x",
+      label: "Format multiplier",
+      detail: "9:16, 16:9, 1:1 from one brief"
+    },
+    {
+      metric: "100%",
+      label: "Character consistency",
+      detail: "Across every shot"
+    },
+    {
+      metric: "Zero",
+      label: "Surprise bills",
+      detail: "Transparent per-shot pricing"
+    }
+  ],
   roadmapIntro: "Rollout Path",
   roadmap: [
     {

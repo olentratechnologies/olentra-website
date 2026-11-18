@@ -58,7 +58,7 @@ const commonTrackBenefits = [
   "Receive mentorship and project feedback",
   "Learn from experienced professionals",
   "Build practical skills for your role",
-  "Use AI tools, including Claude, Codex, and Gemini",
+  "Access to AI tools, including Claude, Codex, and Gemini",
 ];
 
 const paidTrackBenefits = [
@@ -89,7 +89,7 @@ const tracks = [
   },
 ];
 const WORK_MODE = "100% remote";
-const SCHEDULE = "Part-time or full-time";
+const SCHEDULE = "Part-time/full-time";
 
 const trackNames = Object.fromEntries(tracks.map((track) => [track.id, track.name]));
 
@@ -627,12 +627,24 @@ export default function InternLanding() {
               return (
               <article
                 key={track.id}
-                className={`${styles.trackCard} ${track.id === "innovator" ? styles.innovator : styles.explorer}`}
+                className={`${styles.trackCard} ${track.id === "innovator" ? styles.innovator : ""}`}
               >
-                <ReferenceArt name={track.art} className={styles.trackArt} />
-                <div className={styles.trackContent}>
-                  <div className={styles.trackHeading}>
+                <header className={styles.trackHeader}>
+                  <ReferenceArt name={track.art} className={styles.trackArt} />
+                  <div className={styles.trackIntro}>
                     <h2>{track.name}</h2>
+                    <p>{track.description}</p>
+                    {canApply && availableTrackIds.includes(track.id) && (
+                      <a href="#internship-application" className={styles.trackButton}
+                        onClick={(event) => applyForTrack(event, track.id)}>
+                        {track.cta} <ArrowRight size={16} aria-hidden="true" />
+                      </a>
+                    )}
+                  </div>
+                </header>
+                <div className={styles.trackContent}>
+                  <div className={styles.trackPanel}>
+                    <h3>Program details</h3>
                     <dl className={styles.trackDetails}>
                       <div>
                         <dt>Duration</dt>
@@ -660,25 +672,18 @@ export default function InternLanding() {
                       </div>
                     </dl>
                   </div>
-                  <p className={styles.trackDescription}>{track.description}</p>
-                  <ul className={styles.trackBenefits} role="list">
-                    {trackBenefits.map((benefit) => (
-                      <li key={benefit}>
-                        <span>
-                          <Check size={11} strokeWidth={3} aria-hidden="true" />
-                        </span>
-                        {benefit}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className={styles.trackPanel}>
+                    <h3>What you’ll gain</h3>
+                    <ul className={styles.trackBenefits} role="list">
+                      {trackBenefits.map((benefit) => (
+                        <li key={benefit}>
+                          <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                          {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                {canApply && availableTrackIds.includes(track.id) && <a
-                  href="#internship-application"
-                  className={`${styles.primaryButton} ${styles.trackButton}`}
-                  onClick={(event) => applyForTrack(event, track.id)}
-                >
-                  {track.cta} <ArrowRight size={14} aria-hidden="true" />
-                </a>}
               </article>
               );
             })}

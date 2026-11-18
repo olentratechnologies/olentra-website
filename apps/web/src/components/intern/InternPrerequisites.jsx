@@ -5,7 +5,7 @@ import styles from "./intern-sections.module.css";
 const ESSENTIALS = [
   { icon: Laptop, title: "Access to a computer", text: "A laptop or desktop computer you can use for development and daily work." },
   { icon: Wifi, title: "Reliable internet", text: "A stable connection for remote collaboration, video calls and online tools." },
-  { icon: CalendarCheck, title: "Program commitment", text: "Availability for the full program, part-time or full-time." },
+  { icon: CalendarCheck, title: "Program commitment", text: "Consistent availability throughout the program, aligned with your selected schedule." },
   { icon: MessagesSquare, title: "Clear communication", text: "Good written and spoken English for working with a remote team." },
   { icon: Rocket, title: "Drive to learn", text: "Willingness to learn, take ownership, and meet deadlines." },
 ];

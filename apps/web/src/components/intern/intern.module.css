@@ -234,258 +234,6 @@
   text-align: center;
   font-size: 14px;
 }
-.trackCard:only-child {
-  grid-column: 1 / -1;
-  width: 100%;
-  max-width: none;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
-  grid-template-areas:
-    "heading art"
-    "description art"
-    "benefits art"
-    "action art";
-  gap: 20px 44px;
-  padding: 40px;
-  align-items: start;
-}
-.trackCard:only-child .trackContent {
-  display: contents;
-}
-.trackCard:only-child .trackHeading {
-  grid-area: heading;
-  min-height: 0;
-  padding: 0;
-}
-.trackCard:only-child h2 {
-  font-size: 36px;
-  line-height: 1.15;
-}
-.trackCard:only-child .trackDescription {
-  grid-area: description;
-  max-width: 620px;
-  margin: 0;
-  font-size: 15px;
-  line-height: 25px;
-}
-.trackCard:only-child .trackBenefits {
-  grid-area: benefits;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 24px;
-  margin: 0;
-}
-.trackCard:only-child .trackArt {
-  grid-area: art;
-  position: static;
-  width: 100%;
-  max-width: 280px;
-  align-self: center;
-  justify-self: center;
-}
-.trackCard:only-child .trackButton {
-  grid-area: action;
-  justify-self: start;
-  margin: 4px 0 0;
-}
-.trackCard {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 24px;
-  min-width: 0;
-  min-height: 440px;
-  overflow: clip;
-  padding: 30px;
-  border: 1px solid #8cd7ff;
-  border-radius: 24px;
-  background: linear-gradient(125deg, #f3f8ffe6, #deedffd9 60%, #bce4ffc4);
-  box-shadow:
-    0 10px 24px #7397ce24,
-    inset 0 0 0 1px #ffffffb3;
-}
-.trackCard::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  right: -110px;
-  bottom: -180px;
-  width: 370px;
-  height: 450px;
-  border: 1px solid #ffffff8c;
-  border-radius: 50%;
-  transform: rotate(30deg);
-  background: linear-gradient(120deg, #9df7ff1a, #ffffff3d);
-}
-.innovator {
-  border-color: #bda1fb;
-  background: linear-gradient(125deg, #f5f1ffe6, #e7e0ffdb 60%, #d0c4ffd1);
-  box-shadow:
-    0 10px 24px #8664bb24,
-    inset 0 0 0 1px #ffffffb3;
-}
-.trackContent {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-}
-.trackHeading {
-  container: track-heading / inline-size;
-  display: grid;
-  align-content: start;
-  gap: 16px;
-  min-width: 0;
-  min-height: 136px;
-  padding-right: 184px;
-}
-.trackContent h2 {
-  margin-top: 12px;
-  font-size: 30px;
-  line-height: 38px;
-  letter-spacing: -0.9px;
-  font-weight: 750;
-}
-.trackContent h2:first-child {
-  margin-top: 0;
-}
-/* Divider lines come from a 1px gap over a tinted background, so the facts
-   line up cleanly in any number of rows and columns. */
-.trackDetails {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1px;
-  width: 100%;
-  max-width: 560px;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid #c9d8f0;
-  border-radius: 14px;
-  background: #d9e4f6;
-}
-.trackDetails > div {
-  display: grid;
-  align-content: start;
-  gap: 6px;
-  min-width: 0;
-  padding: 14px 18px;
-  background: #fbfdff;
-}
-.trackDetails dt {
-  color: #5b6b82;
-  font-size: 12px;
-  line-height: 18px;
-  font-weight: 500;
-}
-.trackDetails dd {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-  min-width: 0;
-  margin: 0;
-  color: #15213b;
-  font-size: 16px;
-  line-height: 22px;
-  font-weight: 650;
-  letter-spacing: -0.3px;
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-}
-.trackDetails .trackPeriod {
-  color: #5b6b82;
-  font-size: 11px;
-  line-height: 16px;
-  font-weight: 400;
-  letter-spacing: 0;
-}
-/* Adapt to the card's available space, including cards beside one another. */
-@container track-heading (max-width: 399px) {
-  .trackDetails {
-    grid-template-columns: minmax(0, 1fr);
-    border-radius: 12px;
-  }
-  .trackDetails > div {
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-  }
-  .trackDetails dd {
-    align-items: flex-end;
-    font-size: 15px;
-    text-align: right;
-  }
-}
-.trackDescription {
-  margin-top: 16px;
-  max-width: 440px;
-  color: #29375f;
-  font-size: 14px;
-  line-height: 23px;
-  text-wrap: pretty;
-}
-.trackBenefits {
-  display: grid;
-  gap: 9px;
-  margin: 20px 0 0;
-  padding: 0;
-  list-style: none;
-}
-.trackBenefits li {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 14px;
-  line-height: 22px;
-}
-.trackBenefits li > span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  margin-top: 2px;
-  border-radius: 50%;
-  color: #fff;
-  background: #0054ff;
-}
-.innovator .trackBenefits li > span {
-  background: #7825ff;
-}
-.trackArt {
-  position: absolute;
-  z-index: 0;
-  top: 30px;
-  right: 20px;
-  width: 170px;
-  height: auto;
-  mask-image: radial-gradient(
-    ellipse 67% 64% at 50% 49%,
-    #000 55%,
-    transparent 100%
-  );
-}
-.innovator .trackArt {
-  right: 25px;
-  width: 157px;
-}
-.trackButton {
-  position: relative;
-  z-index: 2;
-  align-self: flex-start;
-  margin-top: auto;
-}
-.innovator .trackButton {
-  border-color: #c09aff;
-  background: linear-gradient(180deg, #a64bff, #7722f5 55%, #6020d4);
-  box-shadow:
-    0 5px 12px #6b2ee830,
-    inset 0 1px 2px #ecd7ff80;
-}
 
 .insights {
   margin-top: 80px;
@@ -1034,11 +782,6 @@
 }
 
 @media (max-width: 1199px) {
-  .trackCard:only-child {
-    grid-template-columns: minmax(0, 1fr) 240px;
-    gap: 20px 28px;
-    padding: 32px;
-  }
   .heroInner {
     grid-template-columns: 1.1fr 1fr;
     gap: 24px;
@@ -1053,29 +796,8 @@
     width: calc(100% + 50px);
     margin-left: -10px;
   }
-  .trackCard {
-    padding: 28px;
-  }
-  .trackHeading {
-    padding-right: 164px;
-  }
-  .trackContent h2 {
-    font-size: 27px;
-    line-height: 35px;
-  }
-  .trackArt {
-    right: 16px;
-    width: 151px;
-  }
-  .innovator .trackArt {
-    right: 20px;
-    width: 140px;
-  }
 }
 @media (max-width: 1023px) {
-  .trackCard:only-child .trackBenefits {
-    grid-template-columns: 1fr;
-  }
   .container {
     width: calc(100% - 64px);
   }
@@ -1103,28 +825,6 @@
   .trackGrid {
     grid-template-columns: minmax(0, 1fr);
   }
-  .trackCard {
-    min-height: 400px;
-  }
-  .trackHeading {
-    min-height: 150px;
-    padding-right: 214px;
-  }
-  .trackContent h2 {
-    font-size: 30px;
-    line-height: 38px;
-  }
-  .trackArt {
-    width: 180px;
-    right: 28px;
-  }
-  .innovator .trackArt {
-    width: 166px;
-    right: 34px;
-  }
-  .trackDescription {
-    max-width: 600px;
-  }
   .benefitsGrid {
     gap: 16px;
   }
@@ -1134,33 +834,6 @@
   }
 }
 @media (max-width: 767px) {
-  .trackCard:only-child {
-    grid-template-columns: minmax(0, 1fr) 104px;
-    grid-template-areas:
-      "heading heading"
-      "description art"
-      "benefits benefits"
-      "action action";
-    gap: 20px 12px;
-    padding: 24px;
-  }
-  .trackCard:only-child h2 {
-    font-size: 25px;
-    line-height: 32px;
-  }
-  .trackCard:only-child .trackDescription {
-    font-size: 14px;
-    line-height: 23px;
-  }
-  .trackCard:only-child .trackBenefits {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  .trackCard:only-child .trackButton {
-    justify-self: stretch;
-    justify-content: center;
-    width: 100%;
-  }
   .main {
     padding-bottom: 56px;
   }
@@ -1201,62 +874,6 @@
   }
   .tracks {
     padding-top: 24px;
-  }
-  .trackCard {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 104px;
-    grid-template-areas:
-      "heading heading"
-      "description art"
-      "benefits benefits"
-      "action action";
-    gap: 20px 12px;
-    min-height: 0;
-    padding: 24px;
-  }
-  .trackContent {
-    display: contents;
-  }
-  .trackHeading {
-    grid-area: heading;
-    min-height: 0;
-    padding-right: 0;
-  }
-  .trackContent h2 {
-    margin-top: 12px;
-    font-size: 25px;
-    line-height: 32px;
-    letter-spacing: -0.7px;
-  }
-  .trackArt {
-    grid-area: art;
-    position: static;
-    align-self: center;
-    width: 104px;
-  }
-  .innovator .trackArt {
-    width: 104px;
-  }
-  .trackDescription {
-    grid-area: description;
-    margin-top: 0;
-    font-size: 14px;
-    line-height: 23px;
-  }
-  .trackBenefits {
-    grid-area: benefits;
-    gap: 10px;
-    margin-top: 0;
-  }
-  .trackBenefits li {
-    font-size: 13px;
-    line-height: 21px;
-  }
-  .trackButton {
-    grid-area: action;
-    min-height: 46px;
-    padding-inline: 21px;
-    font-size: 13px;
   }
   .insights,
   .bottomGrid {
@@ -1369,22 +986,6 @@
     padding-inline: 14px;
     font-size: 12px;
   }
-  .trackCard {
-    padding: 22px;
-  }
-  .trackContent h2 {
-    font-size: 23px;
-    line-height: 30px;
-  }
-  .trackArt {
-    width: 100%;
-  }
-  .innovator .trackArt {
-    width: 100%;
-  }
-  .trackBenefits li {
-    font-size: 12px;
-  }
   .application {
     padding: 24px 20px;
   }
@@ -1407,254 +1008,118 @@
 
 .applicationClosed{margin-top:34px;padding:34px;border:1px solid #cbdcf5;border-radius:22px;background:#f6faff;color:#172a49;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}.applicationClosed h2{font-size:25px;line-height:1.3;font-weight:700;letter-spacing:-.5px}.applicationClosed p{max-width:540px;font-size:14px;line-height:1.7;color:#5b6d86}.applicationClosed a{margin-top:4px}@media(max-width:640px){.applicationClosed{padding:26px 20px}.applicationClosed h2{font-size:22px}}
 
-/*
- * Side-by-side (and stacked tablet) track cards: the artwork gets its own
- * column beside the title and details, centred on them instead of pinned to
- * the card's top corner. Phones and the single-card layout keep their own grids.
- */
-@media (min-width: 768px) {
-  .trackCard:not(:only-child) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto auto auto 1fr;
-    grid-template-areas:
-      "heading art"
-      "description description"
-      "benefits benefits"
-      "action action";
-    column-gap: 24px;
-    row-gap: 0;
-  }
-  .trackCard:not(:only-child) .trackContent {
-    display: contents;
-  }
-  .trackCard:not(:only-child) .trackHeading {
-    grid-area: heading;
-    min-height: 0;
-    padding-right: 0;
-  }
-  .trackCard:not(:only-child) .trackArt {
-    grid-area: art;
-    position: static;
-    align-self: center;
-    justify-self: end;
-    margin-right: -10px;
-  }
-  .trackCard:not(:only-child) .trackDescription {
-    grid-area: description;
-  }
-  .trackCard:not(:only-child) .trackBenefits {
-    grid-area: benefits;
-  }
-  .trackCard:not(:only-child) .trackButton {
-    grid-area: action;
-    align-self: end;
-    margin-top: 24px;
-  }
-}
-
-/*
- * Single track card (e.g. only Tech Explorer open): one content column with a
- * shared width so every block lines up on both edges, and the artwork in its
- * own column, centred on the whole card.
- *   Title → description → key facts → benefits → call to action
- */
-@media (min-width: 768px) {
-  .trackCard:only-child {
-    grid-template-columns: minmax(0, 680px) minmax(220px, 1fr);
-    grid-template-areas:
-      "title art"
-      "description art"
-      "details art"
-      "benefits art"
-      "action art";
-    grid-template-rows: auto auto auto auto 1fr;
-    column-gap: 56px;
-    row-gap: 0;
-    padding: 44px 48px;
-    align-items: start;
-  }
-  .trackCard:only-child .trackHeading {
-    display: contents;
-  }
-  .trackCard:only-child h2 {
-    grid-area: title;
-    margin: 0;
-    font-size: 34px;
-    line-height: 1.15;
-    letter-spacing: -1px;
-  }
-  .trackCard:only-child .trackDescription {
-    grid-area: description;
-    max-width: none;
-    margin: 12px 0 0;
-    font-size: 15px;
-    line-height: 25px;
-  }
-  .trackCard:only-child .trackDetails {
-    grid-area: details;
-    max-width: none;
-    margin-top: 24px;
-  }
-  .trackCard:only-child .trackDetails > div {
-    padding: 16px 22px;
-  }
-  .trackCard:only-child .trackBenefits {
-    grid-area: benefits;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 28px;
-    margin: 24px 0 0;
-  }
-  /* An odd last benefit gets the full row instead of wrapping in a half column. */
-  .trackCard:only-child .trackBenefits li:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
-  .trackCard:only-child .trackButton {
-    grid-area: action;
-    align-self: start;
-    justify-self: start;
-    margin: 32px 0 0;
-  }
-  .trackCard:only-child .trackArt {
-    grid-area: art;
-    align-self: center;
-    justify-self: center;
-    width: 100%;
-    max-width: 300px;
-  }
-}
-@media (min-width: 768px) and (max-width: 1023px) {
-  .trackCard:only-child {
-    grid-template-columns: minmax(0, 1fr) 180px;
-    column-gap: 32px;
-    padding: 36px;
-  }
-  .trackCard:only-child h2 {
-    font-size: 30px;
-  }
-  .trackCard:only-child .trackBenefits {
-    grid-template-columns: 1fr;
-  }
-}
-
-/*
- * Phones: artwork beside the title, then every block full width in the same
- * order as desktop, with the key facts as a clean stacked list.
- */
-@media (max-width: 767px) {
-  .trackCard:only-child {
-    grid-template-columns: minmax(0, 1fr) 76px;
-    grid-template-areas:
-      "title art"
-      "description description"
-      "details details"
-      "benefits benefits"
-      "action action";
-    column-gap: 16px;
-    row-gap: 0;
-    padding: 24px 20px;
-    align-items: center;
-  }
-  .trackCard:only-child .trackHeading {
-    display: contents;
-  }
-  .trackCard:only-child h2 {
-    grid-area: title;
-    margin: 0;
-    font-size: 26px;
-    line-height: 1.2;
-  }
-  .trackCard:only-child .trackArt {
-    grid-area: art;
-    position: static;
-    width: 76px;
-    max-width: none;
-    justify-self: end;
-  }
-  .trackCard:only-child .trackDescription {
-    grid-area: description;
-    max-width: none;
-    margin: 14px 0 0;
-  }
-  .trackCard:only-child .trackDetails {
-    grid-area: details;
-    grid-template-columns: minmax(0, 1fr);
-    max-width: none;
-    margin-top: 20px;
-    border-radius: 14px;
-  }
-  .trackCard:only-child .trackDetails > div {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 12px;
-    padding: 13px 16px;
-  }
-  .trackCard:only-child .trackDetails dt {
-    font-size: 13px;
-  }
-  .trackCard:only-child .trackDetails dd {
-    align-items: flex-end;
-    font-size: 15px;
-    text-align: right;
-  }
-  .trackCard:only-child .trackBenefits {
-    grid-area: benefits;
-    margin: 20px 0 0;
-  }
-  .trackCard:only-child .trackButton {
-    grid-area: action;
-    margin: 24px 0 0;
-  }
-}
-
-.trackTitleBlock {
-  grid-area: title;
+.trackCard {
+  --track-accent: #2957b5;
+  --track-wash: #edf3ff;
+  container: internship-track / inline-size;
   min-width: 0;
+  overflow: hidden;
+  border: 1px solid #cbd9ed;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 18px 44px -24px #263f7270;
 }
-.trackEyebrow {
+.trackCard:only-child { grid-column: 1 / -1; }
+.innovator {
+  --track-accent: #6442a4;
+  --track-wash: #f3effa;
+}
+.trackHeader {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  min-height: 240px;
+  padding: clamp(24px, 5cqi, 44px);
+  color: var(--ink);
+  background: var(--track-header, linear-gradient(115deg, #f5f9ff, #dcecff));
+  border-bottom: 1px solid #d5e3f7;
+}
+.innovator { --track-header: linear-gradient(115deg, #faf7ff, #e8e1ff); }
+.trackArt {
+  position: absolute;
+  right: 6%;
+  width: min(32%, 205px);
+  mask-image: radial-gradient(ellipse, black 53%, transparent 75%);
+}
+.trackIntro { position: relative; width: 60%; }
+.trackIntro h2 {
+  color: var(--ink);
+  font-size: clamp(34px, 5.2cqi, 58px);
+  font-weight: 650;
+  letter-spacing: -.055em;
+  line-height: 1.06;
+}
+.trackIntro p {
+  max-width: 42ch;
+  margin-top: 13px;
+  color: var(--muted);
+  font-size: clamp(14px, 1.6cqi, 16px);
+  line-height: 1.6;
+}
+.trackButton {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  color: #42639d;
-  font-size: 10px;
-  line-height: 16px;
-  letter-spacing: 1.7px;
-  text-transform: uppercase;
+  justify-content: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-top: 22px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--track-accent);
+  color: white;
   font-weight: 650;
 }
-.trackEyebrow > span {
-  width: 18px;
-  height: 2px;
-  border-radius: 2px;
-  background: #426bea;
+.trackButton:hover { filter: brightness(.92); }
+.trackContent {
+  display: grid;
+  gap: 24px;
+  padding: clamp(20px, 4cqi, 40px);
 }
-.trackCard .trackTitleBlock h2 {
+.trackPanel { min-width: 0; }
+.trackPanel h3 {
+  margin-bottom: 16px;
+  color: #182d51;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -.025em;
+}
+.trackDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
   margin: 0;
-  font-size: clamp(30px, 3.7vw, 46px);
-  line-height: 1.12;
-  letter-spacing: -1.6px;
-  font-weight: 650;
-  color: #172b54;
+  border: 1px solid #dbe3f0;
+  border-radius: 13px;
+  overflow: hidden;
+  background: #dbe3f0;
 }
-.trackNameAccent {
-  color: #2859cf;
+.trackDetails > div { padding: 13px 12px; background: #f7f9fd; }
+.trackDetails dt { color: #54647b; font-size: 12px; line-height: 1.5; }
+.trackDetails dd { margin: 4px 0 0; color: #192e52; font-size: 14px; font-weight: 650; line-height: 1.4; }
+.trackPeriod { margin-left: .25em; font-weight: 450; white-space: nowrap; }
+.trackBenefits { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.trackBenefits li { display: flex; gap: 10px; align-items: flex-start; color: #344766; line-height: 1.5; }
+.trackBenefits svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--track-wash);
+  color: var(--track-accent);
 }
-.innovator .trackNameAccent {
-  color: #7044c5;
+@container internship-track (min-width: 760px) {
+  .trackContent { grid-template-columns: 1.2fr 1fr; gap: 5%; }
 }
-.innovator .trackEyebrow > span {
-  background: #8256ce;
-}
-@media (max-width: 767px) {
-  .trackCard .trackTitleBlock h2 {
-    font-size: clamp(27px, 7vw, 36px);
-    letter-spacing: -1px;
-  }
-  .trackEyebrow {
-    font-size: 9px;
-    letter-spacing: 1.2px;
-    gap: 6px;
-    margin-bottom: 8px;
-  }
+@container internship-track (max-width: 480px) {
+  .trackHeader { min-height: auto; padding: 22px; }
+  .trackArt { top: 13px; right: 16px; width: 64px; }
+  .trackIntro { width: 100%; }
+  .trackIntro h2 { padding-right: 72px; font-size: clamp(26px, 8cqi, 36px); }
+  .trackIntro p { margin-top: 18px; }
+  .trackDetails { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

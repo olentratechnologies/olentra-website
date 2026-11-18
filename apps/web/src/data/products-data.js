@@ -36,7 +36,7 @@ export const products = [
         price: 'Usage-Based',
         image: '/images/products/olen-bot.png',
         logo: {
-            src: '/images/products/branding/olenbot-transparent.png',
+            src: '/images/products/branding/olenbot-metallic.webp',
             width: 1254,
             height: 1254,
         }
@@ -56,7 +56,7 @@ export const products = [
         price: 'Consult for Pricing',
         image: '/images/products/ai-studio.png',
         logo: {
-            src: '/images/products/branding/olentra-ai-studio-film-transparent.png',
+            src: '/images/products/branding/olentra-ai-studio-metallic-v2.webp',
             width: 1254,
             height: 1254,
         }

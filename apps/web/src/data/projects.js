@@ -39,5 +39,32 @@ export const projects = [
         status: 'In development',
         image: '/images/projects/vasudha-stay-inn.webp',
         href: 'https://vasudha-stay-inn.vercel.app/',
+    },
+    {
+        category: 'Fintech',
+        title: 'NewNet',
+        subtitle: 'Secure Digital Payment Infrastructure',
+        description: 'A digital presence for secure payment infrastructure, connecting banks, fintechs, and payment service providers.',
+        features: ['Payment solutions & products', 'Cloud & real-time payments'],
+        image: '/images/projects/newnet.webp',
+        href: 'https://newnet.com/',
+    },
+    {
+        category: 'Game Art / Animation',
+        title: 'Moonglade Atelier',
+        subtitle: 'Game Art & Animation Studio',
+        description: 'A creative studio showcase for game art, animation, and production-ready visuals that bring game worlds to life.',
+        features: ['2D & 3D game art', 'Animation & game trailers'],
+        image: '/images/projects/moonglade-atelier.webp',
+        href: 'https://www.moongladeatelier.com/',
+    },
+    {
+        category: 'E-commerce',
+        title: 'Monrow',
+        subtitle: 'Fashion & Comfort Footwear Store',
+        description: 'An online storefront for women’s footwear and bags, bringing fashion-led collections and everyday comfort together.',
+        features: ['Footwear & bag collections', 'Online shopping experience'],
+        image: '/images/projects/monrow.webp',
+        href: 'https://www.monrow.in/',
     }
 ];

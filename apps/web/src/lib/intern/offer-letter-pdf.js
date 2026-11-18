@@ -73,7 +73,7 @@ export function buildOfferLetterPdfBytes(details) {
     icon('building-2',94,32,11,white); text('Olentra Technologies Pvt. Ltd.',112,34,8.2,false,white);
     text('|',247,34,9,false,white); icon('map-pin',265,32,11,white);text('Hyderabad, India',282,34,8.2,false,white);
     text('|',358,34,9,false,white);text('CIN: U72900TG2023PTC176542',375,34,8.2,false,white);
-    icon('mail',145,12,11,white);text('support@olentratechnologies.com',163,14,8.2,false,white);
+    icon('mail',145,12,11,white);text('intern.support@olentratechnologies.com',163,14,8.2,false,white);
     text('|',317,14,9,false,white);icon('globe',334,12,11,white);text('www.olentratechnologies.com',351,14,8.2,false,white);
   }
   const flush = () => { footer(); pages.push(commands.splice(0).join('\n')); };
