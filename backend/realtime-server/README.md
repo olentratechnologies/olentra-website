@@ -135,3 +135,7 @@ password is set. `delete --email EMAIL --yes` permanently removes a staff
 account, its credentials and sessions, while protecting the last active admin.
 Use the same database, signing secret and workspace origin as the service.
 See [workspace recovery](../../apps/admin/README.md#locked-out-recovery).
+
+## OCI direct file uploads
+
+See [deployment and API guide](../../docs/oci-file-storage.md) and [implementation plan](../../docs/plans/oci-uploads.md). Uploads remain on GridFS until `INTERNSHIP_FILE_STORAGE=oci` is configured with private buckets, workload IAM and ClamAV.

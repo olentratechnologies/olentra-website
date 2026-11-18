@@ -1,0 +1,6 @@
+# Replace <storage-compartment-ocid> and <bun-instance-group>.
+# Dynamic-group matching rule: instance.id = '<production-bun-instance-ocid>'
+Allow dynamic-group <bun-instance-group> to read buckets in compartment id <storage-compartment-ocid> where any {target.bucket.name='olentrainternship', target.bucket.name='olentrainternship-quarantine'}
+Allow dynamic-group <bun-instance-group> to manage objects in compartment id <storage-compartment-ocid> where all {target.bucket.name='olentrainternship-quarantine', any {request.permission='OBJECT_READ', request.permission='OBJECT_CREATE', request.permission='OBJECT_OVERWRITE', request.permission='OBJECT_DELETE'}}
+Allow dynamic-group <bun-instance-group> to manage buckets in compartment id <storage-compartment-ocid> where all {target.bucket.name='olentrainternship-quarantine', request.permission='PAR_MANAGE'}
+Allow dynamic-group <bun-instance-group> to manage objects in compartment id <storage-compartment-ocid> where all {target.bucket.name='olentrainternship', any {request.permission='OBJECT_READ', request.permission='OBJECT_CREATE', request.permission='OBJECT_DELETE'}}

@@ -1,0 +1,24 @@
+# Join Bun's private Docker network; never publish 3310 to a host/public interface.
+# Set CLAMAV_IMAGE to an approved digest of the official clamav/clamav image.
+services:
+  clamav:
+    image: ${CLAMAV_IMAGE:?Set an approved clamav/clamav image digest}
+    restart: unless-stopped
+    volumes:
+      - clamav-db:/var/lib/clamav
+      - ./clamd.conf:/etc/clamav/clamd.conf:ro
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping", "3"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    mem_limit: 2g
+    cpus: 2
+networks:
+  backend:
+    external: true
+    name: ${BACKEND_DOCKER_NETWORK:?Set the Bun backend private network}
+volumes:
+  clamav-db:

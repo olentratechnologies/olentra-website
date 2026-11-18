@@ -19,7 +19,8 @@
     "test:templates": "node --test scripts/message-templates.test.mjs",
     "test:board": "node --test scripts/intern-board.test.mjs",
     "test:offer": "node --test scripts/offer-deadline.test.mjs",
-    "test:draft": "node --test scripts/apply-draft.test.mjs"
+    "test:draft": "node --test scripts/apply-draft.test.mjs",
+    "test:uploads": "node --test scripts/direct-upload.test.mjs scripts/intern-client.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",

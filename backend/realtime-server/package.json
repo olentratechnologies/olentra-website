@@ -2,7 +2,7 @@
   "name": "@olentra/realtime-server",
   "version": "1.0.0",
   "type": "module",
-  "description": "Olentra unified realtime backend – presence and internship WebSocket/HTTP modules",
+  "description": "Olentra unified realtime backend \u2013 presence and internship WebSocket/HTTP modules",
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun build --target=bun --minify --outfile=dist/realtime-server.js src/index.ts",
@@ -17,7 +17,8 @@
     "seed:test": "bun scripts/seed-test-accounts.ts",
     "promote-admin": "bun scripts/promote-admin.ts",
     "healthcheck": "bun scripts/healthcheck.ts",
-    "admin-access": "bun scripts/admin-access.ts"
+    "admin-access": "bun scripts/admin-access.ts",
+    "storage:smoke": "bun scripts/storage-smoke.ts"
   },
   "devDependencies": {
     "bun-types": "latest",
@@ -25,6 +26,8 @@
   },
   "dependencies": {
     "jose": "^6.2.15",
-    "mongodb": "^7.8.0"
+    "mongodb": "^7.8.0",
+    "oci-common": "^2.147.0",
+    "oci-objectstorage": "^2.147.0"
   }
 }
