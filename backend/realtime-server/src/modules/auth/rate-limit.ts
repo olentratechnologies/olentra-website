@@ -13,6 +13,9 @@ export const RATE_LIMITS = {
   apply: { ip: { limit: 20, windowMs: HOUR }, target: { limit: 5, windowMs: HOUR }, message: "Too many applications from this connection. Please wait an hour and try again." },
   /** File uploads. `target` is the signed-in account, when there is one. */
   upload: { ip: { limit: 10, windowMs: HOUR }, target: { limit: 60, windowMs: HOUR }, message: "Too many uploads. Please wait an hour and try again." },
+  resumeGrant: { ip: { limit: 240, windowMs: HOUR }, message: "Too many upload authorizations from this network. Please wait an hour and try again." },
+  verifiedResume: { ip: { limit: 360, windowMs: HOUR }, target: { limit: 3, windowMs: HOUR }, message: "Resume upload limit reached. Verify again to retry your application, or wait if your network has reached its limit." },
+  verifiedApply: { ip: { limit: 240, windowMs: HOUR }, target: { limit: 5, windowMs: HOUR }, message: "Too many applications or retries. Please wait an hour and try again." },
 } as const;
 export type RateLimitName = keyof typeof RATE_LIMITS;
 
@@ -28,7 +31,7 @@ export function createRateLimiter(store: AttemptStore, now = Date.now) {
       const policy = RATE_LIMITS[name];
       const rules = [
         { key: `${name}:ip:${hash(address || "unknown")}`, ...policy.ip },
-        ...(target ? [{ key: `${name}:target:${hash(target.trim().toLowerCase())}`, ...policy.target }] : []),
+        ...(target && "target" in policy ? [{ key: `${name}:target:${hash(target.trim().toLowerCase())}`, ...policy.target }] : []),
       ];
       const at = new Date(now());
       // The address is checked first, so a blocked client can't create new per-email counters.

@@ -18,6 +18,7 @@ import { bearerToken } from "../interfaces/http/middleware";
 import { removeOrphanedUploads } from "../modules/files/cleanup";
 import { createRateLimiter, type RateLimiter } from "../modules/auth/rate-limit";
 import { createFilesRoutes, isFileDownloadPath, isFileUploadPath } from "../interfaces/http/files.routes";
+import { createResumeGrants, RESUME_GRANT_PATH } from "../modules/files/resume-grant";
 import { healthResponse as internshipHealthResponse } from "../interfaces/http/health.routes";
 import { healthResponse as presenceHealthResponse } from "../interfaces/http/presence-health.route";
 import { statsResponse as presenceStatsResponse } from "../interfaces/http/presence-stats.route";
@@ -40,6 +41,7 @@ type InternshipRuntime = {
   authRoutes: ReturnType<typeof createAuthRoutes>;
   fileRoutes: ReturnType<typeof createFilesRoutes>;
   limiter: RateLimiter;
+  verifiedResumeUploads: boolean;
   siteFeatures: ReturnType<typeof createSiteFeatureStore>;
   signinEmailTemplates: ReturnType<typeof createSigninEmailTemplateSettings>;
   staffSockets: StaffSocketRegistry;
@@ -305,7 +307,9 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     await domain.collection("rate_limits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     const signinEmailTemplates = createSigninEmailTemplateSettings(domain.collection("email_template_settings"));
     const authRoutes = createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOrigin, sendJson, limiter, signinEmailTemplates });
-    const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter });
+    const turnstileSecret = process.env.INTERNSHIP_TURNSTILE_SECRET_KEY;
+    const resumeGrants = turnstileSecret ? createResumeGrants(secret, turnstileSecret) : undefined;
+    const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter, resumeGrants });
     const siteFeatures = createSiteFeatureStore(domain.collection("site_features") as any);
     const nextRuntime: InternshipRuntime = {
       auth,
@@ -313,6 +317,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       authRoutes,
       fileRoutes,
       limiter,
+      verifiedResumeUploads: Boolean(resumeGrants),
       siteFeatures,
       signinEmailTemplates,
       staffSockets,
@@ -374,6 +379,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           const body = await request.json() as { state?: unknown; expectedRevision?: unknown };
           return sendJson({ ok: true, data: await runtime.siteFeatures.write(body.state, Number(body.expectedRevision)) }, origin);
         }
+        if (url.pathname === RESUME_GRANT_PATH && request.method === "POST") return await runtime.fileRoutes.authorizeResume(request, origin, instance.requestIP(request)?.address);
         if (isFileUploadPath(url.pathname, request.method)) return await runtime.fileRoutes.upload(request, origin, instance.requestIP(request)?.address);
         if (isFileDownloadPath(url.pathname, request.method)) return await runtime.fileRoutes.download(request, origin);
         throw new DomainError("NOT_FOUND", "Endpoint not found.");
@@ -440,7 +446,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
             // Applying sends email and stores data, so anonymous applies are
             // limited per client address and per email, shared across sockets.
             const email = typeof request.params?.email === "string" ? request.params.email : null;
-            await runtime.limiter.consume("apply", (socket.data as InternSocketData).address || "unknown", email);
+            await runtime.limiter.consume(runtime.verifiedResumeUploads ? "verifiedApply" : "apply", (socket.data as InternSocketData).address || "unknown", email);
             result = await runtime.domain.execute(request.method, request.params || {}, null, request.idempotencyKey);
           } else if (request.method === "intern.insights") {
             result = { ...(await runtime.insights.get()), viewers: runtime.insightsViewers() };

@@ -19,7 +19,8 @@ import ApplicationLaunch from "./ApplicationLaunch";
 import LaunchAnimation from "./LaunchAnimation";
 import LoadingIndicator from "@olentra/ui/LoadingIndicator";
 import { useInternship } from "./InternshipProvider";
-import { saveAttachment } from "@/lib/intern-attachments.mjs";
+import { authorizeResumeUpload, saveAttachment } from "@/lib/intern-attachments.mjs";
+import ResumeSecurityCheck, { resumeSecuritySiteKey } from "./ResumeSecurityCheck";
 import { isProgramAvailable, matchesCompensationMode, resolveProgramSelection } from "@/lib/intern/program-availability.mjs";
 import styles from "./intern.module.css";
 import InternInsights from "./InternInsights";
@@ -220,6 +221,7 @@ export default function InternLanding() {
   const [savedApplication, setSavedApplication] = useState(null);
   const submissionLock = useRef(false);
   const uploadedResume = useRef(null);
+  const resumeGrant = useRef(null);
   const nameInput = useRef(null);
   // Unfinished applications are kept in this browser only (never sent until
   // submitted), restored on the next visit and cleared after applying.
@@ -406,7 +408,25 @@ export default function InternLanding() {
     setPreviewComplete(false);
     setShowValidation(false);
     try {
-      const attachment = uploadedResume.current || await saveAttachment(file, "resume", { publicUpload: true });
+      let attachment = uploadedResume.current;
+      if (!attachment) {
+        if (resumeSecuritySiteKey && (!resumeGrant.current || resumeGrant.current.expiresAt <= Date.now())) {
+          const challenge = String(formData.get("cf-turnstile-response") || "");
+          if (!challenge) throw new Error("Complete the security check before uploading your resume.");
+          const widget = event.target.querySelector("[data-resume-security-check]");
+          try {
+            resumeGrant.current = await authorizeResumeUpload(challenge);
+          } finally {
+            widget?.dispatchEvent(new Event("resume-challenge-reset"));
+          }
+        }
+        try {
+          attachment = await saveAttachment(file, "resume", { publicUpload: true, resumeGrant: resumeGrant.current?.token });
+        } catch (error) {
+          if (error.status === 403 || error.status === 429) resumeGrant.current = null;
+          throw error;
+        }
+      }
       uploadedResume.current = attachment;
       if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) {
         setSubmitError("That track is no longer accepting applications. Choose an available track.");
@@ -427,6 +447,7 @@ export default function InternLanding() {
       }
       // Only a newly accepted application reaches the success screen.
       setSavedApplication({ ...input, applicationId: result.data?.applicationId, message: result.data?.message });
+      resumeGrant.current = null;
       resetApplicationForm();
       if (!canApplyRef.current || !availableTrackIdsRef.current.includes(input.programId)) return;
       setLaunchPhase("launching");
@@ -1057,6 +1078,7 @@ export default function InternLanding() {
                     )}
                   </div>
                 </fieldset>
+                <ResumeSecurityCheck />
                 <button
                   ref={submitButtonRef}
                   className={`${styles.primaryButton} ${styles.submitButton}`}

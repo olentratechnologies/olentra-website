@@ -9,6 +9,7 @@ import { can } from "../../modules/access/policy";
 import { bearerToken } from "./middleware";
 import { clientAddress } from "../../modules/auth/login-throttle";
 import type { RateLimiter } from "../../modules/auth/rate-limit";
+import type { createResumeGrants } from "../../modules/files/resume-grant";
 import { SIGNATURE_BYTES, allowedType, matchesSignature } from "../../modules/files/file-types";
 
 export const FILES_PATH = "/intern/files";
@@ -25,20 +26,31 @@ type Cors = (origin: string | null, extra?: Record<string, string>) => Headers;
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
 /** GridFS-backed file transport adapter. */
-export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter }: {
+export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter, resumeGrants }: {
   auth: Auth;
   bucket: GridFSBucket;
   files: Collection<FileRow>;
   withCors: Cors;
   sendJson: SendJson;
   limiter?: RateLimiter;
+  resumeGrants?: ReturnType<typeof createResumeGrants>;
 }) {
   const authenticate = async (request: Request) => {
     const value = bearerToken(request);
     return value ? (await auth.verify(value)).account : null;
   };
+  const addressFor = (request: Request, peerAddress?: string) =>
+    clientAddress(request, peerAddress, /^(true|1)$/i.test(process.env.REALTIME_TRUST_PROXY || ""));
 
   return {
+    async authorizeResume(request: Request, origin: string | null, peerAddress?: string) {
+      if (!resumeGrants || !origin) throw new DomainError("FORBIDDEN", "Resume verification is unavailable for this request.");
+      await limiter?.consume("resumeGrant", addressFor(request, peerAddress));
+      const challenge = request.headers.get("x-resume-challenge") || "";
+      const grant = await resumeGrants.verifyChallenge(challenge, new URL(origin).hostname);
+      return sendJson({ ok: true, data: grant }, origin);
+    },
+
     async upload(request: Request, origin: string | null, peerAddress = "direct") {
       const kind = request.headers.get("x-file-kind") || "resume";
       const name = (request.headers.get("x-file-name") || "").split(/[\\/]/).pop()?.replace(/[\x00-\x1f\x7f]/g, "").trim() || "";
@@ -48,10 +60,16 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
       const account = await authenticate(request);
       if (kind === "work" && !account) throw new DomainError("UNAUTHENTICATED", "Sign in to upload work.");
       if (account?.role === "company") throw new DomainError("FORBIDDEN", "Staff accounts cannot upload intern attachments.");
-      await limiter?.consume("upload", clientAddress(request, peerAddress, /^(true|1)$/i.test(process.env.REALTIME_TRUST_PROXY || "")), account?.id);
       const maximum = (kind === "resume" ? 5 : 10) * 1024 * 1024;
       const declared = Number(request.headers.get("content-length") || 0);
       if (declared > maximum || !request.body) throw new DomainError("INVALID_REQUEST", "The file is too large or empty.");
+      const address = addressFor(request, peerAddress);
+      if (resumeGrants && !account) {
+        const draftId = await resumeGrants.draftId(request.headers.get("x-resume-grant") || "");
+        await limiter?.consume("verifiedResume", address, draftId);
+      } else {
+        await limiter?.consume("upload", address, account?.id);
+      }
       const gridId = new ObjectId();
       const attachmentId = randomUUID();
       const accessToken = randomBytes(32).toString("base64url");
