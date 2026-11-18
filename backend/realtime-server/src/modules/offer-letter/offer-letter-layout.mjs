@@ -82,11 +82,11 @@ export function buildOfferLetterPdfBytes(details) {
   header();
   text('Internship',32,740,30,true);
   text('Offer Letter',32+measure('Internship ',30),740,30,true,blue);
-  path('32 723 539 4 re',blue);
+  path('32 723 539 2 re',blue);
   text(`Ref: OL-OFR-${clean(details.applicationId||'intern').replace(/^OL-/,'').slice(0,18)}`,32,696,10,true,'0.02 0.04 0.07');
   panel(425,687,143,25,9);icon('calendar',435,693,14,navy);text(`Issued: ${date(details.issueDate||new Date().toISOString())}`,457,695,10,false,'0.02 0.04 0.07');
   if(details.durationLabel)text(`Duration: ${details.durationLabel} | Offer version: ${details.offerVersion||1}`,32,682,8,false,gray);
-  let y=details.durationLabel?670:672;
+  let y=details.durationLabel?660:672;
   y=para(`To: ${details.name||'Candidate'}`,32,y,530,11.5,true,navy);
   icon('mail',33,y-10,13,navy);y=para(details.email,57,y-7,506,10,false,'0.02 0.04 0.07');
   if(details.college)y=para(details.college,57,y-3,506,9.5);
