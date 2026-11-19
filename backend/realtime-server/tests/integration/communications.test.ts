@@ -19,6 +19,7 @@ beforeAll(async () => {
   connection = await connectInternDatabase(uri!);
   domain = createInternshipDomain({ ...connection, prefix });
   await domain.initialize();
+  await domain.collection("accounts").insertOne({ _id: staff.id, role: staff.role, staffRole: "admin", name: staff.name, email: staff.email, sessionVersion: 1 });
   transact = async <T>(key: string, actor: Principal | null, input: unknown, fn: (session: ClientSession) => Promise<T>) => {
     const session = connection.client.startSession(), commands = domain.collection("comms_test_commands"), id = `${actor?.id}:${key}`;
     let result!: T;
@@ -97,10 +98,7 @@ test("settings cannot configure retired programs or enable unavailable integrati
 }, 30000);
 
 test("settings validation and a mid-write error roll back every change", async () => {
-  await domain.collection("accounts").insertMany([
-    { _id: "staff", role: "company", name: "Staff", email: "staff@example.test" },
-    { _id: "another-staff", role: "company", name: "Other", email: "duplicate@example.test" },
-  ]);
+  await domain.collection("accounts").insertOne({ _id: "another-staff", role: "company", name: "Other", email: "duplicate@example.test" });
   const beforeProgram = await domain.collection("programs").findOne({ _id: "software-engineer" });
   const beforeSettings = await domain.collection("settings").findOne({ _id: "program" });
   const beforeActivity = await domain.collection("activity").countDocuments({ title: "Program settings updated" });
