@@ -4,13 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, FileSpreadsheet, Mail, Send, X } from "lucide-react";
 import { useInternship } from "@/components/intern/InternshipProvider";
 import { useInternQuery } from "../useInternQuery";
-import { readEmailValuesFromFile } from "@/lib/intern/email-recipient-import.mjs";
-import { LINKEDIN_FOLLOWUP_TEMPLATE } from "@/data/custom-email-templates.mjs";
+import { readEmailRowsFromFile } from "@/lib/intern/email-recipient-import.mjs";
+import { LINKEDIN_FOLLOWUP_TEMPLATE, normalizeCustomEmailName, renderCustomEmailGreeting } from "@/data/custom-email-templates.mjs";
 import { Button, PageHeader, Panel } from "./DashboardUI";
 import QueryStatus from "./QueryStatus";
 import styles from "./custom-email.module.css";
 
 const MAX_RECIPIENTS = 500;
+// Leave room for the request envelope within the 64 KiB WebSocket limit.
+const MAX_CAMPAIGN_BYTES = 64_000;
 const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 const NO_TEMPLATES = [];
 
@@ -32,10 +34,11 @@ export default function CustomEmailPage() {
   ], [savedTemplates]);
   const [templateId, setTemplateId] = useState(LINKEDIN_FOLLOWUP_TEMPLATE.id);
   const selectedTemplate = templates.find(template => template.id === templateId) || templates[0];
+  const usesRecipientGreeting = selectedTemplate?.id === LINKEDIN_FOLLOWUP_TEMPLATE.id;
   const subject = selectedTemplate?.subject || "";
   const [content, setContent] = useState(LINKEDIN_FOLLOWUP_TEMPLATE.body);
   const [manualText, setManualText] = useState("");
-  const [importedEmails, setImportedEmails] = useState([]);
+  const [importedRecipients, setImportedRecipients] = useState(() => new Map());
   const [importSummary, setImportSummary] = useState("");
   const [importWarning, setImportWarning] = useState("");
   const [importError, setImportError] = useState("");
@@ -50,8 +53,10 @@ export default function CustomEmailPage() {
   const manualEntries = useMemo(() => splitAddresses(manualText), [manualText]);
   const invalidManual = useMemo(() => manualEntries.filter(email => email.length > 254 || !EMAIL_RE.test(email)), [manualEntries]);
   const validManual = useMemo(() => manualEntries.filter(email => email.length <= 254 && EMAIL_RE.test(email)).map(email => email.toLowerCase()), [manualEntries]);
-  const uniqueRecipients = useMemo(() => [...new Set([...validManual, ...importedEmails])], [validManual, importedEmails]);
-  const duplicateCount = validManual.length + importedEmails.length - uniqueRecipients.length;
+  const uniqueRecipients = useMemo(() => [...new Set([...validManual, ...importedRecipients.keys()])], [validManual, importedRecipients]);
+  const duplicateCount = validManual.length + importedRecipients.size - uniqueRecipients.length;
+  const previewName = usesRecipientGreeting ? [...importedRecipients.values()].find(Boolean) : undefined;
+  const previewContent = usesRecipientGreeting ? renderCustomEmailGreeting(content, previewName) : content;
   const tooManyRecipients = uniqueRecipients.length > MAX_RECIPIENTS;
   const sendingCampaign = Boolean(campaignStatus && !campaignStatus.complete);
   const sendDisabled = checkingLatestCampaign || sendBusy || importBusy || sendingCampaign || !selectedTemplate || !subject.trim() || !content.trim() || !uniqueRecipients.length || tooManyRecipients || invalidManual.length > 0;
@@ -100,12 +105,18 @@ export default function CustomEmailPage() {
     setImportWarning("");
     setImportSummary("");
     try {
-      const values = await readEmailValuesFromFile(file);
-      const rows = values.map((value, index) => ({ email: String(value || "").trim(), row: index + 1 })).filter(item => item.email);
-      const valid = rows.filter(item => item.email.length <= 254 && EMAIL_RE.test(item.email)).map(item => item.email.toLowerCase());
+      const rows = await readEmailRowsFromFile(file);
+      const valid = rows.filter(item => item.email.length <= 254 && EMAIL_RE.test(item.email));
       const invalid = rows.filter(item => item.email.length > 254 || !EMAIL_RE.test(item.email));
-      if (!valid.length) throw new Error("No valid email addresses were found. Use one address per row in the first column, without a header.");
-      setImportedEmails(current => [...new Set([...current, ...valid])]);
+      if (!valid.length) throw new Error("No valid email addresses were found in column B from row 2 onward.");
+      setImportedRecipients(current => {
+        const next = new Map(current);
+        for (const { email, name } of valid) {
+          const address = email.toLowerCase();
+          if (!next.get(address)) next.set(address, normalizeCustomEmailName(name));
+        }
+        return next;
+      });
       setImportSummary(`${valid.length} address${valid.length === 1 ? "" : "es"} loaded from ${file.name}.`);
       if (invalid.length) {
         const examples = invalid.slice(0, 3).map(item => `row ${item.row}: ${item.email}`).join(" · ");
@@ -128,22 +139,34 @@ export default function CustomEmailPage() {
   function removeRecipient(email) {
     const normalized = email.toLowerCase();
     setManualText(current => splitAddresses(current).filter(value => value.toLowerCase() !== normalized).join("\n"));
-    setImportedEmails(current => current.filter(value => value !== normalized));
+    setImportedRecipients(current => {
+      const next = new Map(current);
+      next.delete(normalized);
+      return next;
+    });
   }
 
   async function send(event) {
     event.preventDefault();
     if (sendInFlight.current || sendDisabled) return;
+    const payload = {
+      recipients: uniqueRecipients.map(email => {
+        const name = usesRecipientGreeting ? importedRecipients.get(email) : "";
+        return name ? { email, name } : email;
+      }),
+      subject,
+      body: content,
+      format: selectedTemplate.format,
+    };
+    if (new TextEncoder().encode(JSON.stringify(payload)).byteLength > MAX_CAMPAIGN_BYTES) {
+      setSendError("Split the recipient list into smaller batches to send this campaign.");
+      return;
+    }
     sendInFlight.current = true;
     setSendBusy(true);
     setSendError("");
     try {
-      const result = await commands.sendCustomEmail({
-        recipients: uniqueRecipients,
-        subject,
-        body: content,
-        format: selectedTemplate.format,
-      });
+      const result = await commands.sendCustomEmail(payload);
       if (!result.ok) {
         setSendError(errorText(result.error, "The email campaign could not be queued."));
         return;
@@ -163,7 +186,7 @@ export default function CustomEmailPage() {
         complete: false,
       });
       setManualText("");
-      setImportedEmails([]);
+      setImportedRecipients(new Map());
       setImportSummary("");
       setImportWarning("");
       setImportError("");
@@ -194,6 +217,14 @@ export default function CustomEmailPage() {
   return <div className={styles.page}>
     <PageHeader title="Custom email" description="Choose a template, add recipients, and send individual email copies." />
     <div className={styles.layout}>
+      {campaignStatus && <Panel className={styles.statusPanel} aria-live="polite">
+        <div className={styles.statusHeading}><div><span className={styles.statusIcon}><Send size={16} /></span><div><h2>{campaignTitle}</h2><p>{campaignStatus.subject}</p></div></div><strong>{progress}%</strong></div>
+        <div className={styles.progressTrack} role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div>
+        <div className={styles.deliveryCounts}><span><b>{campaignStatus.sent}</b> sent</span><span><b>{campaignStatus.queued}</b> queued</span><span><b>{campaignStatus.failed}</b> failed</span></div>
+        <p className={waitingForWorker ? styles.warning : campaignStatus.retrying > 0 || campaignStatus.failed > 0 ? styles.error : styles.statusMessage} role={waitingForWorker || campaignStatus.retrying > 0 || campaignStatus.failed > 0 ? "alert" : "status"}>{campaignMessage}</p>
+        {campaignStatus.failedRecipients?.length > 0 && <details className={styles.failedList}><summary>View failed addresses</summary><ul>{campaignStatus.failedRecipients.map(email => <li key={email}>{email}</li>)}</ul></details>}
+      </Panel>}
+
       <Panel className={styles.composer}>
         <div className={styles.panelHeading}>
           <span className={styles.headingIcon}><Mail size={18} /></span>
@@ -236,7 +267,7 @@ export default function CustomEmailPage() {
             <div className={styles.uploadIcon}><FileSpreadsheet size={18} /></div>
             <div className={styles.uploadText}>
               <h3 id="upload-title">Import from Excel or CSV</h3>
-              <p>Use the first worksheet and first column. Put one email per row, with no header.</p>
+              <p>Use any headers in row 1. From row 2, put names in column A and email addresses in column B. For Excel, use the first worksheet.{usesRecipientGreeting && " Names personalize the greeting."}</p>
               <label className={styles.uploadButton}>
                 {importBusy ? "Reading file…" : "Choose .xlsx or .csv"}
                 <input type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importFile} disabled={importBusy || sendBusy} />
@@ -246,13 +277,13 @@ export default function CustomEmailPage() {
           {importSummary && <p className={styles.success}><Check size={15} />{importSummary}</p>}
           {importWarning && <p className={styles.warning} role="status">{importWarning}</p>}
           {importError && <p className={styles.error} role="alert">{importError}</p>}
-          {importedEmails.length > 0 && <div className={styles.importedList}>
-            <span>{importedEmails.length} imported address{importedEmails.length === 1 ? "" : "es"}</span>
-            <Button variant="ghost" disabled={sendBusy} onClick={() => { setImportedEmails([]); setImportSummary(""); setImportWarning(""); }}>Clear import <X size={14} /></Button>
+          {importedRecipients.size > 0 && <div className={styles.importedList}>
+            <span>{importedRecipients.size} imported address{importedRecipients.size === 1 ? "" : "es"}</span>
+            <Button variant="ghost" disabled={sendBusy} onClick={() => { setImportedRecipients(new Map()); setImportSummary(""); setImportWarning(""); }}>Clear import <X size={14} /></Button>
           </div>}
           {uniqueRecipients.length > 0 && <details className={styles.recipientPreview}>
             <summary>Review recipient list ({uniqueRecipients.length})</summary>
-            <ul>{uniqueRecipients.slice(0, 20).map(email => <li key={email}>{email}</li>)}</ul>
+            <ul>{uniqueRecipients.slice(0, 20).map(email => <li key={email}>{importedRecipients.get(email) ? `${importedRecipients.get(email)} — ${email}` : email}</li>)}</ul>
             {uniqueRecipients.length > 20 && <p>And {uniqueRecipients.length - 20} more address{uniqueRecipients.length - 20 === 1 ? "" : "es"}.</p>}
           </details>}
 
@@ -264,23 +295,13 @@ export default function CustomEmailPage() {
         </form>
       </Panel>
 
-      <div className={styles.previewColumn}>
-        <Panel className={styles.previewPanel}>
-          <div className={styles.previewHeading}><div><span>EMAIL PREVIEW</span><h2>{selectedTemplate?.name || "Select a template"}</h2></div><small>{selectedTemplate?.format === "html" ? "HTML email" : "Plain text email"}</small></div>
-          <div className={styles.subjectPreview}><span>Subject</span><strong>{subject || "Choose a template"}</strong></div>
-          {selectedTemplate?.format === "html"
-            ? <iframe className={styles.htmlPreview} title={`${selectedTemplate.name} email preview`} sandbox="" referrerPolicy="no-referrer" srcDoc={content} />
-            : <pre className={styles.textPreview}>{content || "Choose an email template to preview it."}</pre>}
-        </Panel>
-
-        {campaignStatus && <Panel className={styles.statusPanel} aria-live="polite">
-          <div className={styles.statusHeading}><div><span className={styles.statusIcon}><Send size={16} /></span><div><h2>{campaignTitle}</h2><p>{campaignStatus.subject}</p></div></div><strong>{progress}%</strong></div>
-          <div className={styles.progressTrack} role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div>
-          <div className={styles.deliveryCounts}><span><b>{campaignStatus.sent}</b> sent</span><span><b>{campaignStatus.queued}</b> queued</span><span><b>{campaignStatus.failed}</b> failed</span></div>
-          <p className={waitingForWorker ? styles.warning : campaignStatus.retrying > 0 || campaignStatus.failed > 0 ? styles.error : styles.statusMessage} role={waitingForWorker || campaignStatus.retrying > 0 || campaignStatus.failed > 0 ? "alert" : "status"}>{campaignMessage}</p>
-          {campaignStatus.failedRecipients?.length > 0 && <details className={styles.failedList}><summary>View failed addresses</summary><ul>{campaignStatus.failedRecipients.map(email => <li key={email}>{email}</li>)}</ul></details>}
-        </Panel>}
-      </div>
+      <Panel className={styles.previewPanel}>
+        <div className={styles.previewHeading}><div><span>EMAIL PREVIEW</span><h2>{selectedTemplate?.name || "Select a template"}</h2>{previewName && <p>Preview for {previewName}</p>}</div><small>{selectedTemplate?.format === "html" ? "HTML email" : "Plain text email"}</small></div>
+        <div className={styles.subjectPreview}><span>Subject</span><strong>{subject || "Choose a template"}</strong></div>
+        {selectedTemplate?.format === "html"
+          ? <iframe className={styles.htmlPreview} title={`${selectedTemplate.name} email preview`} sandbox="" referrerPolicy="no-referrer" srcDoc={previewContent} />
+          : <pre className={styles.textPreview}>{content || "Choose an email template to preview it."}</pre>}
+      </Panel>
     </div>
   </div>;
 }

@@ -4,6 +4,7 @@ import { DomainError } from "../../shared/errors";
 import type { Principal } from "../../shared/principal";
 import type { Outbox } from "../outbox/outbox";
 import { isAdmin } from "../access/policy";
+import { CUSTOM_EMAIL_GREETING, normalizeCustomEmailName } from "./custom-email-greeting.mjs";
 
 type Row = Document & { _id: string };
 type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session: ClientSession) => Promise<T>) => Promise<T>;
@@ -85,12 +86,20 @@ export function createCustomEmails({ collection, transact, outbox }: {
     if (!Array.isArray(params.recipients) || params.recipients.length < 1 || params.recipients.length > MAX_RECIPIENTS) {
       throw new DomainError("INVALID_REQUEST", `Add between 1 and ${MAX_RECIPIENTS} email addresses.`);
     }
-    const recipients = [...new Set(params.recipients.map((value: unknown) => text(value).trim().toLowerCase()))];
-    if (recipients.some(email => email.length > 254 || /[\r\n]/.test(email) || !EMAIL_RE.test(email))) {
-      throw new DomainError("INVALID_REQUEST", "Check the recipient list and remove any invalid email addresses.");
+    const recipients = new Map<string, string>();
+    const usesRecipientGreeting = format === "html" && body.includes(CUSTOM_EMAIL_GREETING);
+    for (const value of params.recipients as unknown[]) {
+      const entry = value && typeof value === "object" ? value as Record<string, unknown> : { email: value };
+      const email = text(entry.email).trim().toLowerCase();
+      if (email.length > 254 || !EMAIL_RE.test(email)) {
+        throw new DomainError("INVALID_REQUEST", "Check the recipient list and remove any invalid email addresses.");
+      }
+      const name = usesRecipientGreeting ? normalizeCustomEmailName(entry.name) : "";
+      if (!recipients.get(email)) recipients.set(email, name);
     }
+    const normalizedRecipients = [...recipients].map(([email, name]) => name ? { email, name } : email);
 
-    return transact(key, actor, { method, params: { ...params, recipients } }, async session => {
+    return transact(key, actor, { method, params: { ...params, recipients: normalizedRecipients } }, async session => {
       const campaignId = `CEM-${randomUUID()}`;
       const createdAt = new Date();
       const row: Row = {
@@ -100,11 +109,11 @@ export function createCustomEmails({ collection, transact, outbox }: {
         body,
         format,
         createdAt,
-        recipients: recipients.map(email => ({ email, status: "queued" })),
+        recipients: [...recipients.keys()].map(email => ({ email, status: "queued" })),
       };
       await campaigns.insertOne(row, { session });
-      await outbox.enqueueMany(recipients.map(to => ({ type: "customEmail" as const, payload: { campaignId, to } })), session);
-      return { campaignId, total: recipients.length, queued: true, createdAt: createdAt.toISOString() };
+      await outbox.enqueueMany([...recipients].map(([to, name]) => ({ type: "customEmail", payload: { campaignId, to, name } })), session);
+      return { campaignId, total: recipients.size, queued: true, createdAt: createdAt.toISOString() };
     });
   }
 

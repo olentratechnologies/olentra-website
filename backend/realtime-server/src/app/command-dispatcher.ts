@@ -22,6 +22,7 @@ export { connectInternDatabase } from "../infrastructure/database/client";
 import { createStories } from "../modules/stories/stories.service";
 import { createTemplates } from "../modules/templates/templates.service";
 import { createCustomEmails } from "../modules/templates/custom-email.service";
+import { renderCustomEmailGreeting } from "../modules/templates/custom-email-greeting.mjs";
 import { createViews } from "../modules/views/views.service";
 import { createResources } from "../modules/resources/resources.service";
 import { createCheckins } from "../modules/checkins/checkins.service";
@@ -729,11 +730,13 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         };
         try {
           if (!activeHooks?.sendCustomEmail) throw new PermanentOutboxError("No custom email sender is configured.");
+          const format = campaign.format === "html" ? "html" : "text";
+          const body = str(campaign.body);
           await activeHooks.sendCustomEmail({
             to,
             subject: str(campaign.subject),
-            body: str(campaign.body),
-            format: campaign.format === "html" ? "html" : "text",
+            body: format === "html" ? renderCustomEmailGreeting(body, name) : body,
+            format,
           });
           await markRecipient("sent");
         } catch (error) {

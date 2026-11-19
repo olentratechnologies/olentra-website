@@ -5,11 +5,51 @@ function extension(fileName) {
   return String(fileName || "").split(".").pop()?.toLowerCase() || "";
 }
 
-function csvValues(source) {
-  return source.replace(/^\uFEFF/, "").split(/\r?\n/).map(line => {
-    const firstColumn = line.split(/[\t,;]/, 1)[0].trim();
-    return firstColumn.replace(/^"(.*)"$/, "$1").trim();
-  });
+function csvDelimiter(source) {
+  const counts = new Map([[",", 0], [";", 0], ["\t", 0]]);
+  let quoted = false;
+  for (const char of source) {
+    if (char === '"') quoted = !quoted;
+    if (quoted) continue;
+    if (char === "\r" || char === "\n") break;
+    if (counts.has(char)) counts.set(char, counts.get(char) + 1);
+  }
+  return [...counts].sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function csvEmailRows(source) {
+  // Treat quoted separators and line breaks as part of the same field, and flush the final row.
+  const input = source.replace(/^\uFEFF/, "") + "\n";
+  const delimiter = csvDelimiter(input);
+  const rows = [];
+  let row = 1;
+  let column = 0;
+  let quoted = false;
+  let fields = ["", ""];
+  for (let index = 0; index < input.length; index++) {
+    const char = input[index];
+    if (char === '"') {
+      if (quoted && input[index + 1] === '"') {
+        if (column < fields.length) fields[column] += '"';
+        index++;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (!quoted && char === delimiter) {
+      column++;
+    } else if (!quoted && (char === "\r" || char === "\n")) {
+      const email = fields[1].trim();
+      if (row > 1 && email) rows.push({ row, name: fields[0].trim(), email });
+      if (char === "\r" && input[index + 1] === "\n") index++;
+      row++;
+      column = 0;
+      fields = ["", ""];
+    } else if (column < fields.length && row > 1) {
+      fields[column] += char;
+    }
+  }
+  if (quoted) throw new Error("The CSV file has an unclosed quoted field.");
+  return rows;
 }
 
 function findZipEntries(buffer) {
@@ -85,6 +125,16 @@ function descendants(element, localName) {
   return Array.from(element.getElementsByTagNameNS("*", localName));
 }
 
+function xlsxCellText(cell, strings) {
+  if (!cell) return "";
+  const type = cell.getAttribute("t");
+  if (type === "inlineStr") {
+    return descendants(cell, "t").map(node => node.textContent || "").join("").trim();
+  }
+  const raw = descendants(cell, "v")[0]?.textContent ?? "";
+  return (type === "s" ? strings[Number.parseInt(raw, 10)] || "" : raw).trim();
+}
+
 function normalizePath(path) {
   const parts = [];
   for (const part of path.split("/")) {
@@ -95,7 +145,7 @@ function normalizePath(path) {
   return parts.join("/");
 }
 
-async function xlsxValues(buffer) {
+async function xlsxEmailRows(buffer) {
   const entries = findZipEntries(buffer);
   const workbookXml = await readZipText(buffer, entries, "xl/workbook.xml");
   const relationshipsXml = await readZipText(buffer, entries, "xl/_rels/workbook.xml.rels");
@@ -116,27 +166,29 @@ async function xlsxValues(buffer) {
   const strings = stringsXml
     ? descendants(parseXml(stringsXml), "si").map(item => descendants(item, "t").map(node => node.textContent || "").join(""))
     : [];
-  const values = [];
+  const rows = [];
+  let rowNumber = 0;
   for (const row of descendants(worksheet, "row")) {
-    const firstColumn = descendants(row, "c").find(cell => /^A\d+$/i.test(cell.getAttribute("r") || ""));
-    if (!firstColumn) continue;
-    const type = firstColumn.getAttribute("t");
-    if (type === "inlineStr") {
-      values.push(descendants(firstColumn, "t").map(node => node.textContent || "").join(""));
-      continue;
-    }
-    const raw = descendants(firstColumn, "v")[0]?.textContent || "";
-    values.push(type === "s" ? (strings[Number(raw)] || "") : raw);
+    const cells = descendants(row, "c");
+    const firstCellRow = cells[0]?.getAttribute("r")?.match(/\d+$/)?.[0];
+    rowNumber = Number(row.getAttribute("r") || firstCellRow) || rowNumber + 1;
+    if (rowNumber === 1) continue;
+
+    const emailCell = cells.find(cell => /^B\d+$/i.test(cell.getAttribute("r") || ""));
+    const email = xlsxCellText(emailCell, strings);
+    if (!email) continue;
+    const nameCell = cells.find(cell => /^A\d+$/i.test(cell.getAttribute("r") || ""));
+    rows.push({ row: rowNumber, name: xlsxCellText(nameCell, strings), email });
   }
-  return values;
+  return rows;
 }
 
-/** Reads the first column of the first worksheet, or the first CSV column, without assuming a header. */
-export async function readEmailValuesFromFile(file) {
+/** Reads names from column A and email addresses from column B, starting at row 2. */
+export async function readEmailRowsFromFile(file) {
   if (!file || file.size <= 0) throw new Error("Choose a non-empty Excel or CSV file.");
   if (file.size > MAX_FILE_BYTES) throw new Error("Upload a file smaller than 5 MB.");
   const type = extension(file.name);
-  if (type === "csv") return csvValues(await file.text());
-  if (type === "xlsx") return xlsxValues(await file.arrayBuffer());
+  if (type === "csv") return csvEmailRows(await file.text());
+  if (type === "xlsx") return xlsxEmailRows(await file.arrayBuffer());
   throw new Error("Choose an .xlsx Excel workbook or a .csv file.");
 }
