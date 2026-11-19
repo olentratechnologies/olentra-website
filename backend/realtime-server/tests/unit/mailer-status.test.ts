@@ -180,7 +180,10 @@ test("the seven applicant journey emails share the branded responsive template",
       assert.match(html, /bgcolor="#eaf0f6"/);
       assert.match(html, /mailto:intern.support@olentratechnologies.com/);
       assert.doesNotMatch(html, /careers@olentratechnologies.com/);
-      assert.match(html, /Automated message about your internship application or program/);
+      const footer = html.split("<!-- Footer -->")[1] ?? "";
+      assert.equal((footer.match(/<p\b/g) ?? []).length, 3);
+      assert.match(footer, />Website<\/a>.*>Internship support<\/a>/);
+      assert.doesNotMatch(footer, /CIN:|Privacy Policy|Terms of Service|banking credentials/);
       assert.match(html, /background:#f3f5f8/);
     }
     assert.match(String(requests[0]?.html), /OL-123/);
@@ -197,7 +200,7 @@ test("reminder emails escape their content and link to the site", async () => {
   globalThis.fetch = (async (_input, init) => { requests.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify({ success: true, id: "email-1" }), { status: 200 }); }) as typeof fetch;
   try {
     const mailer = createInternshipMailer("delivery-test-token", "http://email-server.test");
-    await mailer.sendNotice({ to: "a@example.test", subject: "2 applications are waiting", heading: "Waiting", intro: "Hi", items: ["<b>Asha</b> · Software Engineer Intern", "Ravi · Software Engineer Intern"], ctaLabel: "Review", ctaUrl: "https://site.example.test/intern/dashboard/applications" });
+    await mailer.sendNotice({ to: "a@example.test", subject: "2 applications are waiting", intro: "Hi", items: ["<b>Asha</b> · Software Engineer Intern", "Ravi · Software Engineer Intern"], ctaLabel: "Review", ctaUrl: "https://site.example.test/intern/dashboard/applications" });
     assert.match(String(requests[0]!.html), /&lt;b&gt;Asha&lt;\/b&gt;/);
     assert.match(String(requests[0]!.html), /href="https:\/\/site\.example\.test\/intern\/dashboard\/applications"/);
     assert.match(String(requests[0]!.html), /bgcolor="#172033"/);

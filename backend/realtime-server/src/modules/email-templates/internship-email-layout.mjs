@@ -1,5 +1,6 @@
 const SITE = "https://www.olentratechnologies.com";
 const LOGO = `${SITE}/images/branding/Logo/Olentra-Logo-Without-Background.png`;
+const SUPPORT_EMAIL = "intern.support@olentratechnologies.com";
 const BRAND_COLORS = ["#1478e8", "#00b9d7", "#20c66b", "#f3d51b", "#ff8b17", "#ed2939"];
 
 export function escapeEmailHtml(value) {
@@ -7,7 +8,7 @@ export function escapeEmailHtml(value) {
 }
 
 /** Shared frame for the dashboard previews and internship email delivery. Content slots take HTML. */
-export function renderInternshipEmail({ title, heading, content, preheader = "", footerDetails = "" }) {
+export function renderInternshipEmail({ title, content, preheader = "" }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,18 +39,15 @@ export function renderInternshipEmail({ title, heading, content, preheader = "",
           </td>
         </tr>
         <tr><td style="padding:34px 32px 28px;">
-          <h1 style="margin:0 0 18px;font-size:24px;line-height:32px;color:#101827;overflow-wrap:anywhere;">${escapeEmailHtml(heading)}</h1>
           ${content}
         </td></tr>
         <!-- Footer -->
-        <tr><td align="center" bgcolor="#eaf0f6" style="background-color:#eaf0f6;padding:24px 32px 26px;text-align:center;overflow-wrap:anywhere;">
-          <p style="margin:0 0 6px;font-size:14px;line-height:21px;font-weight:700;color:#243549;">Olentra Technologies</p>
-          <p style="margin:0;font-size:13px;line-height:21px;color:#46596f;">Enterprise product engineering and digital growth</p>
-          <p style="margin:4px 0 0;font-size:13px;line-height:21px;">
-            <a href="${SITE}/" target="_blank" style="color:#1555a2;text-decoration:underline;">www.olentratechnologies.com</a>
+        <tr><td align="center" bgcolor="#eaf0f6" style="background-color:#eaf0f6;padding:20px 16px;text-align:center;">
+          <p style="margin:0;font-size:14px;line-height:21px;font-weight:700;color:#243549;text-align:center;">Olentra Technologies</p>
+          <p style="margin:4px 0 0;font-size:13px;line-height:20px;color:#46596f;text-align:center;">
+            <a href="${SITE}/" target="_blank" style="color:#1555a2;text-decoration:underline;">Website</a>&nbsp;·&nbsp;<a href="mailto:${SUPPORT_EMAIL}" style="color:#1555a2;text-decoration:underline;">Internship support</a>
           </p>
-          ${footerDetails}
-          <p style="margin:14px 0 0;font-size:12px;line-height:19px;color:#536479;">© 2026 Olentra Technologies. All rights reserved.</p>
+          <p style="margin:8px 0 0;font-size:12px;line-height:18px;color:#536479;text-align:center;">© 2026 Olentra Technologies</p>
         </td></tr>
       </table>
     </td></tr>
@@ -89,5 +87,5 @@ export function emailSignOff(team) {
 
 /** Saved messages keep a plain text version and share the same HTML layout as the built-in template. */
 export function renderInternshipTextEmail(subject, body) {
-  return renderInternshipEmail({ title: subject, heading: subject, content: emailMessage(body) });
+  return renderInternshipEmail({ title: subject, content: emailMessage(body) });
 }

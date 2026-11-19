@@ -56,7 +56,7 @@ export async function runReminders({ collection, outbox, transact, now = new Dat
         const recipients = reviewerId ? await accounts.find({ _id: reviewerId, disabled: { $ne: true } }, { projection: { email: 1 } }).toArray() : adminRows;
         for (const recipient of recipients) {
           await outbox.enqueue("notice", {
-            to: String(recipient.email), subject: `${list.length} ${list.length === 1 ? "application is" : "applications are"} waiting for review`, heading: "Applications waiting for review",
+            to: String(recipient.email), subject: `${list.length} ${list.length === 1 ? "application is" : "applications are"} waiting for review`,
             intro: reviewerId ? `These applications assigned to you have waited more than ${REVIEW_AFTER_DAYS} days.` : `These unassigned applications have waited more than ${REVIEW_AFTER_DAYS} days.`,
             items: list.slice(0, 20).map(application => `${String(application.name)} · ${String(application.program || "")}`).join("\n") + (list.length > 20 ? `\n…and ${list.length - 20} more` : ""),
             ctaLabel: "Review applications", ctaPath: reviewerId ? "/intern/dashboard/applications?assignee=me" : "/intern/dashboard/applications",
@@ -82,7 +82,7 @@ export async function runReminders({ collection, outbox, transact, now = new Dat
       ]);
       for (const admin of await admins()) {
         await outbox.enqueue("notice", {
-          to: String(admin.email), subject: "Your weekly internship summary", heading: "This week in the internship program",
+          to: String(admin.email), subject: "Your weekly internship summary",
           intro: `Here's where things stand for ${week}.`,
           items: [`New applications in the last 7 days: ${newApplications}`, `Waiting for review: ${pending}`, `Shortlisted: ${shortlisted}`, `Overdue intern tasks: ${overdue}`].join("\n"),
           ctaLabel: "Open the dashboard", ctaPath: "/intern/dashboard",

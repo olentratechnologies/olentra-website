@@ -707,7 +707,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       } else if (row.type === "notice") {
         if (!activeHooks?.sendNotice) throw new Error("No email sender is configured.");
         const p = row.payload;
-        await activeHooks.sendNotice({ to: p.to || "", subject: p.subject || "", heading: p.heading || "", intro: p.intro || "", items: (p.items || "").split("\n").filter(Boolean), ctaLabel: p.ctaLabel || "", ctaPath: p.ctaPath || "/" });
+        await activeHooks.sendNotice({ to: p.to || "", subject: p.subject || "", intro: p.intro || "", items: (p.items || "").split("\n").filter(Boolean), ctaLabel: p.ctaLabel || "", ctaPath: p.ctaPath || "/" });
       } else if (row.type === "customEmail") {
         const campaignId = str(row.payload.campaignId), to = emailOf(row.payload.to);
         const campaigns = collection("custom_email_campaigns");

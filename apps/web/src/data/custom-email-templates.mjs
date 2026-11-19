@@ -11,7 +11,6 @@ export const LINKEDIN_FOLLOWUP_TEMPLATE = Object.freeze({
   format: "html",
   body: renderInternshipEmail({
     title: "Olentra Technologies — Internship Application",
-    heading: "Thank you for applying!",
     content: `
           ${emailParagraph(CUSTOM_EMAIL_GREETING)}
           ${emailParagraph("Thank you for your interest in the <strong>Software Engineer Intern</strong> opportunity at <strong>Olentra Technologies</strong> and for submitting your application through LinkedIn.")}

@@ -29,7 +29,7 @@ test("all fifteen defaults render required links and details, with no portal lin
     expect(rendered.html).toContain("Alex &lt;Kumar&gt;");
     expect(rendered.html).toContain('bgcolor="#101827"');
     expect(rendered.html).toContain('bgcolor="#eaf0f6"');
-    expect(rendered.html).toContain(`>${definition.name.replaceAll("&", "&amp;")}</h1>`);
+    expect(rendered.html).not.toMatch(/<h1\b/i);
     expect(rendered.html).toContain('alt="Olentra Technologies logo"');
     expect(rendered.html).toContain('mailto:intern.support@olentratechnologies.com');
     expect(rendered.html).not.toContain("Alex <Kumar>");

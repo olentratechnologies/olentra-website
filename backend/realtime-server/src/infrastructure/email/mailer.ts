@@ -57,11 +57,7 @@ interface PasswordResetEmailOptions {
 
 const EMAIL_DELIVERY_TOKEN = process.env.EMAIL_DELIVERY_TOKEN;
 const EMAIL_SERVER_URL = process.env.EMAIL_SERVER_URL || "http://127.0.0.1:3001";
-const AUTOMATED_FOOTER_DETAILS = `
-          <p style="margin:12px 0 0;font-size:12px;line-height:19px;color:#46596f;">Olentra Technologies Pvt. Ltd. · CIN: U72900TG2023PTC176542 · Hyderabad, India</p>
-          <p style="margin:4px 0 0;font-size:12px;line-height:19px;color:#46596f;">Support: <a href="mailto:intern.support@olentratechnologies.com" style="color:#1555a2;text-decoration:underline;">intern.support@olentratechnologies.com</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/careers/intern" style="color:#1555a2;text-decoration:underline;">Careers</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/privacy-policy" style="color:#1555a2;text-decoration:underline;">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/terms-of-service" style="color:#1555a2;text-decoration:underline;">Terms of Service</a></p>
-          <p style="margin:10px 0 0;font-size:12px;line-height:19px;color:#536479;">Automated message about your internship application or program. Please do not reply directly to this email.</p>
-          <p style="margin:4px 0 0;font-size:12px;line-height:19px;color:#536479;">Security notice: Olentra will never request fee payments, banking credentials, or your account password via email.</p>`;
+const ACCOUNT_SECURITY_NOTICE = "Olentra will never request fee payments, banking credentials, or your account password via email.";
 
 export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, deliveryUrl = EMAIL_SERVER_URL, resolveTemplate?: (id: AutomatedEmailId) => Promise<EmailTemplate>) {
   function resolveCandidateGreeting(rawName: string | undefined): { greeting: string; firstName: string; fullName: string } {
@@ -229,6 +225,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       buttons.push({ label: "Open candidate portal", url: options.magicLinkUrl });
       details.push("Single-use link · Expires in 24 hours", "This single-use link expires in 24 hours. If you didn’t request this link, you can safely ignore this email.");
     }
+    if (id === "signin" || id === "selected") details.push(ACCOUNT_SECURITY_NOTICE);
     const panelContent = customPanelHtml || (details.length
       ? emailPanel(details.map(item => `<p style="margin:4px 0;font-size:14px;line-height:22px;overflow-wrap:anywhere;">${escapeHtml(item)}</p>`).join(""))
       : "");
@@ -237,7 +234,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       + panelContent
       + actions.map(button => emailAction(button.label, button.url)).join("")
       + (template.body === definition.body ? emailSignOff("The Olentra Team") : "");
-    const html = renderInternshipEmail({ title: subject, preheader: body.slice(0, 180), heading: definition.name, content, footerDetails: AUTOMATED_FOOTER_DETAILS });
+    const html = renderInternshipEmail({ title: subject, preheader: body.slice(0, 180), content });
     const text = [body, ...details, ...actions.map(button => `${button.label}: ${button.url}`), "The Olentra Team"].join("\n\n");
     return { subject, html, text, attachments };
   }
@@ -260,8 +257,8 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     async sendInterviewCancelled(options: InterviewScheduledEmailOptions): Promise<SendResult> { return automated("interview-cancelled", options); },
     async sendInterviewReminder(options: InterviewScheduledEmailOptions): Promise<SendResult> { return automated("interview-reminder", options); },
 
-    /** A plain reminder or digest: a heading, an intro, a short list and one button. */
-    async sendNotice({ to, subject, heading, intro, items, ctaLabel, ctaUrl }: { to: string; subject: string; heading: string; intro: string; items: string[]; ctaLabel: string; ctaUrl: string }): Promise<SendResult> {
+    /** A reminder or digest with an intro, a short list and one button. */
+    async sendNotice({ to, subject, intro, items, ctaLabel, ctaUrl }: { to: string; subject: string; intro: string; items: string[]; ctaLabel: string; ctaUrl: string }): Promise<SendResult> {
       const text = `${intro}\n\n${items.map(item => `- ${item}`).join("\n")}\n\n${ctaLabel}: ${ctaUrl}\n\nThe Olentra Team`;
       const content = `
         ${emailMessage(intro)}
@@ -269,7 +266,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
         ${emailAction(ctaLabel, ctaUrl)}
         ${emailSignOff("The Olentra Team")}
       `;
-      const html = renderInternshipEmail({ title: subject, preheader: intro, heading, content, footerDetails: AUTOMATED_FOOTER_DETAILS });
+      const html = renderInternshipEmail({ title: subject, preheader: intro, content });
       return sendEmail(to, subject, html, text);
     },
 
@@ -277,7 +274,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       if (options.status !== "rejected") return automated(options.status, options);
       const subject = `Update on your Olentra internship application (${options.programName})`;
       const body = `Hi ${options.name},\n\nThank you for taking the time to apply to Olentra Technologies and sharing your background with us. After careful consideration, we are unable to offer you an internship position for this cohort. We received a tremendous number of outstanding applications and had to make difficult decisions. We truly appreciate your interest in Olentra, wish you continued success in your learning and career, and warmly invite you to stay connected with us on LinkedIn and re-apply in future cohorts.`;
-      const html = renderInternshipEmail({ title: subject, preheader: subject, heading: "Application Status Update", content: emailMessage(body), footerDetails: AUTOMATED_FOOTER_DETAILS });
+      const html = renderInternshipEmail({ title: subject, preheader: subject, content: emailMessage(body) });
       return sendEmail(options.to, subject, html, body);
     },
     async sendApplicationConfirmation(options: ApplicationEmailOptions): Promise<SendResult> { return automated("application-received", options); },
@@ -285,22 +282,20 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
 
     async sendPasswordResetLink({ to, name = "there", resetUrl }: PasswordResetEmailOptions): Promise<SendResult> {
       const subject = "Reset your Olentra Internship Account Password";
-      const text = `Hi ${name},\n\nWe received a request to reset the password for your Olentra Internship account.\n\nClick the link below to set a new password:\n\n${resetUrl}\n\nThis secure link is valid for 1 hour and can be used once.\n\nIf you did not request this password reset, you can safely ignore this email; your password will remain unchanged.\n\nBest regards,\nThe Olentra Team`;
+      const text = `Hi ${name},\n\nWe received a request to reset the password for your Olentra Internship account.\n\nClick the link below to set a new password:\n\n${resetUrl}\n\nThis secure link is valid for 1 hour and can be used once.\n\nIf you did not request this password reset, you can safely ignore this email; your password will remain unchanged.\n\n${ACCOUNT_SECURITY_NOTICE}\n\nBest regards,\nThe Olentra Team`;
 
       const safeName = escapeHtml(String(name));
       const content = `
         ${emailParagraph(`Hi <strong>${safeName}</strong>,`)}
         ${emailParagraph("We received a request to reset the password for your Olentra Internship account. Click the button below to choose a new password:")}
         ${emailAction("Reset My Password", resetUrl)}
-        ${emailPanel("<p style=\"margin:0;font-size:14px;line-height:22px;\"><strong>Security note:</strong> This single-use link is valid for 1 hour. If you did not request a password reset, you can safely ignore this email; your password will remain unchanged.</p>")}
+        ${emailPanel(`<p style="margin:0;font-size:14px;line-height:22px;"><strong>Security note:</strong> This single-use link is valid for 1 hour. If you did not request a password reset, you can safely ignore this email; your password will remain unchanged.</p><p style="margin:8px 0 0;font-size:14px;line-height:22px;">${ACCOUNT_SECURITY_NOTICE}</p>`)}
         ${emailSignOff("The Olentra Team")}
       `;
       const html = renderInternshipEmail({
         title: subject,
         preheader: "Reset your Olentra Internship account password. This secure link is valid for 1 hour.",
-        heading: "Reset your Account Password",
         content,
-        footerDetails: AUTOMATED_FOOTER_DETAILS,
       });
 
       return sendEmail(to, subject, html, text);

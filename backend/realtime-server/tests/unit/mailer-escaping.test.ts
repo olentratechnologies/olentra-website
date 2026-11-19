@@ -47,7 +47,7 @@ test("confirmation email escapes the applicant name and track and never includes
 });
 
 test("magic-link email escapes the name and link", async () => {
-  const { html } = await capture(mailer => mailer.sendMagicLink({ to: "a@example.test", name: hostile, magicLinkUrl: "https://example.test/v?token=a&b", templateVariant: "professional" }));
+  const { html, text } = await capture(mailer => mailer.sendMagicLink({ to: "a@example.test", name: hostile, magicLinkUrl: "https://example.test/v?token=a&b", templateVariant: "professional" }));
   assertEscaped(html);
   assert.match(html, /href="https:\/\/example\.test\/v\?token=a&amp;b"/);
   assert.match(html, /background:#f3f5f8/);
@@ -56,6 +56,8 @@ test("magic-link email escapes the name and link", async () => {
   assert.match(html, /Open candidate portal/);
   assert.match(html, /Single-use link · Expires in 24 hours/);
   assert.match(html, /Use this secure sign-in link/);
+  assert.match(html.split("<!-- Footer -->")[0], /will never request fee payments/);
+  assert.match(text, /will never request fee payments/);
 });
 
 test("saved sign-in copy changes delivery while required security details stay present", async () => {
@@ -74,9 +76,11 @@ test("saved sign-in copy changes delivery while required security details stay p
 });
 
 test("password reset email escapes the name and link", async () => {
-  const { html } = await capture(mailer => mailer.sendPasswordResetLink({ to: "a@example.test", name: hostile, resetUrl: "https://example.test/r?token=a&b" }));
+  const { html, text } = await capture(mailer => mailer.sendPasswordResetLink({ to: "a@example.test", name: hostile, resetUrl: "https://example.test/r?token=a&b" }));
   assertEscaped(html);
   assert.match(html, /href="https:\/\/example\.test\/r\?token=a&amp;b"/);
+  assert.match(html.split("<!-- Footer -->")[0], /will never request fee payments/);
+  assert.match(text, /will never request fee payments/);
 });
 
 test("saved plain text messages deliver the same branded markup as their preview", async () => {

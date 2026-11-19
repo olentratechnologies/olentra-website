@@ -40,7 +40,7 @@ export type InternshipHooks = {
   sendInterviewReminder?: (notice: InterviewScheduledNotice) => Promise<unknown>;
   sendInterviewCancelled?: (notice: InterviewScheduledNotice) => Promise<unknown>;
   /** A plain reminder or digest email; `ctaPath` is a path on the website. */
-  sendNotice?: (notice: { to: string; subject: string; heading: string; intro: string; items: string[]; ctaLabel: string; ctaPath: string }) => Promise<unknown>;
+  sendNotice?: (notice: { to: string; subject: string; intro: string; items: string[]; ctaLabel: string; ctaPath: string }) => Promise<unknown>;
   /** A selected custom email template addressed to exactly one recipient. */
   sendCustomEmail?: (notice: { to: string; subject: string; body: string; format: "html" | "text" }) => Promise<unknown>;
 };
