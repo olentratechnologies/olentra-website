@@ -7,5 +7,72 @@ export const LINKEDIN_FOLLOWUP_TEMPLATE = Object.freeze({
   name: "LinkedIn applicant follow-up",
   subject: "Thank you for applying — Software Engineer Intern | Olentra Technologies",
   format: "html",
-  body: "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Olentra Technologies — Internship Application</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f3f5f8;font-family:Arial,Helvetica,sans-serif;color:#172033;\">\n  <!-- Subject: Thank you for applying — Software Engineer Intern | Olentra Technologies -->\n  <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"background:#f3f5f8;padding:24px 12px;\">\n    <tr><td align=\"center\">\n      <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"600\" style=\"width:100%;max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;\">\n        <!-- Brand header -->\n        <tr>\n          <td style=\"background:#101827;padding:26px 30px;text-align:center;\">\n            <a href=\"https://www.olentratechnologies.com/\" target=\"_blank\" style=\"text-decoration:none;\">\n              <img src=\"https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png\" width=\"66\" alt=\"Olentra Technologies logo\" style=\"display:block;width:66px;height:auto;max-width:66px;margin:0 auto 12px;border:0;\">\n            </a>\n            <div style=\"font-size:23px;line-height:30px;font-weight:700;letter-spacing:.2px;color:#ffffff;\">Olentra Technologies</div>\n            <div style=\"font-size:11px;line-height:18px;letter-spacing:2px;text-transform:uppercase;color:#c7d2e0;margin-top:5px;\">Engineering • Innovation • Opportunity</div>\n            <!-- Brand spectrum accent -->\n            <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\" style=\"margin-top:22px;\">\n              <tr>\n                <td width=\"16.6%\" height=\"4\" style=\"background:#1478e8;font-size:0;line-height:0;\">&nbsp;</td>\n                <td width=\"16.6%\" style=\"background:#00b9d7;font-size:0;line-height:0;\">&nbsp;</td>\n                <td width=\"16.6%\" style=\"background:#20c66b;font-size:0;line-height:0;\">&nbsp;</td>\n                <td width=\"16.6%\" style=\"background:#f3d51b;font-size:0;line-height:0;\">&nbsp;</td>\n                <td width=\"16.6%\" style=\"background:#ff8b17;font-size:0;line-height:0;\">&nbsp;</td>\n                <td width=\"16.6%\" style=\"background:#ed2939;font-size:0;line-height:0;\">&nbsp;</td>\n              </tr>\n            </table>\n          </td>\n        </tr>\n        <tr><td style=\"padding:34px 32px 12px;\">\n          <h1 style=\"margin:0 0 18px;font-size:24px;line-height:32px;color:#101827;\">Thank you for applying!</h1>\n          <p style=\"margin:0 0 16px;font-size:16px;line-height:26px;\">" + CUSTOM_EMAIL_GREETING + "</p>\n          <p style=\"margin:0 0 16px;font-size:16px;line-height:26px;\">Thank you for your interest in the <strong>Software Engineer Intern</strong> opportunity at <strong>Olentra Technologies</strong> and for submitting your application through LinkedIn.</p>\n          <p style=\"margin:0 0 16px;font-size:16px;line-height:26px;\">To help us review your profile through our official recruitment process, please complete your application on our internship portal using the link below.</p>\n          <p style=\"margin:0 0 24px;font-size:16px;line-height:26px;\">We request you to submit your details through our official portal:</p>\n          <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 auto 28px;\">\n            <tr><td align=\"center\" bgcolor=\"#172033\" style=\"border-radius:6px;\">\n              <a href=\"https://www.olentratechnologies.com/careers/intern\" target=\"_blank\" style=\"display:inline-block;padding:15px 28px;font-size:16px;line-height:20px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:6px;\">Complete Your Application&nbsp; →</a>\n            </td></tr>\n          </table>\n          <p style=\"margin:0 0 16px;font-size:14px;line-height:24px;color:#526075;\">If the button doesn't work, copy and paste this link into your browser:<br>\n            <a href=\"https://www.olentratechnologies.com/careers/intern\" target=\"_blank\" style=\"color:#1478e8;word-break:break-word;\">https://www.olentratechnologies.com/careers/intern</a>\n          </p>\n          <p style=\"margin:0 0 16px;font-size:16px;line-height:26px;\">We appreciate your interest in joining our team and look forward to reviewing your application.</p>\n          <p style=\"margin:0;font-size:16px;line-height:26px;\">Best regards,<br><strong>Recruitment Team</strong><br><strong>Olentra Technologies</strong></p>\n        </td></tr>\n        <!-- Footer -->\n        <tr><td style=\"padding:22px 32px;background:#f7f8fa;text-align:center;border-top:1px solid #e8ecf1;\">\n          <p style=\"margin:0 0 6px;font-size:13px;line-height:20px;font-weight:bold;color:#172033;\">Olentra Technologies</p>\n          <p style=\"margin:0;font-size:12px;line-height:20px;color:#647184;\">\n            Enterprise product engineering and digital growth<br>\n            <a href=\"https://www.olentratechnologies.com/\" target=\"_blank\" style=\"color:#1478e8;text-decoration:none;\">www.olentratechnologies.com</a>\n          </p>\n          <p style=\"margin:14px 0 0;font-size:11px;line-height:18px;color:#8b95a4;\">© 2026 Olentra Technologies. All rights reserved.</p>\n        </td></tr>\n      </table>\n    </td></tr>\n  </table>\n</body>\n</html>\n",
+  body: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Olentra Technologies — Internship Application</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f5f8;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+  <!-- Subject: Thank you for applying — Software Engineer Intern | Olentra Technologies -->
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f3f5f8;padding:24px 12px;">
+    <tr><td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;">
+        <!-- Brand header -->
+        <tr>
+          <td align="center" bgcolor="#101827" style="background-color:#101827;padding:26px 30px;text-align:center;">
+            <a href="https://www.olentratechnologies.com/" target="_blank" style="text-decoration:none;">
+              <img src="https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png" width="66" alt="Olentra Technologies logo" style="display:block;width:66px;height:auto;max-width:66px;margin:0 auto 12px;border:0;">
+            </a>
+            <div style="font-size:23px;line-height:30px;font-weight:700;letter-spacing:.2px;color:#ffffff;">Olentra Technologies</div>
+            <div style="font-size:11px;line-height:18px;letter-spacing:2px;text-transform:uppercase;color:#c7d2e0;margin-top:5px;">Engineering • Innovation • Opportunity</div>
+            <!-- Brand spectrum accent -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:22px;">
+              <tr>
+                <td width="16.6%" height="4" style="background:#1478e8;font-size:0;line-height:0;">&nbsp;</td>
+                <td width="16.6%" style="background:#00b9d7;font-size:0;line-height:0;">&nbsp;</td>
+                <td width="16.6%" style="background:#20c66b;font-size:0;line-height:0;">&nbsp;</td>
+                <td width="16.6%" style="background:#f3d51b;font-size:0;line-height:0;">&nbsp;</td>
+                <td width="16.6%" style="background:#ff8b17;font-size:0;line-height:0;">&nbsp;</td>
+                <td width="16.6%" style="background:#ed2939;font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr><td style="padding:34px 32px 28px;">
+          <h1 style="margin:0 0 18px;font-size:24px;line-height:32px;color:#101827;">Thank you for applying!</h1>
+          <p style="margin:0 0 16px;font-size:16px;line-height:26px;">${CUSTOM_EMAIL_GREETING}</p>
+          <p style="margin:0 0 16px;font-size:16px;line-height:26px;">Thank you for your interest in the <strong>Software Engineer Intern</strong> opportunity at <strong>Olentra Technologies</strong> and for submitting your application through LinkedIn.</p>
+          <p style="margin:0 0 24px;font-size:16px;line-height:26px;">To help us review your profile, please complete your application through our official internship portal.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 28px;">
+            <tr><td align="center" bgcolor="#172033" style="border-radius:6px;">
+              <a href="https://www.olentratechnologies.com/careers/intern" target="_blank" style="display:inline-block;padding:15px 28px;font-size:16px;line-height:20px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:6px;">Complete Your Application&nbsp; →</a>
+            </td></tr>
+          </table>
+          <p style="margin:0 0 16px;font-size:14px;line-height:24px;color:#526075;">If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="https://www.olentratechnologies.com/careers/intern" target="_blank" style="color:#1478e8;word-break:break-word;">https://www.olentratechnologies.com/careers/intern</a>
+          </p>
+          <p style="margin:0 0 16px;font-size:16px;line-height:26px;">We appreciate your interest in joining our team and look forward to reviewing your application.</p>
+          <p style="margin:24px 0 0;font-size:15px;line-height:23px;color:#475569;">
+            Best regards,<br>
+            <strong style="font-weight:600;color:#334155;">Recruitment Team</strong><br>
+            <span style="color:#526075;">Olentra Technologies</span>
+          </p>
+        </td></tr>
+        <!-- Footer -->
+        <tr><td align="center" bgcolor="#101827" style="background-color:#101827;border-top:2px solid #3b82f6;padding:24px 32px 26px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:14px;line-height:21px;font-weight:700;color:#ffffff;">Olentra Technologies</p>
+          <p style="margin:0;font-size:13px;line-height:21px;color:#c7d2e0;">Enterprise product engineering and digital growth</p>
+          <p style="margin:4px 0 0;font-size:13px;line-height:21px;">
+            <a href="https://www.olentratechnologies.com/" target="_blank" style="color:#9ecbff;text-decoration:underline;">www.olentratechnologies.com</a>
+          </p>
+          <p style="margin:14px 0 0;font-size:12px;line-height:19px;color:#a7b7cd;">© 2026 Olentra Technologies. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+`,
 });
