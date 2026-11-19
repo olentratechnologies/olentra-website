@@ -165,7 +165,7 @@ test("unsupported bulk-write capability uses the sequential transaction path", a
 }, 30000);
 
 test("full domain retries a settings write conflict without duplicate activity", async () => {
-  const admin = await domain.createTestStaff("full-domain-admin@example.test", "FullDomainPassword2026!");
+  const admin = staff;
   const client = connection.client as any, original = client.bulkWrite;
   let calls = 0;
   client.bulkWrite = async function(...args: any[]) {
