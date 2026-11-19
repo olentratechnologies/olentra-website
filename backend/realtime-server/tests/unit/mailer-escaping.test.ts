@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createInternshipMailer } from "../../src/infrastructure/email/mailer";
+import { renderInternshipTextEmail } from "../../src/modules/email-templates/internship-email-layout.mjs";
 
 const hostile = `<img src=x onerror=alert(1)>`;
 
@@ -49,8 +50,9 @@ test("magic-link email escapes the name and link", async () => {
   const { html } = await capture(mailer => mailer.sendMagicLink({ to: "a@example.test", name: hostile, magicLinkUrl: "https://example.test/v?token=a&b", templateVariant: "professional" }));
   assertEscaped(html);
   assert.match(html, /href="https:\/\/example\.test\/v\?token=a&amp;b"/);
-  assert.match(html, /background:#f3f6fb/);
-  assert.match(html, /alt="Olentra Technologies"/);
+  assert.match(html, /background:#f3f5f8/);
+  assert.match(html, /alt="Olentra Technologies logo"/);
+  assert.match(html, /bgcolor="#eaf0f6"/);
   assert.match(html, /Open candidate portal/);
   assert.match(html, /Single-use link · Expires in 24 hours/);
   assert.match(html, /Use this secure sign-in link/);
@@ -75,4 +77,14 @@ test("password reset email escapes the name and link", async () => {
   const { html } = await capture(mailer => mailer.sendPasswordResetLink({ to: "a@example.test", name: hostile, resetUrl: "https://example.test/r?token=a&b" }));
   assertEscaped(html);
   assert.match(html, /href="https:\/\/example\.test\/r\?token=a&amp;b"/);
+});
+
+test("saved plain text messages deliver the same branded markup as their preview", async () => {
+  const subject = "Your internship update";
+  const body = `Hello,\n\n${hostile}`;
+  const { html, text } = await capture(mailer => mailer.sendCustomEmail({ to: "a@example.test", subject, body, format: "text" }));
+  assert.equal(html, renderInternshipTextEmail(subject, body));
+  assert.equal(text, body);
+  assert.match(html, /bgcolor="#eaf0f6"/);
+  assertEscaped(html);
 });

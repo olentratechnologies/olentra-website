@@ -5,7 +5,7 @@ import { Check, FileSpreadsheet, Mail, Send, X } from "lucide-react";
 import { useInternship } from "@/components/intern/InternshipProvider";
 import { useInternQuery } from "../useInternQuery";
 import { readEmailRowsFromFile } from "@/lib/intern/email-recipient-import.mjs";
-import { LINKEDIN_FOLLOWUP_TEMPLATE, normalizeCustomEmailName, renderCustomEmailGreeting } from "@/data/custom-email-templates.mjs";
+import { LINKEDIN_FOLLOWUP_TEMPLATE, normalizeCustomEmailName, renderCustomEmailGreeting, renderInternshipTextEmail } from "@/data/custom-email-templates.mjs";
 import { Button, PageHeader, Panel } from "./DashboardUI";
 import QueryStatus from "./QueryStatus";
 import styles from "./custom-email.module.css";
@@ -56,7 +56,9 @@ export default function CustomEmailPage() {
   const uniqueRecipients = useMemo(() => [...new Set([...validManual, ...importedRecipients.keys()])], [validManual, importedRecipients]);
   const duplicateCount = validManual.length + importedRecipients.size - uniqueRecipients.length;
   const previewName = usesRecipientGreeting ? [...importedRecipients.values()].find(Boolean) : undefined;
-  const previewContent = usesRecipientGreeting ? renderCustomEmailGreeting(content, previewName) : content;
+  const previewContent = selectedTemplate?.format === "html"
+    ? renderCustomEmailGreeting(content, previewName)
+    : renderInternshipTextEmail(subject, content);
   const tooManyRecipients = uniqueRecipients.length > MAX_RECIPIENTS;
   const sendingCampaign = Boolean(campaignStatus && !campaignStatus.complete);
   const sendDisabled = checkingLatestCampaign || sendBusy || importBusy || sendingCampaign || !selectedTemplate || !subject.trim() || !content.trim() || !uniqueRecipients.length || tooManyRecipients || invalidManual.length > 0;
@@ -296,11 +298,9 @@ export default function CustomEmailPage() {
       </Panel>
 
       <Panel className={styles.previewPanel}>
-        <div className={styles.previewHeading}><div><span>EMAIL PREVIEW</span><h2>{selectedTemplate?.name || "Select a template"}</h2>{previewName && <p>Preview for {previewName}</p>}</div><small>{selectedTemplate?.format === "html" ? "HTML email" : "Plain text email"}</small></div>
+        <div className={styles.previewHeading}><div><span>EMAIL PREVIEW</span><h2>{selectedTemplate?.name || "Select a template"}</h2>{previewName && <p>Preview for {previewName}</p>}</div><small>HTML email</small></div>
         <div className={styles.subjectPreview}><span>Subject</span><strong>{subject || "Choose a template"}</strong></div>
-        {selectedTemplate?.format === "html"
-          ? <iframe className={styles.htmlPreview} title={`${selectedTemplate.name} email preview`} sandbox="" referrerPolicy="no-referrer" srcDoc={previewContent} />
-          : <pre className={styles.textPreview}>{content || "Choose an email template to preview it."}</pre>}
+        <iframe className={styles.htmlPreview} title={`${selectedTemplate.name} email preview`} sandbox="" referrerPolicy="no-referrer" srcDoc={previewContent} />
       </Panel>
     </div>
   </div>;

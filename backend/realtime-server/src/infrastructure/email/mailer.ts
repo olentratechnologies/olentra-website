@@ -2,6 +2,7 @@ import { scheduleDisplay, displayDate } from "../../modules/programs/schedule.mj
 import { emailDefinition, fillEmailTemplate, type AutomatedEmailId, type EmailTemplate } from "../../modules/email-templates/automated-templates";
 import { interviewIcs, interviewTimeLabel } from "../../modules/interviews/ics";
 import type { SigninEmailTemplateVariant } from "../../modules/email-templates/signin-template-settings";
+import { emailAction, emailMessage, emailParagraph, emailSignOff, escapeEmailHtml as escapeHtml, renderInternshipEmail, renderInternshipTextEmail } from "../../modules/email-templates/internship-email-layout.mjs";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
 type ApplicantStatus = "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
@@ -56,16 +57,13 @@ interface PasswordResetEmailOptions {
 
 const EMAIL_DELIVERY_TOKEN = process.env.EMAIL_DELIVERY_TOKEN;
 const EMAIL_SERVER_URL = process.env.EMAIL_SERVER_URL || "http://127.0.0.1:3001";
+const AUTOMATED_FOOTER_DETAILS = `
+          <p style="margin:12px 0 0;font-size:12px;line-height:19px;color:#46596f;">Olentra Technologies Pvt. Ltd. · CIN: U72900TG2023PTC176542 · Hyderabad, India</p>
+          <p style="margin:4px 0 0;font-size:12px;line-height:19px;color:#46596f;">Support: <a href="mailto:intern.support@olentratechnologies.com" style="color:#1555a2;text-decoration:underline;">intern.support@olentratechnologies.com</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/careers/intern" style="color:#1555a2;text-decoration:underline;">Careers</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/privacy-policy" style="color:#1555a2;text-decoration:underline;">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/terms-of-service" style="color:#1555a2;text-decoration:underline;">Terms of Service</a></p>
+          <p style="margin:10px 0 0;font-size:12px;line-height:19px;color:#536479;">Automated message about your internship application or program. Please do not reply directly to this email.</p>
+          <p style="margin:4px 0 0;font-size:12px;line-height:19px;color:#536479;">Security notice: Olentra will never request fee payments, banking credentials, or your account password via email.</p>`;
 
 export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, deliveryUrl = EMAIL_SERVER_URL, resolveTemplate?: (id: AutomatedEmailId) => Promise<EmailTemplate>) {
-  const escapeHtml = (value: string) =>
-    value.replace(/[&<>"']/g, (character) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    })[character]!);
   function resolveCandidateGreeting(rawName: string | undefined): { greeting: string; firstName: string; fullName: string } {
     const trimmed = String(rawName || "").trim();
     const lower = trimmed.toLowerCase();
@@ -92,81 +90,10 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     return { greeting: `Hi ${firstName},`, firstName, fullName };
   }
 
-  const emailShell = ({
-    subject,
-    preheader,
-    heading,
-    content,
-  }: {
-    subject: string;
-    preheader: string;
-    eyebrow: string;
-    heading: string;
-    content: string;
-  }) => `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light">
-  <meta name="supported-color-schemes" content="light">
-  <title>${escapeHtml(subject)}</title>
-</head>
-<body style="margin:0;padding:0;background:#f3f6fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;color:#14213d;">
-  <div style="display:none;font-size:1px;color:#f3f6fb;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
-    ${escapeHtml(preheader)}
-    &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
-  </div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f6fb" style="font-family:Arial,Helvetica,sans-serif;background:#f3f6fb;padding:20px 12px;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;width:100%;max-width:640px;background:#ffffff;border:1px solid #e4eaf3;border-radius:2px;">
-        <tr><td align="center" bgcolor="#10265f" style="font-family:Arial,Helvetica,sans-serif;padding:20px 24px 0;background-color:#10265f;border-bottom:2px solid #2563eb;">
-          <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;">
-            <tr>
-              <td width="52" valign="middle" style="font-family:Arial,Helvetica,sans-serif;width:52px;padding:0 0 16px;">
-                <a href="https://www.olentratechnologies.com" style="font-family:Arial,Helvetica,sans-serif;text-decoration:none;"><img src="https://www.olentratechnologies.com/images/branding/Logo/Olentra-Logo-Without-Background.png" width="40" height="40" alt="Olentra Technologies" style="display:block;width:40px;height:40px;border:0;"></a>
-              </td>
-              <td valign="middle" style="font-family:Arial,Helvetica,sans-serif;padding:0 0 16px;font-size:20px;line-height:1.25;font-weight:700;color:#ffffff;">Olentra Technologies</td>
-            </tr>
-          </table>
-        </td></tr>
-        <tr><td align="center" style="font-family:Arial,Helvetica,sans-serif;padding:20px 24px 16px;text-align:center;">
-          <h1 style="font-family:Arial,Helvetica,sans-serif;margin:0;font-size:25px;line-height:1.24;font-weight:700;letter-spacing:-.025em;color:#0f172a;">${escapeHtml(heading)}</h1>
-        </td></tr>
-        <tr><td style="font-family:Arial,Helvetica,sans-serif;padding:0 24px 20px;">${content}</td></tr>
-        <tr><td style="font-family:Arial,Helvetica,sans-serif;padding:0 24px;"><div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;">&nbsp;</div></td></tr>
-        <tr><td style="font-family:Arial,Helvetica,sans-serif;padding:16px 24px 18px;background:#ffffff;">
-          <p style="font-family:Arial,Helvetica,sans-serif;margin:0 0 5px;font-size:12px;line-height:1.55;font-weight:600;color:#334155;">Olentra Technologies Pvt. Ltd. · Building intelligent systems</p>
-          <p style="font-family:Arial,Helvetica,sans-serif;margin:0 0 8px;font-size:11px;line-height:1.55;color:#64748b;">CIN: U72900TG2023PTC176542 · Hyderabad, India · <a href="https://www.olentratechnologies.com" style="font-family:Arial,Helvetica,sans-serif;color:#2563eb;text-decoration:none;">www.olentratechnologies.com</a></p>
-          <p style="font-family:Arial,Helvetica,sans-serif;margin:0 0 10px;font-size:11px;line-height:1.55;color:#64748b;">Support: <a href="mailto:intern.support@olentratechnologies.com" style="font-family:Arial,Helvetica,sans-serif;color:#2563eb;text-decoration:none;">intern.support@olentratechnologies.com</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/careers/intern" style="font-family:Arial,Helvetica,sans-serif;color:#2563eb;text-decoration:none;">Careers</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/privacy-policy" style="font-family:Arial,Helvetica,sans-serif;color:#2563eb;text-decoration:none;">Privacy Policy</a> &nbsp;·&nbsp; <a href="https://www.olentratechnologies.com/terms-of-service" style="font-family:Arial,Helvetica,sans-serif;color:#2563eb;text-decoration:none;">Terms of Service</a></p>
-          <div style="height:1px;background:#e8edf5;font-size:1px;line-height:1px;margin:10px 0;">&nbsp;</div>
-          <p style="font-family:Arial,Helvetica,sans-serif;margin:0 0 5px;font-size:11px;line-height:1.55;color:#718096;">Automated message about your internship application or program. Please do not reply directly to this email.</p>
-          <p style="font-family:Arial,Helvetica,sans-serif;margin:0;font-size:11px;line-height:1.55;color:#64748b;">Security notice: Olentra will never request fee payments, banking credentials, or your account password via email.</p>
-        </td></tr>
-      </table>
-      <p style="font-family:Arial,Helvetica,sans-serif;margin:16px 0 0;font-size:11px;line-height:1.5;color:#8a96a8;">© 2026 Olentra Technologies Pvt. Ltd. All rights reserved.</p>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-  const emailButton = (label: string, href: string, background = "#2563eb") => `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;margin:16px 0 6px;">
-      <tr>
-        <td bgcolor="${background}" style="font-family:Arial,Helvetica,sans-serif;border-radius:4px;background:${background};">
-          <a href="${escapeHtml(href)}" style="font-family:Arial,Helvetica,sans-serif;display:inline-block;padding:11px 20px;border:1px solid ${background};border-radius:4px;color:#ffffff;text-decoration:none;font-size:14px;line-height:1.2;font-weight:700;letter-spacing:-0.01em;">${escapeHtml(label)} &rarr;</a>
-        </td>
-      </tr>
-    </table>
-    <p style="font-family:Arial,Helvetica,sans-serif;margin:4px 0 16px;font-size:11px;line-height:1.5;color:#8a96a8;word-break:break-all;">If the button doesn&#39;t work, copy and paste this link into your browser:<br><a href="${escapeHtml(href)}" style="font-family:Arial,Helvetica,sans-serif;color:#2563eb;text-decoration:underline;">${escapeHtml(href)}</a></p>
-  `;
-  const emailPanel = (content: string, tone: "blue" | "neutral" | "green" = "neutral") => {
-    const palette = {
-      blue: { background: "#f2f7ff", border: "#dce9ff", accent: "#2563eb" },
-      neutral: { background: "#f8fafc", border: "#e2e8f0", accent: "#2563eb" },
-      green: { background: "#f0faf5", border: "#d4f0e0", accent: "#16a34a" },
-    }[tone];
-    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;margin:16px 0;border-top:1px solid ${palette.border};border-bottom:1px solid ${palette.border};"><tr><td style="font-family:Arial,Helvetica,sans-serif;padding:12px 0;color:${palette.accent};">${content}</td></tr></table>`;
-  };
+  const emailPanel = (content: string) => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
+      <tr><td bgcolor="#eaf0f6" style="padding:12px 16px;background-color:#eaf0f6;border-radius:6px;color:#243549;">${content}</td></tr>
+    </table>`;
 
   type Attachment = { filename: string; content: string | Buffer; contentType: string };
   async function sendEmail(to: string, subject: string, html: string, text: string, attachments: Attachment[] = []): Promise<SendResult> {
@@ -260,7 +187,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;table-layout:fixed;">
                 <tr>
                   <td width="28%" valign="top" style="font-family:Arial,Helvetica,sans-serif;padding:0 12px 10px 0;font-size:13px;line-height:1.5;color:#475569;">Review timeline</td>
-                  <td valign="top" style="font-family:Arial,Helvetica,sans-serif;padding:0 0 10px;font-size:13px;line-height:1.5;font-weight:700;color:#2563eb;">Review within 3–5 business days</td>
+                  <td valign="top" style="font-family:Arial,Helvetica,sans-serif;padding:0 0 10px;font-size:13px;line-height:1.5;font-weight:700;color:#1555a2;">Review within 3–5 business days</td>
                 </tr>
                 <tr>
                   <td valign="top" style="font-family:Arial,Helvetica,sans-serif;padding:10px 12px 0 0;border-top:1px solid #e2e8f0;font-size:13px;line-height:1.5;color:#475569;">Next step</td>
@@ -302,20 +229,16 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       buttons.push({ label: "Open candidate portal", url: options.magicLinkUrl });
       details.push("Single-use link · Expires in 24 hours", "This single-use link expires in 24 hours. If you didn’t request this link, you can safely ignore this email.");
     }
-    const panelContent = customPanelHtml
-      ? customPanelHtml
-      : details.length
-        ? emailPanel(
-            details.map(item => `<p style="font-family:Arial,Helvetica,sans-serif;margin:4px 0;font-size:14px;line-height:1.65;color:#1e293b;">${escapeHtml(item)}</p>`).join(""),
-            ["selected", "offer-accepted", "certificate"].includes(id) ? "green" : "neutral"
-          )
-        : "";
-
-    const content = `<p style="font-family:Arial,Helvetica,sans-serif;margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;white-space:pre-wrap;">${escapeHtml(body)}</p>`
+    const panelContent = customPanelHtml || (details.length
+      ? emailPanel(details.map(item => `<p style="margin:4px 0;font-size:14px;line-height:22px;overflow-wrap:anywhere;">${escapeHtml(item)}</p>`).join(""))
+      : "");
+    const actions = buttons.filter(button => button.url);
+    const content = emailMessage(body)
       + panelContent
-      + buttons.filter(button => button.url).map(button => emailButton(button.label, button.url)).join("");
-    const html = emailShell({ subject, preheader: body.slice(0, 180), eyebrow: "Olentra Careers · Internship program", heading: definition.name, content });
-    const text = [body, ...details, ...buttons.filter(button => button.url).map(button => `${button.label}: ${button.url}`), "The Olentra Team"].join("\n\n");
+      + actions.map(button => emailAction(button.label, button.url)).join("")
+      + (template.body === definition.body ? emailSignOff("The Olentra Team") : "");
+    const html = renderInternshipEmail({ title: subject, preheader: body.slice(0, 180), heading: definition.name, content, footerDetails: AUTOMATED_FOOTER_DETAILS });
+    const text = [body, ...details, ...actions.map(button => `${button.label}: ${button.url}`), "The Olentra Team"].join("\n\n");
     return { subject, html, text, attachments };
   }
   async function automated(id: AutomatedEmailId, options: Record<string, any>) {
@@ -329,7 +252,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     async sendCustomEmail({ to, subject, body, format }: { to: string; subject: string; body: string; format: "html" | "text" }): Promise<SendResult> {
       const html = format === "html"
         ? body
-        : `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#334155;white-space:pre-wrap;">${escapeHtml(body).replace(/\r?\n/g, "<br>")}</div>`;
+        : renderInternshipTextEmail(subject, body);
       const text = format === "html" ? plainTextFromHtml(body) : body;
       return sendEmail(to, subject, html, text || body.replace(/<[^>]*>/g, " ").trim() || subject);
     },
@@ -341,11 +264,12 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     async sendNotice({ to, subject, heading, intro, items, ctaLabel, ctaUrl }: { to: string; subject: string; heading: string; intro: string; items: string[]; ctaLabel: string; ctaUrl: string }): Promise<SendResult> {
       const text = `${intro}\n\n${items.map(item => `- ${item}`).join("\n")}\n\n${ctaLabel}: ${ctaUrl}\n\nThe Olentra Team`;
       const content = `
-        <p style="font-family:Arial,Helvetica,sans-serif;margin:0;font-size:15px;line-height:1.65;color:#43536e;">${escapeHtml(intro)}</p>
-        ${emailPanel(`<ul style="margin:0;padding:0 0 0 19px;font-size:14px;line-height:1.8;color:#43536e;">${items.map(item => `<li style="padding:2px 0;">${escapeHtml(item)}</li>`).join("")}</ul>`, "neutral")}
-        ${emailButton(ctaLabel, ctaUrl)}
+        ${emailMessage(intro)}
+        ${emailPanel(`<ul style="margin:0;padding:0 0 0 19px;font-size:14px;line-height:22px;">${items.map(item => `<li style="padding:2px 0;">${escapeHtml(item)}</li>`).join("")}</ul>`)}
+        ${emailAction(ctaLabel, ctaUrl)}
+        ${emailSignOff("The Olentra Team")}
       `;
-      const html = emailShell({ subject, preheader: intro, eyebrow: "Olentra Careers · Internship program", heading, content });
+      const html = renderInternshipEmail({ title: subject, preheader: intro, heading, content, footerDetails: AUTOMATED_FOOTER_DETAILS });
       return sendEmail(to, subject, html, text);
     },
 
@@ -353,7 +277,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       if (options.status !== "rejected") return automated(options.status, options);
       const subject = `Update on your Olentra internship application (${options.programName})`;
       const body = `Hi ${options.name},\n\nThank you for taking the time to apply to Olentra Technologies and sharing your background with us. After careful consideration, we are unable to offer you an internship position for this cohort. We received a tremendous number of outstanding applications and had to make difficult decisions. We truly appreciate your interest in Olentra, wish you continued success in your learning and career, and warmly invite you to stay connected with us on LinkedIn and re-apply in future cohorts.`;
-      const html = emailShell({ subject, preheader: subject, eyebrow: "Olentra Careers · Internship program", heading: "Application Status Update", content: `<p style="font-family:Arial,Helvetica,sans-serif;margin:0;font-size:15px;white-space:pre-wrap;line-height:1.6;">${escapeHtml(body)}</p>` });
+      const html = renderInternshipEmail({ title: subject, preheader: subject, heading: "Application Status Update", content: emailMessage(body), footerDetails: AUTOMATED_FOOTER_DETAILS });
       return sendEmail(options.to, subject, html, body);
     },
     async sendApplicationConfirmation(options: ApplicationEmailOptions): Promise<SendResult> { return automated("application-received", options); },
@@ -365,17 +289,18 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
 
       const safeName = escapeHtml(String(name));
       const content = `
-        <p style="font-family:Arial,Helvetica,sans-serif;margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">Hi <strong>${safeName}</strong>,</p>
-        <p style="font-family:Arial,Helvetica,sans-serif;margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">We received a request to reset the password for your Olentra Internship account. Click the button below to choose a new password:</p>
-        ${emailButton("Reset My Password", resetUrl)}
-        ${emailPanel("<p style=\"margin:0;font-size:13px;line-height:1.6;color:#475569;\"><strong>Security note:</strong> This single-use link is valid for 1 hour. If you did not request a password reset, you can safely ignore this email; your password will remain unchanged.</p>", "blue")}
+        ${emailParagraph(`Hi <strong>${safeName}</strong>,`)}
+        ${emailParagraph("We received a request to reset the password for your Olentra Internship account. Click the button below to choose a new password:")}
+        ${emailAction("Reset My Password", resetUrl)}
+        ${emailPanel("<p style=\"margin:0;font-size:14px;line-height:22px;\"><strong>Security note:</strong> This single-use link is valid for 1 hour. If you did not request a password reset, you can safely ignore this email; your password will remain unchanged.</p>")}
+        ${emailSignOff("The Olentra Team")}
       `;
-      const html = emailShell({
-        subject,
+      const html = renderInternshipEmail({
+        title: subject,
         preheader: "Reset your Olentra Internship account password. This secure link is valid for 1 hour.",
-        eyebrow: "Olentra Careers · Password Recovery",
         heading: "Reset your Account Password",
         content,
+        footerDetails: AUTOMATED_FOOTER_DETAILS,
       });
 
       return sendEmail(to, subject, html, text);

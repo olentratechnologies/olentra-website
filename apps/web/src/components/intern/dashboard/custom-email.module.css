@@ -363,19 +363,6 @@
   border-radius: 10px;
   background: #f3f5f8;
 }
-.textPreview {
-  min-height: 250px;
-  margin: 0;
-  padding: 19px;
-  overflow: auto;
-  border: 1px solid var(--ad-border, #d2dcec);
-  border-radius: 10px;
-  color: var(--ad-text, #26354e);
-  background: var(--ad-field, #ffffff);
-  font: 12px/1.7 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
 .statusPanel {
   display: grid;
   grid-column: 1 / -1;

@@ -173,13 +173,15 @@ test("the seven applicant journey emails share the branded responsive template",
     assert.equal(requests.length, 7);
     for (const request of requests) {
       const html = String(request.html);
-      assert.match(html, /max-width:640px/);
-      assert.match(html, /alt="Olentra Technologies"/);
-      assert.match(html, />Olentra Technologies<\/td>/);
+      assert.match(html, /max-width:600px/);
+      assert.match(html, /alt="Olentra Technologies logo"/);
+      assert.match(html, /Engineering • Innovation • Opportunity/);
+      assert.match(html, /bgcolor="#101827"/);
+      assert.match(html, /bgcolor="#eaf0f6"/);
       assert.match(html, /mailto:intern.support@olentratechnologies.com/);
       assert.doesNotMatch(html, /careers@olentratechnologies.com/);
       assert.match(html, /Automated message about your internship application or program/);
-      assert.match(html, /background:#f3f6fb/);
+      assert.match(html, /background:#f3f5f8/);
     }
     assert.match(String(requests[0]?.html), /OL-123/);
     assert.doesNotMatch(String(requests[3]?.html), /Share on LinkedIn/);
@@ -198,6 +200,7 @@ test("reminder emails escape their content and link to the site", async () => {
     await mailer.sendNotice({ to: "a@example.test", subject: "2 applications are waiting", heading: "Waiting", intro: "Hi", items: ["<b>Asha</b> · Software Engineer Intern", "Ravi · Software Engineer Intern"], ctaLabel: "Review", ctaUrl: "https://site.example.test/intern/dashboard/applications" });
     assert.match(String(requests[0]!.html), /&lt;b&gt;Asha&lt;\/b&gt;/);
     assert.match(String(requests[0]!.html), /href="https:\/\/site\.example\.test\/intern\/dashboard\/applications"/);
+    assert.match(String(requests[0]!.html), /bgcolor="#172033"/);
     assert.match(String(requests[0]!.text), /- Ravi · Software Engineer Intern/);
   } finally {
     globalThis.fetch = originalFetch;
