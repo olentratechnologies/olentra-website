@@ -26,7 +26,7 @@ beforeAll(async () => {
   await domain.createTestStaff("staff@example.test", "OpportunitiesPassword2026!");
   await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
   await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { enabled: true, fee: 0, stipend: 15000 } });
-  await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true, compensationMode: "free" } });
+  await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true, compensationMode: "both" } });
   domain.invalidatePublicData();
 }, 30000);
 

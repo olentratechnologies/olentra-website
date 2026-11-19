@@ -97,7 +97,7 @@ test("application through approved work and one certificate, with ownership and 
   expect(skillFilter.counts.skills.some((row: any) => row.name === "React")).toBe(true);
   const timeline = (await call("application.get", { id: application.id }, intern)).history.map((event: any) => event.title);
   expect(timeline).toContain("Interview scheduled"); expect(timeline).toContain("Offer sent"); expect(timeline).toContain("Onboarding submitted"); expect(timeline).toContain("Intern onboarded");
-  const project = await call("project.create", { project: { name: "Test project", description: "Test description", team: [application.id] } });
+  const project = await call("project.create", { project: { name: "Test project", description: "Test description", program: "Software Engineer Intern", team: [application.id] } });
   const task = await call("task.create", { projectId: project.id, applicationId: application.id, title: "Test task", description: "Implement work", dueOn: "2026-12-01", required: true });
   await expect(call("intern.update", { id: active.id, patch: { status: "Completed" } })).rejects.toBeInstanceOf(DomainError);
   await expect(call("submission.create", { taskId: task.id, notes: "wrong owner" }, other)).rejects.toBeInstanceOf(DomainError);

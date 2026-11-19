@@ -23,7 +23,7 @@ beforeAll(async () => {
   ]);
   await domain.collection("offers").insertOne({ _id: "offer-1", applicationId: "app-1", status: "Accepted" });
   await domain.collection("onboarding").insertOne({ _id: "onboarding-1", applicationId: "app-1", status: "Approved" });
-  await domain.collection("projects").insertOne({ _id: "project-1", name: "Orbital project", description: "Build", team: ["app-1", "app-2"], status: "In progress", program: "Software Engineer Intern", createdOn: "2026-02-01" });
+  await domain.collection("projects").insertOne({ _id: "project-1", name: "Orbital project", description: "Build", team: ["app-1", "app-2"], status: "In progress", programId: "software-engineer", program: "Software Engineer Intern", createdOn: "2026-02-01" });
   await domain.collection("tasks").insertOne({ _id: "task-1", applicationId: "app-3", projectId: "project-1", title: "Task", status: "Todo", required: true, dueOn: "2026-12-01" });
   await domain.collection("submissions").insertOne({ _id: "submission-1", applicationId: "app-3", taskId: "task-1", status: "Submitted", submittedOn: "2026-02-02", version: 1 });
   await domain.collection("certificates").insertOne({ _id: "cert-1", internId: "intern-2", applicationId: "app-2", recipient: "Bob", certificateNumber: "CERT-1", programId: "software-engineer", program: "Software Engineer Intern", status: "Issued", issuedOn: "2026-02-03" });

@@ -64,7 +64,7 @@ test("messages, notifications, announcements and analytics respect role and owne
   expect((await communications.snapshot(first)).notifications[0]!.unread).toBe(false);
   await communications.execute("announcement.send", { subject: "Program update", message: "Team update", audience: "software-engineer" }, staff, "announce-one");
   expect((await communications.snapshot(first)).notifications).toHaveLength(2);
-  expect((await communications.snapshot(second)).notifications).toHaveLength(0);
+  expect((await communications.snapshot(second)).notifications).toHaveLength(1);
   expect((await communications.execute("notification.list", { pageSize: 1, page: 2 }, first, "")).items).toHaveLength(1);
   expect(await domain.collection("events").findOne({ type: "changed", applicationIds: "first-app" })).toBeTruthy();
   const analytics = await communications.execute("analytics.get", {}, staff, "");
@@ -77,23 +77,23 @@ test("messages, notifications, announcements and analytics respect role and owne
 test("settings cannot configure retired programs or enable unavailable integrations", async () => {
   await expect(communications.execute("settings.update", { patch: { compensationMode: "invalid" } }, staff, "settings-invalid-mode")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   await expect(communications.execute("settings.update", { patch: { compensationMode: null } }, staff, "settings-null-mode")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
-  await expect(domain.execute("program.configure", { programId: "explorer", fee: 0, stipend: 0, enabled: true }, staff, "settings-one")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
-  await expect(communications.execute("settings.update", { patch: { emailNotifications: true } }, staff, "settings-two")).rejects.toBeInstanceOf(DomainError);
+  await expect(domain.execute("program.configure", { programId: "explorer", fee: 0, stipend: 0, enabled: true }, staff, "settings-retired-program-01")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(communications.execute("settings.update", { patch: { emailNotifications: true } }, staff, "settings-email-disabled-02")).rejects.toBeInstanceOf(DomainError);
   // The weekly digest and review reminders are available now; general email notifications are not.
-  await communications.execute("settings.update", { patch: { weeklyDigest: true, reviewReminder: true } }, staff, "settings-digest");
+  await communications.execute("settings.update", { patch: { weeklyDigest: true, reviewReminder: true } }, staff, "settings-digest-enable-03");
   expect(await domain.collection("settings").findOne({ _id: "program" })).toMatchObject({ weeklyDigest: true, reviewReminder: true });
   await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { fee: 0, stipend: 0 } });
-  await domain.execute("program.configure", { programId: "software-engineer", fee: 0, stipend: 0, enabled: true }, staff, "settings-three");
-  await communications.execute("settings.update", { patch: { programEnabled: true, defaultBatch: "Autumn" } }, staff, "settings-three-general");
+  await domain.execute("program.configure", { programId: "software-engineer", fee: 0, stipend: 0, enabled: true }, staff, "settings-program-enable-04");
+  await communications.execute("settings.update", { patch: { programEnabled: true, defaultBatch: "Autumn" } }, staff, "settings-general-enable-05");
   expect((await domain.collection("programs").findOne({ _id: "software-engineer" }))?.enabled).toBe(true);
   expect((await domain.collection("settings").findOne({ _id: "program" }))?.defaultBatch).toBe("Autumn");
-  await communications.execute("settings.update", { patch: { defaultBatch: "" } }, staff, "settings-empty-batch");
+  await communications.execute("settings.update", { patch: { defaultBatch: "" } }, staff, "settings-empty-batch-06");
   expect((await domain.collection("settings").findOne({ _id: "program" }))?.defaultBatch).toBe("");
   for (const mode of ["free", "paid", "both"]) {
-    await communications.execute("settings.update", { patch: { compensationMode: mode } }, staff, `settings-mode-${mode}`);
+    await communications.execute("settings.update", { patch: { compensationMode: mode } }, staff, `settings-compensation-mode-${mode}`);
     expect((await domain.collection("settings").findOne({ _id: "program" }))?.compensationMode).toBe(mode);
   }
-  await expect(communications.execute("settings.update", { patch: { defaultBatch: "Winter" } }, first, "settings-four")).rejects.toBeInstanceOf(DomainError);
+  await expect(communications.execute("settings.update", { patch: { defaultBatch: "Winter" } }, first, "settings-unauthorized-update-07")).rejects.toBeInstanceOf(DomainError);
 }, 30000);
 
 test("settings validation and a mid-write error roll back every change", async () => {
@@ -219,5 +219,5 @@ test("analytics cache is shared briefly and invalidation reloads updated records
   communications.invalidateAnalytics();
   const updated = await communications.execute("analytics.get", {}, staff, "");
   expect(updated.totalApplications).toBe(3);
-  expect(updated.byProgram["software-engineer"]).toBe(2);
+  expect(updated.byProgram["software-engineer"]).toBe(3);
 }, 30000);

@@ -26,7 +26,7 @@ afterAll(async () => {
 
 test("clean database initializes only closed named programs", async () => {
   const data = await domain.publicData();
-  expect(data.programs.map(p => p.id)).toEqual(["software-engineer", "software-engineer"]);
+  expect(data.programs.map(p => p.id)).toEqual(["software-engineer"]);
   expect(data.settings.programEnabled).toBe(false);
   expect(data.settings.compensationMode).toBe("both");
   expect(await domain.collection("applications").countDocuments()).toBe(0);
@@ -136,7 +136,7 @@ test("staff can securely create an account for an unclaimed application", async 
 test("anonymous visitors and interns only see public program settings; staff see all", async () => {
   const anonymous = await domain.execute("intern.public", {}, null, "public-payload-anon") as any;
   expect(Object.keys(anonymous).sort()).toEqual(["opportunities", "organization", "programs", "settings"]);
-  expect(Object.keys(anonymous.settings).sort()).toEqual(["applicationDeadline", "compensationMode", "duration", "software-engineerEnabled", "software-engineerEnabled", "programEnabled", "programName"]);
+  expect(Object.keys(anonymous.settings).sort()).toEqual(["applicationDeadline", "compensationMode", "duration", "programEnabled", "programName"]);
   const internSnapshot = await domain.execute("intern.snapshot", {}, null, "public-payload-snap") as any;
   expect(internSnapshot.data.settings).not.toHaveProperty("rejectionEmails");
   const staffSnapshot = await domain.execute("intern.snapshot", {}, staff, "public-payload-staff") as any;
