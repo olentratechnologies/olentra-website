@@ -257,7 +257,7 @@ export function ProjectsPage() {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    program: "Tech Innovator",
+    program: "Software Engineer Intern",
     dueOn: "",
     art: "planet",
     team: [],
@@ -345,7 +345,7 @@ export function ProjectsPage() {
       setForm({
         name: "",
         description: "",
-        program: "Tech Innovator",
+        program: "Software Engineer Intern",
         dueOn: "",
         art: "planet",
         team: [],
@@ -476,9 +476,7 @@ export function ProjectsPage() {
               >
                 <span className={styles.coverEyebrow}>
                   <FolderKanban size={13} />{" "}
-                  {project.program === "Tech Innovator"
-                    ? "INNOVATOR PROJECT"
-                    : "EXPLORER PROJECT"}
+                  SOFTWARE ENGINEER PROJECT
                 </span>
                 {project.art === "planet" ? (
                   <PlanetArtwork className={styles.planetArt} />
@@ -500,11 +498,9 @@ export function ProjectsPage() {
                 </p>
                 <div className={styles.projectMeta}>
                   <TrackBadge
-                    programId={
-                      project.program === "Tech Innovator"
-                        ? "innovator"
-                        : "explorer"
-                    }
+                    programId="software-engineer"
+                    label={project.program || "Software Engineer Intern"}
+                  />
                     label={project.program}
                   />
                   <span>{project.team.length} members</span>
@@ -725,11 +721,9 @@ export function ProjectsPage() {
             <form onSubmit={saveProject}>
               <div className={styles.detailOverview}>
                 <TrackBadge
-                  programId={
-                    selectedProject.program === "Tech Innovator"
-                      ? "innovator"
-                      : "explorer"
-                  }
+                  programId="software-engineer"
+                  label={selectedProject.program || "Software Engineer Intern"}
+                />
                   label={selectedProject.program}
                 />
                 <span>

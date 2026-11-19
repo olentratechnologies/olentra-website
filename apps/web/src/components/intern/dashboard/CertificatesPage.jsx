@@ -175,18 +175,11 @@ export function CertificatesPage() {
             tone: "green",
           }] : []),
           {
-            id: "explorer",
-            label: "Tech Explorer",
-            value: summary ? summary.counts?.programs?.explorer || 0 : "—",
+            id: "software-engineer",
+            label: "Software Engineer Intern",
+            value: summary ? summary.counts?.programs?.["software-engineer"] || 0 : "—",
             icon: "users",
             tone: "purple",
-          },
-          {
-            id: "innovator",
-            label: "Tech Innovator",
-            value: summary ? summary.counts?.programs?.innovator || 0 : "—",
-            icon: "trophy",
-            tone: "orange",
           },
         ]}
       />

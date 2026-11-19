@@ -743,15 +743,11 @@ export function ApplicationsAreaChart({ period, className }) {
 export function ProgramDonut({ programs = [], className }) {
   const id = useSvgId("donut");
   const first = programs[0] || {
-    share: 68,
+    share: 100,
     name: "Software Engineer Intern",
     color: "#2583ff",
   };
-  const second = programs[1] || {
-    share: 32,
-    name: "Tech Innovator",
-    color: "#9454ff",
-  };
+  const second = null;
   const circumference = 2 * Math.PI * 64;
   return (
     <svg
@@ -759,27 +755,16 @@ export function ProgramDonut({ programs = [], className }) {
       viewBox="0 0 180 180"
       fill="none"
       role="img"
-      aria-label={`${first.name}: ${first.share}%; ${second.name}: ${second.share}%`}
+      aria-label={`${first.name}: ${first.share}%`}
     >
-      <title>{`Program split: ${first.share}% Tech Explorer, ${second.share}% Tech Innovator`}</title>
+      <title>{`Program split: ${first.share}% Software Engineer Intern`}</title>
       <defs>
         <linearGradient
-          id={`${id}-purple`}
+          id={`${id}-blue`}
           x1="15"
           y1="36"
-          x2="90"
-          y2="156"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stopColor="#ad71ff" />
-          <stop offset="1" stopColor="#7f3aff" />
-        </linearGradient>
-        <linearGradient
-          id={`${id}-blue`}
-          x1="105"
-          y1="16"
-          x2="156"
-          y2="151"
+          x2="165"
+          y2="144"
           gradientUnits="userSpaceOnUse"
         >
           <stop stopColor="#2279ff" />
@@ -790,23 +775,8 @@ export function ProgramDonut({ programs = [], className }) {
         cx="90"
         cy="90"
         r="64"
-        stroke={`url(#${id}-purple)`}
-        strokeWidth="24"
-      />
-      <circle
-        cx="90"
-        cy="90"
-        r="64"
         stroke={`url(#${id}-blue)`}
         strokeWidth="24"
-        strokeDasharray={`${(circumference * first.share) / 100} ${circumference}`}
-        transform="rotate(-90 90 90)"
-      />
-      <path
-        d="M 90 14 V 38"
-        stroke="white"
-        strokeOpacity=".55"
-        strokeWidth="1"
       />
       <text
         x="90"
