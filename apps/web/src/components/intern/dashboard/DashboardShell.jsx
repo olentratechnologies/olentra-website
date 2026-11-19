@@ -19,6 +19,7 @@ import {
   Check,
   ChevronDown,
   ClipboardCheck,
+  Mail,
   Download,
   House,
   LogOut,
@@ -54,6 +55,7 @@ import ProjectSummary from "./ProjectSummary";
 const icons = {
   home: House,
   clipboard: ClipboardCheck,
+  mail: Mail,
   chart: ChartNoAxesCombined,
   users: Users,
   briefcase: BriefcaseBusiness,

@@ -186,6 +186,32 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     }
   }
 
+  function plainTextFromHtml(html: string) {
+    return html
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/<(script|style|head)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, " ")
+      .replace(/<(br|\/p|\/div|\/tr|\/h[1-6]|\/li)\b[^>]*>/gi, "\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;|&apos;/gi, "'")
+      .replace(/&#(\d+);/g, (_match, value: string) => {
+        const code = Number(value);
+        return Number.isInteger(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : " ";
+      })
+      .replace(/&#x([\da-f]+);/gi, (_match, value: string) => {
+        const code = Number.parseInt(value, 16);
+        return Number.isInteger(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : " ";
+      })
+      .replace(/[ \t]+/g, " ")
+      .replace(/ *\n */g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
   function renderAutomated(id: AutomatedEmailId, options: Record<string, any>, template: EmailTemplate = emailDefinition(id)) {
     const definition = emailDefinition(id);
     const resolved = resolveCandidateGreeting(options.name);
@@ -299,6 +325,14 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
 
   return {
     renderAutomated,
+    /** Sends a stored custom template to one recipient; bulk campaigns call this once per address. */
+    async sendCustomEmail({ to, subject, body, format }: { to: string; subject: string; body: string; format: "html" | "text" }): Promise<SendResult> {
+      const html = format === "html"
+        ? body
+        : `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#334155;white-space:pre-wrap;">${escapeHtml(body).replace(/\r?\n/g, "<br>")}</div>`;
+      const text = format === "html" ? plainTextFromHtml(body) : body;
+      return sendEmail(to, subject, html, text || body.replace(/<[^>]*>/g, " ").trim() || subject);
+    },
     async sendInterviewScheduled(options: InterviewScheduledEmailOptions): Promise<SendResult> { return automated("interview-scheduled", options); },
     async sendInterviewCancelled(options: InterviewScheduledEmailOptions): Promise<SendResult> { return automated("interview-cancelled", options); },
     async sendInterviewReminder(options: InterviewScheduledEmailOptions): Promise<SendResult> { return automated("interview-reminder", options); },

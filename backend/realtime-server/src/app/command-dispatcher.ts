@@ -21,13 +21,14 @@ export type { InternshipHooks, Principal } from "../shared/principal";
 export { connectInternDatabase } from "../infrastructure/database/client";
 import { createStories } from "../modules/stories/stories.service";
 import { createTemplates } from "../modules/templates/templates.service";
+import { createCustomEmails } from "../modules/templates/custom-email.service";
 import { createViews } from "../modules/views/views.service";
 import { createResources } from "../modules/resources/resources.service";
 import { createCheckins } from "../modules/checkins/checkins.service";
 import { createFeedback } from "../modules/feedback/feedback.service";
 import { DEFAULT_RUBRIC, createReviews, type Criterion } from "../modules/reviews/reviews.service";
 import { HAS_VIDEO_BACKFILL, applicationSort, hasVideoLink, videoFilter } from "../modules/applications/video-filter";
-import { createOutbox, type OutboxRow } from "../modules/outbox/outbox";
+import { createOutbox, OUTBOX_MAX_ATTEMPTS, PermanentOutboxError, type OutboxRow } from "../modules/outbox/outbox";
 import { normalizeSkills } from "../modules/applications/skills";
 import { linkedinKey } from "../modules/applications/duplicates";
 import { auditDecision } from "../modules/audit/decision-audit";
@@ -61,6 +62,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       stories.initialize(),
       reviews.initialize(),
       templates.initialize(),
+      customEmails.initialize(),
       views.initialize(),
       resources.initialize(),
       checkins.initialize(),
@@ -265,6 +267,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   const stories = createStories({ collection, transact });
   const reviews = createReviews({ collection, transact });
   const templates = createTemplates({ collection, transact });
+  const customEmails = createCustomEmails({ collection, transact, outbox });
   const views = createViews({ collection, transact });
   const resources = createResources({ collection, transact });
   const checkins = createCheckins({ collection, transact });
@@ -582,6 +585,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     if (lifecycle.supports(method)) return lifecycle.execute(method, params, actor, key);
     if (stories.supports(method)) return stories.execute(method, params, actor, key);
     if (reviews.supports(method)) return reviews.execute(method, params, actor, key);
+    if (customEmails.supports(method)) return customEmails.execute(method, params, actor, key);
     if (templates.supports(method)) return templates.execute(method, params, actor, key);
     if (views.supports(method)) return views.execute(method, params, actor, key);
     if (resources.supports(method)) return resources.execute(method, params, actor, key);
@@ -703,6 +707,39 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!activeHooks?.sendNotice) throw new Error("No email sender is configured.");
         const p = row.payload;
         await activeHooks.sendNotice({ to: p.to || "", subject: p.subject || "", heading: p.heading || "", intro: p.intro || "", items: (p.items || "").split("\n").filter(Boolean), ctaLabel: p.ctaLabel || "", ctaPath: p.ctaPath || "/" });
+      } else if (row.type === "customEmail") {
+        const campaignId = str(row.payload.campaignId), to = emailOf(row.payload.to);
+        const campaigns = collection("custom_email_campaigns");
+        const campaign = await campaigns.findOne({ _id: campaignId });
+        if (!campaign) return;
+        const markRecipient = async (status: "sent" | "failed") => {
+          await campaigns.updateOne(
+            { _id: campaignId },
+            { $set: { "recipients.$[recipient].status": status } },
+            { arrayFilters: [{ "recipient.email": to }] },
+          );
+          const latest = await campaigns.findOne({ _id: campaignId }, { projection: { recipients: 1 } });
+          if (Array.isArray(latest?.recipients) && latest.recipients.every((recipient: any) => recipient.status !== "queued")) {
+            // Keep recipient delivery status briefly for the dashboard, then let the campaign TTL remove it.
+            await campaigns.updateOne(
+              { _id: campaignId },
+              { $unset: { body: "", format: "" }, $set: { expiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000) } },
+            );
+          }
+        };
+        try {
+          if (!activeHooks?.sendCustomEmail) throw new PermanentOutboxError("No custom email sender is configured.");
+          await activeHooks.sendCustomEmail({
+            to,
+            subject: str(campaign.subject),
+            body: str(campaign.body),
+            format: campaign.format === "html" ? "html" : "text",
+          });
+          await markRecipient("sent");
+        } catch (error) {
+          if (error instanceof PermanentOutboxError || row.attempts >= OUTBOX_MAX_ATTEMPTS) await markRecipient("failed");
+          throw error;
+        }
       } else if (row.type === "applicantStatus") {
         return deliverApplicantStatus(String(row.payload.applicationId), row.payload.status as ApplicantStatusNotice["status"], row.payload.certificateNumber || undefined, row.payload.offerSnapshot);
       } else throw new Error(`Unknown outbox type ${String(row.type)}`);

@@ -8,7 +8,7 @@ import type { ClientSession, Collection } from "mongodb";
  * claimed with a short lease, so several server instances can run the worker
  * and still send every email once.
  */
-export type OutboxType = "applicationConfirmation" | "magicLink" | "applicantStatus" | "notice" | "interview" | "interviewReminder";
+export type OutboxType = "applicationConfirmation" | "magicLink" | "applicantStatus" | "notice" | "interview" | "interviewReminder" | "customEmail";
 export type OutboxRow = {
   _id: string;
   type: OutboxType;
@@ -29,6 +29,14 @@ const LEASE_MS = 60_000;
 const WEEK_MS = 7 * 86_400_000;
 /** 30 s, 1 min, 2 min, 4 min, 8 min between attempts. */
 export const outboxBackoff = (attempts: number) => Math.min(30_000 * 2 ** Math.max(0, attempts - 1), 30 * 60_000);
+
+/** A delivery error caused by configuration or invalid input that retrying cannot fix. */
+export class PermanentOutboxError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PermanentOutboxError";
+  }
+}
 
 export function createOutbox(rows: Collection<OutboxRow>, now: () => number = Date.now) {
   return {
@@ -64,7 +72,7 @@ export function createOutbox(rows: Collection<OutboxRow>, now: () => number = Da
           await rows.updateOne({ _id: row._id, leaseUntil: row.leaseUntil }, { $set: { status: delivery?.suppressed ? "superseded" : "sent", sentAt: new Date(now()), leaseUntil: null, expiresAt: new Date(now() + WEEK_MS) } });
         } catch (error) {
           const lastError = String((error as Error)?.message || error).slice(0, 300);
-          const failed = row.attempts >= OUTBOX_MAX_ATTEMPTS;
+          const failed = error instanceof PermanentOutboxError || row.attempts >= OUTBOX_MAX_ATTEMPTS;
           await rows.updateOne({ _id: row._id, leaseUntil: row.leaseUntil }, {
             $set: failed
               ? { status: "failed", leaseUntil: null, lastError, expiresAt: new Date(now() + WEEK_MS) }

@@ -9,7 +9,7 @@ export function canOpenInternSection(account, section) {
     case "interns": return can("interns.read");
     case "projects": return can("projects.read") || can("projects.summary");
     case "certificates": return can("certificates.read");
-    case "settings": case "staff": return account?.staffRole === "admin";
+    case "settings": case "staff": case "custom-email": return account?.staffRole === "admin";
     default: return false;
   }
 }

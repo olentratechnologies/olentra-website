@@ -24,6 +24,11 @@
       "icon": "clipboard"
     },
     {
+      "id": "custom-email",
+      "label": "Custom email",
+      "icon": "mail"
+    },
+    {
       "id": "analytics",
       "label": "Analytics",
       "icon": "chart"

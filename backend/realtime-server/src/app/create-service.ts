@@ -14,7 +14,7 @@ import { createCorsHeaders, errorResult, sendJson as sendJsonResponse, statusFor
 import { CORS_HEADERS, CORS_METHODS, createOriginGuard, requestId } from "../interfaces/http/middleware";
 import { createAuthRoutes, AUTH_PATHS } from "../interfaces/http/auth.routes";
 import { clientAddress, mongoAttemptStore } from "../modules/auth/login-throttle";
-import { runLeasedJob } from "../modules/outbox/outbox";
+import { PermanentOutboxError, runLeasedJob } from "../modules/outbox/outbox";
 import { SITE_FEATURES_PATH, canControlWebsite, createSiteFeatureStore } from "../modules/site-features/site-features";
 import { createSigninEmailTemplateSettings } from "../modules/email-templates/signin-template-settings";
 import { bearerToken } from "../interfaces/http/middleware";
@@ -183,6 +183,14 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       async sendNotice(notice) {
         const result = await mailer.sendNotice({ ...notice, ctaUrl: `${siteOrigin}${notice.ctaPath}` });
         if (!result.ok) throw new Error(result.error || "Reminder email was not delivered.");
+      },
+      async sendCustomEmail(notice) {
+        const result = await mailer.sendCustomEmail(notice);
+        if (!result.ok) {
+          const message = result.error || "Custom email was not delivered.";
+          if (/not configured|failed \(503\)/i.test(message)) throw new PermanentOutboxError(message);
+          throw new Error(message);
+        }
       },
       async sendInterviewCancelled(notice) {
         const result = await mailer.sendInterviewCancelled({ ...notice, portalUrl: `${siteOrigin}/intern/portal` });
