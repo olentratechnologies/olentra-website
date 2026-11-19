@@ -3,13 +3,12 @@ import assert from "node:assert/strict";
 import { canRefreshInternWriteInBackground, reconcileInternWrite } from "../src/lib/intern-committed-write.mjs";
 
 const admin = { id: "admin", role: "company", sessionVersion: 2 };
-const original = { account: admin, data: { programs: [{ id: "explorer", fee: 0, stipend: 0, enabled: false }], settings: { programEnabled: false, explorerEnabled: false, maxStipend: 0 } }, my: {} };
+const original = { account: admin, data: { programs: [{ id: "software-engineer", fee: 0, stipend: 0, enabled: false }], settings: { programEnabled: false, maxStipend: 0 } }, my: {} };
 
 test("confirmed track and general settings update immediately without altering the old snapshot", () => {
-  const result = { id: "explorer", fee: 100, stipend: 200, enabled: true };
+  const result = { id: "software-engineer", fee: 100, stipend: 200, enabled: true };
   const updated = reconcileInternWrite(original, admin, "program.configure", {}, result);
   assert.deepEqual(updated.data.programs[0], { ...result, detail: "Fee ₹100, stipend ₹200" });
-  assert.equal(updated.data.settings.explorerEnabled, true);
   assert.equal(updated.data.settings.maxStipend, 200);
   assert.equal(original.data.programs[0].enabled, false);
   const general = reconcileInternWrite(updated, admin, "settings.update", { patch: { programEnabled: true } }, true);
@@ -27,7 +26,7 @@ test("a response from an older account or session never changes the current work
 });
 
 test("a compensation-mode change preserves track terms and existing applications", () => {
-  const snapshot = { ...original, data: { ...original.data, applications: [{ id: "existing", programId: "explorer", status: "Joined" }] } };
+  const snapshot = { ...original, data: { ...original.data, applications: [{ id: "existing", programId: "software-engineer", status: "Joined" }] } };
   const updated = reconcileInternWrite(snapshot, admin, "settings.update", { patch: { compensationMode: "paid" } }, true);
   assert.equal(updated.data.settings.compensationMode, "paid");
   assert.deepEqual(updated.data.programs, snapshot.data.programs);

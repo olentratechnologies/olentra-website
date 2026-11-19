@@ -138,14 +138,14 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     opportunities: typeof INTERNSHIP_OPPORTUNITIES;
     organization: { name: string; legalName: string; website: string };
     programs: { id: string; name: string; fee: number | null; stipend: number | null; enabled: boolean }[];
-    settings: { programEnabled: boolean; compensationMode: CompensationMode; explorerEnabled: boolean; innovatorEnabled: boolean; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; rubric: Criterion[]; onboardingDocuments: { id: string; label: string; required: boolean }[]; emailNotifications: boolean; integrations: Record<string, unknown>; applicationDeadline: string | null; duration: string; durationSpec: any; scheduleRevision: string };
+    settings: { programEnabled: boolean; compensationMode: CompensationMode; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; rubric: Criterion[]; onboardingDocuments: { id: string; label: string; required: boolean }[]; emailNotifications: boolean; integrations: Record<string, unknown>; applicationDeadline: string | null; duration: string; durationSpec: any; scheduleRevision: string };
   };
   let cachedPublicData: PublicData | null = null;
   function invalidatePublicData() { cachedPublicData = null; }
   async function fetchPublicData(): Promise<PublicData> {
     const [rows, config] = await Promise.all([programs.find({}).sort({ _id: 1 }).toArray(), settings.findOne({ _id: "program" })]);
     const duration = normalizeInternshipDuration(config?.duration);
-    return { opportunities: { ...INTERNSHIP_OPPORTUNITIES, duration }, organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), explorerEnabled: !!rows.find(r => r._id === "explorer")?.enabled, innovatorEnabled: !!rows.find(r => r._id === "innovator")?.enabled, maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, rubric: Array.isArray(config?.rubric) && config.rubric.length ? config.rubric : DEFAULT_RUBRIC, onboardingDocuments: Array.isArray(config?.onboardingDocuments) ? config.onboardingDocuments : [], durationSpec:parseDuration(config?.durationSpec||config?.duration), scheduleRevision:String(config?.scheduleRevision||config?.duration||""), emailNotifications: false, integrations: {}, applicationDeadline: normalizeDeadline(config?.applicationDeadline), duration } };
+    return { opportunities: { ...INTERNSHIP_OPPORTUNITIES, duration }, organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, rubric: Array.isArray(config?.rubric) && config.rubric.length ? config.rubric : DEFAULT_RUBRIC, onboardingDocuments: Array.isArray(config?.onboardingDocuments) ? config.onboardingDocuments : [], durationSpec:parseDuration(config?.durationSpec||config?.duration), scheduleRevision:String(config?.scheduleRevision||config?.duration||""), emailNotifications: false, integrations: {}, applicationDeadline: normalizeDeadline(config?.applicationDeadline), duration } };
   }
   /**
    * What anonymous visitors and interns may see: tracks and whether they are
@@ -154,8 +154,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
    */
   async function anonymousData() {
     const { organization, programs: tracks, settings: all, opportunities } = await publicData();
-    const { programEnabled, compensationMode, explorerEnabled, innovatorEnabled, programName, applicationDeadline, duration } = all;
-    return { organization, programs: tracks, opportunities, settings: { programEnabled, compensationMode, explorerEnabled, innovatorEnabled, programName, applicationDeadline, duration } };
+    const { programEnabled, compensationMode, programName, applicationDeadline, duration } = all;
+    return { organization, programs: tracks, opportunities, settings: { programEnabled, compensationMode, programName, applicationDeadline, duration } };
   }
   async function publicData(): Promise<PublicData> {
     if (cachedPublicData) return cachedPublicData;

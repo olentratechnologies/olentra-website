@@ -12,7 +12,7 @@ export function reconcileInternWrite(snapshot, actor, method, params, result) {
   const next = { ...snapshot, data: { ...snapshot.data }, my: { ...snapshot.my } };
   if (method === "program.configure") {
     next.data.programs = snapshot.data.programs.map(program => program.id === result.id ? { ...program, ...result, detail: `Fee ₹${result.fee}, stipend ₹${result.stipend}` } : program);
-    next.data.settings = { ...snapshot.data.settings, [result.id === "explorer" ? "explorerEnabled" : "innovatorEnabled"]: result.enabled, maxStipend: Math.max(snapshot.data.settings.maxStipend || 0, result.stipend) };
+    next.data.settings = { ...snapshot.data.settings, maxStipend: Math.max(snapshot.data.settings.maxStipend || 0, result.stipend) };
   } else if (method === "settings.update") {
     next.data.settings = { ...snapshot.data.settings, ...params.patch };
   } else return snapshot;

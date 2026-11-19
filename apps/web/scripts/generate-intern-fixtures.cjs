@@ -552,8 +552,6 @@ data.activity = [
 data.settings = {
   ...data.settings,
   programEnabled: true,
-  explorerEnabled: true,
-  innovatorEnabled: true,
   maxStipend: 20000,
   programName: "Olentra Internship Program",
   defaultBatch: "Nov 2026",
