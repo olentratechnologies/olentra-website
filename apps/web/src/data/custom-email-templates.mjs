@@ -61,13 +61,13 @@ export const LINKEDIN_FOLLOWUP_TEMPLATE = Object.freeze({
           </p>
         </td></tr>
         <!-- Footer -->
-        <tr><td align="center" bgcolor="#101827" style="background-color:#101827;border-top:2px solid #3b82f6;padding:24px 32px 26px;text-align:center;">
-          <p style="margin:0 0 6px;font-size:14px;line-height:21px;font-weight:700;color:#ffffff;">Olentra Technologies</p>
-          <p style="margin:0;font-size:13px;line-height:21px;color:#c7d2e0;">Enterprise product engineering and digital growth</p>
+        <tr><td align="center" bgcolor="#eaf0f6" style="background-color:#eaf0f6;padding:24px 32px 26px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:14px;line-height:21px;font-weight:700;color:#243549;">Olentra Technologies</p>
+          <p style="margin:0;font-size:13px;line-height:21px;color:#46596f;">Enterprise product engineering and digital growth</p>
           <p style="margin:4px 0 0;font-size:13px;line-height:21px;">
-            <a href="https://www.olentratechnologies.com/" target="_blank" style="color:#9ecbff;text-decoration:underline;">www.olentratechnologies.com</a>
+            <a href="https://www.olentratechnologies.com/" target="_blank" style="color:#1555a2;text-decoration:underline;">www.olentratechnologies.com</a>
           </p>
-          <p style="margin:14px 0 0;font-size:12px;line-height:19px;color:#a7b7cd;">© 2026 Olentra Technologies. All rights reserved.</p>
+          <p style="margin:14px 0 0;font-size:12px;line-height:19px;color:#536479;">© 2026 Olentra Technologies. All rights reserved.</p>
         </td></tr>
       </table>
     </td></tr>
