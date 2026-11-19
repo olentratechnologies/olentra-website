@@ -43,22 +43,29 @@ export default function CustomEmailPage() {
   const [sendBusy, setSendBusy] = useState(false);
   const [sendError, setSendError] = useState("");
   const [campaignStatus, setCampaignStatus] = useState(null);
+  const [checkingLatestCampaign, setCheckingLatestCampaign] = useState(true);
   const campaignSelected = useRef(false);
+  const sendInFlight = useRef(false);
 
   const manualEntries = useMemo(() => splitAddresses(manualText), [manualText]);
   const invalidManual = useMemo(() => manualEntries.filter(email => email.length > 254 || !EMAIL_RE.test(email)), [manualEntries]);
   const validManual = useMemo(() => manualEntries.filter(email => email.length <= 254 && EMAIL_RE.test(email)).map(email => email.toLowerCase()), [manualEntries]);
   const uniqueRecipients = useMemo(() => [...new Set([...validManual, ...importedEmails])], [validManual, importedEmails]);
   const duplicateCount = validManual.length + importedEmails.length - uniqueRecipients.length;
+  const tooManyRecipients = uniqueRecipients.length > MAX_RECIPIENTS;
+  const sendingCampaign = Boolean(campaignStatus && !campaignStatus.complete);
+  const sendDisabled = checkingLatestCampaign || sendBusy || importBusy || sendingCampaign || !selectedTemplate || !subject.trim() || !content.trim() || !uniqueRecipients.length || tooManyRecipients || invalidManual.length > 0;
 
   useEffect(() => {
     let cancelled = false;
     async function restoreLatestCampaign() {
       const result = await commands.getLatestCustomEmailStatus();
-      if (!cancelled && !campaignSelected.current && result.ok && result.data) {
+      if (cancelled) return;
+      if (!campaignSelected.current && result.ok && result.data) {
         campaignSelected.current = true;
         setCampaignStatus(result.data);
       }
+      setCheckingLatestCampaign(false);
     }
     void restoreLatestCampaign();
     return () => { cancelled = true; };
@@ -126,11 +133,10 @@ export default function CustomEmailPage() {
 
   async function send(event) {
     event.preventDefault();
-    if (!selectedTemplate || !uniqueRecipients.length || uniqueRecipients.length > MAX_RECIPIENTS || invalidManual.length) return;
+    if (sendInFlight.current || sendDisabled) return;
+    sendInFlight.current = true;
     setSendBusy(true);
     setSendError("");
-    setCampaignStatus(null);
-    campaignSelected.current = true;
     try {
       const result = await commands.sendCustomEmail({
         recipients: uniqueRecipients,
@@ -142,6 +148,7 @@ export default function CustomEmailPage() {
         setSendError(errorText(result.error, "The email campaign could not be queued."));
         return;
       }
+      campaignSelected.current = true;
       setCampaignStatus({
         campaignId: result.data.campaignId,
         subject,
@@ -155,14 +162,17 @@ export default function CustomEmailPage() {
         createdAt: result.data.createdAt,
         complete: false,
       });
+      setManualText("");
+      setImportedEmails([]);
+      setImportSummary("");
+      setImportWarning("");
+      setImportError("");
     } finally {
+      sendInFlight.current = false;
       setSendBusy(false);
     }
   }
 
-  const tooManyRecipients = uniqueRecipients.length > MAX_RECIPIENTS;
-  const sendingCampaign = Boolean(campaignStatus && !campaignStatus.complete);
-  const sendDisabled = sendBusy || importBusy || sendingCampaign || !selectedTemplate || !subject.trim() || !content.trim() || !uniqueRecipients.length || tooManyRecipients || invalidManual.length > 0;
   const progress = campaignStatus?.total ? Math.round(((campaignStatus.sent + campaignStatus.failed) / campaignStatus.total) * 100) : 0;
   const campaignAge = campaignStatus?.createdAt ? Date.now() - new Date(campaignStatus.createdAt).getTime() : 0;
   const waitingForWorker = Boolean(sendingCampaign && campaignStatus.queued > 0 && !campaignStatus.retrying && campaignAge > 15_000);
@@ -176,6 +186,10 @@ export default function CustomEmailPage() {
       ? `A delivery attempt failed and will be retried. ${campaignStatus.lastError || ""}`.trim()
       : waitingForWorker ? "No delivery attempt has been reported. Check that the realtime email outbox worker is running."
         : "The email delivery service will update this status as recipients are processed.";
+  const sendHint = checkingLatestCampaign ? "Checking for a queued campaign…"
+    : sendingCampaign ? "Wait for the current campaign to finish."
+      : uniqueRecipients.length ? `Ready to email ${uniqueRecipients.length} recipient${uniqueRecipients.length === 1 ? "" : "s"}.`
+        : "Add recipients to continue.";
 
   return <div className={styles.page}>
     <PageHeader title="Custom email" description="Choose a template, add recipients, and send individual email copies." />
@@ -189,14 +203,14 @@ export default function CustomEmailPage() {
         <form onSubmit={send} className={styles.form}>
           <label className={styles.field}>
             Email template
-            <select value={selectedTemplate?.id || ""} onChange={chooseTemplate} aria-label="Email template">
+            <select value={selectedTemplate?.id || ""} onChange={chooseTemplate} aria-label="Email template" disabled={sendBusy}>
               <option value={LINKEDIN_FOLLOWUP_TEMPLATE.id}>{LINKEDIN_FOLLOWUP_TEMPLATE.name} · supplied template</option>
               {savedTemplates.map(template => <option key={template.id} value={template.id}>{template.name}</option>)}
             </select>
           </label>
           {selectedTemplate?.format === "text" && <label className={styles.field}>
             Message
-            <textarea className={styles.messageEditor} value={content} onChange={event => setContent(event.target.value)} rows={7} maxLength={5000} required />
+            <textarea className={styles.messageEditor} value={content} onChange={event => setContent(event.target.value)} rows={7} maxLength={5000} readOnly={sendBusy} required />
             <span className={styles.fieldHint}>Changes apply to this campaign only. Review placeholders before sending.</span>
           </label>}
 
@@ -206,10 +220,10 @@ export default function CustomEmailPage() {
               <span className={styles.count}>{uniqueRecipients.length} / {MAX_RECIPIENTS}</span>
             </div>
             <label className={styles.srOnly} htmlFor="manual-recipients">Email addresses</label>
-            <textarea id="manual-recipients" value={manualText} onChange={event => setManualText(event.target.value)} rows={5} placeholder="alex@example.com&#10;sam@example.com" autoComplete="off" />
+            <textarea id="manual-recipients" value={manualText} onChange={event => setManualText(event.target.value)} rows={5} placeholder="alex@example.com&#10;sam@example.com" autoComplete="off" readOnly={sendBusy} />
             {uniqueRecipients.length > 0 && <div className={styles.recipientTokens} aria-label="Added recipients">
               {uniqueRecipients.slice(0, 50).map(email => <span className={styles.recipientToken} key={email}>
-                <span>{email}</span><button type="button" onClick={() => removeRecipient(email)} aria-label={`Remove ${email}`}><X size={12} /></button>
+                <span>{email}</span><button type="button" onClick={() => removeRecipient(email)} aria-label={`Remove ${email}`} disabled={sendBusy}><X size={12} /></button>
               </span>)}
               {uniqueRecipients.length > 50 && <span className={styles.moreRecipients}>+{uniqueRecipients.length - 50} more</span>}
             </div>}
@@ -225,7 +239,7 @@ export default function CustomEmailPage() {
               <p>Use the first worksheet and first column. Put one email per row, with no header.</p>
               <label className={styles.uploadButton}>
                 {importBusy ? "Reading file…" : "Choose .xlsx or .csv"}
-                <input type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importFile} disabled={importBusy} />
+                <input type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={importFile} disabled={importBusy || sendBusy} />
               </label>
             </div>
           </section>
@@ -234,7 +248,7 @@ export default function CustomEmailPage() {
           {importError && <p className={styles.error} role="alert">{importError}</p>}
           {importedEmails.length > 0 && <div className={styles.importedList}>
             <span>{importedEmails.length} imported address{importedEmails.length === 1 ? "" : "es"}</span>
-            <Button variant="ghost" onClick={() => { setImportedEmails([]); setImportSummary(""); setImportWarning(""); }}>Clear import <X size={14} /></Button>
+            <Button variant="ghost" disabled={sendBusy} onClick={() => { setImportedEmails([]); setImportSummary(""); setImportWarning(""); }}>Clear import <X size={14} /></Button>
           </div>}
           {uniqueRecipients.length > 0 && <details className={styles.recipientPreview}>
             <summary>Review recipient list ({uniqueRecipients.length})</summary>
@@ -244,7 +258,7 @@ export default function CustomEmailPage() {
 
           {sendError && <p className={styles.error} role="alert">{sendError}</p>}
           <div className={styles.sendRow}>
-            <p>{uniqueRecipients.length ? `Ready to email ${uniqueRecipients.length} recipient${uniqueRecipients.length === 1 ? "" : "s"}.` : "Add recipients to continue."}</p>
+            <p>{sendHint}</p>
             <Button type="submit" disabled={sendDisabled}><Send size={15} />{sendBusy ? "Queueing…" : sendingCampaign ? campaignStatus.retrying ? "Retrying…" : "Queued" : `Send${uniqueRecipients.length ? ` to ${uniqueRecipients.length}` : " email"}`}</Button>
           </div>
         </form>
