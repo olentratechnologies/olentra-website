@@ -124,6 +124,7 @@ test("invalid schedules, the paid track and expired intake are refused without c
   for (const [index, patch] of [{ schedule: "" }, { schedule: "hybrid" }].entries()) {
     await expect(applicant.request("application.submit", { ...payload, email: `invalid-${index}@example.test`, ...patch }, key())).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   }
+  await domain.collection("settings").updateOne({ _id: "program" }, { $set: { compensationMode: "free" } });
   await expect(applicant.request("application.submit", { ...payload, programId: "software-engineer" }, key())).rejects.toMatchObject({ code: "CLOSED" });
   await domain.collection("settings").updateOne({ _id: "program" }, { $set: { applicationDeadline: new Date(Date.now() - 1).toISOString() } });
   try { await expect(applicant.request("application.submit", payload, key())).rejects.toMatchObject({ code: "CLOSED" }); }

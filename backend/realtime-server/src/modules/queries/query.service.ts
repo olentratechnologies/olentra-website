@@ -43,7 +43,10 @@ export function createInternshipQueries(collection: CollectionOf) {
       const status = str(params.status);
       if (status && status !== "all") filter.status = { $regex: `^${escaped(status)}$`, $options: "i" };
       const program = str(params.programId);
-      if (program && program !== "all") filter.program = program;
+      if (program && program !== "all") {
+        const configuredProgram = await collection("programs").findOne({ _id: program }, { projection: { name: 1 } });
+        filter.program = configuredProgram?.name || program;
+      }
       const searches = [str(params.search), str(params.query)].filter(Boolean);
       if (searches.length) filter.$and = searches.map(search => ({ name: { $regex: escaped(search), $options: "i" } }));
       const allowedSort = ["name", "status", "program", "dueOn", "createdOn", "progress"];
@@ -109,7 +112,12 @@ export function createInternshipQueries(collection: CollectionOf) {
     } else throw new DomainError("NOT_IMPLEMENTED", "This query is not available.");
     for (const search of [str(params.search), str(params.query)].filter(Boolean)) filters.push({ $or: searchFields.map(field => ({ [field]: { $regex: escaped(search), $options: "i" } })) });
     const programId = str(params.programId);
-    if (programId && programId !== "all") filters.push({ [programField]: programId });
+    if (programId && programId !== "all") {
+      const programValue = method === "project.list"
+        ? (await collection("programs").findOne({ _id: programId }, { projection: { name: 1 } }))?.name || programId
+        : programId;
+      filters.push({ [programField]: programValue });
+    }
     const status = str(params.status);
     if (status && status !== "all") statusFilter.push({ status: { $regex: `^${escaped(status)}$`, $options: "i" } });
     if (filters.length) pipeline.push({ $match: { $and: filters } });
