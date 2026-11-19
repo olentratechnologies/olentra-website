@@ -21,8 +21,7 @@ const facets = {
     { _id: "Applied", count: 10 }, { _id: "Under Review", count: 4 }, { _id: "Shortlisted", count: 3 },
     { _id: "Selected", count: 2 }, { _id: "Joined", count: 5 }, { _id: "Rejected", count: 6 },
   ],
-  tracks: [{ _id: "software-engineer", count: 30 }],
-  roles: [{ _id: "build", count: 18 }, { _id: "automate", count: 7 }, { _id: null, count: 2 }, { _id: "intern", count: 1 }],
+  programs: [{ _id: "software-engineer", count: 30 }],
   monthly: [{ _id: { month, program: "software-engineer" }, count: 9 }],
   skills: [{ name: "React", count: 6 }, { name: "Python", count: 3 }],
 };
@@ -34,27 +33,28 @@ const recent = [
 test("public insights compute the selection funnel and monthly totals", async () => {
   const { collection } = stubCollections({ facets, recent, projects: 4, certificates: 3 });
   const value = await createPublicInsights({ collection }).calculate();
-  expect(value.tracks).toEqual([{ id: "software-engineer", name: "Software Engineer Intern" }]);
+  expect(value.programs).toEqual([{ id: "software-engineer", name: "Software Engineer Intern" }]);
   expect(value.totals).toEqual({ applied: 30, reviewed: 14, shortlisted: 10, selected: 7, onboarded: 5, certified: 3, projects: 4 });
-  expect(value.byTrack).toEqual({ "software-engineer": 30 });
-  expect(value.byRole).toEqual({ build: 18, automate: 7 });
+  expect(value.byProgram).toEqual({ "software-engineer": 30 });
+  expect(value).not.toHaveProperty("byRole");
   expect(value.thisMonth).toBe(9);
   expect(value.months).toHaveLength(12);
   expect(value.months[11]["software-engineer"]).toBe(9);
+  expect(value.months[11].applications).toBe(9);
   expect(value.topSkills).toEqual([{ name: "React", count: 6 }, { name: "Python", count: 3 }]);
 });
 
-test("public insights keep only known intern roles", async () => {
-  const { collection } = stubCollections({ facets, recent });
+test("public insights do not split applicants by intern role", async () => {
+  const { collection, pipelines } = stubCollections({ facets, recent });
   const value = await createPublicInsights({ collection }).calculate();
-  expect(value.byRole).toEqual({ build: 18, automate: 7 });
-  expect(JSON.stringify(value.byRole)).not.toContain("intern");
+  expect(value).not.toHaveProperty("byRole");
+  expect(JSON.stringify(pipelines.applications)).not.toContain("$roleId");
 });
 
 test("public insights shorten applicant names and round activity to the minute", async () => {
   const { collection } = stubCollections({ facets, recent });
   const value = await createPublicInsights({ collection }).calculate();
-  expect(value.recent).toEqual([{ track: "software-engineer", at: "2026-11-12T10:15:00.000Z", name: "Priya S." }]);
+  expect(value.recent).toEqual([{ programId: "software-engineer", at: "2026-11-12T10:15:00.000Z", name: "Priya S." }]);
   const json = JSON.stringify(value);
   expect(json).not.toContain("@");
   expect(json).not.toContain("Sharma");
@@ -69,37 +69,37 @@ test("public applicant names keep a first name and last initial only", () => {
   expect(publicApplicantName("A".repeat(80)).length).toBe(32);
 });
 
-test("public insights cover only tracks enabled in program settings", async () => {
+test("public insights cover only the enabled internship program in program settings", async () => {
   const programs = [{ ...BOTH[0], enabled: false }];
   const { collection } = stubCollections({ facets, recent: [...recent, { createdAt: new Date(), programId: "software-engineer" }], programs });
   const value = await createPublicInsights({ collection }).calculate();
-  expect(value.tracks).toEqual([]);
-  expect(value.byTrack).toEqual({});
+  expect(value.programs).toEqual([]);
+  expect(value.byProgram).toEqual({});
   expect(value.recent).toEqual([]);
   expect(value.thisMonth).toBe(0);
 });
 
-test("compensation mode in Settings hides tracks exactly like the dashboard", async () => {
+test("compensation mode in Settings filters the program exactly like the dashboard", async () => {
   const free = await createPublicInsights({ collection: stubCollections({ facets, recent, compensationMode: "free" }).collection }).calculate();
-  expect(free.tracks.map(track => track.id)).toEqual([]);
-  expect(free.byTrack).toEqual({});
+  expect(free.programs.map(track => track.id)).toEqual([]);
+  expect(free.byProgram).toEqual({});
   const paid = await createPublicInsights({ collection: stubCollections({ facets, recent, compensationMode: "paid" }).collection }).calculate();
-  expect(paid.tracks.map(track => track.id)).toEqual(["software-engineer"]);
-  expect(paid.byTrack).toEqual({ "software-engineer": 30 });
+  expect(paid.programs.map(track => track.id)).toEqual(["software-engineer"]);
+  expect(paid.byProgram).toEqual({ "software-engineer": 30 });
   const both = await createPublicInsights({ collection: stubCollections({ facets, recent, compensationMode: "both" }).collection }).calculate();
-  expect(both.tracks.map(track => track.id)).toEqual(["software-engineer"]);
-  expect(both.byTrack).toEqual({ "software-engineer": 30 });
+  expect(both.programs.map(track => track.id)).toEqual(["software-engineer"]);
+  expect(both.byProgram).toEqual({ "software-engineer": 30 });
   const unconfigured = await createPublicInsights({ collection: stubCollections({ facets, recent, programs: [{ ...BOTH[0], fee: null }] }).collection }).calculate();
-  expect(unconfigured.tracks.map(track => track.id)).toEqual([]);
+  expect(unconfigured.programs.map(track => track.id)).toEqual([]);
 });
 
 test("public insights are empty when every track is disabled", async () => {
   const { collection, calls } = stubCollections({ facets, recent, programs: BOTH.map(row => ({ ...row, enabled: false })) });
   const value = await createPublicInsights({ collection }).calculate();
-  expect(value.tracks).toEqual([]);
+  expect(value.programs).toEqual([]);
   expect(value.totals.applied).toBe(0);
   expect(value.recent).toEqual([]);
-  expect(value.byRole).toEqual({});
+  expect(value).not.toHaveProperty("byRole");
   expect(calls.applications).toBeUndefined();
 });
 

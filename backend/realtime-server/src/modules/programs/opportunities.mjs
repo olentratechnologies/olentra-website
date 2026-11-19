@@ -1,21 +1,19 @@
-// Public, dependency-free catalog shared by the browser and the service.
+// Public, dependency-free program catalog shared by the browser and service.
 // Keep secrets and server-only imports out of this module.
-export const INTERN_ROLES = [
-  {
-    id: "build", tag: "Build", title: "AI Full Stack Engineering Intern", short: "AI Full Stack Engineering",
-    summary: "Build AI-powered websites, web applications and software products.",
-    focusLabel: "What you’ll work on",
-    focus: ["Frontend and backend development", "React, Node.js and databases", "AI API and LLM integration", "Building real-world software products"],
-    skills: ["HTML, CSS and JavaScript basics", "Familiarity with React or Node.js is a plus", "Interest in AI-powered products"],
-  },
-  {
-    id: "automate", tag: "Automate", title: "Agentic AI Engineer Intern", short: "Agentic AI Engineering",
-    subtitle: "AI Agent & Automation Engineering Intern",
-    summary: "Design, develop and manage intelligent AI agents and automated workflows.",
-    focusLabel: "What you’ll work on",
-    focus: ["Agentic AI development", "AI agents and multi-agent systems", "Workflow automation", "Tool and API integrations", "Business process automation", "AI chatbot development"],
-    skills: ["Basic programming in Python or JavaScript", "Understanding of APIs", "Curiosity about AI agents and automation"],
-  },
+export const INTERN_WORK_AREAS = [
+  "Frontend and backend software development",
+  "React, Node.js and database driven applications",
+  "AI API and large language model integration",
+  "AI agents and multi-agent systems",
+  "Workflow and business process automation",
+  "Tool and API integrations, including AI chatbots",
+  "Building real-world software products",
+];
+export const INTERN_HELPFUL_SKILLS = [
+  "HTML, CSS and JavaScript fundamentals",
+  "Basic programming in JavaScript or Python",
+  "Familiarity with React, Node.js or APIs is helpful",
+  "Interest in AI-powered products, agents and automation",
 ];
 
 export const INTERN_SCHEDULES = [
@@ -31,8 +29,6 @@ export function applicationDurationLabel(application) {
   const months = application?.durationMonths;
   return typeof months === "number" && Number.isFinite(months) && months > 0 ? `${months} month${months === 1 ? "" : "s"}` : "Not provided";
 }
-export const INTERNSHIP_OPPORTUNITIES = { roles: INTERN_ROLES, schedules: INTERN_SCHEDULES, workMode: "remote", duration: DEFAULT_INTERNSHIP_DURATION };
-export const isInternRole = value => INTERN_ROLES.some(role => role.id === value);
+export const INTERNSHIP_OPPORTUNITIES = { workAreas: INTERN_WORK_AREAS, helpfulSkills: INTERN_HELPFUL_SKILLS, schedules: INTERN_SCHEDULES, workMode: "remote", duration: DEFAULT_INTERNSHIP_DURATION };
 export const isInternSchedule = value => INTERN_SCHEDULES.some(schedule => schedule.id === value);
-export const internRoleLabel = value => INTERN_ROLES.find(role => role.id === value)?.title || "Not provided";
 export const internScheduleLabel = value => INTERN_SCHEDULES.find(schedule => schedule.id === value)?.label || "Not provided";

@@ -21,7 +21,7 @@ test("application through approved work and one certificate, with ownership and 
   await call("settings.update", { patch: { programEnabled: true, durationSpec:{quantity:1,unit:"months"} } });
   const fileToken = "test-token";
   await domain.collection("files").insertOne({ _id: "resume", kind: "resume", status: "ready", accessTokenHash: createHash("sha256").update(fileToken).digest("hex") });
-  await call("application.submit", { name: "Test Intern", email: "life@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", roleId: "build", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: fileToken }, null);
+  await call("application.submit", { name: "Test Intern", email: "life@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: fileToken }, null);
   const application = { id: String((await domain.collection("applications").findOne({ email: "life@example.test" }))!._id) };
   const statusEmails: string[] = [], interviewEmails: string[] = [];
   domain.setHooks({

@@ -1,21 +1,19 @@
 import type { Collection } from "mongodb";
 import type { InternshipRow } from "../../infrastructure/database/collections";
 import { acceptsCompensationMode } from "../programs/compensation";
-import { isInternRole } from "../programs/opportunities.mjs";
 
 type Row = InternshipRow;
 
 export type PublicInsights = {
-  /** Tracks currently enabled in program settings; every number below is limited to these. */
-  tracks: { id: string; name: string }[];
+  /** The currently enabled internship program. */
+  programs: { id: string; name: string }[];
   totals: { applied: number; reviewed: number; shortlisted: number; selected: number; onboarded: number; certified: number; projects: number };
-  byTrack: Record<string, number>;
-  byRole: Record<string, number>;
+  byProgram: Record<string, number>;
   thisMonth: number;
   lastMonth: number;
   months: { label: string; month: string; [key: string]: number | string }[];
   topSkills: { name: string; count: number }[];
-  recent: { track: string; at: string; name: string }[];
+  recent: { programId: string; at: string; name: string }[];
   viewers: number;
   updatedAt: string;
 };
@@ -70,8 +68,7 @@ export function createPublicInsights({ collection }: { collection: (name: string
         {
           $facet: {
             statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }],
-            tracks: [{ $group: { _id: "$programId", count: { $sum: 1 } } }],
-            roles: [{ $group: { _id: "$roleId", count: { $sum: 1 } } }],
+            programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }],
             monthly: [
               { $match: { appliedOn: { $type: "string", $gte: firstMonth } } },
               { $group: { _id: { month: { $substrBytes: ["$appliedOn", 0, 7] }, program: "$programId" }, count: { $sum: 1 } } },
@@ -108,21 +105,21 @@ export function createPublicInsights({ collection }: { collection: (name: string
       const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11 + index, 1));
       const key = date.toISOString().slice(0, 7), rows = monthly.filter(row => row._id.month === key);
       const count = (program: string) => !ids.includes(program) ? 0 : rows.filter(row => row._id.program === program).reduce((total, row) => total + row.count, 0);
-      const entry: any = { label: date.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }), month: key };
+      const entry: any = { label: date.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }), month: key, applications: 0 };
       for (const id of ids) entry[id] = count(id);
+      entry.applications = ids.reduce((total, id) => total + entry[id], 0);
       return entry;
     });
     const monthTotal = (entry?: any) => entry ? ids.reduce((total, id) => total + (entry[id] || 0), 0) : 0;
     return {
-      tracks: enabled,
+      programs: enabled,
       totals: { applied, reviewed: sum(REVIEWED), shortlisted: sum(SHORTLISTED), selected: sum(SELECTED), onboarded: statuses.Joined || 0, certified: certificateCount, projects: projectCount },
-      byTrack: Object.fromEntries(((facets?.tracks || []) as { _id: unknown; count: number }[]).filter(row => typeof row._id === "string" && ids.includes(row._id)).map(row => [row._id as string, row.count])),
-      byRole: Object.fromEntries(((facets?.roles || []) as { _id: unknown; count: number }[]).filter(row => typeof row._id === "string" && isInternRole(row._id)).map(row => [row._id as string, row.count])),
+      byProgram: Object.fromEntries(((facets?.programs || []) as { _id: unknown; count: number }[]).filter(row => typeof row._id === "string" && ids.includes(row._id)).map(row => [row._id as string, row.count])),
       thisMonth: monthTotal(months[11]),
       lastMonth: monthTotal(months[10]),
       months,
       topSkills: ((facets?.skills || []) as { name: string; count: number }[]).map(row => ({ name: String(row.name).slice(0, 40), count: row.count })),
-      recent: recentRows.flatMap(row => { const at = minute(row.createdAt); return at && typeof row.programId === "string" && ids.includes(row.programId) ? [{ track: row.programId, at, name: publicApplicantName(row.name) }] : []; }),
+      recent: recentRows.flatMap(row => { const at = minute(row.createdAt); return at && typeof row.programId === "string" && ids.includes(row.programId) ? [{ programId: row.programId, at, name: publicApplicantName(row.name) }] : []; }),
       updatedAt: new Date().toISOString(),
     };
   }

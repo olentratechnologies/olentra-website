@@ -15,7 +15,6 @@ test("application export includes video and LinkedIn review signals", () => {
     name: "Test Intern",
     email: "intern@example.test",
     program: "Software Engineer Intern",
-    roleId: "build",
     schedule: "full_time",
     college: "Test University",
     appliedOn: "2026-01-02",
@@ -30,11 +29,10 @@ test("application export includes video and LinkedIn review signals", () => {
     "Yes",
   ]);
   assert.equal(row.length, APPLICATION_EXPORT_COLUMNS.length);
-  assert.equal(row[APPLICATION_EXPORT_COLUMNS.indexOf("Intern role")], "AI Full Stack Engineering Intern");
   assert.equal(row[APPLICATION_EXPORT_COLUMNS.indexOf("Schedule")], "Full-time");
   const legacy = applicationExportRow({});
-  assert.equal(legacy[APPLICATION_EXPORT_COLUMNS.indexOf("Intern role")], "Not provided");
   assert.equal(legacy[APPLICATION_EXPORT_COLUMNS.indexOf("Schedule")], "Not provided");
+  assert.equal(APPLICATION_EXPORT_COLUMNS.includes("Intern role"), false);
 });
 
 test("fetchAllPages reads every page and stops at the cap", async () => {

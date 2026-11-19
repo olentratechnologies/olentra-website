@@ -4,7 +4,7 @@ import type { Principal } from '../../shared/principal';
 import { DomainError } from '../../shared/errors';
 import { requireAdmin } from '../access/policy';
 import { parseDuration, durationLabel, completionDate, civilToday, legacyDuration } from '../programs/schedule.mjs';
-import { internRoleLabel, internScheduleLabel } from '../programs/opportunities.mjs';
+import { internScheduleLabel } from '../programs/opportunities.mjs';
 const fail=(message:string):never=>{throw new DomainError('CONFLICT',message);};
 const key=(id:string,version:number)=>`${id}:v${version}`;
 export function createOfferSchedules(collection:any) {
@@ -19,7 +19,7 @@ export function createOfferSchedules(collection:any) {
     if(method==='offer.versions')return (await versions.find({applicationId},opts).sort({version:-1}).toArray()).map(({_id,...v}:any)=>({id:_id,...v}));
     const now=new Date().toISOString();
     const history=async(title:string,detail:string)=>apps.updateOne({_id:applicationId},{$inc:{version:1},$push:{history:{id:`HST-${randomUUID()}`,title,detail,date:now}}},opts);
-    const archive=async()=>{if(old&&!old.currentVersion)await versions.updateOne({_id:key(applicationId,1)},{$setOnInsert:{...old,_id:key(applicationId,1),applicationId,version:1,durationLabel:legacyDuration(old.startOn,old.endOn),legacy:true,issueDate:old.issueDate||old.sentOn||old.decidedOn,name:app.name,email:app.email,program:app.program,roleTitle:internRoleLabel(app.roleId),workMode:app.workMode,schedule:internScheduleLabel(app.schedule)}},{...opts,upsert:true});};
+    const archive=async()=>{if(old&&!old.currentVersion)await versions.updateOne({_id:key(applicationId,1)},{$setOnInsert:{...old,_id:key(applicationId,1),applicationId,version:1,durationLabel:legacyDuration(old.startOn,old.endOn),legacy:true,issueDate:old.issueDate||old.sentOn||old.decidedOn,name:app.name,email:app.email,program:app.program,workMode:app.workMode,schedule:internScheduleLabel(app.schedule)}},{...opts,upsert:true});};
     if(['offer.preview','offer.send','offer.revise'].includes(method)) {
       const duration=parseDuration(p.durationOverride||config?.durationSpec||config?.duration);
       if(!duration)throw new DomainError('INVALID_REQUEST','Set a precise program duration in Settings before preparing an offer.');
@@ -45,7 +45,7 @@ export function createOfferSchedules(collection:any) {
       if(!program||!Number.isSafeInteger(stipend)||stipend<0||stipend>Number(program.stipend))throw new DomainError('INVALID_REQUEST','Choose a stipend within the program limit.');
       await archive();
       const version=Number(old?.latestVersion||old?.currentVersion|| (old?1:0))+1;
-      const snapshot={...preview,_id:key(applicationId,version),version,name:app.name,email:app.email,college:app.college||'',program:app.program,roleTitle:internRoleLabel(app.roleId),stipend,stipendPeriod:'month',message:String(p.message??old?.message??'').slice(0,2000),reason,sentOn:now,issueDate:civilToday(new Date(now)),expiresOn:new Date(Date.parse(now)+days*86400000).toISOString(),createdBy:actor!.id,status:'Sent'};
+      const snapshot={...preview,_id:key(applicationId,version),version,name:app.name,email:app.email,college:app.college||'',program:app.program,stipend,stipendPeriod:'month',message:String(p.message??old?.message??'').slice(0,2000),reason,sentOn:now,issueDate:civilToday(new Date(now)),expiresOn:new Date(Date.parse(now)+days*86400000).toISOString(),createdBy:actor!.id,status:'Sent'};
       await versions.insertOne(snapshot,opts);
       let result:any;
       if(old?.status==='Accepted') {

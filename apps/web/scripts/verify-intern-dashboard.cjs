@@ -32,7 +32,7 @@ const statuses = {
   Joined: 740,
   Rejected: 262,
 };
-const tracks = { explorer: 1730, innovator: 810 };
+const programs = { "software-engineer": 2540 };
 const monthNumbers = {
   Jun: "06",
   Jul: "07",
@@ -96,12 +96,12 @@ verify("Application totals and unique identities", () => {
       total,
       status,
     );
-  for (const [track, total] of Object.entries(tracks))
+  for (const [program, total] of Object.entries(programs))
     assert.equal(
-      data.applications.filter((application) => application.programId === track)
+      data.applications.filter((application) => application.programId === program)
         .length,
       total,
-      track,
+      program,
     );
   assert.equal(
     Object.values(statuses).reduce((sum, value) => sum + value, 0),
@@ -167,7 +167,7 @@ verify("Cumulative funnel agrees with records", () => {
     assert.equal(metric.value, counts[metric.id], metric.id),
   );
 });
-verify("Track split agrees with records", () => {
+verify("Single program agrees with records", () => {
   assert.equal(
     data.programs.reduce((sum, program) => sum + program.share, 0),
     100,
@@ -175,7 +175,7 @@ verify("Track split agrees with records", () => {
   data.programs.forEach((program) =>
     assert.equal(
       program.share,
-      Math.round((tracks[program.id] / data.applications.length) * 100),
+      Math.round((programs[program.id] / data.applications.length) * 100),
       program.id,
     ),
   );
@@ -280,37 +280,13 @@ verify("Issued certificates are unique and eligible", () => {
     );
   });
 });
-verify("Monthly analytics match application dates and tracks", () => {
+verify("Monthly analytics match application dates", () => {
   data.analytics.months.forEach((month) => {
-    const records = data.applications.filter(
-      (application) =>
-        application.appliedOn.slice(5, 7) === monthNumbers[month.label],
-    );
-    assert.equal(
-      month.explorer + month.innovator,
-      expectedMonths[month.label],
-      month.label,
-    );
-    assert.equal(
-      month.explorer,
-      records.filter((application) => application.programId === "explorer")
-        .length,
-      `${month.label} Explorer`,
-    );
-    assert.equal(
-      month.innovator,
-      records.filter((application) => application.programId === "innovator")
-        .length,
-      `${month.label} Innovator`,
-    );
+    const records = data.applications.filter((application) => application.appliedOn.slice(5, 7) === monthNumbers[month.label]);
+    assert.equal(month.applications, expectedMonths[month.label], month.label);
+    assert.equal(month.applications, records.length, month.label);
   });
-  assert.equal(
-    data.analytics.months.reduce(
-      (sum, month) => sum + month.explorer + month.innovator,
-      0,
-    ),
-    2540,
-  );
+  assert.equal(data.analytics.months.reduce((sum, month) => sum + month.applications, 0), 2540);
 });
 verify("Skills and source analytics match applications", () => {
   data.analytics.skills.forEach((skill) =>

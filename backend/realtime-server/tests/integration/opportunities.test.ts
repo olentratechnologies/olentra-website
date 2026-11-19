@@ -79,16 +79,17 @@ test("every role and schedule persists through the real socket, resume, email-li
   expect(publicData.opportunities).toEqual({ ...INTERNSHIP_OPPORTUNITIES, duration });
   expect(publicData.settings.duration).toBe(duration);
   let firstApplicationId: string | undefined;
-  for (const roleId of ["build", "automate"]) for (const schedule of ["part_time", "full_time"]) {
-    const email = `${roleId}-${schedule}@example.test`, requestKey = key();
-    const payload = { name: "Test Candidate", email, programId: "software-engineer", roleId, schedule, workMode: "onsite", durationMonths: 999, linkedin: `https://linkedin.com/in/${roleId}-${schedule}`, ...await upload() };
+  for (const [index, schedule] of ["part_time", "full_time"].entries()) {
+    const email = `${schedule}@example.test`, requestKey = key();
+    const payload = { name: "Test Candidate", email, programId: "software-engineer", ...(index === 0 ? { roleId: "build" } : {}), schedule, workMode: "onsite", durationMonths: 999, linkedin: `https://linkedin.com/in/${schedule}`, ...await upload() };
     const received = await anonymous.request("application.submit", payload, requestKey);
     expect(received.received).toBe(true);
     expect(await anonymous.request("application.submit", payload, requestKey)).toEqual(received);
     expect(await domain.collection("applications").countDocuments({ email })).toBe(1);
     const stored = (await domain.collection("applications").findOne({ email }))!;
-    const expected = { roleId, schedule, workMode: "remote", duration };
+    const expected = { schedule, workMode: "remote", duration };
     expect(stored).toMatchObject(expected);
+    expect(stored).not.toHaveProperty("roleId");
     firstApplicationId ||= stored._id;
     expect(await admin.request("application.get", { id: stored._id })).toMatchObject(expected);
     expect((await admin.request("application.list", { search: email })).items[0]).toMatchObject(expected);
@@ -116,11 +117,11 @@ test("every role and schedule persists through the real socket, resume, email-li
   await admin.request("settings.update", { patch: { duration: INTERNSHIP_OPPORTUNITIES.duration } }, key());
 }, 30000);
 
-test("invalid choices, the paid track and expired intake are refused without consuming the resume", async () => {
+test("invalid schedules, the paid track and expired intake are refused without consuming the resume", async () => {
   const applicant = await socket();
   const file = await upload();
-  const payload = { name: "Invalid Candidate", email: "invalid@example.test", linkedin: "https://linkedin.com/in/invalid", programId: "software-engineer", roleId: "build", schedule: "part_time", ...file };
-  for (const [index, patch] of [{ roleId: "" }, { roleId: "admin" }, { schedule: "" }, { schedule: "hybrid" }].entries()) {
+  const payload = { name: "Invalid Candidate", email: "invalid@example.test", linkedin: "https://linkedin.com/in/invalid", programId: "software-engineer", schedule: "part_time", ...file };
+  for (const [index, patch] of [{ schedule: "" }, { schedule: "hybrid" }].entries()) {
     await expect(applicant.request("application.submit", { ...payload, email: `invalid-${index}@example.test`, ...patch }, key())).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   }
   await expect(applicant.request("application.submit", { ...payload, programId: "software-engineer" }, key())).rejects.toMatchObject({ code: "CLOSED" });

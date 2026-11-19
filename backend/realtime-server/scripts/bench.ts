@@ -12,7 +12,7 @@ const domain = createInternshipDomain({ ...connection, prefix });
 const staff: Principal = { id: "benchmark-staff", role: "company", staffRole: "admin", name: "Benchmark", email: "benchmark@example.test", applicationId: null, sessionVersion: 1 };
 try {
   await domain.initialize();
-  await domain.collection("applications").insertMany(Array.from({ length: 1000 }, (_, i) => ({ _id: `bench-${i}`, name: `Applicant ${i}`, email: `benchmark-${i}@example.test`, programId: i % 2 ? "explorer" : "innovator", status: i % 3 ? "Applied" : "Under Review", appliedOn: "2026-01-01" })));
+  await domain.collection("applications").insertMany(Array.from({ length: 1000 }, (_, i) => ({ _id: `bench-${i}`, name: `Applicant ${i}`, email: `benchmark-${i}@example.test`, programId: "software-engineer", status: i % 3 ? "Applied" : "Under Review", appliedOn: "2026-01-01" })));
   const samples: number[] = [], concurrency = 10, requests = 50;
   const memoryBefore = process.memoryUsage().rss;
   const started = performance.now();

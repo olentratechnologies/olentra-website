@@ -3,7 +3,7 @@ import { createOfferSchedules } from '../../src/modules/lifecycle/offer-schedule
 const admin:any={id:'admin',role:'company',staffRole:'admin'},student:any={id:'student',role:'intern',applicationId:'OL-1'};
 function fixture() {
  const rows=new Map<string,any[]>();
- rows.set('applications',[{_id:'OL-1',name:'Alex',email:'a@example.test',programId:'software-engineer',program:'Software Engineer Intern',roleId:'automate',schedule:'part_time',status:'Selected',version:1}]);rows.set('settings',[{_id:'program',duration:'1 month',scheduleRevision:'config1'}]);rows.set('programs',[{_id:'software-engineer',stipend:5000}]);
+ rows.set('applications',[{_id:'OL-1',name:'Alex',email:'a@example.test',programId:'software-engineer',program:'Software Engineer Intern',schedule:'part_time',status:'Selected',version:1}]);rows.set('settings',[{_id:'program',duration:'1 month',scheduleRevision:'config1'}]);rows.set('programs',[{_id:'software-engineer',stipend:5000}]);
  const matches=(row:any,filter:any)=>Object.entries(filter).every(([k,v]:any)=>v&&typeof v==='object'&&'$in'in v?v.$in.includes(row[k]):row[k]===v);
  const collection=(name:string)=>{if(!rows.has(name))rows.set(name,[]);const items=rows.get(name)!;return {
   findOne:async(f:any)=>items.find(r=>matches(r,f))||null,

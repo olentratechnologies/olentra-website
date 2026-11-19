@@ -8,7 +8,7 @@ import { authorizeStaff, can, isAdmin } from "../modules/access/policy";
 import { acceptsCompensationMode, normalizeCompensationMode, type CompensationMode } from "../modules/programs/compensation";
 import { normalizeDeadline } from "../modules/programs/deadline";
 import { generateOfferLetterPdf } from "../modules/offer-letter/offer-letter-pdf";
-import { INTERNSHIP_OPPORTUNITIES, isInternRole, isInternSchedule, internRoleLabel, normalizeInternshipDuration } from "../modules/programs/opportunities.mjs";
+import { INTERNSHIP_OPPORTUNITIES, isInternSchedule, normalizeInternshipDuration } from "../modules/programs/opportunities.mjs";
 import { MongoClient, type ClientSession, type Db, type Document } from "mongodb";
 import type { InternshipRow } from "../infrastructure/database/collections";
 import { DomainError } from "../shared/errors";
@@ -32,6 +32,7 @@ import { normalizeSkills } from "../modules/applications/skills";
 import { linkedinKey } from "../modules/applications/duplicates";
 import { auditDecision } from "../modules/audit/decision-audit";
 import { mentorScope } from "../modules/access/mentor-scope";
+import { migrateLegacyPrograms, PROGRAM_ID, PROGRAM_NAME } from "../modules/programs/legacy-program-migration";
 import { runReminders } from "../modules/reminders/reminders";
 import { FINAL_STATUSES, eraseApplicant, expiredApplicationIds } from "../modules/privacy/erase";
 
@@ -81,7 +82,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       events.dropIndex("applicationId_1_createdAt_-1").catch(() => undefined),
     ]);
     await Promise.all([
-      programs.updateOne({ _id: "software-engineer" }, { $setOnInsert: { name: "Software Engineer Intern", fee: null, stipend: null, enabled: false } }, { upsert: true }),
+      programs.updateOne({ _id: PROGRAM_ID }, { $setOnInsert: { name: PROGRAM_NAME, fee: null, stipend: null, enabled: false } }, { upsert: true }),
       settings.updateOne({ _id: "program" }, { $setOnInsert: { programEnabled: false, compensationMode: "both", defaultBatch: "", maxStipend: null } }, { upsert: true }),
       applications.updateMany(HAS_VIDEO_BACKFILL.filter, HAS_VIDEO_BACKFILL.update),
       applications.createIndex({ hasVideo: -1, appliedOn: -1 }),
@@ -91,6 +92,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       // Retention counts from when a final decision was made; older rows start counting today.
       applications.updateMany({ status: { $in: FINAL_STATUSES }, statusChangedOn: { $exists: false } }, { $set: { statusChangedOn: new Date().toISOString() } }),
     ]);
+    await migrateLegacyPrograms(collection);
   }
   /** Adds LinkedIn keys to older applications and flags the ones that share a profile. */
   async function backfillDuplicates() {
@@ -202,7 +204,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   async function deliverApplicantStatus(applicationId: string, status: ApplicantStatusNotice["status"], certificateNumber?: string, offerSnapshot?: string) {
     if (!activeHooks?.sendApplicantStatus) throw new Error("No email sender is configured.");
     {
-      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1, college: 1, roleId: 1, duration: 1 } });
+      const application = await applications.findOne({ _id: applicationId }, { projection: { email: 1, name: 1, program: 1, college: 1, duration: 1 } });
       if (!application) throw new Error(`Application ${applicationId} was not found after its status changed.`);
       const currentOffer = await collection("offers").findOne({applicationId});
       let pinned = offerSnapshot ? JSON.parse(offerSnapshot) : null;
@@ -231,7 +233,6 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
           email: str(offer?.email||application.email),
           college: str(offer?.college ?? application.college ?? ""),
           program: str(offer?.program||application.program),
-          roleTitle: offer?.roleTitle || (application.roleId ? internRoleLabel(application.roleId) : "Engineering Intern"),
           durationLabel: offer?.durationLabel,
           offerVersion: offer?.version || offer?.currentVersion,
           issueDate: offer?.issueDate || offer?.sentOn,
@@ -317,7 +318,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     if (method === "program.configure") {
       company(actor);
       const programId = str(params.programId), fee = Number(params.fee), stipend = Number(params.stipend);
-      if (!["number", "string"].includes(typeof params.fee) || !["number", "string"].includes(typeof params.stipend) || str(String(params.fee)) === "" || str(String(params.stipend)) === "" || !["explorer", "innovator"].includes(programId) || !Number.isSafeInteger(fee) || fee < 0 || !Number.isSafeInteger(stipend) || stipend < 0 || typeof params.enabled !== "boolean") throw new DomainError("INVALID_REQUEST", "Enter a valid program, fee and stipend.");
+      if (!["number", "string"].includes(typeof params.fee) || !["number", "string"].includes(typeof params.stipend) || str(String(params.fee)) === "" || str(String(params.stipend)) === "" || programId !== PROGRAM_ID || !Number.isSafeInteger(fee) || fee < 0 || !Number.isSafeInteger(stipend) || stipend < 0 || typeof params.enabled !== "boolean") throw new DomainError("INVALID_REQUEST", "Enter a valid program, fee and stipend.");
       return transact(key, actor, { method, params }, async session => {
         if (communications.supportsTransactionalBulk()) {
           const row = await programs.findOne({ _id: programId }, { session, projection: { name: 1 } });
@@ -383,8 +384,10 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     }
     if (method === "application.submit") {
       if (actor) throw new DomainError("FORBIDDEN", "Sign out before submitting an application.");
-      const roleId = str(params.roleId), schedule = str(params.schedule);
-      if (!isInternRole(roleId) || !isInternSchedule(schedule)) throw new DomainError("INVALID_REQUEST", "Choose an intern role and a part-time or full-time schedule. Refresh this page if these choices are missing.");
+      // Accept stale clients that still send roleId, but do not validate or
+      // persist that legacy preference. The program now has one unified scope.
+      const schedule = str(params.schedule);
+      if (!isInternSchedule(schedule)) throw new DomainError("INVALID_REQUEST", "Choose a part-time or full-time schedule. Refresh this page if the choices are missing.");
       const name = str(params.name), email = emailOf(params.email), programId = str(params.programId), fileId = str(params.resumeAttachmentId), fileToken = str(params.resumeAccessToken);
       if (name.length < 2 || name.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new DomainError("INVALID_REQUEST", "Enter your full name and a valid email address.");
       if (!fileId || !fileToken) throw new DomainError("INVALID_REQUEST", "Attach a resume before applying.");
@@ -412,7 +415,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (deadline && Date.parse(deadline) <= Date.now()) throw new DomainError("CLOSED", "The application deadline for this internship cycle has passed.");
         if (!file) throw new DomainError("INVALID_REQUEST", "Upload your resume before applying.");
         const applicationId = id("OL"), now = new Date();
-        const row: Row = { _id: applicationId, name, email, programId, roleId, schedule, workMode: INTERNSHIP_OPPORTUNITIES.workMode, duration: normalizeInternshipDuration(config?.duration), program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github, bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
+        const row: Row = { _id: applicationId, name, email, programId, schedule, workMode: INTERNSHIP_OPPORTUNITIES.workMode, duration: normalizeInternshipDuration(config?.duration), program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github, bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
         // Flag likely duplicates: a different email with the same LinkedIn profile.
         const profileKey = linkedinKey(linkedin);
         if (profileKey) {

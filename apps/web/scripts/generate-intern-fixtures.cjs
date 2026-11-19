@@ -14,22 +14,22 @@ const assert = require("node:assert/strict");
 const fixturePath = path.join(__dirname, "../src/data/intern-dashboard.json");
 const data = JSON.parse(fs.readFileSync(fixturePath, "utf8"));
 const seedApplicants = [
-  ["Arjun Sharma", "innovator", "2026-11-02", "Selected", "#d9e5fb"],
-  ["Sneha Reddy", "explorer", "2026-11-02", "Shortlisted", "#e6ddff"],
-  ["Rahul Verma", "innovator", "2026-11-01", "Applied", "#dcefe8"],
-  ["Divya Patel", "explorer", "2026-11-01", "Selected", "#ffe5d9"],
-  ["Karthik Rao", "innovator", "2026-10-31", "Applied", "#dce8ff"],
-  ["Ananya Singh", "explorer", "2026-10-30", "Joined", "#f5dff3"],
-  ["Vikram Nair", "innovator", "2026-10-29", "Shortlisted", "#dceef5"],
-  ["Priya Mehta", "explorer", "2026-10-28", "Selected", "#fff0d4"],
-  ["Aditya Kumar", "explorer", "2026-10-27", "Joined", "#e0e7fd"],
-  ["Ishita Das", "innovator", "2026-10-26", "Shortlisted", "#f3def0"],
-  ["Rohan Gupta", "explorer", "2026-10-25", "Joined", "#d8eee6"],
-  ["Meera Iyer", "innovator", "2026-10-24", "Applied", "#ffe1dd"],
-  ["Nikhil Joshi", "explorer", "2026-10-23", "Joined", "#dce7fa"],
-  ["Kavya Menon", "innovator", "2026-10-22", "Selected", "#efe2ff"],
-  ["Sai Teja", "explorer", "2026-10-21", "Joined", "#e5f0d9"],
-  ["Neha Kapoor", "innovator", "2026-10-20", "Shortlisted", "#fbe7d7"],
+  ["Arjun Sharma", "software-engineer", "2026-11-02", "Selected", "#d9e5fb"],
+  ["Sneha Reddy", "software-engineer", "2026-11-02", "Shortlisted", "#e6ddff"],
+  ["Rahul Verma", "software-engineer", "2026-11-01", "Applied", "#dcefe8"],
+  ["Divya Patel", "software-engineer", "2026-11-01", "Selected", "#ffe5d9"],
+  ["Karthik Rao", "software-engineer", "2026-10-31", "Applied", "#dce8ff"],
+  ["Ananya Singh", "software-engineer", "2026-10-30", "Joined", "#f5dff3"],
+  ["Vikram Nair", "software-engineer", "2026-10-29", "Shortlisted", "#dceef5"],
+  ["Priya Mehta", "software-engineer", "2026-10-28", "Selected", "#fff0d4"],
+  ["Aditya Kumar", "software-engineer", "2026-10-27", "Joined", "#e0e7fd"],
+  ["Ishita Das", "software-engineer", "2026-10-26", "Shortlisted", "#f3def0"],
+  ["Rohan Gupta", "software-engineer", "2026-10-25", "Joined", "#d8eee6"],
+  ["Meera Iyer", "software-engineer", "2026-10-24", "Applied", "#ffe1dd"],
+  ["Nikhil Joshi", "software-engineer", "2026-10-23", "Joined", "#dce7fa"],
+  ["Kavya Menon", "software-engineer", "2026-10-22", "Selected", "#efe2ff"],
+  ["Sai Teja", "software-engineer", "2026-10-21", "Joined", "#e5f0d9"],
+  ["Neha Kapoor", "software-engineer", "2026-10-20", "Shortlisted", "#fbe7d7"],
 ];
 const firstNames = [
   "Aarav",
@@ -239,7 +239,7 @@ const stageTargets = {
   Joined: 740,
   Rejected: 262,
 };
-const programTargets = { explorer: 1730, innovator: 810 };
+const programTargets = { "software-engineer": 2540 };
 const sourceTargets = {
   LinkedIn: 1040,
   Referral: 620,
@@ -327,8 +327,7 @@ data.applications = records.map(
     const id = formatId("OL", index + 1);
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const skills = skillSets[index % skillSets.length];
-    const program =
-      programId === "explorer" ? "Tech Explorer" : "Tech Innovator";
+    const program = "Software Engineer Intern";
     const history = [
       {
         id: `${id}-history-1`,
@@ -418,7 +417,7 @@ data.projects = [
     description:
       "Transform complex data into clear insights with intelligent analytics, live metrics, and beautiful visualizations.",
     status: "In progress",
-    program: "Tech Innovator",
+    program: "Software Engineer Intern",
     progress: 78,
     teamSize: 24,
     art: "planet",
@@ -432,7 +431,7 @@ data.projects = [
     description:
       "Create a seamless shopping experience with a modern storefront, secure checkout, and a powerful seller portal.",
     status: "In progress",
-    program: "Tech Explorer",
+    program: "Software Engineer Intern",
     progress: 62,
     teamSize: 18,
     art: "cube",
@@ -446,7 +445,7 @@ data.projects = [
     description:
       "Build smarter inventory planning and delivery workflows that connect teams, simplify operations, and reduce waste.",
     status: "In review",
-    program: "Tech Innovator",
+    program: "Software Engineer Intern",
     progress: 92,
     teamSize: 12,
     art: "sphere",
@@ -512,7 +511,7 @@ data.activity = [
     id: "activity-001",
     event: "application",
     title: "New application received",
-    detail: "from Arjun Sharma – Tech Innovator",
+    detail: "from Arjun Sharma – Software Engineer Intern",
     time: "2 min ago",
     tone: "blue",
     icon: "application",
@@ -522,7 +521,7 @@ data.activity = [
     id: "activity-002",
     event: "shortlisted",
     title: "Application shortlisted",
-    detail: "Sneha Reddy – Tech Explorer",
+    detail: "Sneha Reddy – Software Engineer Intern",
     time: "5 min ago",
     tone: "green",
     icon: "users",
@@ -542,13 +541,14 @@ data.activity = [
     id: "activity-004",
     event: "application",
     title: "New application received",
-    detail: "from Divya Patel – Tech Explorer",
+    detail: "from Divya Patel – Software Engineer Intern",
     time: "18 min ago",
     tone: "purple",
     icon: "application",
     unread: false,
   },
 ];
+data.programs = [{ id: "software-engineer", name: "Software Engineer Intern", detail: "Paid ₹20k", share: 100, color: "#2583ff", fee: 0, stipend: 20000, enabled: true }];
 data.settings = {
   ...data.settings,
   programEnabled: true,
@@ -568,8 +568,7 @@ data.analytics = {
   views: 4820,
   previousMonths: ["Dec", "Jan", "Feb", "Mar", "Apr", "May"].map((label) => ({
     label,
-    explorer: 0,
-    innovator: 0,
+    applications: 0,
   })),
   months: ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov"].map((label, index) => {
     const month = String(index + 6).padStart(2, "0");
@@ -578,12 +577,7 @@ data.analytics = {
     );
     return {
       label,
-      explorer: applicants.filter(
-        (applicant) => applicant.programId === "explorer",
-      ).length,
-      innovator: applicants.filter(
-        (applicant) => applicant.programId === "innovator",
-      ).length,
+      applications: applicants.length,
     };
   }),
   skills: Object.entries(skillCounts)
@@ -679,7 +673,7 @@ assert(
 );
 assert.equal(
   data.analytics.months.reduce(
-    (sum, month) => sum + month.explorer + month.innovator,
+    (sum, month) => sum + month.applications,
     0,
   ),
   2540,
@@ -696,5 +690,5 @@ console.log(
   `Generated and validated ${data.applications.length} applications, ${data.interns.length} interns, ${data.projects.length} projects, and ${data.certificates.length} certificates.`,
 );
 console.log(
-  `Stages: ${JSON.stringify(stageTargets)}; tracks: ${JSON.stringify(programTargets)}.`,
+  `Stages: ${JSON.stringify(stageTargets)}; programs: ${JSON.stringify(programTargets)}.`,
 );

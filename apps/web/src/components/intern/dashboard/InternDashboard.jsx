@@ -330,7 +330,6 @@ export default function InternDashboard() {
               >
                 <h2 id="program-split-title">
                   <span className={styles.programHeadingIcon}>✥</span> Program
-                  Split
                 </h2>
                 <ProgramDonut
                   programs={data.programs}

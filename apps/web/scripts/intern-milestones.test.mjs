@@ -9,7 +9,7 @@ const my = {
   application: { id: "OL1" },
   offer: { id: "OFFER1", status: "Sent", sentOn: recent },
   onboarding: { applicationId: "OL1", status: "Approved", approvedOn: recent },
-  certificates: [{ id: "CERT1", issuedOn: "2026-11-12", program: "Tech Explorer" }],
+  certificates: [{ id: "CERT1", issuedOn: "2026-11-12", program: "Software Engineer Intern" }],
   tasks: [{ id: "T1", title: "Landing page" }],
   submissions: [
     { id: "S1", taskId: "T1", status: "Approved", reviewedOn: recent },

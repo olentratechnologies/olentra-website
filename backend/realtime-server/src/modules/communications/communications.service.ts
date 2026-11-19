@@ -150,9 +150,9 @@ export function createCommunications({ collection, transact }: Options) {
     const months = Array.from({ length: 12 }, (_, index) => {
       const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11 + index, 1));
       const key = date.toISOString().slice(0, 7), matching = monthly.filter(row => row._id.month === key);
-      return { label: date.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }), month: key, explorer: matching.find(row => row._id.program === "explorer")?.count || 0, innovator: matching.find(row => row._id.program === "innovator")?.count || 0 };
+      return { label: date.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }), month: key, applications: matching.reduce((sum, row) => sum + row.count, 0) };
     });
-    return { statusCounts: Object.fromEntries(statuses.map(row => [row._id, row.count])), byTrack: Object.fromEntries(tracks.map(row => [row._id, row.count])), totalApplications: statuses.reduce((sum, row) => sum + row.count, 0), months, previousMonths: [], skills: skills.map(row => ({ name: row._id, count: row.count })), views: null };
+    return { statusCounts: Object.fromEntries(statuses.map(row => [row._id, row.count])), byProgram: Object.fromEntries(tracks.map(row => [row._id, row.count])), totalApplications: statuses.reduce((sum, row) => sum + row.count, 0), months, previousMonths: [], skills: skills.map(row => ({ name: row._id, count: row.count })), views: null };
   }
   // Dashboard snapshots often arrive in bursts after a change. Share one
   // aggregation across concurrent requests, and bound cached staleness.
@@ -230,7 +230,7 @@ export function createCommunications({ collection, transact }: Options) {
     }
     if (method === "announcement.send") {
       const sender = staff(actor), subject = str(params.subject), body = str(params.message), audience = str(params.audience) || "all-interns";
-      if (!subject || subject.length > 140 || !body || body.length > 3000 || !["all-interns", "explorer", "innovator"].includes(audience)) throw new DomainError("INVALID_REQUEST", "Enter a valid subject, message and audience.");
+      if (!subject || subject.length > 140 || !body || body.length > 3000 || !["all-interns", "software-engineer"].includes(audience)) throw new DomainError("INVALID_REQUEST", "Enter a valid subject, message and audience.");
       return transact(key, sender, { method, params }, async session => {
         await addNotice(session, { recipientRole: "intern", applicationId: null, audience, title: subject, body, href: "/intern/portal/application" });
         await addActivity(session, "Program announcement", subject, null, "send");
@@ -296,12 +296,6 @@ export function createCommunications({ collection, transact }: Options) {
       if (patch.emailNotifications === true || (patch.integrations && Object.values(patch.integrations).some(Boolean))) throw new DomainError("UNAVAILABLE", "Email notifications and external integrations are not configured.");
       return transact(key, account, { method, params }, async session => {
         const writes: ClientBulkWriteModel<Record<string, Row>>[] = [];
-        for (const [field, programId] of [["explorerEnabled", "explorer"], ["innovatorEnabled", "innovator"]] as const) if (patch[field] !== undefined) {
-          if (typeof patch[field] !== "boolean") throw new DomainError("INVALID_REQUEST", "Invalid track visibility.");
-          const program = await programs.findOne({ _id: programId }, { session });
-          if (patch[field] && (program?.fee == null || program?.stipend == null)) throw new DomainError("INVALID_REQUEST", "Set the track fee and stipend before opening applications.");
-          writes.push({ namespace: programs.namespace, name: "updateOne", filter: { _id: programId }, update: { $set: { enabled: patch[field] } } });
-        }
         if (patch.profile !== undefined) {
           const name = str(patch.profile?.name), email = str(patch.profile?.email ?? account.email).toLowerCase();
           if (!name || name.length > 120) throw new DomainError("INVALID_REQUEST", "Enter a valid administrator name.");

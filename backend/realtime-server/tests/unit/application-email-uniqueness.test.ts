@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createInternshipDomain } from "../../src/app/command-dispatcher";
 
-const payload = { name: "Test Candidate", email: "  CANDIDATE@Example.Test  ", programId: "software-engineer", roleId: "build", schedule: "part_time", linkedin: "https://www.linkedin.com/in/test-candidate", resumeAttachmentId: "resume", resumeAccessToken: "resume-token" };
+const payload = { name: "Test Candidate", email: "  CANDIDATE@Example.Test  ", programId: "software-engineer", schedule: "part_time", linkedin: "https://www.linkedin.com/in/test-candidate", resumeAttachmentId: "resume", resumeAccessToken: "resume-token" };
 function fixture(existing?: any, race = false) {
   let application = existing;
   const commandRecords = new Map<string, any>();

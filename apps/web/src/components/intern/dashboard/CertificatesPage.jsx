@@ -202,12 +202,12 @@ export function CertificatesPage() {
           <div className={common.filters}>
             <FilterMenu>
               <label>
-                Internship track
+                Internship program
                 <select
                   value={track}
                   onChange={(event) => { setTrack(event.target.value); setPage(1); }}
                 >
-                  <option value="all">All tracks</option>
+                  <option value="all">All programs</option>
                   {data.programs.map((program) => (
                     <option value={program.id} key={program.id}>
                       {program.name}
@@ -315,7 +315,7 @@ export function CertificatesPage() {
           {listQuery.data && !rows.length && (
             <EmptyState
               title="No certificates found"
-              description="Try another recipient, certificate number, or track."
+              description="Try another recipient, certificate number, or program."
             />
           )}
         </div>

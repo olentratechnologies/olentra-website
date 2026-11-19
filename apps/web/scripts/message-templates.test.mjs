@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { fillTemplate, templateValues } from "../src/lib/intern/message-templates.mjs";
 
 test("templates fill known placeholders and leave unknown or empty ones visible", () => {
-  const values = templateValues({ name: "Asha Rao", program: "Tech Explorer" }, null);
-  assert.equal(fillTemplate("Hi {firstName}, welcome to {track}!", values), "Hi Asha, welcome to Tech Explorer!");
+  const values = templateValues({ name: "Asha Rao", program: "Software Engineer Intern" }, null);
+  assert.equal(fillTemplate("Hi {firstName}, welcome to {track}!", values), "Hi Asha, welcome to Software Engineer Intern!");
   assert.equal(fillTemplate("Your interview is at {interviewTime}. {unknown}", values), "Your interview is at {interviewTime}. {unknown}");
   assert.equal(fillTemplate("Dear {fullName}", values), "Dear Asha Rao");
 });

@@ -7,7 +7,6 @@ import CompanyBrand from "@/components/intern/CompanyBrand";
 import { Award, Copy, Download, Eye, FileText, Linkedin, Printer, ShieldCheck } from "lucide-react";
 import { linkedInAddUrl, verifyUrl } from "@/lib/intern/certificate-share.mjs";
 import { downloadOfferLetterPdf } from "@/lib/intern/offer-letter-pdf";
-import { internRoleLabel } from "@/lib/intern/opportunities.mjs";
 import PortalStory from "./PortalStory";
 import ExitFeedback from "./ExitFeedback";
 import { useInternship } from "@/components/intern/InternshipProvider";
@@ -124,7 +123,6 @@ export default function PortalCertificates() {
                 <h3>Internship Offer Letter</h3>
                 <p>
                   {application?.name || offer.name || "Intern"}
-                  {application?.roleId ? ` · ${internRoleLabel(application.roleId)}` : ""}
                 </p>
                 <small>
                   {offerDocument.date ? `${offerDocument.dateLabel} ${formatDate(offerDocument.date)}` : "Internship Offer Letter"}
@@ -143,7 +141,6 @@ export default function PortalCertificates() {
                       email: offer.email || application?.email,
                       college: offer.college ?? application?.college,
                       program: offer.program || application?.program,
-                      roleTitle: offer.roleTitle || internRoleLabel(application?.roleId),
                       startOn: offer.startOn,
                       endOn: offer.endOn,
                       stipend: offer.stipend,

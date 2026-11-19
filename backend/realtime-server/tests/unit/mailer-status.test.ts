@@ -195,10 +195,10 @@ test("reminder emails escape their content and link to the site", async () => {
   globalThis.fetch = (async (_input, init) => { requests.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify({ success: true, id: "email-1" }), { status: 200 }); }) as typeof fetch;
   try {
     const mailer = createInternshipMailer("delivery-test-token", "http://email-server.test");
-    await mailer.sendNotice({ to: "a@example.test", subject: "2 applications are waiting", heading: "Waiting", intro: "Hi", items: ["<b>Asha</b> · Software Engineer Intern", "Ravi · Tech Innovator"], ctaLabel: "Review", ctaUrl: "https://site.example.test/intern/dashboard/applications" });
+    await mailer.sendNotice({ to: "a@example.test", subject: "2 applications are waiting", heading: "Waiting", intro: "Hi", items: ["<b>Asha</b> · Software Engineer Intern", "Ravi · Software Engineer Intern"], ctaLabel: "Review", ctaUrl: "https://site.example.test/intern/dashboard/applications" });
     assert.match(String(requests[0]!.html), /&lt;b&gt;Asha&lt;\/b&gt;/);
     assert.match(String(requests[0]!.html), /href="https:\/\/site\.example\.test\/intern\/dashboard\/applications"/);
-    assert.match(String(requests[0]!.text), /- Ravi · Tech Innovator/);
+    assert.match(String(requests[0]!.text), /- Ravi · Software Engineer Intern/);
   } finally {
     globalThis.fetch = originalFetch;
   }

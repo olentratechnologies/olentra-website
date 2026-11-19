@@ -9,7 +9,7 @@ const uri = internshipTestMongoUri();
 if (!uri) throw new Error("Set INTERNSHIP_TEST_MONGODB_URI (or deprecated INTERN_TEST_MONGODB_URI) for the isolated latency benchmark.");
 const prefix = `bench_intern_latency_${randomUUID().replaceAll("-", "")}_`;
 const samples = Math.max(2, Math.min(50, Number(internshipEnv("INTERNSHIP_BENCH_SAMPLES", "INTERN_BENCH_SAMPLES")) || 8));
-const timings: Record<string, number[]> = Object.fromEntries(["login", "socketConnect", "socketAuthenticate", "snapshot", "loginToSnapshot", "configureTrack", "saveSettings"].map(name => [name, []]));
+const timings: Record<string, number[]> = Object.fromEntries(["login", "socketConnect", "socketAuthenticate", "snapshot", "loginToSnapshot", "configureProgram", "saveSettings"].map(name => [name, []]));
 const currentRss = () => Math.round(process.memoryUsage().rss / 1048576 * 10) / 10;
 const connection = await connectInternDatabase(uri);
 const domain = createInternshipDomain({ ...connection, prefix });
@@ -63,7 +63,7 @@ try {
     await timed("socketAuthenticate", () => socket.request("auth.authenticate", { token: login.token }));
     await timed("snapshot", () => socket.request("intern.snapshot"));
     timings.loginToSnapshot!.push(performance.now() - journey);
-    await timed("configureTrack", () => socket.request("program.configure", { programId: "explorer", fee: 0, stipend: 0, enabled: false }, true));
+    await timed("configureProgram", () => socket.request("program.configure", { programId: "software-engineer", fee: 0, stipend: 0, enabled: false }, true));
     await timed("saveSettings", () => socket.request("settings.update", { patch: { programName: "Latency benchmark" } }, true));
     socket.ws.close();
     const logout = await fetch(base + "/intern/auth/logout", { method: "POST", headers: { "x-intern-context": context, cookie: login.cookie, authorization: `Bearer ${login.token}` } });

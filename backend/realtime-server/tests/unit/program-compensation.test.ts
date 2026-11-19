@@ -90,7 +90,7 @@ test("application submission enforces free, paid and both against the current st
   ];
   for (const { mode, stipend, accepts } of cases) {
     const { domain, inserted } = fixture(mode, stipend);
-    const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", roleId: "build", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
+    const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
     if (accepts) {
       expect(await request).toMatchObject({ received: true });
       const applications = inserted.filter(write => write.collection === "applications");
@@ -116,7 +116,6 @@ test("admin duration changes update public data and new applications keep their 
     email: "duration@example.test",
     linkedin: "https://www.linkedin.com/in/duration-candidate",
     programId: "software-engineer",
-    roleId: "build",
     schedule: "part_time",
     duration: "client-value",
     durationMonths: 99,

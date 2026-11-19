@@ -7,7 +7,7 @@ import { Video } from "lucide-react";
 import { useInternQuery } from "../useInternQuery";
 import { BOARD_COLUMNS, canMoveCard } from "@/lib/intern/board.mjs";
 import styles from "./board.module.css";
-import { internRoleLabel, internScheduleLabel } from "@/lib/intern/opportunities.mjs";
+import { internScheduleLabel } from "@/lib/intern/opportunities.mjs";
 
 const PER_COLUMN = 20;
 
@@ -36,7 +36,7 @@ function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, o
             <Link href={`/intern/dashboard/applications/${application.id}`} className={styles.cardName}>{application.name}</Link>
             {isAdmin && onDelete && <RowMenu items={[{ label: "Delete application", danger: true, onClick: () => onDelete(application) }]} />}
             <small>{application.program}{application.hasVideo ? <span className={styles.video}><Video size={11} aria-hidden="true" /> video</span> : null}</small>
-            <small>{internRoleLabel(application.roleId)} · {internScheduleLabel(application.schedule)}</small>
+            <small>{internScheduleLabel(application.schedule)}</small>
             {typeof application.score === "number" && <small>Score {application.score.toFixed(1)}</small>}
             <select
               aria-label={`Move ${application.name}`}

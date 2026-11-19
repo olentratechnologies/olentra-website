@@ -412,10 +412,10 @@
 .flash { color: #3b5fcc; transition: color 0.4s; }
 .spotlight .flash { color: #93c5ff; -webkit-text-fill-color: #93c5ff; }
 
-/* ─── Pulse section (feed + roles) ──────────────────────────────────── */
+/* ─── Public application activity ───────────────────────────────────── */
 .pulse {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   margin-top: 16px;
   border: 1px solid #e2e9f4;
   border-radius: 16px;
@@ -423,15 +423,11 @@
   background: #fff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(15, 29, 56, 0.02);
 }
-.pulseFeed, .pulseRoles {
+.pulseFeed {
   min-width: 0;
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
-}
-.pulseRoles {
-  border-left: 1px solid #edf1f8;
-  background: linear-gradient(180deg, #f8faff 0%, #fff 100%);
 }
 .pulse h3 {
   font-size: 14px;
@@ -500,73 +496,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── Role list ─────────────────────────────────────────────────────── */
-.roleList { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
-.roleRow {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  text-decoration: none;
-  color: inherit;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #edf1f8;
-  background: #fff;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.roleRow:hover {
-  border-color: #d4dff4;
-  background: #f8faff;
-  box-shadow: 0 2px 8px rgba(15, 29, 56, 0.04);
-  transform: translateY(-1px);
-}
-.roleRowTop {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: center;
-}
-.roleName {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #1a2d50;
-}
-.roleCount {
-  font-size: 16px;
-  font-weight: 650;
-  letter-spacing: -0.5px;
-  color: #1a3fa0;
-  font-variant-numeric: tabular-nums;
-}
-.roleShare {
-  display: block;
-  height: 4px;
-  background: #edf1f8;
-  border-radius: 100px;
-  overflow: hidden;
-}
-.roleShare > span {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, #3b5fcc, #6b8de8);
-  border-radius: 100px;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.mostRequested {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: #2d52b5;
-  background: linear-gradient(135deg, #e8effd, #f0f4ff);
-  padding: 2px 6px;
-  border-radius: 100px;
-  border: 1px solid #d0daf3;
-}
 @keyframes pulseIn {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: none; }
@@ -697,9 +626,8 @@
   .card:last-child { display: flex; }
   .skills { display: block; }
   .skills ul { margin-top: 8px; }
-  .pulse { grid-template-columns: 1fr; margin-top: 14px; }
-  .pulseFeed, .pulseRoles { padding: 16px 18px; }
-  .pulseRoles { border-left: 0; border-top: 1px solid #edf1f8; }
+  .pulse { margin-top: 14px; }
+  .pulseFeed { padding: 16px 18px; }
   .applicationTimeline { padding: 18px 20px; margin-top: 14px; }
   .timelineSteps {
     grid-template-columns: repeat(4, minmax(120px, 1fr));

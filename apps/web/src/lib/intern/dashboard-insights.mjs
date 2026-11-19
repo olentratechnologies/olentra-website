@@ -7,7 +7,7 @@ export function dashboardInsights(analytics) {
   const counts = analytics.statusCounts || {};
   const total = analytics.totalApplications || 0;
   const months = analytics.months || [];
-  const monthTotal = (entry) => (entry ? (entry.explorer || 0) + (entry.innovator || 0) : 0);
+  const monthTotal = (entry) => Number(entry?.applications || 0);
   const thisMonth = monthTotal(months.at(-1)), lastMonth = monthTotal(months.at(-2));
 
   const growth = lastMonth > 0

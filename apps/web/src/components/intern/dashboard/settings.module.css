@@ -222,10 +222,6 @@
   border-radius: 15px;
   background: linear-gradient(140deg, var(--ad-panel, #f9fcff), color-mix(in srgb, var(--ad-panel-alt, #e6efff) 53%, transparent));
 }
-.trackCard[data-track="innovator"] {
-  background: linear-gradient(140deg, var(--ad-purple-soft, #fcfaff), color-mix(in srgb, var(--ad-purple-soft, #eee5ff) 53%, transparent));
-  border-color: var(--ad-border, #ded1ff);
-}
 .trackIcon {
   display: flex;
   align-items: center;
@@ -236,10 +232,6 @@
   background: var(--ad-panel-soft, #e1edff);
   color: var(--ad-blue, #347fff);
   margin-bottom: 15px;
-}
-.trackCard[data-track="innovator"] .trackIcon {
-  color: var(--ad-purple, #8857f1);
-  background: var(--ad-purple-soft, #ece1ff);
 }
 .trackCard h3 {
   font-size: 17px;

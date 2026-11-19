@@ -62,28 +62,29 @@ test("messages, notifications, announcements and analytics respect role and owne
   expect((await communications.snapshot(first)).notifications[0]!.unread).toBe(true);
   await communications.execute("notification.markRead", { ids: [id] }, first, "read-own");
   expect((await communications.snapshot(first)).notifications[0]!.unread).toBe(false);
-  await communications.execute("announcement.send", { subject: "Explorer", message: "Team update", audience: "software-engineer" }, staff, "announce-one");
+  await communications.execute("announcement.send", { subject: "Program update", message: "Team update", audience: "software-engineer" }, staff, "announce-one");
   expect((await communications.snapshot(first)).notifications).toHaveLength(2);
   expect((await communications.snapshot(second)).notifications).toHaveLength(0);
   expect((await communications.execute("notification.list", { pageSize: 1, page: 2 }, first, "")).items).toHaveLength(1);
   expect(await domain.collection("events").findOne({ type: "changed", applicationIds: "first-app" })).toBeTruthy();
   const analytics = await communications.execute("analytics.get", {}, staff, "");
   expect(analytics.totalApplications).toBe(2);
-  expect(analytics.byTrack).toEqual({ software-engineer: 1, software-engineer: 1 });
+  expect(analytics.byProgram).toEqual({ "software-engineer": 2 });
   expect(analytics.skills).toEqual([{ name: "JavaScript", count: 2 }]);
   await expect(communications.execute("analytics.get", {}, first, "")).rejects.toBeInstanceOf(DomainError);
 }, 30000);
 
-test("settings cannot open an unconfigured track or enable unavailable integrations", async () => {
+test("settings cannot configure retired programs or enable unavailable integrations", async () => {
   await expect(communications.execute("settings.update", { patch: { compensationMode: "invalid" } }, staff, "settings-invalid-mode")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   await expect(communications.execute("settings.update", { patch: { compensationMode: null } }, staff, "settings-null-mode")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
-  await expect(communications.execute("settings.update", { patch: { software-engineerEnabled: true } }, staff, "settings-one")).rejects.toBeInstanceOf(DomainError);
+  await expect(domain.execute("program.configure", { programId: "explorer", fee: 0, stipend: 0, enabled: true }, staff, "settings-one")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   await expect(communications.execute("settings.update", { patch: { emailNotifications: true } }, staff, "settings-two")).rejects.toBeInstanceOf(DomainError);
   // The weekly digest and review reminders are available now; general email notifications are not.
   await communications.execute("settings.update", { patch: { weeklyDigest: true, reviewReminder: true } }, staff, "settings-digest");
   expect(await domain.collection("settings").findOne({ _id: "program" })).toMatchObject({ weeklyDigest: true, reviewReminder: true });
   await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { fee: 0, stipend: 0 } });
-  await communications.execute("settings.update", { patch: { software-engineerEnabled: true, programEnabled: true, defaultBatch: "Autumn" } }, staff, "settings-three");
+  await domain.execute("program.configure", { programId: "software-engineer", fee: 0, stipend: 0, enabled: true }, staff, "settings-three");
+  await communications.execute("settings.update", { patch: { programEnabled: true, defaultBatch: "Autumn" } }, staff, "settings-three-general");
   expect((await domain.collection("programs").findOne({ _id: "software-engineer" }))?.enabled).toBe(true);
   expect((await domain.collection("settings").findOne({ _id: "program" }))?.defaultBatch).toBe("Autumn");
   await communications.execute("settings.update", { patch: { defaultBatch: "" } }, staff, "settings-empty-batch");
@@ -105,7 +106,7 @@ test("settings validation and a mid-write error roll back every change", async (
   const beforeActivity = await domain.collection("activity").countDocuments({ title: "Program settings updated" });
   const beforeEvents = await domain.collection("events").countDocuments({ type: "changed", public: true });
   let failure: any;
-  try { await communications.execute("settings.update", { patch: { software-engineerEnabled: false, programEnabled: false, profile: { name: "Staff", email: "duplicate@example.test" } } }, staff, "settings-rollback-duplicate"); }
+  try { await communications.execute("settings.update", { patch: { programEnabled: false, profile: { name: "Staff", email: "duplicate@example.test" } } }, staff, "settings-rollback-duplicate"); }
   catch (error) { failure = error; }
   // Changing the sign-in email from settings is refused, and nothing else in the patch is applied.
   expect(failure?.code).toBe("INVALID_REQUEST");
@@ -218,5 +219,5 @@ test("analytics cache is shared briefly and invalidation reloads updated records
   communications.invalidateAnalytics();
   const updated = await communications.execute("analytics.get", {}, staff, "");
   expect(updated.totalApplications).toBe(3);
-  expect(updated.byTrack.software-engineer).toBe(2);
+  expect(updated.byProgram["software-engineer"]).toBe(2);
 }, 30000);

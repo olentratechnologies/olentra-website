@@ -37,7 +37,7 @@ function assertEscaped(html: string) {
 
 test("confirmation email escapes the applicant name and track and never includes a login link", async () => {
   const { html, text } = await capture(mailer => mailer.sendApplicationConfirmation({
-    to: "a@example.test", name: hostile, programName: `Explorer "><script>x</script>`, magicLinkUrl: `https://example.test/v?token=a"b&c=1`,
+    to: "a@example.test", name: hostile, programName: `Internship "><script>x</script>`, magicLinkUrl: `https://example.test/v?token=a"b&c=1`,
   }));
   assertEscaped(html);
   assert.ok(!html.includes("<script>x</script>"));

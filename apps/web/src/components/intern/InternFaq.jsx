@@ -5,26 +5,25 @@ import { Mail, Plus } from "lucide-react";
 import JsonLd from "@/components/JsonLd";
 import { deadlineTime, formatDeadline } from "@/lib/intern/application-deadline.mjs";
 import styles from "./intern-faq.module.css";
-import { INTERN_ROLES } from "@/lib/intern/opportunities.mjs";
 
 const formatMoney = (amount) => `₹${amount.toLocaleString("en-IN")}`;
 
 /** "Software Engineer Intern is unpaid" / "Software Engineer Intern with stipend". */
 function stipendAnswer(tracks) {
   const priced = tracks.filter((track) => Number.isSafeInteger(track.stipend));
-  if (!priced.length) return "Stipend details for each track will be announced with the next intake.";
+  if (!priced.length) return "Stipend details for the program will be announced with the next intake.";
   const parts = priced.map((track) => (track.stipend > 0 ? `${track.name} pays a stipend of ${formatMoney(track.stipend)} a month` : `${track.name} is unpaid and learning-focused`));
   const allUnpaid = priced.every((track) => track.stipend === 0);
-  return `${parts.join(", while ")}. ${allUnpaid ? "Each track includes practical project experience, mentorship, and a certificate on completion." : "Every track includes real project experience, mentor guidance and a certificate on completion."}`;
+  return `${parts.join(", while ")}. ${allUnpaid ? "The program includes practical project experience, mentorship, and a certificate on completion." : "The program includes real project experience, mentor guidance and a certificate on completion."}`;
 }
 
 function feeAnswer(tracks) {
   const charged = tracks.filter((track) => Number.isSafeInteger(track.fee) && track.fee > 0);
   if (!charged.length) return "No. There is no application or program fee. Olentra will never ask you to pay to apply, to take part or to receive your certificate.";
-  return `There is no fee to apply. ${charged.map((track) => `${track.name} has a program fee of ${formatMoney(track.fee)}`).join(" and ")}, shown on the track card before you apply.`;
+  return `There is no fee to apply. ${charged.map((track) => `${track.name} has a program fee of ${formatMoney(track.fee)}`).join(" and ")}, shown on the program card before you apply.`;
 }
 
-function buildQuestions({ duration, tracks, roles }) {
+function buildQuestions({ duration, tracks }) {
   return [
     {
       id: "duration",
@@ -42,14 +41,9 @@ function buildQuestions({ duration, tracks, roles }) {
       answer: "The program offers both part-time and full-time options to accommodate academic and professional commitments. Select a schedule that allows you to participate consistently throughout the program.",
     },
     {
-      id: "roles",
-      question: "Which intern roles are available?",
-      answer: `Available roles include ${roles.map(role => role.title).join(", ")}. Explore the role tabs on this page for responsibilities and helpful skills.`,
-    },
-    {
       id: "eligibility",
       question: "Who can apply, and what are the prerequisites?",
-      answer: "Students, recent graduates and early-career learners. Prior industry experience is not required. You need your own laptop, a reliable internet connection, availability for the full program and good communication skills. Role-specific skills are helpful but not required; see Prerequisites on this page.",
+      answer: "Students, recent graduates and early-career learners can apply. Prior industry experience is not required. You need your own laptop, a reliable internet connection, availability for the full program and good communication skills. Web fundamentals, JavaScript or Python, and familiarity with APIs are helpful but optional.",
     },
     {
       id: "stipend",
@@ -69,17 +63,17 @@ function buildQuestions({ duration, tracks, roles }) {
     {
       id: "work",
       question: "What will I work on?",
-      answer: "Real projects in your chosen role, guided by experienced mentors and using AI tools such as Claude, Codex and Gemini. You finish with practical skills and work you can show in your portfolio.",
+      answer: "You will build software products across frontend and backend development, integrate AI APIs and language models, and explore agents, chatbots and workflow automation. Projects use tools such as Claude, Codex and Gemini, with mentor guidance and practical work for your portfolio.",
     },
     {
       id: "apply",
       question: "How do I apply?",
-      answer: "Choose a program track, an intern role and a part-time or full-time schedule. Complete the application form with your resume and LinkedIn profile. An introduction video is optional and helps us get to know you.",
+      answer: "Apply to the Software Engineer Intern program and select a part-time or full-time schedule. Complete the application form with your resume and LinkedIn profile. An introduction video is optional and helps us get to know you.",
     },
     {
       id: "process",
       question: "What happens after I apply?",
-      answer: "You receive an email with a secure link to your candidate portal, where you can follow your application at every stage. Our team checks eligibility and rigorously assesses your skills, experience, and alignment with your chosen role based on your application. There is no interview. Selected candidates receive an offer, followed by onboarding.",
+      answer: "You receive an email with a secure link to your candidate portal, where you can follow your application at every stage. Our team checks eligibility and assesses your software fundamentals, experience, problem-solving, and interest in AI-powered products. There is no interview. Selected candidates receive an offer, followed by onboarding.",
     },
     {
       id: "deadline",
@@ -88,8 +82,8 @@ function buildQuestions({ duration, tracks, roles }) {
     },
     {
       id: "multiple",
-      question: "Can I apply for more than one track?",
-      answer: "You can submit one application per email address, so choose the track that best matches your goals. You can follow it, and any next steps, from your candidate portal.",
+      question: "Can I submit more than one application?",
+      answer: "You can submit one application per email address for each intake. You can follow it, and any next steps, from your candidate portal.",
     },
   ];
 }
@@ -123,12 +117,12 @@ function FaqItem({ item, index, open, onToggle }) {
 }
 
 /** Frequently asked questions for the careers page, with answers drawn from the live program settings. */
-export default function InternFaq({ duration, tracks, deadline, roles = INTERN_ROLES }) {
+export default function InternFaq({ duration, tracks, deadline }) {
   const [openId, setOpenId] = useState("duration");
   const [deadlineText, setDeadlineText] = useState("");
   useEffect(() => { setDeadlineText(deadlineAnswer(deadline)); }, [deadline]);
 
-  const questions = buildQuestions({ duration, tracks, roles }).map((item) => (item.id === "deadline" ? { ...item, answer: deadlineText || "Check the deadline timer on this page for the current closing date." } : item));
+  const questions = buildQuestions({ duration, tracks }).map((item) => (item.id === "deadline" ? { ...item, answer: deadlineText || "Check the deadline timer on this page for the current closing date." } : item));
   // Search engines get the answers that don't depend on the visitor's clock.
   const structured = {
     "@context": "https://schema.org",

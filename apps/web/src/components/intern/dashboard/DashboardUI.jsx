@@ -177,7 +177,7 @@ export function Avatar({ person, size = 32 }) {
 export function TrackBadge({ programId, label }) {
   return (
     <span className={styles.trackBadge} data-track={programId}>
-      {label || (programId === "innovator" ? "Innovator" : "Explorer")}
+      {label || "Software Engineer Intern"}
     </span>
   );
 }

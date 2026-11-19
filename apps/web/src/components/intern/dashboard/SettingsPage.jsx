@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, CalendarClock, Check, Layers, Save, Settings2, ShieldCheck, Sparkles, X, Zap } from "lucide-react";
+import { Bell, CalendarClock, Check, Layers, Save, Settings2, ShieldCheck, X, Zap } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { Button, PageHeader, Panel, Tabs } from "./DashboardUI";
 import { isProgramAvailable, normalizeCompensationMode } from "@/lib/intern/program-availability.mjs";
@@ -39,9 +39,9 @@ function deadlineSummary(value, savedIso) {
 }
 
 const compensationOptions = [
-  { value: "free", label: "Free / unpaid", description: "Only tracks with no stipend." },
-  { value: "paid", label: "Paid", description: "Only tracks that pay a stipend." },
-  { value: "both", label: "Both", description: "Accept unpaid and paid tracks." },
+  { value: "free", label: "Free / unpaid", description: "The program has no stipend." },
+  { value: "paid", label: "Paid", description: "The program pays a stipend." },
+  { value: "both", label: "Both", description: "Accept either stipend setup." },
 ];
 
 function Switch({ label, checked, onChange, description, disabled = false }) {
@@ -65,14 +65,14 @@ function TrackSettings({ program, configure, notify }) {
       notify(`${program.name} settings saved.`);
     } finally { setBusy(false); }
   }
-  const Icon = program.id === "explorer" ? Sparkles : Zap;
+  const Icon = Zap;
   return <form className={styles.trackCard} data-track={program.id} onSubmit={save}>
-    <div className={styles.trackIcon}><Icon size={26}/></div><h3>{program.name}</h3><p>A ₹0 stipend makes this a free / unpaid track. Set a positive stipend for a paid track. Applicant fees are separate.</p>
+    <div className={styles.trackIcon}><Icon size={26}/></div><h3>{program.name}</h3><p>Set the applicant fee and monthly stipend for this internship program.</p>
     <label className={ui.field}>Program fee charged to applicant (₹)<input type="number" min="0" step="1" value={fee} onChange={event => setFee(event.target.value)} required/></label>
     <label className={ui.field}>Monthly stipend paid to intern (₹)<input type="number" min="0" step="1" value={stipend} onChange={event => setStipend(event.target.value)} required/></label>
     <Switch label={`Accept applications for ${program.name}`} checked={enabled} onChange={setEnabled}/>
     {error && <p className={styles.error} role="alert">{error}</p>}
-    <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save track"}</Button>
+    <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save program"}</Button>
   </form>;
 }
 
@@ -109,7 +109,7 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   useEffect(() => { setBatch(data.settings.defaultBatch || ""); setName(data.settings.programName || "Olentra Internship Program"); setDuration(data.settings.duration || DEFAULT_INTERNSHIP_DURATION); setProgramEnabled(Boolean(data.settings.programEnabled)); setCompensationMode(normalizeCompensationMode(data.settings.compensationMode)); setApplicationAlerts(data.settings.applicationAlerts !== false); setRejectionEmails(data.settings.rejectionEmails === true); setWeeklyDigest(data.settings.weeklyDigest === true); setReviewReminder(data.settings.reviewReminder === true); setRetentionDays(data.settings.retentionDays ?? null); setRubric(data.settings.rubric || DEFAULT_RUBRIC); setChecklist(data.settings.onboardingDocuments || []); setDeadline(toLocalInputValue(data.settings.applicationDeadline)); }, [data.settings.applicationDeadline, data.settings.duration, data.settings.weeklyDigest, data.settings.reviewReminder, data.settings.onboardingDocuments, data.settings.rubric, data.settings.retentionDays, data.settings.defaultBatch, data.settings.programName, data.settings.programEnabled, data.settings.compensationMode, data.settings.applicationAlerts, data.settings.rejectionEmails]);
-  const availableTracks = data.programs.filter(program => isProgramAvailable(program, { programEnabled: true, compensationMode }));
+  const availableProgram = data.programs.filter(program => isProgramAvailable(program, { programEnabled: true, compensationMode }));
   async function save(event) {
     event.preventDefault();
     if (tab === "general" && !name.trim()) { setError("Enter a program name."); return; }
@@ -127,19 +127,19 @@ export default function SettingsPage() {
   function edit(setter, value) { setter(value); setSaved(false); setError(""); }
   return <div className={ui.page}>
     <PageHeader title="Settings" description="Configure your internship program"/>
-    <Tabs label="Settings sections" value={tab} onChange={value => { setTab(value); setSaved(false); setError(""); }} items={[{ id: "general", label: "General" }, { id: "tracks", label: "Tracks" }, { id: "notifications", label: "Notifications" }, { id: "templates", label: "Templates" }, { id: "learning", label: "Learning" }]}/>
-    {tab === "learning" ? <ResourcesSettings programs={data.programs} commands={commands} notify={notify}/> : tab === "templates" ? <TemplatesSettings commands={commands} notify={notify}/> : tab === "tracks" ? <Panel className={`${styles.settingsPanel} ${styles.settingsForm}`}><div className={styles.sectionHeading}><span><Layers size={19}/></span><div><h2>Internship Tracks</h2><p>Configure each track before accepting applications.</p></div></div><div className={styles.trackCards}>{data.programs.map(program => <TrackSettings key={program.id} program={program} configure={commands.configureProgram} notify={notify}/>)}</div><p className={styles.helper}><ShieldCheck size={15}/> Existing application and intern records remain available when a track is paused. The program must also be enabled in General.</p></Panel> : <form onSubmit={save} className={styles.settingsForm}><Panel className={styles.settingsPanel}>
-      {tab === "general" ? <><div className={styles.sectionHeading}><span><Settings2 size={19}/></span><div><h2>Program General Settings</h2><p>Manage the internship program and application intake.</p></div></div><div className={styles.switches}><Switch label="Enable Internship Program" description="Accept applications for tracks that are enabled and configured." checked={programEnabled} onChange={value => edit(setProgramEnabled, value)}/></div>
+    <Tabs label="Settings sections" value={tab} onChange={value => { setTab(value); setSaved(false); setError(""); }} items={[{ id: "general", label: "General" }, { id: "tracks", label: "Program" }, { id: "notifications", label: "Notifications" }, { id: "templates", label: "Templates" }, { id: "learning", label: "Learning" }]}/>
+    {tab === "learning" ? <ResourcesSettings programs={data.programs} commands={commands} notify={notify}/> : tab === "templates" ? <TemplatesSettings commands={commands} notify={notify}/> : tab === "tracks" ? <Panel className={`${styles.settingsPanel} ${styles.settingsForm}`}><div className={styles.sectionHeading}><span><Layers size={19}/></span><div><h2>Software Engineer Intern</h2><p>Configure the internship program.</p></div></div><div className={styles.trackCards}>{data.programs.map(program => <TrackSettings key={program.id} program={program} configure={commands.configureProgram} notify={notify}/>)}</div><p className={styles.helper}><ShieldCheck size={15}/> Existing application and intern records remain available if applications are paused. The program must also be enabled in General.</p></Panel> : <form onSubmit={save} className={styles.settingsForm}><Panel className={styles.settingsPanel}>
+      {tab === "general" ? <><div className={styles.sectionHeading}><span><Settings2 size={19}/></span><div><h2>Program General Settings</h2><p>Manage the internship program and application intake.</p></div></div><div className={styles.switches}><Switch label="Enable Internship Program" description="Accept applications for the configured internship program." checked={programEnabled} onChange={value => edit(setProgramEnabled, value)}/></div>
       <fieldset className={styles.compensationFieldset} aria-describedby="compensation-help compensation-availability">
         <legend>Internship type</legend>
-        <p id="compensation-help">Choose which tracks accept applications. Free means no stipend; applicant fees are configured separately in Tracks.</p>
+        <p id="compensation-help">Choose whether the program accepts applications based on its stipend. Free means no stipend; applicant fees are configured separately.</p>
         <div className={styles.compensationOptions}>
           {compensationOptions.map(option => <label key={option.value} className={styles.compensationOption}>
             <input type="radio" name="compensationMode" value={option.value} checked={compensationMode === option.value} onChange={() => edit(setCompensationMode, option.value)}/>
             <span><strong>{option.label}</strong><small>{option.description}</small></span>
           </label>)}
         </div>
-        <p id="compensation-availability" className={styles.availability} role="status">{availableTracks.length ? `${availableTracks.length} enabled ${availableTracks.length === 1 ? "track matches" : "tracks match"} this selection.${programEnabled ? "" : " Enable the program to open applications."}` : "No enabled tracks match this selection. Set the stipend and enable a matching track in Tracks."}</p>
+        <p id="compensation-availability" className={styles.availability} role="status">{availableProgram.length ? `${availableProgram.length} enabled ${availableProgram.length === 1 ? "program matches" : "program matches"} this selection.${programEnabled ? "" : " Enable the program to open applications."}` : "No enabled program matches this selection. Update the stipend in Program settings."}</p>
       </fieldset>
       <div className={styles.divider}/>
       <section className={styles.deadlineBlock} aria-labelledby="deadline-heading">

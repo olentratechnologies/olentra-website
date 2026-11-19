@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 import { useInternQuery } from "./useInternQuery";
 import styles from "./success-stories.module.css";
 
-const TRACK_COLORS = { explorer: "#2583ff", innovator: "#8256ff" };
+const PROGRAM_COLOR = "#2583ff";
 const initials = (name) => String(name || "").split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
 /** Approved intern stories (shared with consent) as a gently auto-advancing carousel. */
@@ -49,7 +49,7 @@ export default function SuccessStories({ heading }) {
             <Quote size={26} className={styles.quoteMark} aria-hidden="true" />
             <p className={styles.quote}>{story.quote}</p>
             <footer className={styles.person}>
-              <span className={styles.avatar} style={{ background: TRACK_COLORS[story.programId] || "#2583ff" }}>{initials(story.displayName)}</span>
+              <span className={styles.avatar} style={{ background: PROGRAM_COLOR }}>{initials(story.displayName)}</span>
               <span>
                 <strong>{story.displayName}</strong>
                 <small>{story.program} intern · Certified</small>

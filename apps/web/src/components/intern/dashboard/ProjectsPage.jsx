@@ -324,7 +324,7 @@ export function ProjectsPage() {
     if (form.description.trim().length < 12)
       return setFormError("Describe the project in at least 12 characters.");
     if (!data.programs.some((program) => program.name === form.program))
-      return setFormError("Choose a valid internship track.");
+      return setFormError("Choose a valid internship program.");
     if (form.team.some((id) => !activeIds.has(id)))
       return setFormError(
         "Team members must be active interns. Review your selection.",
@@ -367,7 +367,7 @@ export function ProjectsPage() {
       return setDetailError("Progress must be between 0 and 100.");
     if (detail.name.trim().length < 3) return setDetailError("Enter a project name with at least 3 characters.");
     if (detail.description.trim().length < 12) return setDetailError("Describe the project in at least 12 characters.");
-    if (!data.programs.some(program => program.name === detail.program)) return setDetailError("Choose a valid internship track.");
+    if (!data.programs.some(program => program.name === detail.program)) return setDetailError("Choose a valid internship program.");
     if (!detail.dueOn) return setDetailError("Choose a project due date.");
     setDetailError("");
     const originalIds = new Set(selectedProject.team);
@@ -436,12 +436,12 @@ export function ProjectsPage() {
           />
           <FilterMenu>
             <label>
-              Internship track
+              Internship program
               <select
                 value={track}
                 onChange={(event) => { setTrack(event.target.value); setPage(1); }}
               >
-                <option value="all">All tracks</option>
+                <option value="all">All programs</option>
                 {data.programs.map((program) => (
                   <option key={program.id} value={program.name}>
                     {program.name}
@@ -500,8 +500,6 @@ export function ProjectsPage() {
                   <TrackBadge
                     programId="software-engineer"
                     label={project.program || "Software Engineer Intern"}
-                  />
-                    label={project.program}
                   />
                   <span>{project.team.length} members</span>
                 </div>
@@ -650,7 +648,7 @@ export function ProjectsPage() {
               />
             </label>
             <label className={common.field}>
-              Internship track
+              Internship program
               <select
                 value={form.program}
                 onChange={(event) =>
@@ -723,8 +721,6 @@ export function ProjectsPage() {
                 <TrackBadge
                   programId="software-engineer"
                   label={selectedProject.program || "Software Engineer Intern"}
-                />
-                  label={selectedProject.program}
                 />
                 <span>
                   <CalendarDays size={14} /> Due{" "}

@@ -18,7 +18,6 @@ export type ApplicantStatusNotice = {
   status: "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
   certificateNumber?: string;
   schedule?: Record<string, any>;
-  roleTitle?: string;
   pdfAttachment?: { filename: string; content: Buffer; contentType: string };
 };
 

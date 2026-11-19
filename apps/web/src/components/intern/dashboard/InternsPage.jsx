@@ -224,12 +224,12 @@ export default function InternsPage() {
         <Panel className={styles.filterPanel}>
           <div className={styles.filterFields}>
             <label>
-              Track
+              Program
               <select
                 value={track}
                 onChange={(event) => updateFilter(setTrack, event.target.value)}
               >
-                <option value="all">All tracks</option>
+                <option value="all">All programs</option>
                 {(data.programs || []).map((program) => (
                   <option key={program.id} value={program.id}>
                     {program.name}
@@ -384,7 +384,7 @@ export default function InternsPage() {
         {listQuery.data && !filtered.length && (
           <EmptyState
             title="No interns found"
-            description="Try a different search, track, batch, or status."
+            description="Try a different search, program, batch, or status."
           />
         )}
         {listQuery.data && <Pagination

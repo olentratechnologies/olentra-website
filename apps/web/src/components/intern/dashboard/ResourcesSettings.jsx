@@ -10,7 +10,7 @@ import styles from "./settings.module.css";
 const blank = { id: "", title: "", url: "", type: "article", minutes: "", programIds: [] };
 const TYPES = [["article", "Article"], ["video", "Video"], ["course", "Course"], ["doc", "Doc"]];
 
-/** Admins curate learning links per track; interns see them in their portal. */
+/** Admins curate learning links for the internship program; interns see them in their portal. */
 export default function ResourcesSettings({ programs, commands, notify }) {
   const query = useInternQuery("resource.list", {});
   const resources = query.data || [];
@@ -41,7 +41,7 @@ export default function ResourcesSettings({ programs, commands, notify }) {
     <div className={styles.sectionHeading}><span><BookOpen size={19}/></span><div><h2>Learning resources</h2><p>Links interns see in their portal and tick off as they go.</p></div></div>
     {resources.length > 0 && <ul className={styles.templateList}>
       {resources.map((resource) => <li key={resource.id}>
-        <div><strong>{resource.title}</strong><small>{resource.programIds.length ? resource.programIds.map(trackName).join(", ") : "All tracks"}{resource.minutes ? ` · ${resource.minutes} min` : ""}</small></div>
+        <div><strong>{resource.title}</strong><small>{resource.programIds.length ? resource.programIds.map(trackName).join(", ") : "All programs"}{resource.minutes ? ` · ${resource.minutes} min` : ""}</small></div>
         <Button variant="ghost" onClick={() => setForm({ ...resource, minutes: resource.minutes ? String(resource.minutes) : "" })}>Edit</Button>
         <Button variant="ghost" onClick={() => void remove(resource)}>Delete</Button>
       </li>)}
@@ -54,7 +54,7 @@ export default function ResourcesSettings({ programs, commands, notify }) {
       <fieldset className={styles.trackChoices}>
         <legend>Show to</legend>
         {programs.map((program) => <label key={program.id}><input type="checkbox" checked={form.programIds.includes(program.id)} onChange={(event) => setForm((current) => ({ ...current, programIds: event.target.checked ? [...current.programIds, program.id] : current.programIds.filter((id) => id !== program.id) }))}/> {program.name}</label>)}
-        <small>Leave both unticked to show it to every track.</small>
+        <small>Leave the program unticked to show it to all interns.</small>
       </fieldset>
       {error && <p className={styles.error} role="alert">{error}</p>}
       <div className={styles.saveRow}>

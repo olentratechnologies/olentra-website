@@ -1,7 +1,7 @@
 const compensationModes = new Set(["free", "paid", "both"]);
 const configuredAmount = amount => Number.isSafeInteger(amount) && amount >= 0;
 
-// Existing programs keep accepting their configured tracks until staff choose a mode.
+// The single internship program remains available for either stipend setup until staff choose a mode.
 export const normalizeCompensationMode = value => compensationModes.has(value) ? value : "both";
 
 export function matchesCompensationMode(program, mode) {

@@ -80,7 +80,7 @@ try {
     return Promise.resolve(Response.json({ success, hostname: "intake.example.test", action: "resume_upload" }));
   }, originalFetch);
   server = await createInternshipServer({ domain, secret, port: 0, allowedOrigins: [origin], siteOrigin: origin, mailer });
-  await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
+  await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
   await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true, compensationMode: "free" } });
   domain.invalidatePublicData();
   const base = "http://127.0.0.1:" + server.server.port;
@@ -138,7 +138,7 @@ try {
             const submitting = performance.now();
             upload.push(submitting - uploading);
             await applicant.call("application.submit", {
-              name: "Synthetic Applicant", email: id + "@example.test", programId: "explorer", roleId: "build", schedule: "part_time",
+              name: "Synthetic Applicant", email: id + "@example.test", programId: "software-engineer", schedule: "part_time",
               linkedin: "https://linkedin.com/in/" + id, resumeAttachmentId: attachment.id, resumeAccessToken: attachment.accessToken,
             }, true);
             submit.push(performance.now() - submitting);

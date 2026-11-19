@@ -1333,11 +1333,3 @@
 .duplicateNote a {
   color: var(--ad-blue);
 }
-.applicationPreference {
-  max-width: 230px;
-  margin-top: 7px;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  font-size: 12px;
-  line-height: 18px;
-}

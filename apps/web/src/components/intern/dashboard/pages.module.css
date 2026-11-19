@@ -358,10 +358,6 @@
   line-height: 1.15;
   white-space: nowrap;
 }
-.trackBadge[data-track="innovator"] {
-  background: var(--ad-purple-soft, #eadfff);
-  color: var(--ad-purple, #8052e9);
-}
 .statusBadge {
   display: inline-flex;
   align-items: center;

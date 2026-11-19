@@ -5,7 +5,6 @@ export type OfferLetterDetails = {
   email: string;
   college?: string;
   program: string;
-  roleTitle?: string;
   startOn?: string;
   endOn?: string;
   stipend?: number;

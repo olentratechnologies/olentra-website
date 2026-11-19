@@ -7,7 +7,6 @@ test("generateOfferLetterPdf produces valid %PDF-1.4 binary with correct letterh
     email: "alex@example.test",
     college: "National Institute of Technology",
     program: "Software Engineer Intern",
-    roleTitle: "AI Full Stack Engineering Intern",
     startOn: "2026-12-01T00:00:00.000Z",
     endOn: "2026-12-31T00:00:00.000Z",
     stipend: 5000,
@@ -27,6 +26,7 @@ test("generateOfferLetterPdf produces valid %PDF-1.4 binary with correct letterh
   expect(text.includes("Internship Offer Letter")).toBe(true);
   expect(text.includes("Alex Kumar")).toBe(true);
   expect(text.includes("Software Engineer Intern")).toBe(true);
+  expect(text.includes("Intern Role")).toBe(false);
   expect(text.includes("National Institute of Technology")).toBe(true);
 });
 
@@ -47,7 +47,7 @@ test("browser download and emailed PDF have identical layouts and format ISO iss
 });
 
 test("long recipient and offer fields wrap onto additional pages rather than clipping", () => {
-  const pdf = generateOfferLetterPdf({ name: "Alex ".repeat(24), email: "candidate@example.test", college: "University ".repeat(40), program: "Engineering ".repeat(30), roleTitle: "Research ".repeat(30), applicationId: "OL-123", issueDate: "2026-11-17" }).toString();
+  const pdf = generateOfferLetterPdf({ name: "Alex ".repeat(24), email: "candidate@example.test", college: "University ".repeat(40), program: "Engineering ".repeat(30), applicationId: "OL-123", issueDate: "2026-11-17" }).toString();
   expect(pdf).not.toContain("/Count 1 ");
   const match = pdf.match(/startxref\n(\d+)/);
   expect(match).not.toBeNull();
@@ -56,7 +56,7 @@ test("long recipient and offer fields wrap onto additional pages rather than cli
 
 
 test("one-month letters retain the approved one-page design and show their confirmed version", () => {
-  const pdf=generateOfferLetterPdf({name:"China Chin",email:"candidate@example.test",program:"Software Engineer Intern",roleTitle:"Agentic AI Engineer Intern",applicationId:"OL-SCHEDULE",durationLabel:"1 calendar month",offerVersion:2,startOn:"2026-11-24",endOn:"2026-12-23",issueDate:"2026-11-17"}).toString();
+  const pdf=generateOfferLetterPdf({name:"China Chin",email:"candidate@example.test",program:"Software Engineer Intern",applicationId:"OL-SCHEDULE",durationLabel:"1 calendar month",offerVersion:2,startOn:"2026-11-24",endOn:"2026-12-23",issueDate:"2026-11-17"}).toString();
   expect(pdf).toContain("Duration: 1 calendar month | Offer version: 2");
   expect(pdf).toContain("24 Nov 2026");
   expect(pdf).toContain("23 Dec 2026");

@@ -103,7 +103,6 @@ export function buildOfferLetterPdfBytes(details) {
   y-=introHeight+24;y=ensure(y,80);section('Internship Details','briefcase-business',y);y-=16;
   const cells=[
     ['Program Track',details.program||'As specified in your offer','layers'],
-    ['Intern Role',details.roleTitle||'Engineering Intern','users-round'],
     ['Start Date',date(details.startOn),'calendar'],
     ['Completion Date',date(details.endOn),'calendar-check'],
     ['Work Mode',details.workMode||'Remote','laptop'],

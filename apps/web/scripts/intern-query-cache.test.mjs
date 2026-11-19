@@ -11,12 +11,12 @@ function deferred() {
 const turn = () => new Promise(resolve => setImmediate(resolve));
 
 test("keys sort nested object fields while preserving array order and method isolation", () => {
-  const a = { page: 2, filter: { status: "Applied", tracks: ["explorer", "innovator"] } };
-  const b = { filter: { tracks: ["explorer", "innovator"], status: "Applied" }, page: 2 };
+  const a = { page: 2, filter: { status: "Applied", tracks: ["software-engineer"] } };
+  const b = { filter: { tracks: ["software-engineer"], status: "Applied" }, page: 2 };
   assert.equal(internQueryKey("application.list", a), internQueryKey("application.list", b));
   assert.notEqual(internQueryKey("application.list", a), internQueryKey("intern.list", a));
   assert.notEqual(internQueryKey("application.list", a), internQueryKey("application.list", { ...a, page: 1 }));
-  assert.notEqual(internQueryKey("application.list", a), internQueryKey("application.list", { ...a, filter: { ...a.filter, tracks: ["innovator", "explorer"] } }));
+  assert.notEqual(internQueryKey("application.list", a), internQueryKey("application.list", { ...a, filter: { ...a.filter, tracks: ["other-program", "software-engineer"] } }));
 });
 
 test("idle and loaded snapshots remain stable and cached rows are immediately available", async () => {

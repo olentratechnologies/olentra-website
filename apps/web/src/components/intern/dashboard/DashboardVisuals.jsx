@@ -520,222 +520,33 @@ export function ApplicationsAreaChart({ period, className }) {
   const points = period?.points || [];
   const maximum = period?.maxValue || 2000;
   const plot = { left: 44, right: 588, top: 12, bottom: 198 };
-  const x = (index) =>
-    plot.left +
-    (index / Math.max(points.length - 1, 1)) * (plot.right - plot.left);
-  const y = (value) =>
-    Math.max(
-      plot.top,
-      Math.min(plot.bottom, plot.bottom - (value / maximum) * (plot.bottom - plot.top)),
-    );
-  const explorerPath = monotoneLinePath(
-    points.map((point, index) => ({ x: x(index), y: y(point.explorer) })),
-  );
-  const innovatorPath = monotoneLinePath(
-    points.map((point, index) => ({ x: x(index), y: y(point.innovator) })),
-  );
-  const axisLabels =
-    period?.axisLabels ||
-    points
-      .map((point, index) => ({ index, label: point.label }))
-      .filter(
-        (_, index) => index % Math.max(1, Math.ceil(points.length / 5)) === 0,
-      );
+  const x = (index) => plot.left + (index / Math.max(points.length - 1, 1)) * (plot.right - plot.left);
+  const count = (point) => Number(point.applications ?? point["software-engineer"] ?? 0);
+  const y = (value) => Math.max(plot.top, Math.min(plot.bottom, plot.bottom - (value / maximum) * (plot.bottom - plot.top)));
+  const path = monotoneLinePath(points.map((point, index) => ({ x: x(index), y: y(count(point)) })));
+  const labels = period?.axisLabels || points.map((point, index) => ({ index, label: point.label })).filter((_, index) => index % Math.max(1, Math.ceil(points.length / 5)) === 0);
   const hovered = hoveredIndex !== null ? points[hoveredIndex] : null;
   return (
-    <div
-      className={className}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "100%",
-        minWidth: 0,
-      }}
-    >
-      <svg
-        viewBox="0 0 600 230"
-        width="100%"
-        height="100%"
-        preserveAspectRatio="none"
-        fill="none"
-        role="img"
-        aria-label="Applications over time for Software Engineer Intern"
-        style={{ display: "block", overflow: "visible" }}
-        onMouseLeave={() => setHoveredIndex(null)}
-        onMouseMove={(event) => {
-          const bounds = event.currentTarget.getBoundingClientRect();
-          const position = ((event.clientX - bounds.left) / bounds.width) * 600;
-          setHoveredIndex(
-            Math.max(
-              0,
-              Math.min(
-                points.length - 1,
-                Math.round(
-                  ((position - plot.left) / (plot.right - plot.left)) *
-                    (points.length - 1),
-                ),
-              ),
-            ),
-          );
-        }}
-      >
+    <div className={className} style={{ position: "relative", width: "100%", height: "100%", minWidth: 0 }}>
+      <svg viewBox="0 0 600 230" width="100%" height="100%" preserveAspectRatio="none" fill="none" role="img" aria-label="Applications over time for Software Engineer Intern" style={{ display: "block", overflow: "visible" }} onMouseLeave={() => setHoveredIndex(null)} onMouseMove={(event) => {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        const position = ((event.clientX - bounds.left) / bounds.width) * 600;
+        if (!points.length) return;
+        const index = Math.round(((position - plot.left) / (plot.right - plot.left)) * (points.length - 1));
+        setHoveredIndex(Math.max(0, Math.min(points.length - 1, index)));
+      }}>
         <title>Applications overview: Software Engineer Intern</title>
-        <defs>
-          <linearGradient id={`${id}-blue`} x1="0" y1="0" x2="0" y2="1">
-            <stop stopColor="var(--ad-chart-fill-1, #438cff)" stopOpacity=".3" />
-            <stop offset="1" stopColor="var(--ad-chart-fill-1, #5798ff)" stopOpacity=".03" />
-          </linearGradient>
-          <linearGradient id={`${id}-purple`} x1="0" y1="0" x2="0" y2="1">
-            <stop stopColor="var(--ad-chart-fill-2, #a36bff)" stopOpacity=".43" />
-            <stop offset="1" stopColor="var(--ad-chart-fill-2, #ad91ff)" stopOpacity=".23" />
-          </linearGradient>
-        </defs>
+        <defs><linearGradient id={`${id}-blue`} x1="0" y1="0" x2="0" y2="1"><stop stopColor="var(--ad-chart-fill-1, #438cff)" stopOpacity=".3"/><stop offset="1" stopColor="var(--ad-chart-fill-1, #5798ff)" stopOpacity=".03"/></linearGradient></defs>
         {[0, 1, 2, 3, 4].map((index) => {
           const value = (maximum * index) / 4;
-          return (
-            <g key={index}>
-              <line
-                x1={plot.left}
-                x2={plot.right}
-                y1={y(value)}
-                y2={y(value)}
-                stroke="var(--ad-chart-grid, #bdcff5)"
-                strokeOpacity=".62"
-                strokeWidth=".7"
-                strokeDasharray={index ? "2 2" : undefined}
-              />
-              <text
-                x="21"
-                y={y(value) + 4}
-                textAnchor="middle"
-                fill="var(--ad-muted, #344c8a)"
-                fontFamily="Arial, sans-serif"
-                fontSize="12"
-              >
-                {value >= 1000 ? `${value / 1000}K` : value}
-              </text>
-            </g>
-          );
+          return <g key={index}><line x1={plot.left} x2={plot.right} y1={y(value)} y2={y(value)} stroke="var(--ad-chart-grid, #bdcff5)" strokeOpacity=".62" strokeWidth=".7" strokeDasharray={index ? "2 2" : undefined}/><text x="21" y={y(value) + 4} textAnchor="middle" fill="var(--ad-muted, #344c8a)" fontFamily="Arial, sans-serif" fontSize="12">{value >= 1000 ? `${value / 1000}K` : value}</text></g>;
         })}
-        {axisLabels.map((tick, index) => (
-          <g key={`${tick.index}-${index}`}>
-            <line
-              x1={x(tick.index)}
-              x2={x(tick.index)}
-              y1={plot.top}
-              y2={plot.bottom}
-              stroke="var(--ad-chart-grid, #bdcff5)"
-              strokeOpacity=".55"
-              strokeWidth=".7"
-              strokeDasharray="2 2"
-            />
-            <text
-              x={x(tick.index)}
-              y="224"
-              textAnchor={
-                index === axisLabels.length - 1
-                  ? "end"
-                  : index === 0
-                    ? "middle"
-                    : "middle"
-              }
-              fill="var(--ad-muted, #344c8a)"
-              fontFamily="Arial, sans-serif"
-              fontSize="12"
-            >
-              {tick.label}
-            </text>
-          </g>
-        ))}
-        <line
-          x1={plot.left}
-          x2={plot.left}
-          y1={plot.top}
-          y2={plot.bottom}
-          stroke="var(--ad-chart-grid, #bbcef6)"
-          strokeWidth="1"
-        />
-        {points.length > 0 && (
-          <>
-            <path
-              d={`${explorerPath} L ${plot.right} ${plot.bottom} L ${plot.left} ${plot.bottom} Z`}
-              fill={`url(#${id}-blue)`}
-            />
-            <path
-              d={`${innovatorPath} L ${plot.right} ${plot.bottom} L ${plot.left} ${plot.bottom} Z`}
-              fill={`url(#${id}-purple)`}
-            />
-            <path
-              d={explorerPath}
-              stroke="var(--ad-chart-series-1, #237cff)"
-              strokeWidth="2.3"
-              vectorEffect="non-scaling-stroke"
-            />
-            <path
-              d={innovatorPath}
-              stroke="var(--ad-chart-series-2, #9c5bff)"
-              strokeWidth="2.3"
-              vectorEffect="non-scaling-stroke"
-            />
-          </>
-        )}
-        {hovered && (
-          <g>
-            <line
-              x1={x(hoveredIndex)}
-              x2={x(hoveredIndex)}
-              y1={plot.top}
-              y2={plot.bottom}
-              stroke="var(--ad-subtle, #6b8cda)"
-              strokeDasharray="4 4"
-            />
-            <circle
-              cx={x(hoveredIndex)}
-              cy={y(hovered.explorer)}
-              r="4"
-              fill="var(--ad-chart-series-1, #237cff)"
-              stroke="var(--ad-panel, white)"
-              strokeWidth="2"
-            />
-            <circle
-              cx={x(hoveredIndex)}
-              cy={y(hovered.innovator)}
-              r="4"
-              fill="var(--ad-chart-series-2, #9c5bff)"
-              stroke="var(--ad-panel, white)"
-              strokeWidth="2"
-            />
-          </g>
-        )}
+        {labels.map((tick, index) => <g key={`${tick.index}-${index}`}><line x1={x(tick.index)} x2={x(tick.index)} y1={plot.top} y2={plot.bottom} stroke="var(--ad-chart-grid, #bdcff5)" strokeOpacity=".55" strokeWidth=".7" strokeDasharray="2 2"/><text x={x(tick.index)} y="224" textAnchor={index === 0 ? "middle" : "middle"} fill="var(--ad-muted, #344c8a)" fontFamily="Arial, sans-serif" fontSize="12">{tick.label}</text></g>)}
+        <line x1={plot.left} x2={plot.left} y1={plot.top} y2={plot.bottom} stroke="var(--ad-chart-grid, #bbcef6)" strokeWidth="1"/>
+        {points.length > 0 && <><path d={`${path} L ${plot.right} ${plot.bottom} L ${plot.left} ${plot.bottom} Z`} fill={`url(#${id}-blue)`}/><path d={path} stroke="var(--ad-chart-series-1, #237cff)" strokeWidth="2.3" vectorEffect="non-scaling-stroke"/></>}
+        {hovered && <g><line x1={x(hoveredIndex)} x2={x(hoveredIndex)} y1={plot.top} y2={plot.bottom} stroke="var(--ad-subtle, #6b8cda)" strokeDasharray="4 4"/><circle cx={x(hoveredIndex)} cy={y(count(hovered))} r="4" fill="var(--ad-chart-series-1, #237cff)" stroke="var(--ad-panel, white)" strokeWidth="2"/></g>}
       </svg>
-      {hovered && (
-        <div
-          style={{
-            position: "absolute",
-            pointerEvents: "none",
-            top: 4,
-            left: `${Math.min(66, Math.max(8, x(hoveredIndex) / 6 - 9))}%`,
-            border: "1px solid var(--ad-border, #d6e1ff)",
-            borderRadius: 9,
-            padding: "9px 12px",
-            background: "var(--ad-panel, rgba(255,255,255,.96))",
-            color: "var(--ad-text, #152451)",
-            boxShadow: "0 6px 18px #294c9b18",
-            fontSize: 11,
-            zIndex: 2,
-            lineHeight: 1.65,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <strong>{hovered.label}</strong>
-          <div style={{ color: "var(--ad-link, #237cff)" }}>
-            Explorer: {hovered.explorer.toLocaleString()}
-          </div>
-          <div style={{ color: "var(--ad-purple, #9355ed)" }}>
-            Innovator: {hovered.innovator.toLocaleString()}
-          </div>
-        </div>
-      )}
+      {hovered && <div style={{ position: "absolute", pointerEvents: "none", top: 4, left: `${Math.min(66, Math.max(8, x(hoveredIndex) / 6 - 9))}%`, border: "1px solid var(--ad-border, #d6e1ff)", borderRadius: 9, padding: "9px 12px", background: "var(--ad-panel, rgba(255,255,255,.96))", color: "var(--ad-text, #152451)", boxShadow: "0 6px 18px #294c9b18", fontSize: 11, zIndex: 2, lineHeight: 1.65, whiteSpace: "nowrap" }}><strong>{hovered.label}</strong><div style={{ color: "var(--ad-link, #237cff)" }}>Software Engineer Intern: {count(hovered).toLocaleString()}</div></div>}
     </div>
   );
 }
@@ -747,8 +558,6 @@ export function ProgramDonut({ programs = [], className }) {
     name: "Software Engineer Intern",
     color: "#2583ff",
   };
-  const second = null;
-  const circumference = 2 * Math.PI * 64;
   return (
     <svg
       className={className}
@@ -757,7 +566,7 @@ export function ProgramDonut({ programs = [], className }) {
       role="img"
       aria-label={`${first.name}: ${first.share}%`}
     >
-      <title>{`Program split: ${first.share}% Software Engineer Intern`}</title>
+      <title>{`Software Engineer Intern: ${first.share}%`}</title>
       <defs>
         <linearGradient
           id={`${id}-blue`}
@@ -798,7 +607,7 @@ export function ProgramDonut({ programs = [], className }) {
         fontFamily="Inter, Arial, sans-serif"
         fontSize="12.5"
       >
-        Explorer
+        Program
       </text>
     </svg>
   );

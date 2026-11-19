@@ -1,11 +1,10 @@
-import { internRoleLabel, internScheduleLabel } from "./opportunities.mjs";
+import { internScheduleLabel } from "./opportunities.mjs";
 
 export const APPLICATION_EXPORT_COLUMNS = [
   "Application ID",
   "Applicant",
   "Email",
   "Track",
-  "Intern role",
   "Schedule",
   "College",
   "Applied On",
@@ -21,7 +20,6 @@ export function applicationExportRow(application) {
     application.name,
     application.email,
     application.program,
-    internRoleLabel(application.roleId),
     internScheduleLabel(application.schedule),
     application.college || "",
     application.appliedOn,

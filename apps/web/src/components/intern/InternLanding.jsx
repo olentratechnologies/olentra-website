@@ -26,7 +26,6 @@ import styles from "./intern.module.css";
 import InternInsights from "./InternInsights";
 import SuccessStories from "./SuccessStories";
 import InternFaq from "./InternFaq";
-import InternRoles from "./InternRoles";
 import InternPrerequisites from "./InternPrerequisites";
 import ApplicationCountdown, { useDeadlineClosed } from "./ApplicationCountdown";
 import { Feature, useSiteFeatures } from "@olentra/site-features/react";
@@ -58,7 +57,7 @@ const commonTrackBenefits = [
   "Gain practical project experience",
   "Receive mentorship and project feedback",
   "Learn from experienced professionals",
-  "Build practical skills for your role",
+  "Build practical software engineering skills",
   "Access to AI tools, including Claude, Codex, and Gemini",
 ];
 
@@ -75,15 +74,13 @@ const tracks = [
     name: "Software Engineer Intern",
     subtitle: "Internship program",
     description:
-      "Build your software engineering skills through real-world projects, mentorship, and hands-on experience.",
-    art: "chip",
+      "Build production-minded software and AI-powered products through hands-on engineering, mentorship, and real-world projects.",
+    art: "book",
     cta: "Apply now",
   },
 ];
 const WORK_MODE = "100% remote";
 const SCHEDULE = "Part-time/full-time";
-
-const trackNames = Object.fromEntries(tracks.map((track) => [track.id, track.name]));
 
 const benefits = [
   { art: "benefitRocket", lines: ["Real-world", "projects"] },
@@ -180,6 +177,8 @@ export default function InternLanding() {
   const { commands, ready, sessionReady, connected, data } = useInternship();
   const { features, ready: featuresReady } = useSiteFeatures();
   const opportunities = data.opportunities || INTERNSHIP_OPPORTUNITIES;
+  const workAreas = opportunities.workAreas || INTERNSHIP_OPPORTUNITIES.workAreas;
+  const helpfulSkills = opportunities.helpfulSkills || INTERNSHIP_OPPORTUNITIES.helpfulSkills;
   const internshipDuration = (data.settings.duration || opportunities.duration || INTERNSHIP_OPPORTUNITIES.duration).replace(/\bcalendar\s+/gi, "").trim();
   const visibleTracks = tracks.filter((track) => matchesCompensationMode(data.programs.find((program) => program.id === track.id), data.settings.compensationMode));
   const availablePrograms = useMemo(() => data.programs.filter((program) => isProgramAvailable(program, data.settings)), [data.programs, data.settings]);
@@ -192,7 +191,6 @@ export default function InternLanding() {
   const canApplyRef = useRef(canApply);
   canApplyRef.current = canApply;
   const [trackChoice, setTrackChoice] = useState("");
-  const [roleChoice, setRoleChoice] = useState("");
   const [scheduleChoice, setScheduleChoice] = useState("");
   const [draftReady, setDraftReady] = useState(false);
   const selectedTrack = resolveProgramSelection(trackChoice, availableTrackIds);
@@ -227,18 +225,17 @@ export default function InternLanding() {
       if (input && "value" in input && !input.value && typeof draft[field] === "string") input.value = draft[field];
     }
     if (typeof draft?.track === "string") setTrackChoice(draft.track);
-    setRoleChoice(draft?.roleId || "");
     setScheduleChoice(draft?.schedule || "");
     setDraftReady(true);
   }, [canApply]);
   // Save controlled choices after rendering, including restored answers.
-  useEffect(() => { if (draftReady) saveDraft(); }, [draftReady, trackChoice, roleChoice, scheduleChoice]);
+  useEffect(() => { if (draftReady) saveDraft(); }, [draftReady, trackChoice, scheduleChoice]);
   function saveDraft() {
     const form = formRef.current;
     if (!form) return;
     if (!draftReady) return;
     const draft = {};
-    for (const field of [...DRAFT_FIELDS, "track", "roleId", "schedule"]) draft[field] = String(form.elements.namedItem(field)?.value || "");
+    for (const field of [...DRAFT_FIELDS, "track", "schedule"]) draft[field] = String(form.elements.namedItem(field)?.value || "");
     writeApplyDraft(draft);
   }
   const resumeInput = useRef(null);
@@ -323,7 +320,6 @@ export default function InternLanding() {
     form?.reset();
     for (const field of Array.from(form?.elements || [])) field.setCustomValidity?.("");
     setTrackChoice("");
-    setRoleChoice("");
     setScheduleChoice("");
     uploadedResume.current = null;
     setResumeName("");
@@ -381,7 +377,6 @@ export default function InternLanding() {
         .trim()
         .toLowerCase(),
       programId: selectedTrack,
-      roleId: roleChoice,
       schedule: scheduleChoice,
       linkedin: String(formData.get("linkedin") || "").trim(),
       github: String(formData.get("github") || "").trim(),
@@ -699,6 +694,18 @@ export default function InternLanding() {
                       ))}
                     </ul>
                   </div>
+                  <div className={`${styles.trackPanel} ${styles.trackPanelWide}`}>
+                    <h3>What you'll work on</h3>
+                    <ul className={styles.trackWorkAreas} role="list">
+                      {workAreas.map((area) => (
+                        <li key={area}><Check size={14} strokeWidth={2.5} aria-hidden="true" />{area}</li>
+                      ))}
+                    </ul>
+                    <h4 className={styles.trackSkillsHeading}>Helpful skills <span>Optional</span></h4>
+                    <ul className={styles.trackSkills} role="list">
+                      {helpfulSkills.map((skill) => <li key={skill}>{skill}</li>)}
+                    </ul>
+                  </div>
                 </div>
               </article>
               );
@@ -706,12 +713,8 @@ export default function InternLanding() {
           </div> : ready ? <p className={styles.tracksEmpty} role="status">Internship opportunities will be announced soon.</p> : <LoadingIndicator label="Loading internship opportunities…" />}
         </section></Feature>
 
-        <Feature name="careers.roles"><div className={styles.container}>
-          <InternRoles roles={opportunities.roles} />
-        </div></Feature>
-
         <Feature name="careers.prerequisites"><div className={styles.container}>
-          <InternPrerequisites roles={opportunities.roles} />
+          <InternPrerequisites />
         </div></Feature>
 
         <Feature name="careers.insights"><section
@@ -720,9 +723,7 @@ export default function InternLanding() {
           data-theme="light"
           aria-labelledby="insights-title"
         >
-          <InternInsights
-            trackNames={trackNames}
-          />
+          <InternInsights />
         </section></Feature>
 
         <Feature name="careers.stories"><div className={styles.container}>
@@ -770,7 +771,6 @@ export default function InternLanding() {
 
           <Feature name="careers.faq">
             <InternFaq
-              roles={opportunities.roles}
               duration={internshipDuration}
               deadline={data.settings.applicationDeadline}
               tracks={visibleTracks.map((track) => {
@@ -839,7 +839,7 @@ export default function InternLanding() {
                     </label>
                     {!soleAvailableProgram ? (
                       <label htmlFor="intern-track">
-                        Internship track <span>*</span>
+                        Internship program <span>*</span>
                         <select
                           id="intern-track"
                           name="track"
@@ -850,7 +850,7 @@ export default function InternLanding() {
                           required
                         >
                           <option value="" disabled>
-                            Choose a track
+                            Choose a program
                           </option>
                           {tracks
                             .filter((track) => availableTrackIds.includes(track.id))
@@ -934,14 +934,6 @@ export default function InternLanding() {
                           {githubError}
                         </p>
                       )}
-                    </div>
-                    <div className={`${styles.profileField} ${styles.profileFieldWide}`}>
-                      <label htmlFor="intern-role">Internship role <span className={styles.requiredMark}>*</span></label>
-                      <select id="intern-role" name="roleId" value={roleChoice} onChange={(event) => setRoleChoice(event.target.value)} required aria-describedby="intern-role-hint">
-                        <option value="" disabled>Choose your role</option>
-                        {opportunities.roles.map((role) => <option key={role.id} value={role.id}>{role.title} — {role.tag}</option>)}
-                      </select>
-                      <p className={styles.fieldHint} id="intern-role-hint">Your track defines the program. Your role defines what you will work on.</p>
                     </div>
                     <fieldset className={styles.scheduleField}>
                       <legend>Schedule <span>*</span></legend>

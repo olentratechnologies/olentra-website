@@ -115,20 +115,19 @@ test("an expired offer can't be accepted until an admin extends it", async () =>
   expect((await domain.execute("offer.accept", { applicationId, version:1 }, account, key()) as any).status).toBe("Accepted");
 });
 
-test("interns see resources for their track and can tick them off", async () => {
+test("interns see resources for the program and can tick them off", async () => {
   const all = await domain.execute("resource.save", { title: "Git basics", url: "https://git-scm.com/book", type: "doc" }, admin, key()) as any;
-  const software-engineerOnly = await domain.execute("resource.save", { title: "React", url: "https://react.dev/learn", type: "course", minutes: 90, programIds: ["software-engineer"] }, admin, key()) as any;
-  const software-engineerOnly = await domain.execute("resource.save", { title: "Systems", url: "https://example.test/sys", programIds: ["software-engineer"] }, admin, key()) as any;
+  const reactOnly = await domain.execute("resource.save", { title: "React", url: "https://react.dev/learn", type: "course", minutes: 90, programIds: ["software-engineer"] }, admin, key()) as any;
+  const systemsOnly = await domain.execute("resource.save", { title: "Systems", url: "https://example.test/sys", programIds: ["software-engineer"] }, admin, key()) as any;
   await expect(domain.execute("resource.save", { title: "x", url: "https://a.test" }, recruiter, key())).rejects.toMatchObject({ code: "FORBIDDEN" });
   const { account } = await applicant("Joined");
-  await domain.execute("resource.complete", { resourceId: software-engineerOnly.id }, account, key());
+  await domain.execute("resource.complete", { resourceId: reactOnly.id }, account, key());
   const snapshot = await domain.execute("intern.snapshot", {}, account, key()) as any;
   const ids = snapshot.my.resources.map((item: any) => item.id);
-  expect(ids).toEqual(expect.arrayContaining([all.id, software-engineerOnly.id]));
-  expect(ids).not.toContain(software-engineerOnly.id);
-  expect(snapshot.my.resources.find((item: any) => item.id === software-engineerOnly.id).done).toBe(true);
-  await domain.execute("resource.complete", { resourceId: software-engineerOnly.id, done: false }, account, key());
-  expect((await domain.execute("intern.snapshot", {}, account, key()) as any).my.resources.find((item: any) => item.id === software-engineerOnly.id).done).toBe(false);
+  expect(ids).toEqual(expect.arrayContaining([all.id, reactOnly.id, systemsOnly.id]));
+  expect(snapshot.my.resources.find((item: any) => item.id === reactOnly.id).done).toBe(true);
+  await domain.execute("resource.complete", { resourceId: reactOnly.id, done: false }, account, key());
+  expect((await domain.execute("intern.snapshot", {}, account, key()) as any).my.resources.find((item: any) => item.id === reactOnly.id).done).toBe(false);
 });
 
 test("active interns check in once a week and mentors can reply", async () => {

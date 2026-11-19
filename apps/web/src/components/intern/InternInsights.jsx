@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Award, CheckCheck, FileSearch, Radio, UserCheck, UserPlus, Sparkles, Users } from "lucide-react";
-import { INTERN_ROLES } from "@/lib/intern/opportunities.mjs";
 import useInternInsights from "./useInternInsights";
 import styles from "./intern-insights.module.css";
 
@@ -38,8 +37,8 @@ function relativeTime(iso, now) {
   return days === 1 ? "1 day ago" : `${days} days ago`;
 }
 
-function trackName(tracks, id) {
-  return tracks.find((track) => track.id === id)?.name || "Olentra internship";
+function programName(programs, id) {
+  return programs.find((program) => program.id === id)?.name || "Olentra internship";
 }
 
 function skillName(value) {
@@ -48,7 +47,7 @@ function skillName(value) {
 }
 
 function monthlyTotals(months) {
-  return months.map((month) => (month.explorer || 0) + (month.innovator || 0));
+  return months.map((month) => Number(month.applications ?? month["software-engineer"] ?? 0));
 }
 
 /** Matches the server's public rule: a first name plus a last initial. */
@@ -106,9 +105,8 @@ export default function InternInsights() {
   const { insights, live, error } = useInternInsights();
   const now = useNow();
   const totals = insights?.totals;
-  const tracks = insights?.tracks || [];
+  const programs = insights?.programs || [];
   const recent = insights?.recent || [];
-  const byRole = insights?.byRole || {};
   const months = insights?.months || [];
   const monthly = monthlyTotals(months);
   const peakMonth = Math.max(1, ...monthly);
@@ -124,13 +122,6 @@ export default function InternInsights() {
   const trendSummary = trendMonths.length
     ? `Applications per month over the last 12 months: ${trendMonths.map((month) => `${month.label} ${month.count}`).join(", ")}.`
     : "No applications in the last 12 months.";
-  const roleCounts = INTERN_ROLES.map((role) => byRole[role.id] || 0);
-  const topCount = Math.max(0, ...roleCounts);
-  const secondCount = [...roleCounts].sort((a, b) => b - a)[1] || 0;
-  const leadingRoleId = topCount > 0 && topCount > secondCount
-    ? INTERN_ROLES[roleCounts.indexOf(topCount)]?.id
-    : null;
-
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
@@ -155,7 +146,7 @@ export default function InternInsights() {
 
       {!insights ? (
         error ? <p className={styles.emptyNote}>Live insights are temporarily unavailable. Please check back shortly.</p> : <Skeleton />
-      ) : !tracks.length ? (
+      ) : !programs.length ? (
         <p className={styles.firstNote}><Sparkles size={15} aria-hidden="true" /> Insights will appear here once an internship track opens.</p>
       ) : (
         <div className={styles.body}>
@@ -249,10 +240,10 @@ export default function InternInsights() {
               {recent.length ? (
                 <ol className={styles.feed} aria-live="polite">
                   {recent.map((item, index) => (
-                    <li key={`${item.at}:${item.track}:${index}`} className={styles.feedItem}>
+                    <li key={`${item.at}:${item.programId}:${index}`} className={styles.feedItem}>
                       {item.name && <span className={styles.feedAvatar} aria-hidden="true">{initials(item.name)}</span>}
                       <span className={styles.feedText}>
-                        {item.name ? <><b>{item.name}</b> applied to {trackName(tracks, item.track)}</> : <>Applied to {trackName(tracks, item.track)}</>}
+                        {item.name ? <><b>{item.name}</b> applied to {programName(programs, item.programId)}</> : <>Applied to {programName(programs, item.programId)}</>}
                       </span>
                       <time className={styles.feedTime} dateTime={item.at}>{relativeTime(item.at, now)}</time>
                     </li>
@@ -260,35 +251,6 @@ export default function InternInsights() {
                 </ol>
               ) : (
                 <p className={styles.firstNote}><Sparkles size={15} aria-hidden="true" /> Be among the first to apply this intake.</p>
-              )}
-            </article>
-            <article className={styles.pulseRoles}>
-              <span className={styles.eyebrow}>Where people apply</span>
-              <h3>Where people are applying</h3>
-              <p className={styles.pulseIntro}>Live demand by intern role — choose the path that fits you.</p>
-              {totals.applied > 0 ? (
-                <ul className={styles.roleList}>
-                  {INTERN_ROLES.map((role) => {
-                    const count = byRole[role.id] || 0;
-                    const share = totals.applied ? Math.min(100, Math.round((count / totals.applied) * 100)) : 0;
-                    return (
-                      <li key={role.id}>
-                        <a className={styles.roleRow} href={`#role-${role.id}`} aria-label={`${role.short}, ${count} ${count === 1 ? "application" : "applications"}${leadingRoleId === role.id ? ", most requested" : ""}`}>
-                          <span className={styles.roleRowTop}>
-                            <span className={styles.roleName}>
-                              {role.short}
-                              {leadingRoleId === role.id && <span className={styles.mostRequested}>Most requested</span>}
-                            </span>
-                            <LiveNumber value={count} className={styles.roleCount} />
-                          </span>
-                          <span className={styles.roleShare} aria-hidden="true"><span style={{ width: `${share}%` }} /></span>
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p className={styles.firstNote}><Sparkles size={15} aria-hidden="true" /> Applications are open — be among the first to apply.</p>
               )}
             </article>
           </section>
@@ -302,7 +264,7 @@ export default function InternInsights() {
             <ol className={styles.timelineSteps}>
               {[
                 { title: "Application review", detail: "Our team checks your application for completeness and eligibility." },
-                { title: "Rigorous screening", detail: "We assess your skills, experience, and alignment with your chosen role." },
+                { title: "Rigorous screening", detail: "We assess your skills, experience, problem-solving, and potential to contribute to the program." },
                 { title: "Offer", detail: "Selected candidates receive an offer." },
                 { title: "Onboarding", detail: "Get ready to join your program." },
               ].map((step, index) => (
