@@ -559,7 +559,7 @@ export function ApplicationsAreaChart({ period, className }) {
         preserveAspectRatio="none"
         fill="none"
         role="img"
-        aria-label="Applications over time for Tech Explorer and Tech Innovator"
+        aria-label="Applications over time for Software Engineer Intern"
         style={{ display: "block", overflow: "visible" }}
         onMouseLeave={() => setHoveredIndex(null)}
         onMouseMove={(event) => {
@@ -579,7 +579,7 @@ export function ApplicationsAreaChart({ period, className }) {
           );
         }}
       >
-        <title>Applications overview: Tech Explorer and Tech Innovator</title>
+        <title>Applications overview: Software Engineer Intern</title>
         <defs>
           <linearGradient id={`${id}-blue`} x1="0" y1="0" x2="0" y2="1">
             <stop stopColor="var(--ad-chart-fill-1, #438cff)" stopOpacity=".3" />
@@ -744,7 +744,7 @@ export function ProgramDonut({ programs = [], className }) {
   const id = useSvgId("donut");
   const first = programs[0] || {
     share: 68,
-    name: "Tech Explorer",
+    name: "Software Engineer Intern",
     color: "#2583ff",
   };
   const second = programs[1] || {
@@ -830,67 +830,6 @@ export function ProgramDonut({ programs = [], className }) {
       >
         Explorer
       </text>
-    </svg>
-  );
-}
-
-export function GrowthArtwork({ className }) {
-  const id = useSvgId("growth");
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 88 68"
-      fill="none"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={`${id}-bars`} x1="0" y1="0" x2="0" y2="1">
-          <stop stopColor="#74bbff" />
-          <stop offset="1" stopColor="#357cff" />
-        </linearGradient>
-        <linearGradient
-          id={`${id}-line`}
-          x1="14"
-          y1="42"
-          x2="72"
-          y2="9"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stopColor="#8edcff" />
-          <stop offset="1" stopColor="#0faf86" />
-        </linearGradient>
-      </defs>
-      {[
-        { x: 13, height: 9 },
-        { x: 25, height: 15 },
-        { x: 37, height: 20 },
-        { x: 49, height: 25 },
-        { x: 61, height: 34 },
-      ].map((bar) => (
-        <rect
-          key={bar.x}
-          x={bar.x}
-          y={58 - bar.height}
-          width="9"
-          height={bar.height}
-          rx="1"
-          fill={`url(#${id}-bars)`}
-        />
-      ))}
-      <path
-        d="M 13 44 L 25 35 L 37 28 L 49 31 L 69 12"
-        stroke={`url(#${id}-line)`}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M 62 12 H 70 V 20"
-        stroke="#11ad88"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
     </svg>
   );
 }

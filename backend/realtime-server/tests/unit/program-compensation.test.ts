@@ -7,7 +7,7 @@ const admin: Principal = { id: "admin", role: "company", staffRole: "admin", nam
 
 function fixture(compensationMode?: unknown, stipend = 0) {
   const config: Record<string, any> = { _id: "program", programEnabled: true, compensationMode };
-  const programs = [{ _id: "explorer", name: "Tech Explorer", fee: 500, stipend, enabled: true }];
+  const programs = [{ _id: "software-engineer", name: "Software Engineer Intern", fee: 500, stipend, enabled: true }];
   const inserted: { collection: string; document: any }[] = [];
   const db = {
     collection(name: string) {
@@ -90,12 +90,12 @@ test("application submission enforces free, paid and both against the current st
   ];
   for (const { mode, stipend, accepts } of cases) {
     const { domain, inserted } = fixture(mode, stipend);
-    const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
+    const request = domain.execute("application.submit", { name: "Test Candidate", email: "candidate@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", roleId: "build", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: "test-file-token" }, null, "compensation-apply-test");
     if (accepts) {
       expect(await request).toMatchObject({ received: true });
       const applications = inserted.filter(write => write.collection === "applications");
       expect(applications).toHaveLength(1);
-      expect(applications[0]!.document.programId).toBe("explorer");
+      expect(applications[0]!.document.programId).toBe("software-engineer");
     } else {
       await expect(request).rejects.toMatchObject({ code: "CLOSED" });
       expect(inserted).toEqual([]);
@@ -115,7 +115,7 @@ test("admin duration changes update public data and new applications keep their 
     name: "Test Candidate",
     email: "duration@example.test",
     linkedin: "https://www.linkedin.com/in/duration-candidate",
-    programId: "explorer",
+    programId: "software-engineer",
     roleId: "build",
     schedule: "part_time",
     duration: "client-value",

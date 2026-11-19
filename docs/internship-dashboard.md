@@ -42,7 +42,7 @@ precedence, and using a deprecated name emits a clear warning.
 The public catalog is shared with the website from
 `backend/realtime-server/src/modules/programs/opportunities.mjs` and included as
 `opportunities` in public and authenticated snapshots. New `application.submit`
-commands require `roleId` (`build`, `automate`, or `grow`) and `schedule`
+commands require `roleId` (`build` or `automate`) and `schedule`
 (`part_time` or `full_time`) separately from `programId`. The service stamps
 `workMode: "remote"` and the configured duration; client values cannot override
 these terms. Administrators can edit the duration as free text in General
@@ -51,9 +51,9 @@ active when they applied, while historical applications retain their original
 data and display “Not provided” for missing choices. The choices appear in the
 live internship dashboard, candidate portal and application CSV exports.
 
-The service initializes only the two named programs and keeps them closed with
+The service initializes only the Software Engineer Intern program and keeps it closed with
 no fees or stipends configured. Staff must set the real amounts and enable the
-tracks in `/intern/dashboard/settings` before applicants can submit. Website
+track in `/intern/dashboard/settings` before applicants can submit. Website
 feature switches must also allow internships and applications. No demo accounts
 or applications are automatically added.
 

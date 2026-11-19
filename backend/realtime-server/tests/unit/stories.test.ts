@@ -27,11 +27,11 @@ function fakeStories(rows: any[]) {
 
 test("only approved stories are public, with no private fields", async () => {
   const stories = fakeStories([
-    { _id: "S1", status: "Approved", displayName: "Priya S.", program: "Tech Explorer", programId: "explorer", quote: "Loved it", applicationId: "OL-1", consentedOn: "x", reviewerAccountId: "ACC" },
-    { _id: "S2", status: "Pending", displayName: "Ravi K.", program: "Tech Explorer", programId: "explorer", quote: "Pending one", applicationId: "OL-2" },
+    { _id: "S1", status: "Approved", displayName: "Priya S.", program: "Software Engineer Intern", programId: "software-engineer", quote: "Loved it", applicationId: "OL-1", consentedOn: "x", reviewerAccountId: "ACC" },
+    { _id: "S2", status: "Pending", displayName: "Ravi K.", program: "Software Engineer Intern", programId: "software-engineer", quote: "Pending one", applicationId: "OL-2" },
   ]);
   const result = await stories.execute("story.public", {}, null, "");
-  expect(result).toEqual([{ id: "S1", displayName: "Priya S.", program: "Tech Explorer", programId: "explorer", quote: "Loved it" }]);
+  expect(result).toEqual([{ id: "S1", displayName: "Priya S.", program: "Software Engineer Intern", programId: "software-engineer", quote: "Loved it" }]);
 });
 
 test("story permissions: interns submit, only admins review, staff need certificates.read to list", async () => {

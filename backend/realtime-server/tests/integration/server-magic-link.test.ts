@@ -59,8 +59,8 @@ test("magic link endpoint returns ok and sends email when application exists", a
     _id: testAppId,
     name: "Enterprise Candidate",
     email: testEmail,
-    programId: "explorer",
-    program: "Tech Explorer",
+    programId: "software-engineer",
+    program: "Software Engineer Intern",
     status: "Selected",
     appliedOn: now.toISOString().slice(0, 10),
     version: 1,
@@ -150,7 +150,7 @@ const verify = (token: string) => fetch(`${base}/intern/auth/verify-magic-link`,
 });
 async function insertApplication(email: string) {
   const applicationId = `OL-test-${randomUUID()}`;
-  await domain.collection("applications").insertOne({ _id: applicationId, name: "Link Candidate", email, programId: "explorer", program: "Tech Explorer", status: "Selected", appliedOn: new Date().toISOString().slice(0, 10), version: 1 });
+  await domain.collection("applications").insertOne({ _id: applicationId, name: "Link Candidate", email, programId: "software-engineer", program: "Software Engineer Intern", status: "Selected", appliedOn: new Date().toISOString().slice(0, 10), version: 1 });
   return applicationId;
 }
 

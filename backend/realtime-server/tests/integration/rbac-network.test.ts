@@ -25,13 +25,13 @@ beforeAll(async () => {
   admin = await domain.createTestStaff("admin@example.test", password);
   for (const role of ["viewer", "recruiter", "mentor", "manager"]) await domain.execute("staff.create", { name: role, email: `${role}@example.test`, password, staffRole: role }, admin, key());
   await domain.collection("applications").insertMany([
-    { _id: "app-review", name: "Private Applicant", email: "private@example.test", program: "Tech Explorer", programId: "explorer", status: "Applied", notes: [{ text: "private note" }], version: 1 },
-    { _id: "app-intern", name: "Private Intern", email: "intern@example.test", program: "Tech Explorer", programId: "explorer", status: "Joined", notes: [], version: 1 },
+    { _id: "app-review", name: "Private Applicant", email: "private@example.test", program: "Software Engineer Intern", programId: "software-engineer", status: "Applied", notes: [{ text: "private note" }], version: 1 },
+    { _id: "app-intern", name: "Private Intern", email: "intern@example.test", program: "Software Engineer Intern", programId: "software-engineer", status: "Joined", notes: [], version: 1 },
   ]);
   // Mentors only see interns assigned to them, so the test mentor mentors this intern.
   const mentorAccount = await domain.collection("accounts").findOne({ email: "mentor@example.test" });
   await domain.collection("interns").insertOne({ _id: "intern-1", applicationId: "app-intern", status: "Active", revision: 1, mentorId: mentorAccount!._id, mentorName: "mentor" });
-  await domain.collection("projects").insertOne({ _id: "project-1", name: "Test Project", description: "Private description", team: ["app-intern"], status: "In progress", progress: 10, program: "Tech Explorer" });
+  await domain.collection("projects").insertOne({ _id: "project-1", name: "Test Project", description: "Private description", team: ["app-intern"], status: "In progress", progress: 10, program: "Software Engineer Intern" });
   await domain.collection("tasks").insertOne({ _id: "task-1", projectId: "project-1", applicationId: "app-intern", title: "Work", status: "Under review", submissionVersion: 1, required: true });
   await domain.collection("submissions").insertOne({ _id: "submission-1", taskId: "task-1", applicationId: "app-intern", version: 1, status: "Submitted", notes: "Private submitted work" });
   await domain.collection("messages").insertMany([

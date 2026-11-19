@@ -9,7 +9,7 @@ import { INTERN_ROLES } from "@/lib/intern/opportunities.mjs";
 
 const formatMoney = (amount) => `₹${amount.toLocaleString("en-IN")}`;
 
-/** "Tech Explorer is unpaid" / "Tech Explorer is unpaid and Tech Innovator pays ₹15,000 a month". */
+/** "Software Engineer Intern is unpaid" / "Software Engineer Intern with stipend". */
 function stipendAnswer(tracks) {
   const priced = tracks.filter((track) => Number.isSafeInteger(track.stipend));
   if (!priced.length) return "Stipend details for each track will be announced with the next intake.";

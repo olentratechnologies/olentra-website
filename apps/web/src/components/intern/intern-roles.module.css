@@ -11,12 +11,6 @@
   --accent-soft: #efe6ff;
   --accent-line: #cfb6fa;
 }
-.tab[data-role="grow"],
-.panel[data-role="grow"] {
-  --accent: #0b8a6a;
-  --accent-soft: #dcf5ec;
-  --accent-line: #9fdcc6;
-}
 
 .top {
   display: flex;
@@ -53,7 +47,7 @@
 /* Role tabs */
 .tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 28px;
 }

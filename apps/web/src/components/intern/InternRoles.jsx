@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, Check, Code2, TrendingUp } from "lucide-react";
+import { Bot, Check, Code2 } from "lucide-react";
 import shared from "./intern-sections.module.css";
 import styles from "./intern-roles.module.css";
 
 import { INTERN_ROLES } from "@/lib/intern/opportunities.mjs";
 
-const ICONS = { build: Code2, automate: Bot, grow: TrendingUp };
+const ICONS = { build: Code2, automate: Bot };
 
 /**
  * "Intern roles" section: three compact role tabs and one detail panel, so the
@@ -54,7 +54,7 @@ export default function InternRoles({ roles = INTERN_ROLES }) {
         <div className={shared.header}>
           <span className={shared.eyebrow}>Intern roles</span>
           <h2 id="internship-roles-title">Choose the role that fits your goals</h2>
-          <p>Explore roles in engineering, AI automation, and business growth.</p>
+          <p>Explore roles in engineering and AI automation.</p>
         </div>
       </div>
 

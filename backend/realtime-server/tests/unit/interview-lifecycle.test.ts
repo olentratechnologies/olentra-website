@@ -17,7 +17,7 @@ function createFakeLifecycle() {
   const application = {
     _id: "OL-1",
     name: "Test Intern",
-    program: "Tech Explorer",
+    program: "Software Engineer Intern",
     status: "Shortlisted",
     history: [] as Record<string, unknown>[],
   };

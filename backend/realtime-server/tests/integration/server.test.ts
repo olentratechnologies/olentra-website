@@ -73,12 +73,12 @@ test("login, streaming resume, application, registration, live status and refres
   await expect(admin.request("auth.authenticate", { token: "invalid-token" })).rejects.toThrow("UNAUTHENTICATED");
   expect((await admin.request("intern.snapshot")).account).toBeNull();
   await admin.request("auth.authenticate", { token: staff.body.data.token });
-  await admin.request("program.configure", { programId: "explorer", fee: 0, stipend: 0, enabled: true }, "program-config-test-0001");
+  await admin.request("program.configure", { programId: "software-engineer", fee: 0, stipend: 0, enabled: true }, "program-config-test-0001");
   await admin.request("settings.update", { patch: { programEnabled: true } }, "program-enable-test-0001");
   const file = await fetch(base + "/intern/files", { method: "POST", headers: { origin, "content-type": "application/pdf", "x-file-name": "resume.pdf", "x-file-kind": "resume" }, body: "%PDF-1.4 test resume" });
   expect(file.status).toBe(200); const uploaded = (await file.json() as any).data;
   const applicant = await socket();
-  await applicant.request("application.submit", { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "submit-application-test-01");
+  await applicant.request("application.submit", { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", roleId: "build", schedule: "part_time", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "submit-application-test-01");
   const application = { id: String((await domain.collection("applications").findOne({ email: "applicant@example.test" }))!._id) };
   const changed = await admin.request("application.update", { id: application.id, status: "Selected", expectedVersion: 1 }, "update-application-test-01");
   expect(changed.status).toBe("Selected");
@@ -122,7 +122,7 @@ test("committed changes notify authorized clients connected to another server", 
     const writer = await socket(); await writer.request("auth.authenticate", { token: staff.body.data.token });
     const observer = await socket(`http://127.0.0.1:${second.server.port}`); await observer.request("auth.authenticate", { token: staff.body.data.token });
     const event = observer.nextEvent();
-    await writer.request("program.configure", { programId: "innovator", fee: 0, stipend: 0, enabled: true }, "program-second-server-0001");
+    await writer.request("program.configure", { programId: "software-engineer", fee: 0, stipend: 0, enabled: true }, "program-second-server-0001");
     await event;
     observer.ws.terminate(); writer.ws.terminate();
   } finally { await second.stop(); }
@@ -169,13 +169,13 @@ test("anonymous careers page receives live aggregate insights without contact de
   const file = await fetch(base + "/intern/files", { method: "POST", headers: { origin, "content-type": "application/pdf", "x-file-name": "resume.pdf", "x-file-kind": "resume" }, body: "%PDF-1.4 insights resume" });
   const uploaded = (await file.json() as any).data;
   const applicant = await socket();
-  await applicant.request("application.submit", { name: "Insights Applicant", email: "insights-applicant@example.test", linkedin: "https://www.linkedin.com/in/insights-applicant", videoUrl: "https://youtu.be/aqz-KE-bpKQ", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "insights-application-0001");
+  await applicant.request("application.submit", { name: "Insights Applicant", email: "insights-applicant@example.test", linkedin: "https://www.linkedin.com/in/insights-applicant", videoUrl: "https://youtu.be/aqz-KE-bpKQ", programId: "software-engineer", roleId: "build", schedule: "part_time", resumeAttachmentId: uploaded.id, resumeAccessToken: uploaded.accessToken }, "insights-application-0001");
   expect((await domain.collection("applications").findOne({ email: "insights-applicant@example.test" }))?.hasVideo).toBe(true);
   const deadline = Date.now() + 15000;
   while (!pushes.some(frame => frame.event === "intern.insights" && frame.data.totals.applied === before + 1) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));
   const update = pushes.find(frame => frame.event === "intern.insights" && frame.data.totals.applied === before + 1);
   expect(update).toBeDefined();
-  expect(update.data.recent[0]).toEqual({ track: "explorer", at: expect.any(String), name: "Insights A." });
+  expect(update.data.recent[0]).toEqual({ track: "software-engineer", at: expect.any(String), name: "Insights A." });
   expect(JSON.stringify(update.data)).not.toContain("insights-applicant@example.test");
   expect(JSON.stringify(update.data)).not.toContain("Insights Applicant");
   await viewer.request("insights.unsubscribe");

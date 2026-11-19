@@ -24,8 +24,8 @@ beforeAll(async () => {
     mailer: { async sendApplicationConfirmation({ to, applicationId }: any) { confirmations.set(to, applicationId); return { ok: true, delivered: true }; }, async sendApplicantStatus() { return { ok: true, delivered: true }; } } as any });
   base = `http://127.0.0.1:${instance.server.port}`;
   await domain.createTestStaff("staff@example.test", "OpportunitiesPassword2026!");
-  await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
-  await domain.collection("programs").updateOne({ _id: "innovator" }, { $set: { enabled: true, fee: 0, stipend: 15000 } });
+  await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
+  await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { enabled: true, fee: 0, stipend: 15000 } });
   await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true, compensationMode: "free" } });
   domain.invalidatePublicData();
 }, 30000);
@@ -79,9 +79,9 @@ test("every role and schedule persists through the real socket, resume, email-li
   expect(publicData.opportunities).toEqual({ ...INTERNSHIP_OPPORTUNITIES, duration });
   expect(publicData.settings.duration).toBe(duration);
   let firstApplicationId: string | undefined;
-  for (const roleId of ["build", "automate", "grow"]) for (const schedule of ["part_time", "full_time"]) {
+  for (const roleId of ["build", "automate"]) for (const schedule of ["part_time", "full_time"]) {
     const email = `${roleId}-${schedule}@example.test`, requestKey = key();
-    const payload = { name: "Test Candidate", email, programId: "explorer", roleId, schedule, workMode: "onsite", durationMonths: 999, linkedin: `https://linkedin.com/in/${roleId}-${schedule}`, ...await upload() };
+    const payload = { name: "Test Candidate", email, programId: "software-engineer", roleId, schedule, workMode: "onsite", durationMonths: 999, linkedin: `https://linkedin.com/in/${roleId}-${schedule}`, ...await upload() };
     const received = await anonymous.request("application.submit", payload, requestKey);
     expect(received.received).toBe(true);
     expect(await anonymous.request("application.submit", payload, requestKey)).toEqual(received);
@@ -119,11 +119,11 @@ test("every role and schedule persists through the real socket, resume, email-li
 test("invalid choices, the paid track and expired intake are refused without consuming the resume", async () => {
   const applicant = await socket();
   const file = await upload();
-  const payload = { name: "Invalid Candidate", email: "invalid@example.test", linkedin: "https://linkedin.com/in/invalid", programId: "explorer", roleId: "build", schedule: "part_time", ...file };
+  const payload = { name: "Invalid Candidate", email: "invalid@example.test", linkedin: "https://linkedin.com/in/invalid", programId: "software-engineer", roleId: "build", schedule: "part_time", ...file };
   for (const [index, patch] of [{ roleId: "" }, { roleId: "admin" }, { schedule: "" }, { schedule: "hybrid" }].entries()) {
     await expect(applicant.request("application.submit", { ...payload, email: `invalid-${index}@example.test`, ...patch }, key())).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   }
-  await expect(applicant.request("application.submit", { ...payload, programId: "innovator" }, key())).rejects.toMatchObject({ code: "CLOSED" });
+  await expect(applicant.request("application.submit", { ...payload, programId: "software-engineer" }, key())).rejects.toMatchObject({ code: "CLOSED" });
   await domain.collection("settings").updateOne({ _id: "program" }, { $set: { applicationDeadline: new Date(Date.now() - 1).toISOString() } });
   try { await expect(applicant.request("application.submit", payload, key())).rejects.toMatchObject({ code: "CLOSED" }); }
   finally { await domain.collection("settings").updateOne({ _id: "program" }, { $set: { applicationDeadline: null } }); }

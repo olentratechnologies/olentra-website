@@ -5,11 +5,11 @@ import type { Principal } from "../../src/shared/principal";
 
 const admin: Principal = { id: "admin", role: "company", staffRole: "admin", name: "Admin", email: "admin@example.test", applicationId: null, sessionVersion: 1 };
 function fixture() {
-  let project: any = { _id: "p1", name: "Original project", description: "Original description", program: "Tech Explorer", team: ["intern1"], progress: 0, status: "In progress" };
+  let project: any = { _id: "p1", name: "Original project", description: "Original description", program: "Software Engineer Intern", team: ["intern1"], progress: 0, status: "In progress" };
   const writes: any[] = [];
   const session = {};
   const collection = (name: string): any => ({
-    findOne: async (filter: any) => name === "programs" ? (["Tech Explorer", "Tech Innovator"].includes(filter.name) ? { name: filter.name } : null) : project,
+    findOne: async (filter: any) => name === "programs" ? (["Software Engineer Intern", "Tech Innovator"].includes(filter.name) ? { name: filter.name } : null) : project,
     findOneAndUpdate: async (_filter: any, update: any, options: any) => { expect(options.session).toBe(session); project = { ...project, ...update.$set }; return project; },
     findOneAndDelete: async (_filter: any, options: any) => { expect(options.session).toBe(session); const value = project; project = null; return value; },
     find: () => ({ project: () => ({ toArray: async () => name === "tasks" ? [{ _id: "t1", applicationId: "intern1" }] : [] }) }),
@@ -23,7 +23,7 @@ function fixture() {
 
 test("project edits persist all editable fields and allow switching tracks in both directions", async () => {
   const { lifecycle } = fixture();
-  for (const program of ["Tech Innovator", "Tech Explorer"]) {
+  for (const program of ["Tech Innovator", "Software Engineer Intern"]) {
     const patch = { name: "Updated project", description: "Updated project description", program, dueOn: "2026-12-20", status: "In review", progress: 55 };
     const result: any = await lifecycle.execute("project.update", { id: "p1", patch }, admin, "edit");
     for (const [key, value] of Object.entries(patch)) expect(result[key]).toEqual(value);

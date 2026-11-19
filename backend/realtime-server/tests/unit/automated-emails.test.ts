@@ -18,7 +18,7 @@ function fixture() {
   const transact = async (_key: string, _actor: any, _input: any, run: any) => run(session);
   return { service: () => createTemplates({ collection: collection as any, transact: transact as any }), records, writes, session };
 }
-const options = { schedule: {durationLabel:"1 calendar month",startOn:"2030-01-24",endOn:"2030-02-23",workMode:"Remote",schedule:"Part-time"}, to: "intern@example.test", name: "Alex <Kumar>", programName: "Tech Explorer", applicationId: "OL-123", scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/meeting", portalUrl: "https://example.test/intern/portal", magicLinkUrl: "https://example.test/intern/verify?token=one-time", linkedinShareUrl: "https://www.linkedin.com/feed/?shareActive=true", certificateVerifyUrl: "https://example.test/certificates/verify/CERT-123", interviewId: "INTV-123", sequence: 2 };
+const options = { schedule: {durationLabel:"1 calendar month",startOn:"2030-01-24",endOn:"2030-02-23",workMode:"Remote",schedule:"Part-time"}, to: "intern@example.test", name: "Alex <Kumar>", programName: "Software Engineer Intern", applicationId: "OL-123", scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/meeting", portalUrl: "https://example.test/intern/portal", magicLinkUrl: "https://example.test/intern/verify?token=one-time", linkedinShareUrl: "https://www.linkedin.com/feed/?shareActive=true", certificateVerifyUrl: "https://example.test/certificates/verify/CERT-123", interviewId: "INTV-123", sequence: 2 };
 
 test("all fifteen defaults render required links and details, with no portal links before selection", () => {
   const mailer = createInternshipMailer("");
@@ -38,7 +38,7 @@ test("all fifteen defaults render required links and details, with no portal lin
       expect(rendered.text).not.toContain("https://");
     }
     if (definition.id === "application-received") {
-      expect(rendered.subject).toBe("Application Received: Tech Explorer (Ref: OL-123)");
+      expect(rendered.subject).toBe("Application Received: Software Engineer Intern (Ref: OL-123)");
       expect(rendered.text).toContain("3–5 business days");
     }
     if (definition.id === "selected") {

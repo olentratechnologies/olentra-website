@@ -104,13 +104,13 @@ try {
   } else {
     await removeIntern(intern.email!);
     const applicationId = id("OL"), accountId = id("ACC"), now = iso();
-    const program = await c("programs").findOne({ _id: "explorer" });
+    const program = await c("programs").findOne({ _id: "software-engineer" });
     const status = stage === "applied" ? "Applied" : stage === "offer" ? "Selected" : "Joined";
-    const history = [{ id: id("HST"), title: "Application received", date: iso(-6), detail: "Applied to Tech Explorer." }];
+    const history = [{ id: id("HST"), title: "Application received", date: iso(-6), detail: "Applied to Software Engineer Intern." }];
     if (stage !== "applied") history.push({ id: id("HST"), title: "Offer sent", date: iso(-1), detail: "Your internship offer is ready." });
     if (stage === "joined") history.push({ id: id("HST"), title: "Intern onboarded", date: now, detail: "Onboarding approved. Your internship workspace is ready." });
     await applications.insertOne({
-      _id: applicationId, name: "Test Intern", email: intern.email, programId: "explorer", program: program?.name || "Tech Explorer",
+      _id: applicationId, name: "Test Intern", email: intern.email, programId: "software-engineer", program: program?.name || "Software Engineer Intern",
       appliedOn: day(-6), status, initials: "TI", avatarColor: "#d9e5fb", college: "Olentra Test University", phone: "+91 90000 00000", location: "Hyderabad",
       skills: ["React", "JavaScript", "CSS"], linkedin: "https://www.linkedin.com/in/test-intern", videoUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ", hasVideo: true,
       github: "", bio: "Seeded test applicant for local checks.", resumeAttachmentId: null, history, notes: [], projectIds: [], source: "Website", version: 1, testAccount: true,
@@ -127,7 +127,7 @@ try {
     if (stage === "joined") {
       await onboarding.insertOne({ _id: id("ONB"), applicationId, phone: "+91 90000 00000", college: "Olentra Test University", location: "Hyderabad", skills: ["React", "JavaScript"], resumeAttachmentId: null, acknowledged: true, status: "Approved", submittedOn: iso(-1), approvedOn: now, testAccount: true });
       const projectId = id("PRJ"), internId = id("INT");
-      await projects.insertOne({ _id: projectId, name: "Olentra Careers Revamp", description: "Polish the careers page experience.", team: [applicationId], dueOn: day(30), createdOn: day(), art: "planet", progress: 0, status: "In progress", program: program?.name || "Tech Explorer", testAccount: true });
+      await projects.insertOne({ _id: projectId, name: "Olentra Careers Revamp", description: "Polish the careers page experience.", team: [applicationId], dueOn: day(30), createdOn: day(), art: "planet", progress: 0, status: "In progress", program: program?.name || "Software Engineer Intern", testAccount: true });
       await interns.insertOne({ _id: internId, applicationId, batch: "", joinedOn: day(), status: "Active", projectIds: [projectId], revision: 1, testAccount: true });
       await tasks.insertOne({ _id: id("TASK"), projectId, applicationId, title: "Build the live insights card", description: "Create a responsive card that shows live internship numbers.", dueOn: day(10), required: true, status: "Todo", createdOn: now, submissionVersion: 0, testAccount: true });
       if (flag("with-certificate")) {
@@ -137,7 +137,7 @@ try {
           await tasks.insertOne({ _id: taskId, projectId, applicationId, title, description: `${title} for the Olentra careers revamp.`, dueOn: due, required: true, status: "Approved", createdOn: iso(-25), submissionVersion: 1, testAccount: true });
           await submissions.insertOne({ _id: id("SUB"), taskId, applicationId, version: 1, notes: "Done — see the linked preview.", url: "https://example.test/preview", attachmentId: null, submittedOn: submitted, status: "Approved", feedback: "Great work!", reviewedOn: reviewed, testAccount: true });
         }
-        await certificates.insertOne({ _id: id("CERT"), certificateNumber: `OLENTRA-${randomUUID()}`, internId, applicationId, recipient: "Test Intern", program: program?.name || "Tech Explorer", programId: "explorer", issuedOn: day(), status: "Issued", testAccount: true });
+        await certificates.insertOne({ _id: id("CERT"), certificateNumber: `OLENTRA-${randomUUID()}`, internId, applicationId, recipient: "Test Intern", program: program?.name || "Software Engineer Intern", programId: "software-engineer", issuedOn: day(), status: "Issued", testAccount: true });
       }
     }
     await events.insertOne({ _id: id("EVT"), type: "application.updated", applicationIds: [applicationId], createdAt: new Date() });

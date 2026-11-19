@@ -7,12 +7,11 @@ import dockStyles from "@/components/intern/mobile-dock.module.css";
 const pageMetadata = buildMetadata({
   title: "Internship Program",
   description:
-    "Learn, build, and grow with Olentra Technologies. Explore our Tech Explorer and Tech Innovator internship tracks, mentorship, and real-world projects.",
+    "Learn, build, and grow with Olentra Technologies. Explore our Software Engineer Intern program, mentorship, and real-world projects.",
   path: "/careers/intern",
   keywords: [
     "Olentra internships",
-    "Tech Explorer",
-    "Tech Innovator",
+    "Software Engineer Intern",
     "technology internship",
   ],
 });

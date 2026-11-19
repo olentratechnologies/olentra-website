@@ -35,8 +35,8 @@ beforeAll(async () => {
   communications = createCommunications({ collection: domain.collection, transact });
   await communications.initialize();
   await domain.collection("applications").insertMany([
-    { _id: "first-app", email: first.email, status: "Joined", programId: "explorer", appliedOn: "2026-10-02", skills: ["JavaScript"] },
-    { _id: "second-app", email: second.email, status: "Joined", programId: "innovator", appliedOn: "2026-10-04", skills: ["JavaScript"] },
+    { _id: "first-app", email: first.email, status: "Joined", programId: "software-engineer", appliedOn: "2026-10-02", skills: ["JavaScript"] },
+    { _id: "second-app", email: second.email, status: "Joined", programId: "software-engineer", appliedOn: "2026-10-04", skills: ["JavaScript"] },
   ]);
 }, 30000);
 afterAll(async () => {
@@ -62,14 +62,14 @@ test("messages, notifications, announcements and analytics respect role and owne
   expect((await communications.snapshot(first)).notifications[0]!.unread).toBe(true);
   await communications.execute("notification.markRead", { ids: [id] }, first, "read-own");
   expect((await communications.snapshot(first)).notifications[0]!.unread).toBe(false);
-  await communications.execute("announcement.send", { subject: "Explorer", message: "Team update", audience: "explorer" }, staff, "announce-one");
+  await communications.execute("announcement.send", { subject: "Explorer", message: "Team update", audience: "software-engineer" }, staff, "announce-one");
   expect((await communications.snapshot(first)).notifications).toHaveLength(2);
   expect((await communications.snapshot(second)).notifications).toHaveLength(0);
   expect((await communications.execute("notification.list", { pageSize: 1, page: 2 }, first, "")).items).toHaveLength(1);
   expect(await domain.collection("events").findOne({ type: "changed", applicationIds: "first-app" })).toBeTruthy();
   const analytics = await communications.execute("analytics.get", {}, staff, "");
   expect(analytics.totalApplications).toBe(2);
-  expect(analytics.byTrack).toEqual({ explorer: 1, innovator: 1 });
+  expect(analytics.byTrack).toEqual({ software-engineer: 1, software-engineer: 1 });
   expect(analytics.skills).toEqual([{ name: "JavaScript", count: 2 }]);
   await expect(communications.execute("analytics.get", {}, first, "")).rejects.toBeInstanceOf(DomainError);
 }, 30000);
@@ -77,14 +77,14 @@ test("messages, notifications, announcements and analytics respect role and owne
 test("settings cannot open an unconfigured track or enable unavailable integrations", async () => {
   await expect(communications.execute("settings.update", { patch: { compensationMode: "invalid" } }, staff, "settings-invalid-mode")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   await expect(communications.execute("settings.update", { patch: { compensationMode: null } }, staff, "settings-null-mode")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
-  await expect(communications.execute("settings.update", { patch: { explorerEnabled: true } }, staff, "settings-one")).rejects.toBeInstanceOf(DomainError);
+  await expect(communications.execute("settings.update", { patch: { software-engineerEnabled: true } }, staff, "settings-one")).rejects.toBeInstanceOf(DomainError);
   await expect(communications.execute("settings.update", { patch: { emailNotifications: true } }, staff, "settings-two")).rejects.toBeInstanceOf(DomainError);
   // The weekly digest and review reminders are available now; general email notifications are not.
   await communications.execute("settings.update", { patch: { weeklyDigest: true, reviewReminder: true } }, staff, "settings-digest");
   expect(await domain.collection("settings").findOne({ _id: "program" })).toMatchObject({ weeklyDigest: true, reviewReminder: true });
-  await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { fee: 0, stipend: 0 } });
-  await communications.execute("settings.update", { patch: { explorerEnabled: true, programEnabled: true, defaultBatch: "Autumn" } }, staff, "settings-three");
-  expect((await domain.collection("programs").findOne({ _id: "explorer" }))?.enabled).toBe(true);
+  await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { fee: 0, stipend: 0 } });
+  await communications.execute("settings.update", { patch: { software-engineerEnabled: true, programEnabled: true, defaultBatch: "Autumn" } }, staff, "settings-three");
+  expect((await domain.collection("programs").findOne({ _id: "software-engineer" }))?.enabled).toBe(true);
   expect((await domain.collection("settings").findOne({ _id: "program" }))?.defaultBatch).toBe("Autumn");
   await communications.execute("settings.update", { patch: { defaultBatch: "" } }, staff, "settings-empty-batch");
   expect((await domain.collection("settings").findOne({ _id: "program" }))?.defaultBatch).toBe("");
@@ -100,16 +100,16 @@ test("settings validation and a mid-write error roll back every change", async (
     { _id: "staff", role: "company", name: "Staff", email: "staff@example.test" },
     { _id: "another-staff", role: "company", name: "Other", email: "duplicate@example.test" },
   ]);
-  const beforeProgram = await domain.collection("programs").findOne({ _id: "explorer" });
+  const beforeProgram = await domain.collection("programs").findOne({ _id: "software-engineer" });
   const beforeSettings = await domain.collection("settings").findOne({ _id: "program" });
   const beforeActivity = await domain.collection("activity").countDocuments({ title: "Program settings updated" });
   const beforeEvents = await domain.collection("events").countDocuments({ type: "changed", public: true });
   let failure: any;
-  try { await communications.execute("settings.update", { patch: { explorerEnabled: false, programEnabled: false, profile: { name: "Staff", email: "duplicate@example.test" } } }, staff, "settings-rollback-duplicate"); }
+  try { await communications.execute("settings.update", { patch: { software-engineerEnabled: false, programEnabled: false, profile: { name: "Staff", email: "duplicate@example.test" } } }, staff, "settings-rollback-duplicate"); }
   catch (error) { failure = error; }
   // Changing the sign-in email from settings is refused, and nothing else in the patch is applied.
   expect(failure?.code).toBe("INVALID_REQUEST");
-  expect((await domain.collection("programs").findOne({ _id: "explorer" }))?.enabled).toBe(beforeProgram?.enabled);
+  expect((await domain.collection("programs").findOne({ _id: "software-engineer" }))?.enabled).toBe(beforeProgram?.enabled);
   expect((await domain.collection("settings").findOne({ _id: "program" }))?.programEnabled).toBe(beforeSettings?.programEnabled);
   expect((await domain.collection("accounts").findOne({ _id: "staff" }))?.email).toBe("staff@example.test");
   expect(await domain.collection("activity").countDocuments({ title: "Program settings updated" })).toBe(beforeActivity);
@@ -189,17 +189,17 @@ test("full domain retries a settings write conflict without duplicate activity",
   let trackCalls = 0;
   client.bulkWrite = async function(...args: any[]) {
     trackCalls++;
-    if (trackCalls === 1) await domain.collection("programs").updateOne({ _id: "innovator" }, { $set: { name: "Concurrent track rename" } });
+    if (trackCalls === 1) await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { name: "Concurrent track rename" } });
     return original.apply(this, args);
   };
   try {
-    const input = { programId: "innovator", fee: 1234, stipend: 5678, enabled: true }, key = "track-full-domain-retry";
+    const input = { programId: "software-engineer", fee: 1234, stipend: 5678, enabled: true }, key = "track-full-domain-retry";
     const before = await domain.collection("events").countDocuments({ type: "program.configure" });
     const result = await domain.execute("program.configure", input, admin, key);
     expect(await domain.execute("program.configure", input, admin, key)).toEqual(result);
-    expect(result).toMatchObject({ id: "innovator", fee: 1234, stipend: 5678, enabled: true });
+    expect(result).toMatchObject({ id: "software-engineer", fee: 1234, stipend: 5678, enabled: true });
     if (trackCalls) { expect(trackCalls).toBeGreaterThan(1); expect(result.name).toBe("Concurrent track rename"); }
-    expect((await domain.collection("programs").findOne({ _id: "innovator" }))?.stipend).toBe(5678);
+    expect((await domain.collection("programs").findOne({ _id: "software-engineer" }))?.stipend).toBe(5678);
     expect((await domain.collection("settings").findOne({ _id: "program" }))?.maxStipend).toBeGreaterThanOrEqual(5678);
     expect(await domain.collection("events").countDocuments({ type: "program.configure" })).toBe(before + 1);
   } finally { client.bulkWrite = original; }
@@ -214,9 +214,9 @@ test("analytics cache is shared briefly and invalidation reloads updated records
   ]);
   expect(concurrentRead).toBe(firstRead);
   expect(await communications.execute("analytics.get", {}, staff, "")).toBe(firstRead);
-  await domain.collection("applications").insertOne({ _id: "third-app", email: "third@example.test", status: "Applied", programId: "explorer", appliedOn: "2026-10-06", skills: [] });
+  await domain.collection("applications").insertOne({ _id: "third-app", email: "third@example.test", status: "Applied", programId: "software-engineer", appliedOn: "2026-10-06", skills: [] });
   communications.invalidateAnalytics();
   const updated = await communications.execute("analytics.get", {}, staff, "");
   expect(updated.totalApplications).toBe(3);
-  expect(updated.byTrack.explorer).toBe(2);
+  expect(updated.byTrack.software-engineer).toBe(2);
 }, 30000);

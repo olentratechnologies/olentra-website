@@ -14,8 +14,8 @@ test("application export includes video and LinkedIn review signals", () => {
     id: "OL-1",
     name: "Test Intern",
     email: "intern@example.test",
-    program: "Tech Explorer",
-    roleId: "grow",
+    program: "Software Engineer Intern",
+    roleId: "build",
     schedule: "full_time",
     college: "Test University",
     appliedOn: "2026-01-02",
@@ -30,7 +30,7 @@ test("application export includes video and LinkedIn review signals", () => {
     "Yes",
   ]);
   assert.equal(row.length, APPLICATION_EXPORT_COLUMNS.length);
-  assert.equal(row[APPLICATION_EXPORT_COLUMNS.indexOf("Intern role")], "Growth & Partnerships Intern");
+  assert.equal(row[APPLICATION_EXPORT_COLUMNS.indexOf("Intern role")], "AI Full Stack Engineering Intern");
   assert.equal(row[APPLICATION_EXPORT_COLUMNS.indexOf("Schedule")], "Full-time");
   const legacy = applicationExportRow({});
   assert.equal(legacy[APPLICATION_EXPORT_COLUMNS.indexOf("Intern role")], "Not provided");

@@ -9,7 +9,7 @@ profiles, organizations, projects, credentials, and program records are sample
 data created for this experience.
 
 START YOUR JOURNEY
-1. Open the Internship Program page and choose Tech Explorer or Tech Innovator.
+1. Open the Internship Program page and choose Software Engineer Intern.
 2. Enter your name and email, then upload a PDF, DOC, or DOCX resume up to 5 MB.
    You can use the included sample resume to explore the application flow.
 3. Submit the application and keep the application ID shown in the confirmation.

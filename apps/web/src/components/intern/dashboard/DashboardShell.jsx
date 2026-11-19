@@ -39,7 +39,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { exportCsv } from "./DashboardUI";
 import {
   ApplicationsAreaChart,
-  GrowthArtwork,
   InsightGlyph,
   MetricGlyph,
   ProgramDonut,

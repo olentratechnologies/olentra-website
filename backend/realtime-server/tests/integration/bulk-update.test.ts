@@ -28,7 +28,7 @@ afterAll(async () => {
 }, 20000);
 
 const seed = async (count: number, tag: string) => {
-  const rows = Array.from({ length: count }, (_, index) => ({ _id: `OL-${tag}-${index}`, name: `Bulk ${index}`, email: `${tag}-${index}@example.test`, programId: "explorer", program: "Tech Explorer", status: "Applied", appliedOn: "2026-11-01", history: [], notes: [], version: 1 }));
+  const rows = Array.from({ length: count }, (_, index) => ({ _id: `OL-${tag}-${index}`, name: `Bulk ${index}`, email: `${tag}-${index}@example.test`, programId: "software-engineer", program: "Software Engineer Intern", status: "Applied", appliedOn: "2026-11-01", history: [], notes: [], version: 1 }));
   await domain.collection("applications").insertMany(rows);
   return rows.map(row => ({ id: row._id, expectedVersion: 1 }));
 };

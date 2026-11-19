@@ -24,8 +24,8 @@ test("an empty form leaves nothing behind, and broken storage is ignored", () =>
 
 test("role and schedule choices survive reload; old and unknown choices stay unselected", () => {
   const storage = memory();
-  writeApplyDraft({ roleId: "grow", schedule: "full_time" }, storage);
-  assert.equal(readApplyDraft(storage).roleId, "grow");
+  writeApplyDraft({ roleId: "build", schedule: "full_time" }, storage);
+  assert.equal(readApplyDraft(storage).roleId, "build");
   assert.equal(readApplyDraft(storage).schedule, "full_time");
   storage.setItem(APPLY_DRAFT_KEY, JSON.stringify({ fullName: "Asha", savedAt: Date.now(), roleId: "admin", schedule: "hybrid" }));
   assert.equal(readApplyDraft(storage).roleId, undefined);

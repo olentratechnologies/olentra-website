@@ -26,19 +26,19 @@ afterAll(async () => {
 
 test("clean database initializes only closed named programs", async () => {
   const data = await domain.publicData();
-  expect(data.programs.map(p => p.id)).toEqual(["explorer", "innovator"]);
+  expect(data.programs.map(p => p.id)).toEqual(["software-engineer", "software-engineer"]);
   expect(data.settings.programEnabled).toBe(false);
   expect(data.settings.compensationMode).toBe("both");
   expect(await domain.collection("applications").countDocuments()).toBe(0);
 });
 
 test("persisted compensation selection controls new applications without changing tracks or existing records", async () => {
-  const originalProgram = await domain.collection("programs").findOne({ _id: "explorer" });
+  const originalProgram = await domain.collection("programs").findOne({ _id: "software-engineer" });
   const originalSettings = await domain.collection("settings").findOne({ _id: "program" });
-  const existingApplication = { _id: "compensation-existing", email: "existing-compensation@example.test", name: "Existing Intern", programId: "explorer", program: "Tech Explorer", status: "Joined", appliedOn: "2026-10-01", version: 1 };
+  const existingApplication = { _id: "compensation-existing", email: "existing-compensation@example.test", name: "Existing Intern", programId: "software-engineer", program: "Software Engineer Intern", status: "Joined", appliedOn: "2026-10-01", version: 1 };
   await domain.collection("applications").insertOne(existingApplication);
   try {
-    await domain.execute("program.configure", { programId: "explorer", fee: 250, stipend: 0, enabled: true }, staff, "compensation-track-free");
+    await domain.execute("program.configure", { programId: "software-engineer", fee: 250, stipend: 0, enabled: true }, staff, "compensation-track-free");
     await domain.execute("settings.update", { patch: { programEnabled: true } }, staff, "compensation-enable-test");
     const cases = [
       { mode: "free", stipend: 0, accepts: true },
@@ -49,36 +49,36 @@ test("persisted compensation selection controls new applications without changin
       { mode: "both", stipend: 1000, accepts: true },
     ] as const;
     for (const [index, { mode, stipend, accepts }] of cases.entries()) {
-      await domain.execute("program.configure", { programId: "explorer", fee: 250, stipend, enabled: true }, staff, `compensation-track-${index}`);
+      await domain.execute("program.configure", { programId: "software-engineer", fee: 250, stipend, enabled: true }, staff, `compensation-track-${index}`);
       await domain.execute("settings.update", { patch: { compensationMode: mode } }, staff, `compensation-mode-${index}`);
       expect((await domain.publicData()).settings.compensationMode).toBe(mode);
       expect((await createInternshipDomain({ ...connection, prefix }).publicData()).settings.compensationMode).toBe(mode);
-      expect(await domain.collection("programs").findOne({ _id: "explorer" })).toMatchObject({ fee: 250, stipend, enabled: true });
+      expect(await domain.collection("programs").findOne({ _id: "software-engineer" })).toMatchObject({ fee: 250, stipend, enabled: true });
       expect(await domain.collection("applications").findOne({ _id: existingApplication._id })).toEqual(existingApplication);
       const fileId = `compensation-file-${index}`, fileToken = `compensation-token-${index}`;
       await domain.collection("files").insertOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
-      const request = domain.execute("application.submit", { name: "Compensation Candidate", email: `compensation-${index}@example.test`, linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: fileId, resumeAccessToken: fileToken }, null, `compensation-apply-${index}`);
+      const request = domain.execute("application.submit", { name: "Compensation Candidate", email: `compensation-${index}@example.test`, linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", roleId: "build", schedule: "part_time", resumeAttachmentId: fileId, resumeAccessToken: fileToken }, null, `compensation-apply-${index}`);
       if (accepts) {
         expect(await request).toMatchObject({ received: true });
-        expect((await domain.collection("applications").findOne({ email: `compensation-${index}@example.test` }))?.programId).toBe("explorer");
+        expect((await domain.collection("applications").findOne({ email: `compensation-${index}@example.test` }))?.programId).toBe("software-engineer");
       }
       else await expect(request).rejects.toMatchObject({ code: "CLOSED" });
     }
   } finally {
     await domain.collection("applications").deleteMany({ email: { $regex: "^compensation-[0-9]+@example\\.test$" } });
     await domain.collection("applications").deleteOne({ _id: existingApplication._id });
-    if (originalProgram) await domain.collection("programs").replaceOne({ _id: "explorer" }, originalProgram);
+    if (originalProgram) await domain.collection("programs").replaceOne({ _id: "software-engineer" }, originalProgram);
     if (originalSettings) await domain.collection("settings").replaceOne({ _id: "program" }, originalSettings);
     domain.invalidatePublicData();
   }
 }, 30000);
 
 test("application claim, registration, status and idempotency persist in Atlas", async () => {
-  await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
+  await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
   await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true } });
   const fileId = "file-test", fileToken = "temporary-file-token";
   await domain.collection("files").insertOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
-  const payload = { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-applicant", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: fileId, resumeAccessToken: fileToken };
+  const payload = { name: "Test Applicant", email: "applicant@example.test", linkedin: "https://www.linkedin.com/in/test-applicant", programId: "software-engineer", roleId: "build", schedule: "part_time", resumeAttachmentId: fileId, resumeAccessToken: fileToken };
   const response = await domain.execute("application.submit", payload, null, "application-test-0001");
   const retry = await domain.execute("application.submit", payload, null, "application-test-0001");
   expect(retry).toEqual(response);
@@ -114,11 +114,11 @@ test("application claim, registration, status and idempotency persist in Atlas",
 }, 30000);
 
 test("staff can securely create an account for an unclaimed application", async () => {
-  await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
+  await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
   await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true } });
   const fileToken = "staff-assist-file-token";
   await domain.collection("files").insertOne({ _id: "staff-assist-file", kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
-  await domain.execute("application.submit", { name: "Assisted Applicant", email: "assisted@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: "staff-assist-file", resumeAccessToken: fileToken }, null, "application-assisted-0001");
+  await domain.execute("application.submit", { name: "Assisted Applicant", email: "assisted@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", roleId: "build", schedule: "part_time", resumeAttachmentId: "staff-assist-file", resumeAccessToken: fileToken }, null, "application-assisted-0001");
   const app = { id: String((await domain.collection("applications").findOne({ email: "assisted@example.test" }))!._id) };
   const payload = { applicationId: app.id, password: "TemporaryPassword2026!" };
   const retryKey = "create-staff-assisted-0001";
@@ -136,7 +136,7 @@ test("staff can securely create an account for an unclaimed application", async 
 test("anonymous visitors and interns only see public program settings; staff see all", async () => {
   const anonymous = await domain.execute("intern.public", {}, null, "public-payload-anon") as any;
   expect(Object.keys(anonymous).sort()).toEqual(["opportunities", "organization", "programs", "settings"]);
-  expect(Object.keys(anonymous.settings).sort()).toEqual(["applicationDeadline", "compensationMode", "duration", "explorerEnabled", "innovatorEnabled", "programEnabled", "programName"]);
+  expect(Object.keys(anonymous.settings).sort()).toEqual(["applicationDeadline", "compensationMode", "duration", "software-engineerEnabled", "software-engineerEnabled", "programEnabled", "programName"]);
   const internSnapshot = await domain.execute("intern.snapshot", {}, null, "public-payload-snap") as any;
   expect(internSnapshot.data.settings).not.toHaveProperty("rejectionEmails");
   const staffSnapshot = await domain.execute("intern.snapshot", {}, staff, "public-payload-staff") as any;

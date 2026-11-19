@@ -13,7 +13,7 @@ export type PublicInsights = {
   byRole: Record<string, number>;
   thisMonth: number;
   lastMonth: number;
-  months: { label: string; month: string; explorer: number; innovator: number }[];
+  months: { label: string; month: string; [key: string]: number | string }[];
   topSkills: { name: string; count: number }[];
   recent: { track: string; at: string; name: string }[];
   viewers: number;
@@ -108,9 +108,11 @@ export function createPublicInsights({ collection }: { collection: (name: string
       const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11 + index, 1));
       const key = date.toISOString().slice(0, 7), rows = monthly.filter(row => row._id.month === key);
       const count = (program: string) => !ids.includes(program) ? 0 : rows.filter(row => row._id.program === program).reduce((total, row) => total + row.count, 0);
-      return { label: date.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }), month: key, explorer: count("explorer"), innovator: count("innovator") };
+      const entry: any = { label: date.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }), month: key };
+      for (const id of ids) entry[id] = count(id);
+      return entry;
     });
-    const monthTotal = (entry?: { explorer: number; innovator: number }) => (entry ? entry.explorer + entry.innovator : 0);
+    const monthTotal = (entry?: any) => entry ? ids.reduce((total, id) => total + (entry[id] || 0), 0) : 0;
     return {
       tracks: enabled,
       totals: { applied, reviewed: sum(REVIEWED), shortlisted: sum(SHORTLISTED), selected: sum(SELECTED), onboarded: statuses.Joined || 0, certified: certificateCount, projects: projectCount },

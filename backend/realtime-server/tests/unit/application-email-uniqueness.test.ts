@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createInternshipDomain } from "../../src/app/command-dispatcher";
 
-const payload = { name: "Test Candidate", email: "  CANDIDATE@Example.Test  ", programId: "explorer", roleId: "build", schedule: "part_time", linkedin: "https://www.linkedin.com/in/test-candidate", resumeAttachmentId: "resume", resumeAccessToken: "resume-token" };
+const payload = { name: "Test Candidate", email: "  CANDIDATE@Example.Test  ", programId: "software-engineer", roleId: "build", schedule: "part_time", linkedin: "https://www.linkedin.com/in/test-candidate", resumeAttachmentId: "resume", resumeAccessToken: "resume-token" };
 function fixture(existing?: any, race = false) {
   let application = existing;
   const commandRecords = new Map<string, any>();
@@ -11,7 +11,7 @@ function fixture(existing?: any, race = false) {
     findOne: async (filter: any) => {
       if (name === "test_applications") return application || null;
       if (name === "test_commands") return commandRecords.get(filter._id) || null;
-      if (name === "test_programs") return { _id: "explorer", enabled: true, fee: 0, stipend: 0, name: "Tech Explorer" };
+      if (name === "test_programs") return { _id: "software-engineer", enabled: true, fee: 0, stipend: 0, name: "Software Engineer Intern" };
       if (name === "test_settings") return { programEnabled: true, compensationMode: "both", applicationAlerts: false };
       if (name === "test_files") return { _id: "resume" };
       return null;
@@ -33,7 +33,7 @@ function fixture(existing?: any, race = false) {
 
 test("the same normalized email cannot apply again, regardless of status or chosen track", async () => {
   for (const status of ["Applied", "Under Review", "Shortlisted", "Selected", "Joined", "Rejected", "Declined", "Withdrawn"]) {
-    const original = { _id: "OL-existing", email: "candidate@example.test", programId: "innovator", status };
+    const original = { _id: "OL-existing", email: "candidate@example.test", programId: "software-engineer", status };
     const f = fixture(original);
     await expect(f.domain.execute("application.submit", payload, null, "repeat-application-request")).rejects.toMatchObject({ code: "ALREADY_APPLIED", message: expect.stringContaining("application already exists") });
     expect(f.writes).toEqual([]);

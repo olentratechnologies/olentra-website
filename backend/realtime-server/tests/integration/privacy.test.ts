@@ -30,7 +30,7 @@ afterAll(async () => {
 
 async function applicant(status = "Applied", extra: Record<string, unknown> = {}) {
   const applicationId = `OL-${randomUUID()}`, email = `privacy-${randomUUID()}@example.test`;
-  await domain.collection("applications").insertOne({ _id: applicationId, name: "Privacy Person", email, programId: "explorer", program: "Tech Explorer", status, appliedOn: "2026-01-01", history: [], notes: [], version: 1, ...extra });
+  await domain.collection("applications").insertOne({ _id: applicationId, name: "Privacy Person", email, programId: "software-engineer", program: "Software Engineer Intern", status, appliedOn: "2026-01-01", history: [], notes: [], version: 1, ...extra });
   const account: Principal = { id: `ACC-${randomUUID()}`, email, name: "Privacy Person", role: "intern", applicationId, sessionVersion: 1 };
   await domain.collection("accounts").insertOne({ _id: account.id, email, name: account.name, role: "intern", applicationId });
   return { applicationId, email, account };
@@ -101,7 +101,7 @@ test("retention does nothing while off, then erases only final decisions older t
 });
 
 test("an expired offer can't be accepted until an admin extends it", async () => {
-  await domain.collection("programs").updateOne({ _id: "explorer" }, { $set: { stipend: 1000, fee: 0 } });
+  await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { stipend: 1000, fee: 0 } });
   const { applicationId, account } = await applicant("Selected");
   await domain.execute("settings.update", {patch:{durationSpec:{quantity:1,unit:"months"}}},admin,key());
   const preview=await domain.execute("offer.preview",{applicationId,startOn:"2030-11-24"},admin,"") as any;
@@ -117,18 +117,18 @@ test("an expired offer can't be accepted until an admin extends it", async () =>
 
 test("interns see resources for their track and can tick them off", async () => {
   const all = await domain.execute("resource.save", { title: "Git basics", url: "https://git-scm.com/book", type: "doc" }, admin, key()) as any;
-  const explorerOnly = await domain.execute("resource.save", { title: "React", url: "https://react.dev/learn", type: "course", minutes: 90, programIds: ["explorer"] }, admin, key()) as any;
-  const innovatorOnly = await domain.execute("resource.save", { title: "Systems", url: "https://example.test/sys", programIds: ["innovator"] }, admin, key()) as any;
+  const software-engineerOnly = await domain.execute("resource.save", { title: "React", url: "https://react.dev/learn", type: "course", minutes: 90, programIds: ["software-engineer"] }, admin, key()) as any;
+  const software-engineerOnly = await domain.execute("resource.save", { title: "Systems", url: "https://example.test/sys", programIds: ["software-engineer"] }, admin, key()) as any;
   await expect(domain.execute("resource.save", { title: "x", url: "https://a.test" }, recruiter, key())).rejects.toMatchObject({ code: "FORBIDDEN" });
   const { account } = await applicant("Joined");
-  await domain.execute("resource.complete", { resourceId: explorerOnly.id }, account, key());
+  await domain.execute("resource.complete", { resourceId: software-engineerOnly.id }, account, key());
   const snapshot = await domain.execute("intern.snapshot", {}, account, key()) as any;
   const ids = snapshot.my.resources.map((item: any) => item.id);
-  expect(ids).toEqual(expect.arrayContaining([all.id, explorerOnly.id]));
-  expect(ids).not.toContain(innovatorOnly.id);
-  expect(snapshot.my.resources.find((item: any) => item.id === explorerOnly.id).done).toBe(true);
-  await domain.execute("resource.complete", { resourceId: explorerOnly.id, done: false }, account, key());
-  expect((await domain.execute("intern.snapshot", {}, account, key()) as any).my.resources.find((item: any) => item.id === explorerOnly.id).done).toBe(false);
+  expect(ids).toEqual(expect.arrayContaining([all.id, software-engineerOnly.id]));
+  expect(ids).not.toContain(software-engineerOnly.id);
+  expect(snapshot.my.resources.find((item: any) => item.id === software-engineerOnly.id).done).toBe(true);
+  await domain.execute("resource.complete", { resourceId: software-engineerOnly.id, done: false }, account, key());
+  expect((await domain.execute("intern.snapshot", {}, account, key()) as any).my.resources.find((item: any) => item.id === software-engineerOnly.id).done).toBe(false);
 });
 
 test("active interns check in once a week and mentors can reply", async () => {

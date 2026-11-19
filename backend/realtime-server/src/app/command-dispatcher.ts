@@ -81,8 +81,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       events.dropIndex("applicationId_1_createdAt_-1").catch(() => undefined),
     ]);
     await Promise.all([
-      programs.updateOne({ _id: "explorer" }, { $setOnInsert: { name: "Tech Explorer", fee: null, stipend: null, enabled: false } }, { upsert: true }),
-      programs.updateOne({ _id: "innovator" }, { $setOnInsert: { name: "Tech Innovator", fee: null, stipend: null, enabled: false } }, { upsert: true }),
+      programs.updateOne({ _id: "software-engineer" }, { $setOnInsert: { name: "Software Engineer Intern", fee: null, stipend: null, enabled: false } }, { upsert: true }),
       settings.updateOne({ _id: "program" }, { $setOnInsert: { programEnabled: false, compensationMode: "both", defaultBatch: "", maxStipend: null } }, { upsert: true }),
       applications.updateMany(HAS_VIDEO_BACKFILL.filter, HAS_VIDEO_BACKFILL.update),
       applications.createIndex({ hasVideo: -1, appliedOn: -1 }),

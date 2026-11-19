@@ -17,11 +17,11 @@ beforeAll(async () => { connection = await connectInternDatabase(uri!); domain =
 afterAll(async () => { if (!connection) return; for (const { name } of await connection.db.listCollections({}, { nameOnly: true }).toArray()) if (name.startsWith(prefix)) await connection.db.collection(name).drop(); await connection.client.close(); }, 30000);
 
 test("application through approved work and one certificate, with ownership and replay protections", async () => {
-  await call("program.configure", { programId: "explorer", fee: 0, stipend: 100, enabled: true });
+  await call("program.configure", { programId: "software-engineer", fee: 0, stipend: 100, enabled: true });
   await call("settings.update", { patch: { programEnabled: true, durationSpec:{quantity:1,unit:"months"} } });
   const fileToken = "test-token";
   await domain.collection("files").insertOne({ _id: "resume", kind: "resume", status: "ready", accessTokenHash: createHash("sha256").update(fileToken).digest("hex") });
-  await call("application.submit", { name: "Test Intern", email: "life@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "explorer", roleId: "build", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: fileToken }, null);
+  await call("application.submit", { name: "Test Intern", email: "life@example.test", linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", roleId: "build", schedule: "part_time", resumeAttachmentId: "resume", resumeAccessToken: fileToken }, null);
   const application = { id: String((await domain.collection("applications").findOne({ email: "life@example.test" }))!._id) };
   const statusEmails: string[] = [], interviewEmails: string[] = [];
   domain.setHooks({
@@ -77,7 +77,7 @@ test("application through approved work and one certificate, with ownership and 
   await expect(call("offer.accept", { applicationId: application.id, version:1 }, other)).rejects.toBeInstanceOf(DomainError);
   await call("offer.accept", { applicationId: application.id, version:1 }, intern);
   const acceptedActivity = await domain.collection("activity").findOne({ title: "Internship offer accepted", applicationId: application.id });
-  expect(acceptedActivity?.detail).toContain("Test Intern accepted the Tech Explorer offer");
+  expect(acceptedActivity?.detail).toContain("Test Intern accepted the Software Engineer Intern offer");
   expect(acceptedActivity?.detail).not.toBe(acceptedActivity?.title);
   await expect(call("onboarding.approve", { applicationId: application.id })).rejects.toBeInstanceOf(DomainError);
   await call("onboarding.save", { applicationId: application.id, details: { phone: "123456", college: "Test College", location: "Test City", skills: ["React", "MongoDB"], acknowledged: true } }, intern);

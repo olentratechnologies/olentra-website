@@ -47,11 +47,6 @@
   --accent-soft: #efe6ff;
   --accent-line: #d4c0fb;
 }
-.roleSkill[data-role="grow"] {
-  --accent: #0b8a6a;
-  --accent-soft: #dcf5ec;
-  --accent-line: #a9e2cf;
-}
 
 .roleTag {
   align-self: flex-start;

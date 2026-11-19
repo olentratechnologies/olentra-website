@@ -7,7 +7,7 @@ import { isAdmin } from "../access/policy";
 type Row = Document & { _id: string };
 type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session: ClientSession) => Promise<T>) => Promise<T>;
 export const RESOURCE_TYPES = ["article", "video", "course", "doc"] as const;
-const PROGRAMS = ["explorer", "innovator"];
+const PROGRAMS = ["software-engineer"];
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
 /** Validates an admin's resource. An empty track list means every track. */

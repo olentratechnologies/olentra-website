@@ -71,22 +71,13 @@ const paidTrackBenefits = [
 
 const tracks = [
   {
-    id: "explorer",
-    name: "Tech Explorer",
+    id: "software-engineer",
+    name: "Software Engineer Intern",
     subtitle: "Internship program",
     description:
-      "Build a foundation in technology through structured learning, mentorship, and practical projects.",
-    art: "book",
-    cta: "Apply for Explorer",
-  },
-  {
-    id: "innovator",
-    name: "Tech Innovator",
-    subtitle: "Internship program",
-    description:
-      "Develop your skills by contributing to projects and collaborating with our team.",
-    art: "trophy",
-    cta: "Apply for Innovator",
+      "Build your software engineering skills through real-world projects, mentorship, and hands-on experience.",
+    art: "chip",
+    cta: "Apply now",
   },
 ];
 const WORK_MODE = "100% remote";
@@ -652,7 +643,7 @@ export default function InternLanding() {
               return (
               <article
                 key={track.id}
-                className={`${styles.trackCard} ${track.id === "innovator" ? styles.innovator : ""}`}
+                className={styles.trackCard}
               >
                 <header className={styles.trackHeader}>
                   <ReferenceArt name={track.art} className={styles.trackArt} />
@@ -698,7 +689,7 @@ export default function InternLanding() {
                     </dl>
                   </div>
                   <div className={styles.trackPanel}>
-                    <h3>What you’ll gain</h3>
+                    <h3>What you'll gain</h3>
                     <ul className={styles.trackBenefits} role="list">
                       {trackBenefits.map((benefit) => (
                         <li key={benefit}>

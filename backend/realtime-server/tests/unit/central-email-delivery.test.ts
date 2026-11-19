@@ -7,7 +7,7 @@ test("internship delivery calls only the configured email-server and forwards ca
   globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => { requests.push({ url: String(url), headers: new Headers(init?.headers), message: JSON.parse(String(init?.body)) }); return Response.json({ success: true, id: "central-smtp-id" }, { status: 201 }); }) as unknown as typeof fetch;
   try {
     const mailer = createInternshipMailer("server-only-token", "http://127.0.0.1:3001/");
-    const response = await mailer.sendInterviewCancelled({ to: "intern@example.test", name: "Alex", programName: "Tech Explorer", scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/meeting", portalUrl: "https://example.test/intern/portal", interviewId: "INTV-1", sequence: 3 });
+    const response = await mailer.sendInterviewCancelled({ to: "intern@example.test", name: "Alex", programName: "Software Engineer Intern", scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/meeting", portalUrl: "https://example.test/intern/portal", interviewId: "INTV-1", sequence: 3 });
     expect(response).toMatchObject({ ok: true, delivered: true, id: "central-smtp-id" });
     expect(requests).toHaveLength(1);
     expect(requests[0].url).toBe("http://127.0.0.1:3001/api/email");

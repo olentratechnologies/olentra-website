@@ -34,7 +34,7 @@ function TrackPerformance({ months, large = false }) {
         aria-label="Monthly applications by internship track"
         onMouseLeave={() => setHovered(null)}
       >
-        <title>Monthly applications for Tech Explorer and Tech Innovator</title>
+        <title>Monthly applications for Software Engineer Intern</title>
         <defs>
           <linearGradient id={`${id}-blue`} x1="0" y1="0" x2="0" y2="1">
             <stop stopColor="var(--ad-chart-fill-1, #53c5ff)" />

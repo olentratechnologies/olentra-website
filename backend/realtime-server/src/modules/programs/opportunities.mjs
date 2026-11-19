@@ -16,21 +16,6 @@ export const INTERN_ROLES = [
     focus: ["Agentic AI development", "AI agents and multi-agent systems", "Workflow automation", "Tool and API integrations", "Business process automation", "AI chatbot development"],
     skills: ["Basic programming in Python or JavaScript", "Understanding of APIs", "Curiosity about AI agents and automation"],
   },
-  {
-    id: "grow", tag: "Grow", title: "Growth & Partnerships Intern", short: "Growth & Partnerships",
-    summary: "Drive growth across marketing, sales, partnerships and client relations.",
-    focusLabel: "Areas you can cover",
-    areas: [
-      ["Marketing", "Digital marketing, social media, campaigns and brand awareness"],
-      ["Sales", "Product pitching, client conversion and closing deals"],
-      ["Lead generation", "Finding potential customers and qualifying leads"],
-      ["Business development", "Identifying new business opportunities"],
-      ["Partnerships", "Building strategic partnerships and collaborations"],
-      ["Client relations", "Customer communication and relationship management"],
-      ["Market research", "Competitor analysis and identifying target markets"],
-    ],
-    skills: ["Strong communication and people skills", "Interest in marketing, sales or business", "Comfort with research and outreach"],
-  },
 ];
 
 export const INTERN_SCHEDULES = [

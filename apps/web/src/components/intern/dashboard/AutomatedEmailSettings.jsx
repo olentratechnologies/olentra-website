@@ -70,7 +70,7 @@ export default function AutomatedEmailSettings({ commands, notify }) {
           </div>
         </form>
         <div className={styles.emailPreview} aria-live="polite">
-          {preview ? <><h3>{preview.subject}</h3><p className={styles.helper}>Sample recipient: Alex Kumar · Tech Explorer</p><iframe title={`${selected.name} email preview`} sandbox="" referrerPolicy="no-referrer" srcDoc={preview.html}/>{preview.attachments?.length > 0 && <p className={styles.helper}>Attachment: interview.ics · {selectedId === "interview-cancelled" ? "Calendar cancellation" : "Calendar invitation / update"}</p>}</> : <p className={styles.helper}>Preview this email with sample data to see its message, buttons and required details.</p>}
+          {preview ? <><h3>{preview.subject}</h3><p className={styles.helper}>Sample recipient: Alex Kumar · Software Engineer Intern</p><iframe title={`${selected.name} email preview`} sandbox="" referrerPolicy="no-referrer" srcDoc={preview.html}/>{preview.attachments?.length > 0 && <p className={styles.helper}>Attachment: interview.ics · {selectedId === "interview-cancelled" ? "Calendar cancellation" : "Calendar invitation / update"}</p>}</> : <p className={styles.helper}>Preview this email with sample data to see its message, buttons and required details.</p>}
         </div>
       </div>
     </>}

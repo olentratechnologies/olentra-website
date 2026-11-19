@@ -15,7 +15,7 @@ test("applicant status emails include the portal and certificate sharing links",
     const result = await mailer.sendApplicantStatus({
       to: "intern@example.test",
       name: "<Test Intern>",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       status: "certificate",
       portalUrl: "https://example.test/intern/portal",
       certificateVerifyUrl: "https://example.test/certificates/verify/OLENTRA-123",
@@ -47,7 +47,7 @@ test("shortlisted applicant emails have a distinct status subject without a port
     await mailer.sendApplicantStatus({
       to: "intern@example.test",
       name: "Test Intern",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       status: "shortlisted",
       portalUrl: "https://example.test/intern/portal",
     });
@@ -71,12 +71,12 @@ test("interview emails include the time, meeting link, and candidate portal", as
     await mailer.sendInterviewScheduled({
       to: "intern@example.test",
       name: "Test Intern",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       scheduledAt: "2026-11-12T10:00:00.000Z",
       meetingUrl: "https://meet.example.test/room",
       portalUrl: "https://example.test/intern/portal",
     });
-    assert.equal(requests[0]?.subject, "Interview scheduled for your Tech Explorer application");
+    assert.equal(requests[0]?.subject, "Interview scheduled for your Software Engineer Intern application");
     assert.match(String(requests[0]?.html), /https:\/\/meet\.example\.test\/room/);
     // India time first, with UTC alongside.
     assert.match(String(requests[0]?.text), /12 Nov 2026(,| at) 3:30\s?PM IST \(10:00 UTC\)/i);
@@ -92,14 +92,14 @@ test("interview emails attach a calendar invite, and cancellations a matching ca
   globalThis.fetch = (async (_input, init) => { requests.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify({ success: true, id: "email-1" }), { status: 200 }); }) as typeof fetch;
   try {
     const mailer = createInternshipMailer("delivery-test-token", "http://email-server.test");
-    const notice = { to: "intern@example.test", name: "<Test>", programName: "Tech Explorer", scheduledAt: "2026-11-12T10:00:00.000Z", meetingUrl: "https://meet.example.test/room", portalUrl: "https://example.test/intern/portal", interviewId: "INTV-9" };
+    const notice = { to: "intern@example.test", name: "<Test>", programName: "Software Engineer Intern", scheduledAt: "2026-11-12T10:00:00.000Z", meetingUrl: "https://meet.example.test/room", portalUrl: "https://example.test/intern/portal", interviewId: "INTV-9" };
     await mailer.sendInterviewScheduled({ ...notice, sequence: 1 });
     await mailer.sendInterviewCancelled({ ...notice, sequence: 2, cancelReason: "Interviewer unavailable" });
     const invite = Buffer.from(requests[0]!.attachments[0].content, "base64").toString();
     const cancel = Buffer.from(requests[1]!.attachments[0].content, "base64").toString();
     assert.match(invite, /METHOD:REQUEST/); assert.match(invite, /UID:INTV-9@/); assert.match(invite, /SEQUENCE:1/);
     assert.match(cancel, /METHOD:CANCEL/); assert.match(cancel, /UID:INTV-9@/); assert.match(cancel, /SEQUENCE:2/);
-    assert.equal(requests[1]!.subject, "Your Tech Explorer interview was cancelled");
+    assert.equal(requests[1]!.subject, "Your Software Engineer Intern interview was cancelled");
     assert.match(String(requests[1]!.html), /&lt;Test&gt;/);
     assert.match(String(requests[1]!.text), /Interviewer unavailable/);
   } finally {
@@ -120,20 +120,20 @@ test("the seven applicant journey emails share the branded responsive template",
     await mailer.sendApplicationConfirmation({
       to: "intern@example.test",
       name: "Test Intern",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       applicationId: "OL-123",
     });
     await mailer.sendApplicantStatus({
       to: "intern@example.test",
       name: "Test Intern",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       status: "shortlisted",
       portalUrl: "https://example.test/intern/portal",
     });
     await mailer.sendInterviewScheduled({
       to: "intern@example.test",
       name: "Test Intern",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       scheduledAt: "2026-11-12T10:00:00.000Z",
       meetingUrl: "https://meet.example.test/room",
       portalUrl: "https://example.test/intern/portal",
@@ -141,7 +141,7 @@ test("the seven applicant journey emails share the branded responsive template",
     await mailer.sendApplicantStatus({
       to: "intern@example.test",
       name: "Test Intern",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       status: "selected",
       portalUrl: "https://example.test/intern/verify?token=secure",
       linkedinShareUrl: "https://www.linkedin.com/feed/?shareActive=true",
@@ -149,21 +149,21 @@ test("the seven applicant journey emails share the branded responsive template",
     await mailer.sendApplicantStatus({
       to: "intern@example.test",
       name: "Test Intern",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       status: "offer",
       portalUrl: "https://example.test/intern/portal",
     });
     await mailer.sendApplicantStatus({
       to: "intern@example.test",
       name: "Test Intern",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       status: "onboarding",
       portalUrl: "https://example.test/intern/portal",
     });
     await mailer.sendApplicantStatus({
       to: "intern@example.test",
       name: "Test Intern",
-      programName: "Tech Explorer",
+      programName: "Software Engineer Intern",
       status: "certificate",
       portalUrl: "https://example.test/intern/portal",
       certificateVerifyUrl: "https://example.test/certificates/verify/OLENTRA-123",
@@ -195,7 +195,7 @@ test("reminder emails escape their content and link to the site", async () => {
   globalThis.fetch = (async (_input, init) => { requests.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify({ success: true, id: "email-1" }), { status: 200 }); }) as typeof fetch;
   try {
     const mailer = createInternshipMailer("delivery-test-token", "http://email-server.test");
-    await mailer.sendNotice({ to: "a@example.test", subject: "2 applications are waiting", heading: "Waiting", intro: "Hi", items: ["<b>Asha</b> · Tech Explorer", "Ravi · Tech Innovator"], ctaLabel: "Review", ctaUrl: "https://site.example.test/intern/dashboard/applications" });
+    await mailer.sendNotice({ to: "a@example.test", subject: "2 applications are waiting", heading: "Waiting", intro: "Hi", items: ["<b>Asha</b> · Software Engineer Intern", "Ravi · Tech Innovator"], ctaLabel: "Review", ctaUrl: "https://site.example.test/intern/dashboard/applications" });
     assert.match(String(requests[0]!.html), /&lt;b&gt;Asha&lt;\/b&gt;/);
     assert.match(String(requests[0]!.html), /href="https:\/\/site\.example\.test\/intern\/dashboard\/applications"/);
     assert.match(String(requests[0]!.text), /- Ravi · Tech Innovator/);
