@@ -247,7 +247,7 @@ function TeamPicker({ selected, onChange, onPeople, label = "Assign team members
 }
 
 export function ProjectsPage() {
-  const { data, query, notify, createProject, updateProject, account } = useDashboard();
+  const { data, query, notify, createProject, updateProject, deleteProject, account } = useDashboard();
   const canManage = hasStaffPermission(account, "projects.manage");
   const canReadTasks = hasStaffPermission(account, "tasks.read");
   const [tab, setTab] = useState("all");
@@ -264,6 +264,7 @@ export function ProjectsPage() {
   });
   const [formError, setFormError] = useState("");
   const [detail, setDetail] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [contributionSearch, setContributionSearch] = useState("");
   const [allContributions, setAllContributions] = useState(false);
@@ -304,11 +305,16 @@ export function ProjectsPage() {
   const openProject = (project) => {
     setDetail({
       id: project.id,
+      name: project.name,
+      description: project.description,
+      program: project.program,
+      dueOn: project.dueOn,
       progress: project.progress,
       status: project.status,
       team: [...project.team],
     });
     setDetailError("");
+    setDeleteConfirm(false);
   };
   const saveNewProject = async (event) => {
     event.preventDefault();
@@ -359,6 +365,11 @@ export function ProjectsPage() {
       Number(detail.progress) > 100
     )
       return setDetailError("Progress must be between 0 and 100.");
+    if (detail.name.trim().length < 3) return setDetailError("Enter a project name with at least 3 characters.");
+    if (detail.description.trim().length < 12) return setDetailError("Describe the project in at least 12 characters.");
+    if (!data.programs.some(program => program.name === detail.program)) return setDetailError("Choose a valid internship track.");
+    if (!detail.dueOn) return setDetailError("Choose a project due date.");
+    setDetailError("");
     const originalIds = new Set(selectedProject.team);
     if (
       detail.team.some(
@@ -369,6 +380,10 @@ export function ProjectsPage() {
     setSaving(true);
     try {
       const saved = await updateProject(detail.id, {
+        name: detail.name.trim(),
+        description: detail.description.trim(),
+        program: detail.program,
+        dueOn: detail.dueOn,
         status: detail.status,
         progress: detail.status === "Completed" ? 100 : Number(detail.progress),
         team: [...new Set(detail.team)],
@@ -724,6 +739,24 @@ export function ProjectsPage() {
               </div>
               <div className={common.formGrid}>
                 <label className={common.field}>
+                  Project name
+                  <input disabled={!canManage || saving} value={detail.name} maxLength={200} required onChange={event => setDetail({ ...detail, name: event.target.value })} />
+                </label>
+                <label className={common.field}>
+                  Program
+                  <select disabled={!canManage || saving} value={detail.program} onChange={event => setDetail({ ...detail, program: event.target.value })}>
+                    {data.programs.map(program => <option key={program.id} value={program.name}>{program.name}</option>)}
+                  </select>
+                </label>
+                <label className={common.field}>
+                  Description
+                  <textarea disabled={!canManage || saving} value={detail.description} maxLength={5000} required rows={4} onChange={event => setDetail({ ...detail, description: event.target.value })} />
+                </label>
+                <label className={common.field}>
+                  Due date
+                  <input disabled={!canManage || saving} type="date" required value={detail.dueOn} onChange={event => setDetail({ ...detail, dueOn: event.target.value })} />
+                </label>
+                <label className={common.field}>
                   Project status
                   <select
                     disabled={!canManage}
@@ -802,14 +835,30 @@ export function ProjectsPage() {
                 </p>
               )}
               <div className={common.formActions}>
-                <Button variant="ghost" onClick={() => setDetail(null)}>
+                <Button variant="ghost" disabled={saving} onClick={() => setDetail(null)}>
                   Cancel
                 </Button>
+                {canManage && <Button type="button" variant="ghost" disabled={saving} onClick={() => setDeleteConfirm(true)}>Delete project</Button>}
                 {canManage && <Button type="submit" disabled={saving}>
                   <Check size={15} /> Save Changes
                 </Button>}
               </div>
             </form>
+            {canManage && deleteConfirm && <div role="alert" className={common.error}>
+              <p>Delete “{selectedProject.name}”? This permanently removes the project and all its tasks and submissions. This cannot be undone.</p>
+              <Button type="button" disabled={saving} onClick={() => setDeleteConfirm(false)}>Keep project</Button>
+              <Button type="button" disabled={saving} onClick={async () => {
+                if (saving) return;
+                setSaving(true);
+                try {
+                  const result = await deleteProject(detail.id);
+                  if (result === false) return;
+                  setDetail(null);
+                  setDeleteConfirm(false);
+                  notify("Project deleted.");
+                } finally { setSaving(false); }
+              }}>Permanently delete project</Button>
+            </div>}
             {canReadTasks && <ProjectWorkflow projectId={selectedProject.id} projectRecord={selectedProject} directoryPeople={people} activeMemberIds={activeIds} />}
           </>
         )}
