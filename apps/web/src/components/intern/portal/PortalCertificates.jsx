@@ -5,7 +5,7 @@ import Link from "next/link";
 import { offerDocumentState } from "@/lib/intern/offer-document.mjs";
 import { durationLabel as scheduleDurationLabel } from "@/lib/intern/schedule.mjs";
 import CompanyBrand from "@/components/intern/CompanyBrand";
-import { Award, Copy, Download, Eye, FileText, Linkedin, Printer, ShieldCheck } from "lucide-react";
+import { Award, Copy, Download, ExternalLink, Eye, FileText, Linkedin, Printer, ShieldCheck } from "lucide-react";
 import { linkedInAddUrl, verifyUrl } from "@/lib/intern/certificate-share.mjs";
 import { buildOfferLetterPdfBytes, downloadOfferLetterPdf } from "@/lib/intern/offer-letter-pdf";
 import PortalStory from "./PortalStory";
@@ -199,11 +199,23 @@ export default function PortalCertificates() {
         className={styles.offerLetterModal}
       >
         {offerPdfUrl && (
-          <iframe
-            className={styles.offerLetterFrame}
-            src={offerPdfUrl}
-            title="Internship offer letter PDF"
-          />
+          <>
+            <div className={styles.modalToolbar}>
+              <span>Accepted offer letter</span>
+              <Button
+                variant="ghost"
+                onClick={() => window.open(offerPdfUrl, "_blank", "noopener")}
+              >
+                <ExternalLink size={15} />
+                Open in new tab
+              </Button>
+            </div>
+            <iframe
+              className={styles.offerLetterFrame}
+              src={offerPdfUrl}
+              title="Internship offer letter PDF"
+            />
+          </>
         )}
       </Modal>
       <Panel>
