@@ -106,6 +106,7 @@ export default function ApplicationsPage() {
   const [track, setTrack] = useState("all");
   const [status, setStatus] = useState("all");
   const [video, setVideo] = useState("all");
+  const [batch, setBatch] = useState("all");
   // "?assignee=me" (from an assignment alert) opens the page filtered to my reviews.
   const [assignee, setAssignee] = useState(() => (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("assignee") === "me" ? "me" : "all"));
   const reviewersQuery = useInternQuery("staff.reviewers", {}, { enabled: canReview });
@@ -139,7 +140,7 @@ export default function ApplicationsPage() {
     const view = savedViews.find((item) => item.id === viewId);
     if (!view) return;
     const f = view.filters || {};
-    setSearch(f.search || ""); setStatus(f.status || "all"); setTrack(f.programId || "all"); setVideo(f.video || "all");
+    setSearch(f.search || ""); setStatus(f.status || "all"); setTrack(f.programId || "all"); setBatch(f.batch || "all"); setVideo(f.video || "all");
     setSkill(f.skill || "all"); setDateFrom(f.dateFrom || ""); setDateTo(f.dateTo || ""); setAssignee(f.assignee || "all");
     if (f.sortKey) setSort({ key: f.sortKey, direction: f.sortDirection === "asc" ? "asc" : "desc" });
     setPage(1);
@@ -147,7 +148,7 @@ export default function ApplicationsPage() {
   async function saveView() {
     const name = window.prompt("Name this view", savedViews.find((item) => item.id === activeView)?.name || "")?.trim();
     if (!name) return;
-    const result = await commands.saveView(name, { search, status, programId: track, video, skill, dateFrom, dateTo, assignee, sortKey: sort.key, sortDirection: sort.direction });
+    const result = await commands.saveView(name, { search, status, programId: track, batch, video, skill, dateFrom, dateTo, assignee, sortKey: sort.key, sortDirection: sort.direction });
     if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Could not save the view."); return; }
     notify(`Saved “${name}”.`);
     setActiveView(result.data.id);
@@ -169,6 +170,7 @@ export default function ApplicationsPage() {
   const [saving, setSaving] = useState(false);
   const activeFilters =
     Number(status !== "all") +
+    Number(batch !== "all") +
     Number(video !== "all") +
     Number(assignee !== "all") +
     Number(skill !== "all") +
@@ -178,15 +180,15 @@ export default function ApplicationsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, search, track, status, video, skill, dateFrom, dateTo, pageSize]);
+  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize]);
   // Selection is scoped to the rows on screen; any change of view clears it.
   useEffect(() => {
     setSelected(new Set());
-  }, [query, search, track, status, video, skill, dateFrom, dateTo, pageSize, page, sort.key, sort.direction, videosFirst]);
+  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, page, sort.key, sort.direction, videosFirst]);
 
   const debouncedSearch = useInternSearch(search);
   const debouncedQuery = useInternSearch(query);
-  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }) };
+  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, batch, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }) };
   const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction, videosFirst }, { enabled: !invalidDateRange });
   // Tab-count summary must NOT include programId — otherwise switching tracks
   // causes the facet response to be scoped to a single program and the other
@@ -229,6 +231,7 @@ export default function ApplicationsPage() {
     setSearch("");
     setTrack("all");
     setStatus("all");
+    setBatch("all");
     setVideo("all");
     setAssignee("all");
     setSkill("all");
@@ -407,6 +410,18 @@ export default function ApplicationsPage() {
                 <option value="all">All statuses</option>
                 {STATUSES.map((value) => (
                   <option key={value}>{value}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Batch
+              <select
+                value={batch}
+                onChange={(event) => { setBatch(event.target.value); setPage(1); }}
+              >
+                <option value="all">All batches</option>
+                {[...new Set([...(summary?.batches || []), ...(batch !== "all" ? [batch] : [])])].map((name) => (
+                  <option key={name} value={name}>{name}</option>
                 ))}
               </select>
             </label>

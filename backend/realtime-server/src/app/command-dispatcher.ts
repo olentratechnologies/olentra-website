@@ -36,6 +36,7 @@ import { linkedinKey } from "../modules/applications/duplicates";
 import { auditDecision } from "../modules/audit/decision-audit";
 import { mentorScope } from "../modules/access/mentor-scope";
 import { migrateLegacyPrograms, PROGRAM_ID, PROGRAM_NAME } from "../modules/programs/legacy-program-migration";
+import { backfillBatches, INITIAL_BATCH } from "../modules/programs/batch-backfill";
 import { runReminders } from "../modules/reminders/reminders";
 import { FINAL_STATUSES, eraseApplicant, expiredApplicationIds } from "../modules/privacy/erase";
 
@@ -45,7 +46,7 @@ const alreadyApplied = () => new DomainError("ALREADY_APPLIED", "An application 
 const publicAccount = (row: Row): Principal => ({ id: row._id, role: row.role, name: row.name, email: row.email, applicationId: row.applicationId ?? null, sessionVersion: row.sessionVersion ?? 1 });
 const publicApplication = (row: Row, staff: boolean) => {
   const { _id, claimHash, claimExpiresAt, communicationFence, ...record } = row;
-  if (!staff) { delete record.notes; delete record.internalNotes; }
+  if (!staff) { delete record.notes; delete record.internalNotes; delete record.batch; }
   return { ...record, id: _id };
 };
 
@@ -93,10 +94,12 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       backfillDuplicates().catch(error => logger.warn("Duplicate backfill failed", { error })),
       applications.createIndex({ assignedTo: 1, appliedOn: -1 }),
       applications.createIndex({ linkedinKey: 1 }, { partialFilterExpression: { linkedinKey: { $type: "string" } } }),
+      applications.createIndex({ batch: 1, appliedOn: -1 }),
       // Retention counts from when a final decision was made; older rows start counting today.
       applications.updateMany({ status: { $in: FINAL_STATUSES }, statusChangedOn: { $exists: false } }, { $set: { statusChangedOn: new Date().toISOString() } }),
     ]);
     await migrateLegacyPrograms(collection);
+    await backfillBatches(collection);
   }
   /** Adds LinkedIn keys to older applications and flags the ones that share a profile. */
   async function backfillDuplicates() {
@@ -293,6 +296,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const filter: Document = {};
       if (params.status && params.status !== "all") filter.status = str(params.status);
       if (params.programId && params.programId !== "all") filter.programId = str(params.programId);
+      if (params.batch && params.batch !== "all") filter.batch = str(params.batch).slice(0, 120);
       Object.assign(filter, videoFilter(params.video));
       if (params.assignee === "me") filter.assignedTo = actor!.id;
       else if (params.assignee === "unassigned") filter.assignedTo = { $exists: false };
@@ -309,10 +313,10 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const [rows, total, aggregate] = await Promise.all([
         applications.find(filter).sort(applicationSort(sortField, direction, params.videosFirst)).skip((page - 1) * limit).limit(limit).toArray(), applications.countDocuments(filter),
         // Counts are only computed when asked for; the list itself doesn't need them.
-        params.facets !== true ? Promise.resolve(null) : applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
+        params.facets !== true ? Promise.resolve(null) : applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
       ]);
       if (!aggregate) return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit };
-      return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) } };
+      return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) }, batches: (aggregate[0]?.batches || []).map((item: any) => item._id).filter(Boolean) };
     }
     if (method === "application.get") {
       if (!actor) throw new DomainError("UNAUTHENTICATED", "Sign in to view applications.");
@@ -422,7 +426,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (deadline && Date.parse(deadline) <= Date.now()) throw new DomainError("CLOSED", "The application deadline for this internship cycle has passed.");
         if (!file) throw new DomainError("INVALID_REQUEST", "Upload your resume before applying.");
         const applicationId = id("OL"), now = new Date();
-        const row: Row = { _id: applicationId, name, email, programId, schedule, workMode: INTERNSHIP_OPPORTUNITIES.workMode, duration: normalizeInternshipDuration(config?.duration), program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github, bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
+        const row: Row = { _id: applicationId, name, email, programId, schedule, workMode: INTERNSHIP_OPPORTUNITIES.workMode, duration: normalizeInternshipDuration(config?.duration), program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", batch: config?.defaultBatch || INITIAL_BATCH, initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github, bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
         // Flag likely duplicates: a different email with the same LinkedIn profile.
         const profileKey = linkedinKey(linkedin);
         if (profileKey) {

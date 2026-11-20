@@ -159,7 +159,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         const updated = await onboarding.findOneAndUpdate({ applicationId, status: "Submitted" }, { $set: { status: "Approved", approvedOn: now } }, { ...opts, returnDocument: "after" }); if (!updated) throw new DomainError("CONFLICT", "The applicant must submit onboarding before approval.");
         await applications.updateOne({ _id: applicationId, status: "Selected" }, { $set: { status: "Joined" }, $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: "Intern onboarded", detail: "Onboarding approved. Your internship workspace is ready.", date: now } } as any }, opts);
         const config = await settings.findOne({ _id: "program" }, opts);
-        const intern: Row = { _id: newId("INT"), applicationId, batch: config?.defaultBatch || "", joinedOn: day(), startOn: offer.startOn, endOn: offer.endOn, offerVersion: offer.currentVersion || 1, duration: offer.duration, durationLabel: offer.durationLabel, status: "Active", projectIds: [], revision: 1 };
+        const intern: Row = { _id: newId("INT"), applicationId, batch: app.batch || config?.defaultBatch || "", joinedOn: day(), startOn: offer.startOn, endOn: offer.endOn, offerVersion: offer.currentVersion || 1, duration: offer.duration, durationLabel: offer.durationLabel, status: "Active", projectIds: [], revision: 1 };
         await interns.insertOne(intern, opts); return plain(intern);
       }
       if (method === "profile.update") {

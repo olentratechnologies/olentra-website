@@ -49,3 +49,10 @@ test("fetchAllPages reads every page and stops at the cap", async () => {
   assert.equal(capped.capped, true);
   await assert.rejects(fetchAllPages(async () => ({ ok: false, error: "Forbidden" })), /Forbidden/);
 });
+
+test("application export records each applicant's batch", () => {
+  const column = APPLICATION_EXPORT_COLUMNS.indexOf("Batch");
+  assert.equal(APPLICATION_EXPORT_COLUMNS[column - 1], "Track");
+  assert.equal(applicationExportRow({ batch: "Batch 2026-1" })[column], "Batch 2026-1");
+  assert.equal(applicationExportRow({})[column], "");
+});

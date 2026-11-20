@@ -8,7 +8,7 @@ type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session
 export const MAX_VIEWS = 20;
 
 /** Only known Applications filters are kept, each as a short string. */
-const FILTER_KEYS = ["search", "status", "programId", "video", "skill", "dateFrom", "dateTo", "assignee", "sortKey", "sortDirection", "videosFirst"];
+const FILTER_KEYS = ["search", "status", "programId", "batch", "video", "skill", "dateFrom", "dateTo", "assignee", "sortKey", "sortDirection", "videosFirst"];
 export function cleanFilters(value: unknown) {
   const source = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
   const filters: Record<string, string> = {};

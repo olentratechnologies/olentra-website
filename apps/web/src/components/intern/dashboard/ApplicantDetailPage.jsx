@@ -432,6 +432,10 @@ export default function ApplicantDetailPage({ applicationId }) {
           </dd>
         </div>
         <div>
+          <dt>Batch</dt>
+          <dd>{application.batch || "—"}</dd>
+        </div>
+        <div>
           <dt>Applied On</dt>
           <dd>{formatDate(application.appliedOn)}</dd>
         </div>
