@@ -532,3 +532,14 @@
     align-self: flex-start;
   }
 }
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ad-subtle, #7389ad);
+}
+
+.hint[role="alert"] {
+  color: var(--ad-danger, #c2410c);
+}

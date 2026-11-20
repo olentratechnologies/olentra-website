@@ -292,6 +292,7 @@ export function createCommunications({ collection, transact }: Options) {
         values.retentionDays = days;
       }
       if (patch.applicationDeadline !== undefined) values.applicationDeadline = parseDeadlinePatch(patch.applicationDeadline);
+      if (patch.onboardingLeadDays !== undefined) { const days = Number(patch.onboardingLeadDays); if (!Number.isInteger(days) || days < 0 || days > 30) throw new DomainError("INVALID_REQUEST", "Set an onboarding lead time of 0 to 30 days."); values.onboardingLeadDays = days; }
       if (patch.maxStipend !== undefined) { const amount = Number(patch.maxStipend); if (!Number.isSafeInteger(amount) || amount < 0 || amount > 1000000) throw new DomainError("INVALID_REQUEST", "Enter a valid stipend."); values.maxStipend = amount; }
       if (patch.emailNotifications === true || (patch.integrations && Object.values(patch.integrations).some(Boolean))) throw new DomainError("UNAVAILABLE", "Email notifications and external integrations are not configured.");
       return transact(key, account, { method, params }, async session => {

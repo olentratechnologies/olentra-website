@@ -5,6 +5,7 @@ import { DomainError } from '../../shared/errors';
 import { requireAdmin } from '../access/policy';
 import { parseDuration, durationLabel, completionDate, civilToday, legacyDuration } from '../programs/schedule.mjs';
 import { internScheduleLabel } from '../programs/opportunities.mjs';
+import { decisionDeadline, maxOpenDays, normalizeLeadDays, offerWindowProblem, MAX_OPEN_DAYS } from '../programs/offer-policy.mjs';
 const fail=(message:string):never=>{throw new DomainError('CONFLICT',message);};
 const key=(id:string,version:number)=>`${id}:v${version}`;
 export function createOfferSchedules(collection:any) {
@@ -27,8 +28,14 @@ export function createOfferSchedules(collection:any) {
       if(p.durationOverride&&!reason)throw new DomainError('INVALID_REQUEST','A duration exception requires a reason.');
       let endOn:string;try{endOn=completionDate(p.startOn,duration);}catch(e:any){throw new DomainError('INVALID_REQUEST',e.message);}
       if(method!=='offer.revise'&&!(method==='offer.preview'&&p.revising&&old)&&p.startOn<civilToday())throw new DomainError('INVALID_REQUEST','Choose a start date today or later.');
+      const days=Number(p.expiresInDays??7);if(!Number.isInteger(days)||days<1||days>MAX_OPEN_DAYS)throw new DomainError('INVALID_REQUEST',`Choose a decision deadline of 1 to ${MAX_OPEN_DAYS} days.`);
+      // The offer must close a lead time before day one. A revision that keeps an
+      // already-running internship's start date only changes its length, so it is exempt.
+      const leadDays=normalizeLeadDays(config?.onboardingLeadDays),expiresOn=decisionDeadline(now,days);
+      const revising=method==='offer.revise'||(method==='offer.preview'&&p.revising&&old);
+      if(!revising||p.startOn!==old?.startOn){const problem=offerWindowProblem({startOn:p.startOn,deadlineIso:expiresOn,leadDays});if(problem)throw new DomainError('INVALID_REQUEST',problem);}
       const configRevision=String(config?.scheduleRevision||config?.duration||'');
-      const preview={applicationId,startOn:p.startOn,endOn,duration,durationLabel:durationLabel(duration),configRevision,workMode:app.workMode||'remote',schedule:internScheduleLabel(app.schedule)};
+      const preview={applicationId,startOn:p.startOn,endOn,duration,durationLabel:durationLabel(duration),configRevision,workMode:app.workMode||'remote',schedule:internScheduleLabel(app.schedule),expiresOn,leadDays,maxOpenDays:maxOpenDays(p.startOn,civilToday(),leadDays)};
       if(method==='offer.preview')return preview;
       if(String(p.configRevision)!==configRevision)fail('Program duration changed or the preview is missing. Review the schedule again.');
       if(p.endOn&&p.endOn!==endOn)fail('The submitted completion date differs from the calculated schedule. Refresh the preview.');
@@ -40,12 +47,11 @@ export function createOfferSchedules(collection:any) {
         if(old.pendingRevision&&old.pendingRevision.expiresOn>now)fail('Resolve or withdraw the existing revision first.');
         if(await collection('interns').findOne({applicationId,status:{$in:['Completed','Dropped']}},opts)||await collection('certificates').findOne({applicationId},opts))fail('Completed internships and issued certificates cannot be revised.');
       }
-      const days=Number(p.expiresInDays??7);if(!Number.isInteger(days)||days<1||days>30)throw new DomainError('INVALID_REQUEST','Choose a decision deadline of 1 to 30 days.');
       const program=await collection('programs').findOne({_id:app.programId},opts),stipend=Number(p.stipend??old?.stipend??0);
       if(!program||!Number.isSafeInteger(stipend)||stipend<0||stipend>Number(program.stipend))throw new DomainError('INVALID_REQUEST','Choose a stipend within the program limit.');
       await archive();
       const version=Number(old?.latestVersion||old?.currentVersion|| (old?1:0))+1;
-      const snapshot={...preview,_id:key(applicationId,version),version,name:app.name,email:app.email,college:app.college||'',program:app.program,stipend,stipendPeriod:'month',message:String(p.message??old?.message??'').slice(0,2000),reason,sentOn:now,issueDate:civilToday(new Date(now)),expiresOn:new Date(Date.parse(now)+days*86400000).toISOString(),createdBy:actor!.id,status:'Sent'};
+      const snapshot={...preview,_id:key(applicationId,version),version,name:app.name,email:app.email,college:app.college||'',program:app.program,stipend,stipendPeriod:'month',message:String(p.message??old?.message??'').slice(0,2000),reason,sentOn:now,issueDate:civilToday(new Date(now)),expiresOn,createdBy:actor!.id,status:'Sent'};
       await versions.insertOne(snapshot,opts);
       let result:any;
       if(old?.status==='Accepted') {
@@ -74,6 +80,8 @@ export function createOfferSchedules(collection:any) {
     if(!revisionAction&&(old.status!=='Sent'||app.status!=='Selected'))fail('This offer is no longer awaiting a decision.');
     if(target.expiresOn&&target.expiresOn<=now)throw new DomainError('OFFER_EXPIRED','The decision deadline has passed. Contact the Olentra team.');
     const accepted=method.endsWith('.accept'),decision=accepted?'Accepted':'Declined';
+    // No backdated starts: an acceptance can't land after the day the internship was due to begin.
+    if(accepted&&(!revisionAction||target.startOn!==old.startOn)&&target.startOn<civilToday())throw new DomainError('START_PASSED','Your start date has passed. The Olentra team will send you a revised schedule.');
     let result:any;
     if(revisionAction) {
       if(accepted){result={...target,_id:old._id,currentVersion:version,latestVersion:old.latestVersion,status:'Accepted',decidedOn:now,revision:Number(old.revision||0)+1};await offers.replaceOne({_id:old._id},result,opts);await collection('interns').updateOne({applicationId},{$set:{startOn:target.startOn,endOn:target.endOn,offerVersion:version,duration:target.duration,durationLabel:target.durationLabel}},opts);}

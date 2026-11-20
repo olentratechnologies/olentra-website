@@ -20,13 +20,14 @@ export function isDigestTime(now: Date) {
  * Hourly reminder run. Every email is queued on the outbox (so it retries),
  * and each reminder is marked sent so it goes out once:
  * - interview reminders to applicants ~24 hours ahead (always on)
+ * - offer deadline reminders ~24 hours before an unanswered offer or revision closes (always on)
  * - review reminders for applications waiting 3+ days (setting: reviewReminder)
  * - Monday digest for admins (setting: weeklyDigest)
  */
 export async function runReminders({ collection, outbox, transact, now = new Date() }: { collection: (name: string) => Collection<Row>; outbox: Outbox; transact: Tx; now?: Date }) {
   const applications = collection("applications"), interviews = collection("interviews"), accounts = collection("accounts"), settings = collection("settings"), tasks = collection("tasks");
   const config = await settings.findOne({ _id: "program" }, { projection: { reviewReminder: 1, weeklyDigest: 1, lastDigestWeek: 1 } });
-  const sent = { interviews: 0, reviews: 0, digests: 0 };
+  const sent = { interviews: 0, offers: 0, reviews: 0, digests: 0 };
   const admins = async () => (await accounts.find({ role: "company", staffRole: "admin", disabled: { $ne: true } }, { projection: { email: 1, name: 1 } }).toArray()).filter(row => typeof row.email === "string" && row.email);
 
   // Interview reminders, about a day ahead.
@@ -42,6 +43,29 @@ export async function runReminders({ collection, outbox, transact, now = new Dat
     });
     if (queued) sent.interviews++;
 
+  }
+
+  // Offer deadline reminders: one per deadline, for offers and schedule revisions still awaiting an answer.
+  const offers = collection("offers"), nowIso = now.toISOString(), dayAhead = new Date(now.getTime() + DAY).toISOString();
+  const closing = await offers.find({ $or: [
+    { status: "Sent", expiresOn: { $gt: nowIso, $lte: dayAhead } },
+    { status: "Accepted", "pendingRevision.expiresOn": { $gt: nowIso, $lte: dayAhead } },
+  ] }).limit(100).toArray();
+  for (const offer of closing) {
+    const revision = offer.status === "Accepted" ? offer.pendingRevision : null;
+    const target = revision || offer, deadline = String(target.expiresOn);
+    if (offer.reminderSentFor === deadline) continue;
+    const version = Number(target.version || offer.currentVersion || 1);
+    const key = createHash("sha256").update(`offer-reminder:${offer._id}:${version}:${deadline}`).digest("hex");
+    const queued = await transact(key, null, { offerId: offer._id, version, deadline }, async session => {
+      const deadlineField = revision ? "pendingRevision.expiresOn" : "expiresOn";
+      const claimed = await offers.updateOne({ _id: offer._id, status: offer.status, [deadlineField]: deadline, reminderSentFor: { $ne: deadline } }, { $set: { reminderSentFor: deadline } }, { session });
+      if (!claimed.modifiedCount) return false;
+      const snapshot = revision ? { ...revision, version } : { ...offer, version };
+      await outbox.enqueue("applicantStatus", { applicationId: String(offer.applicationId), status: "offer-reminder", offerVersion: String(version), offerSnapshot: JSON.stringify(snapshot) }, session);
+      return true;
+    });
+    if (queued) sent.offers++;
   }
 
   // Review reminders: one email per reviewer listing what's waiting on them.

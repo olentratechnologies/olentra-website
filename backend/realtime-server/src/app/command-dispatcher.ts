@@ -36,6 +36,7 @@ import { linkedinKey } from "../modules/applications/duplicates";
 import { auditDecision } from "../modules/audit/decision-audit";
 import { mentorScope } from "../modules/access/mentor-scope";
 import { migrateLegacyPrograms, PROGRAM_ID, PROGRAM_NAME } from "../modules/programs/legacy-program-migration";
+import { DEFAULT_ONBOARDING_LEAD_DAYS, normalizeLeadDays } from "../modules/programs/offer-policy.mjs";
 import { backfillBatches, INITIAL_BATCH } from "../modules/programs/batch-backfill";
 import { runReminders } from "../modules/reminders/reminders";
 import { FINAL_STATUSES, eraseApplicant, expiredApplicationIds } from "../modules/privacy/erase";
@@ -88,7 +89,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     ]);
     await Promise.all([
       programs.updateOne({ _id: PROGRAM_ID }, { $setOnInsert: { name: PROGRAM_NAME, fee: null, stipend: null, enabled: false } }, { upsert: true }),
-      settings.updateOne({ _id: "program" }, { $setOnInsert: { programEnabled: false, compensationMode: "both", defaultBatch: "", maxStipend: null } }, { upsert: true }),
+      settings.updateOne({ _id: "program" }, { $setOnInsert: { programEnabled: false, compensationMode: "both", defaultBatch: "", onboardingLeadDays: DEFAULT_ONBOARDING_LEAD_DAYS, maxStipend: null } }, { upsert: true }),
       applications.updateMany(HAS_VIDEO_BACKFILL.filter, HAS_VIDEO_BACKFILL.update),
       applications.createIndex({ hasVideo: -1, appliedOn: -1 }),
       backfillDuplicates().catch(error => logger.warn("Duplicate backfill failed", { error })),
@@ -147,14 +148,14 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     opportunities: typeof INTERNSHIP_OPPORTUNITIES;
     organization: { name: string; legalName: string; website: string };
     programs: { id: string; name: string; fee: number | null; stipend: number | null; enabled: boolean }[];
-    settings: { programEnabled: boolean; compensationMode: CompensationMode; maxStipend: number; defaultBatch: string; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; rubric: Criterion[]; onboardingDocuments: { id: string; label: string; required: boolean }[]; emailNotifications: boolean; integrations: Record<string, unknown>; applicationDeadline: string | null; duration: string; durationSpec: any; scheduleRevision: string };
+    settings: { programEnabled: boolean; compensationMode: CompensationMode; maxStipend: number; defaultBatch: string; onboardingLeadDays: number; programName: string; applicationAlerts: boolean; weeklyDigest: boolean; reviewReminder: boolean; rejectionEmails: boolean; retentionDays: number | null; rubric: Criterion[]; onboardingDocuments: { id: string; label: string; required: boolean }[]; emailNotifications: boolean; integrations: Record<string, unknown>; applicationDeadline: string | null; duration: string; durationSpec: any; scheduleRevision: string };
   };
   let cachedPublicData: PublicData | null = null;
   function invalidatePublicData() { cachedPublicData = null; }
   async function fetchPublicData(): Promise<PublicData> {
     const [rows, config] = await Promise.all([programs.find({}).sort({ _id: 1 }).toArray(), settings.findOne({ _id: "program" })]);
     const duration = normalizeInternshipDuration(config?.duration);
-    return { opportunities: { ...INTERNSHIP_OPPORTUNITIES, duration }, organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, rubric: Array.isArray(config?.rubric) && config.rubric.length ? config.rubric : DEFAULT_RUBRIC, onboardingDocuments: Array.isArray(config?.onboardingDocuments) ? config.onboardingDocuments : [], durationSpec:parseDuration(config?.durationSpec||config?.duration), scheduleRevision:String(config?.scheduleRevision||config?.duration||""), emailNotifications: false, integrations: {}, applicationDeadline: normalizeDeadline(config?.applicationDeadline), duration } };
+    return { opportunities: { ...INTERNSHIP_OPPORTUNITIES, duration }, organization: { name: "Olentra", legalName: "Olentra Technologies Pvt. Ltd.", website: "/" }, programs: rows.map(({ _id, ...row }: any) => ({ id: _id, ...row })), settings: { programEnabled: !!config?.programEnabled, compensationMode: normalizeCompensationMode(config?.compensationMode), maxStipend: config?.maxStipend ?? 0, defaultBatch: config?.defaultBatch || "", onboardingLeadDays: normalizeLeadDays(config?.onboardingLeadDays), programName: config?.programName || "Olentra Internship Program", applicationAlerts: config?.applicationAlerts !== false, weeklyDigest: !!config?.weeklyDigest, reviewReminder: !!config?.reviewReminder, rejectionEmails: config?.rejectionEmails === true, retentionDays: typeof config?.retentionDays === "number" ? config.retentionDays : null, rubric: Array.isArray(config?.rubric) && config.rubric.length ? config.rubric : DEFAULT_RUBRIC, onboardingDocuments: Array.isArray(config?.onboardingDocuments) ? config.onboardingDocuments : [], durationSpec:parseDuration(config?.durationSpec||config?.duration), scheduleRevision:String(config?.scheduleRevision||config?.duration||""), emailNotifications: false, integrations: {}, applicationDeadline: normalizeDeadline(config?.applicationDeadline), duration } };
   }
   /**
    * What anonymous visitors and interns may see: tracks and whether they are
@@ -219,12 +220,15 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if(status==="offer")return {suppressed:true};
         pinned=await collection("offer_versions").findOne({applicationId,version:1});
       }
-      if(pinned && ["offer","offer-revised"].includes(status)) {
+      if(status==="offer-reminder"&&!pinned)return {suppressed:true};
+      if(pinned && ["offer","offer-revised","offer-reminder"].includes(status)) {
         const expected=currentOffer?.pendingRevision?.version || currentOffer?.currentVersion || 1;
         if(Number(expected)!==Number(pinned.version))return {suppressed:true};
         const deadline=currentOffer?.pendingRevision?.expiresOn||currentOffer?.expiresOn;
         if(pinned.expiresOn && pinned.expiresOn!==deadline)return {suppressed:true};
         if(status==="offer"&&currentOffer?.status!=="Sent")return {suppressed:true};
+        // A reminder only goes out while that exact offer or revision is still open.
+        if(status==="offer-reminder"&&(!pinned.expiresOn||pinned.expiresOn<=new Date().toISOString()||(Number(currentOffer?.pendingRevision?.version)!==Number(pinned.version)&&currentOffer?.status!=="Sent")))return {suppressed:true};
         if(status==="offer-revised"&&currentOffer?.status==="Accepted"&& !currentOffer.pendingRevision)return {suppressed:true};
       }
       const schedule = pinned || currentOffer;

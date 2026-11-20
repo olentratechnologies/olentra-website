@@ -109,7 +109,7 @@ export default function PortalDashboard() {
                 : journey.pending
                   ? "Your internship offer has arrived. Review and accept it in My application before starting onboarding."
                   : journey.expired
-                    ? "Your offer deadline has passed. Contact the Olentra team to request an extension."
+                    ? "Your offer deadline has passed. To ask for more time, write to intern.support@olentratechnologies.com."
                     : journey.accepted
                       ? "Complete your digital agreement and profile to unlock your project workspace."
                       : "Track your application here. Once your offer arrives, review and accept it in My application."}

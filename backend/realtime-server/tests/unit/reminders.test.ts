@@ -18,7 +18,7 @@ test("reminder claim and enqueue share a transaction; only the due current inter
   const collection = (name: string) => name === "interviews" ? {
     find: () => ({ limit: () => ({ toArray: async () => interview.reminderSentOn ? [] : [interview] }) }),
     updateOne: async (filter: any, update: any, options: any) => { expect(options.session).toBe(session); expect(filter.sequence).toBe(2); Object.assign(interview, update.$set); return { modifiedCount: 1 }; },
-  } : { findOne: async () => null };
+  } : name === "offers" ? { find: () => ({ limit: () => ({ toArray: async () => [] }) }) } : { findOne: async () => null };
   const outbox = { enqueue: async (type: string, payload: any, options: any) => { expect(options).toBe(session); queued.push({ type, payload }); } };
   const transact = async (_key: string, _actor: any, _input: any, run: any) => run(session);
   expect(await runReminders({ collection: collection as any, outbox: outbox as any, transact, now })).toMatchObject({ interviews: 1 });

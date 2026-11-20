@@ -38,6 +38,10 @@ import { hasStaffPermission } from "./staffAccess";
 import { burstFrom } from "@/lib/confetti.mjs";
 import TemplatePicker from "./TemplatePicker";
 import { offerTimeLeft } from "@/lib/intern/offer-deadline.mjs";
+import { civilDaysBetween, deadlineDay, decisionDeadline, earliestStartDate, formatDeadline, maxOpenDays, normalizeLeadDays } from "@/lib/intern/offer-policy.mjs";
+
+const OPEN_FOR_OPTIONS = [1, 2, 3, 5, 7, 10, 14, 30];
+const EXTEND_OPTIONS = [1, 2, 3, 5, 7, 10, 14, 30];
 import OnboardingDocumentsReview from "./OnboardingDocumentsReview";
 
 function localDate(days = 0) {
@@ -162,12 +166,25 @@ export function ApplicantWorkflow({ applicationId }) {
       "We’re excited to welcome you to the Olentra internship program. Review your offer and take the next step in your journey.",
   });
   const [offerPreview, setOfferPreview] = useState(null);
+  const [extendDays, setExtendDays] = useState("");
+  // Offers must close a lead time before day one (program setting, default 3 days).
+  const leadDays = normalizeLeadDays(data.settings.onboardingLeadDays);
+  const today = civilToday();
+  const earliestStart = earliestStartDate(today, leadDays);
+  const longestWindow = offerForm.startOn ? maxOpenDays(offerForm.startOn, today, leadDays) : 30;
+  const startTooSoon = Boolean(offerForm.startOn) && offerForm.startOn < earliestStart;
+  useEffect(() => {
+    // Keep "Open for" inside what the chosen start date allows.
+    if (!offerForm.startOn || longestWindow < 1 || offerForm.expiresInDays <= longestWindow) return;
+    const fallback = [...OPEN_FOR_OPTIONS].reverse().find(days => days <= longestWindow) || 1;
+    setOfferForm(previous => ({ ...previous, expiresInDays: fallback }));
+  }, [offerForm.startOn, offerForm.expiresInDays, longestWindow]);
   const [durationException,setDurationException]=useState(false);
   const [exceptionQuantity,setExceptionQuantity]=useState(1),[exceptionUnit,setExceptionUnit]=useState("months"),[exceptionReason,setExceptionReason]=useState("");
   useEffect(()=>{
     setOfferPreview(null);
     setOfferForm(previous=>{let endOn="";try{endOn=completionDate(previous.startOn,durationException?{quantity:Number(exceptionQuantity),unit:exceptionUnit}:data.settings.durationSpec||data.settings.duration);}catch{}return {...previous,endOn};});
-  },[offerForm.startOn,data.settings.durationSpec,data.settings.duration,data.settings.scheduleRevision,durationException,exceptionQuantity,exceptionUnit,exceptionReason]);
+  },[offerForm.startOn,offerForm.expiresInDays,data.settings.durationSpec,data.settings.duration,data.settings.scheduleRevision,durationException,exceptionQuantity,exceptionUnit,exceptionReason]);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   useEffect(() => {
@@ -203,10 +220,14 @@ export function ApplicantWorkflow({ applicationId }) {
       notify("The internship end date must follow its start date.");
       return;
     }
+    if (startTooSoon) {
+      notify(`Choose a start date on or after ${displayDate(earliestStart)}, so the offer can close ${leadDays} days before the internship starts.`);
+      return;
+    }
     setBusy(true);
     try {
       if(!offerPreview) {
-        const preview=await commands.previewOffer({applicationId,startOn:offerForm.startOn,...(durationException?{durationOverride:{quantity:Number(exceptionQuantity),unit:exceptionUnit},reason:exceptionReason}:{})});
+        const preview=await commands.previewOffer({applicationId,startOn:offerForm.startOn,expiresInDays:Number(offerForm.expiresInDays),...(durationException?{durationOverride:{quantity:Number(exceptionQuantity),unit:exceptionUnit},reason:exceptionReason}:{})});
         if(!preview.ok){notify(preview.error);return;}
         setOfferPreview(preview.data);return;
       }
@@ -316,11 +337,26 @@ export function ApplicantWorkflow({ applicationId }) {
                   <dd>₹{Number(offer.stipend || 0).toLocaleString("en-IN")}</dd>
                 </div>
                 {offer.status === "Sent" && offer.expiresOn && <div>
-                  <dt>Answer by</dt>
-                  <dd>{timestamp(offer.expiresOn)} · {offerTimeLeft(offer.expiresOn)?.label}</dd>
+                  <dt>Respond by</dt>
+                  <dd>{formatDeadline(offer.expiresOn)} · {offerTimeLeft(offer.expiresOn)?.label}</dd>
                 </div>}
               </dl>
-              {isAdmin && offer.status === "Sent" && <Button variant="secondary" disabled={busy} onClick={async () => { setBusy(true); try { await perform(() => commands.extendOffer(applicationId, 7), notify, "Offer extended by 7 days."); } finally { setBusy(false); } }}>Extend 7 days</Button>}
+              {isAdmin && offer.status === "Sent" && (() => {
+                // New deadlines count from today and must still close the lead time before the start date.
+                const longest = maxOpenDays(offer.startOn, today, leadDays);
+                const current = offer.expiresOn ? civilDaysBetween(today, deadlineDay(offer.expiresOn)) : 0;
+                const choices = EXTEND_OPTIONS.filter(days => days > current && days <= longest);
+                if (!choices.length) return <p className={styles.hint}>The deadline can’t move later without eating into the {leadDays}-day onboarding lead time. Use Revise schedule to move the start date instead.</p>;
+                const chosen = choices.includes(Number(extendDays)) ? Number(extendDays) : choices[choices.length - 1];
+                return <div className={styles.formActions}>
+                  <label>New deadline
+                    <select value={chosen} onChange={event => setExtendDays(event.target.value)}>
+                      {choices.map(days => <option key={days} value={days}>{formatDeadline(decisionDeadline(new Date().toISOString(), days))}</option>)}
+                    </select>
+                  </label>
+                  <Button variant="secondary" disabled={busy} onClick={async () => { setBusy(true); try { await perform(() => commands.extendOffer(applicationId, chosen), notify, "Deadline extended. The applicant has been emailed."); } finally { setBusy(false); } }}>Extend deadline</Button>
+                </div>;
+              })()}
               {offer.message && <p>{offer.message}</p>}
               {(offer.respondedOn || offer.decidedOn) && (
                 <small>
@@ -337,9 +373,11 @@ export function ApplicantWorkflow({ applicationId }) {
                 <label>
                   Start date
                   <input
-                    min={civilToday()}
+                    min={earliestStart}
                     required
                     type="date"
+                    aria-invalid={startTooSoon || undefined}
+                    aria-describedby="offer-deadline-hint"
                     value={offerForm.startOn}
                     onChange={(event) =>
                       setOfferForm({
@@ -378,10 +416,15 @@ export function ApplicantWorkflow({ applicationId }) {
                 </label>
                 <label>
                   Open for
-                  <select value={offerForm.expiresInDays} onChange={(event) => setOfferForm({ ...offerForm, expiresInDays: Number(event.target.value) })}>
-                    {[3, 5, 7, 10, 14, 30].map((days) => <option key={days} value={days}>{days} days</option>)}
+                  <select value={offerForm.expiresInDays} aria-describedby="offer-deadline-hint" onChange={(event) => setOfferForm({ ...offerForm, expiresInDays: Number(event.target.value) })}>
+                    {OPEN_FOR_OPTIONS.map((days) => <option key={days} value={days} disabled={Boolean(offerForm.startOn) && days > longestWindow}>{days === 1 ? "1 day" : `${days} days`}</option>)}
                   </select>
                 </label>
+                <p id="offer-deadline-hint" className={`${styles.fullWidth} ${styles.hint}`} role={startTooSoon ? "alert" : undefined}>
+                  {startTooSoon
+                    ? `This start date is too soon. Offers must close ${leadDays} days before the internship starts, so choose ${displayDate(earliestStart)} or later.`
+                    : `Applicant must respond by ${formatDeadline(decisionDeadline(new Date().toISOString(), Number(offerForm.expiresInDays)))}${offerForm.startOn ? `, at least ${leadDays} days before the start date.` : "."} Longer windows need a later start date.`}
+                </p>
                 <label className={styles.fullWidth}>
                   Welcome message
                   <textarea
@@ -401,9 +444,9 @@ export function ApplicantWorkflow({ applicationId }) {
               <label><input type="checkbox" checked={durationException} onChange={event=>setDurationException(event.target.checked)}/>Use a duration exception for this student</label>
               {durationException&&<div className={styles.formGrid}><label>Duration quantity<input type="number" min="1" step="1" required value={exceptionQuantity} onChange={event=>setExceptionQuantity(event.target.value)}/></label><label>Unit<select value={exceptionUnit} onChange={event=>setExceptionUnit(event.target.value)}><option value="months">Calendar months</option><option value="weeks">Weeks</option><option value="days">Days</option></select></label><label>Reason for exception<textarea required value={exceptionReason} onChange={event=>setExceptionReason(event.target.value)}/></label></div>}
               <p id="calculated-offer-dates">Duration: {durationLabel(data.settings.durationSpec||data.settings.duration)}. Completion is calculated from the program settings.</p>
-              {offerPreview && <div role="status"><strong>Confirm the schedule before sending</strong><p>{offerPreview.durationLabel} · {displayDate(offerPreview.startOn)} to {displayDate(offerPreview.endOn)}</p><p>Application originally recorded: {application.duration || "Not recorded"}. This offer uses the current configured duration.</p></div>}
+              {offerPreview && <div role="status"><strong>Confirm the schedule before sending</strong><p>{offerPreview.durationLabel} · {displayDate(offerPreview.startOn)} to {displayDate(offerPreview.endOn)}</p><p>Application originally recorded: {application.duration || "Not recorded"}. This offer uses the current configured duration.</p>{offerPreview.expiresOn && <p>Respond by {formatDeadline(offerPreview.expiresOn)}.</p>}</div>}
               <div className={styles.formActions}>
-                <Button type="submit" disabled={busy}>
+                <Button type="submit" disabled={busy || startTooSoon}>
                   <Send size={15} />
                   {busy ? "Preparing…" : offerPreview ? "Confirm and send offer" : "Review offer schedule"}
                 </Button>

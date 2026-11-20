@@ -11,17 +11,19 @@ type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session
 const text = (v: unknown) => typeof v === "string" ? v.trim() : "";
 const newId = (p: string) => `${p}-${randomUUID()}`;
 import { auditDecision } from "../audit/decision-audit";
+import { civilToday } from "../programs/schedule.mjs";
+import { decisionDeadline, formatDeadline, normalizeLeadDays, offerWindowProblem } from "../programs/offer-policy.mjs";
 import { mentorScope } from "../access/mentor-scope";
 import { missingDocuments, type ChecklistItem } from "../onboarding/documents";
-/** The moment an offer stops accepting answers: `days` after `fromIso`. */
-export const offerDeadline = (fromIso: string, days: number) => new Date(new Date(fromIso).getTime() + days * 86_400_000).toISOString();
+/** The moment an offer stops accepting answers: 11:59 PM IST, `days` calendar days after `fromIso`. */
+export const offerDeadline = (fromIso: string, days: number) => decisionDeadline(fromIso, days);
 /** Offers without a deadline (sent before expiry existed) never expire. */
 export const isOfferExpired = (offer: Record<string, unknown>, nowIso: string) => typeof offer.expiresOn === "string" && offer.expiresOn < nowIso;
 const plain = (row: Row) => { const { _id, ...data } = row; return { ...data, id: _id }; };
 const required = (value: unknown, label: string, max = 500) => { const v = text(value); if (!v || v.length > max) throw new DomainError("INVALID_REQUEST", `Enter a valid ${label}.`); return v; };
 const own = (actor: Principal | null, app: string) => { if (actor?.role !== "intern" || actor.applicationId !== app) throw new DomainError("FORBIDDEN", "This record belongs to another account."); };
 const staff = (actor: Principal | null) => { if (actor?.role !== "company") throw new DomainError("FORBIDDEN", "Company access is required."); };
-const day = () => new Date().toISOString().slice(0, 10);
+const day = () => civilToday();
 const validDate = (v: unknown) => { const value = text(v), parsed = new Date(value); return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; };
 const validUrl = (value: unknown) => { const v = text(value); if (v) { try { if (!["https:", "http:"].includes(new URL(v).protocol)) throw 0; } catch { throw new DomainError("INVALID_REQUEST", "Use an http or https link."); } } return v; };
 
@@ -76,9 +78,15 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         staff(actor); const applicationId = required(p.applicationId, "application");
         const days = Number(p.days ?? 7);
         if (!Number.isInteger(days) || days < 1 || days > 30) throw new DomainError("INVALID_REQUEST", "Extend by 1 to 30 days.");
-        const offer = await offers.findOneAndUpdate({ applicationId, status: "Sent" }, { $set: { expiresOn: offerDeadline(now, days), extendedOn: now } }, { ...opts, returnDocument: "after" });
+        const current = await offers.findOne({ applicationId, status: "Sent" }, opts);
+        if (!current) throw new DomainError("CONFLICT", "Only an open offer can be extended.");
+        const config = await settings.findOne({ _id: "program" }, opts), expiresOn = offerDeadline(now, days);
+        if (current.expiresOn && expiresOn <= current.expiresOn) throw new DomainError("INVALID_REQUEST", "Choose more days: that would not move the deadline later.");
+        const problem = offerWindowProblem({ startOn: current.startOn, deadlineIso: expiresOn, leadDays: normalizeLeadDays(config?.onboardingLeadDays) });
+        if (problem) throw new DomainError("INVALID_REQUEST", `${problem} To give more time, use Revise schedule to move the start date.`);
+        const offer = await offers.findOneAndUpdate({ _id: current._id, status: "Sent" }, { $set: { expiresOn, extendedOn: now, previousExpiresOn: current.expiresOn || null }, $unset: { reminderSentFor: "" } }, { ...opts, returnDocument: "after" });
         if (!offer) throw new DomainError("CONFLICT", "Only an open offer can be extended.");
-        await applications.updateOne({ _id: applicationId }, { $push: { history: { id: newId("HST"), title: "Offer extended", detail: `You now have until ${offer.expiresOn.slice(0, 10)} to decide.`, date: now } } as any }, opts);
+        await applications.updateOne({ _id: applicationId }, { $push: { history: { id: newId("HST"), title: "Offer extended", detail: `You now have until ${formatDeadline(offer.expiresOn)} to decide.`, date: now } } as any }, opts);
         return {...plain(offer),emailSnapshot:{...offer,version:offer.currentVersion||1},emailStatus:"offer"};
       }
       if (method === "application.withdraw") {
@@ -152,6 +160,8 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         staff(actor); const applicationId = required(p.applicationId, "application");
         const app = await applications.findOne({ _id: applicationId, status: "Selected" }, opts); const offer = await offers.findOne({ applicationId, status: "Accepted" }, opts);
         if (!app || !offer) throw new DomainError("CONFLICT", "Only selected applicants with an accepted offer can be onboarded.");
+        // Interns are never backdated: a missed start date needs a revised schedule first.
+        if (offer.startOn && offer.startOn < civilToday()) throw new DomainError("CONFLICT", "This start date has passed. Use Revise schedule to set a new start date before approving onboarding.");
         const checklist = ((await settings.findOne({ _id: "program" }, { ...opts, projection: { onboardingDocuments: 1 } }))?.onboardingDocuments || []) as ChecklistItem[];
         const pendingRow = await onboarding.findOne({ applicationId }, opts);
         const missing = missingDocuments(checklist, pendingRow?.documents);

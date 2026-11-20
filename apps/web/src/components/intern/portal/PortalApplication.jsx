@@ -37,6 +37,7 @@ import {
 import styles from "./portal.module.css";
 import { useSiteFeatures } from "@olentra/site-features/react";
 import { offerTimeLeft } from "@/lib/intern/offer-deadline.mjs";
+import { formatDeadline } from "@/lib/intern/offer-policy.mjs";
 
 export default function PortalApplication() {
   const { features, ready: featuresReady } = useSiteFeatures();
@@ -247,7 +248,7 @@ export default function PortalApplication() {
                 Decline offer
               </Button>
               <small>Accepting opens your onboarding checklist.</small>
-              {timeLeft && <small className={timeLeft.urgent || timeLeft.expired ? styles.offerUrgent : ""} role="status">{timeLeft.label}{offer.expiresOn ? ` · until ${new Date(offer.expiresOn).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}` : ""}</small>}
+              {timeLeft && <small className={timeLeft.urgent || timeLeft.expired ? styles.offerUrgent : ""} role="status">{timeLeft.label}{offer.expiresOn ? ` · respond by ${formatDeadline(offer.expiresOn)}` : ""}</small>}
             </div>
           ) : offer.status === "Accepted" ? (
             <section className={styles.acceptedOffer} aria-labelledby="accepted-offer-title">

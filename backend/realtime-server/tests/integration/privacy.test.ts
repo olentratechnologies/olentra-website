@@ -2,6 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
 import { internshipTestMongoUri } from "./config";
 import { connectInternDatabase, createInternshipDomain, type Principal } from "./domain";
+import { decisionDeadline } from "../../src/modules/programs/offer-policy.mjs";
 
 const uri = internshipTestMongoUri();
 if (!uri) throw new Error("Set INTERNSHIP_TEST_MONGODB_URI for isolated internship integration tests.");
@@ -106,7 +107,7 @@ test("an expired offer can't be accepted until an admin extends it", async () =>
   await domain.execute("settings.update", {patch:{durationSpec:{quantity:1,unit:"months"}}},admin,key());
   const preview=await domain.execute("offer.preview",{applicationId,startOn:"2030-11-24"},admin,"") as any;
   const offer = await domain.execute("offer.send", { ...preview, stipend: 500, expiresInDays: 3 }, admin, key()) as any;
-  expect(Date.parse(offer.expiresOn) - Date.parse(offer.sentOn)).toBe(3 * 86_400_000);
+  expect(offer.expiresOn).toBe(decisionDeadline(offer.sentOn, 3)); // 11:59 PM IST, three calendar days after sending
   await domain.collection("offers").updateOne({ applicationId }, { $set: { expiresOn: new Date(Date.now() - 60_000).toISOString() } });
   await expect(domain.execute("offer.accept", { applicationId, version:1 }, account, key())).rejects.toMatchObject({ code: "OFFER_EXPIRED" });
   await expect(domain.execute("offer.extend", { applicationId, days: 5 }, recruiter, key())).rejects.toMatchObject({ code: "FORBIDDEN" });

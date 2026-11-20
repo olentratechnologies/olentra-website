@@ -1,11 +1,12 @@
 import { scheduleDisplay, displayDate } from "../../modules/programs/schedule.mjs";
+import { formatDeadline } from "../../modules/programs/offer-policy.mjs";
 import { emailDefinition, fillEmailTemplate, type AutomatedEmailId, type EmailTemplate } from "../../modules/email-templates/automated-templates";
 import { interviewIcs, interviewTimeLabel } from "../../modules/interviews/ics";
 import type { SigninEmailTemplateVariant } from "../../modules/email-templates/signin-template-settings";
 import { emailAction, emailMessage, emailParagraph, emailSignOff, escapeEmailHtml as escapeHtml, renderInternshipEmail, renderInternshipTextEmail } from "../../modules/email-templates/internship-email-layout.mjs";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
-type ApplicantStatus = "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
+type ApplicantStatus = "offer-reminder" | "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
 
 interface ApplicantStatusEmailOptions {
   to: string;
@@ -145,6 +146,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       program: String(options.programName || ""),
       referenceId: String(options.applicationId || "pending"),
       interviewTime: time,
+      decisionDeadline: formatDeadline(options.schedule?.expiresOn) || "the deadline shown in your candidate portal",
       ...scheduleDisplay(options.schedule),
     });
     if (resolved.greeting === "Hello,") {
@@ -157,7 +159,10 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       if(schedule?.startOn && schedule?.endOn) {
         if(schedule.historical)details.push("This message records an earlier offer version. Your current accepted terms are available in Certificates & Documents.");
         details.push(`Duration: ${schedule.durationLabel||scheduleDisplay(schedule).duration}`, `Start date: ${displayDate(schedule.startOn)}`, `Completion date: ${displayDate(schedule.endOn)}`, `Work arrangement: ${schedule.workMode||"Remote"}${schedule.schedule?` · ${schedule.schedule}`:""}`);
-        if(["offer","offer-revised"].includes(id)&&schedule.expiresOn)details.push(`Decision deadline: ${new Date(schedule.expiresOn).toLocaleString("en-GB",{timeZone:"Asia/Kolkata",dateStyle:"long",timeStyle:"short"})} IST (separate from the internship completion date)`);
+        if(["offer","offer-revised","offer-reminder"].includes(id)&&schedule.expiresOn) {
+          if(id==="offer"&&schedule.extendedOn)details.push("Your decision deadline has been extended.");
+          details.push(`Respond by: ${formatDeadline(schedule.expiresOn)}`,"Need more time? Write to intern.support@olentratechnologies.com before the deadline.");
+        }
         if(schedule.reason)details.push(`Revision reason: ${schedule.reason}`);
       } else if(["application-received","shortlisted","selected"].includes(id)) details.push(`Duration: ${schedule?.durationLabel||"As described in the program"}`,"Start date to be confirmed in your offer.");
     }
@@ -227,7 +232,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       buttons.push({ label: "Activate your internship portal", url: options.portalUrl });
       details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
     }
-    if (["offer", "offer-accepted", "onboarding", "certificate", "offer-revised", "offer-revision-accepted", "offer-revision-declined", "offer-revision-withdrawn"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
+    if (["offer", "offer-reminder", "offer-accepted", "onboarding", "certificate", "offer-revised", "offer-revision-accepted", "offer-revision-declined", "offer-revision-withdrawn"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
     if (id === "offer-accepted" && options.linkedinShareUrl) {
       buttons.push({ label: "Share on LinkedIn (optional)", url: options.linkedinShareUrl });
     }
