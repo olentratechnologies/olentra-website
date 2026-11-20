@@ -60,7 +60,7 @@ test("the download route applies the same rules and is never cached", async () =
   const get = (account: any, id: string) => routes(account).download(new Request(`https://api.test/intern/files/${id}`, { headers: account ? { authorization: "Bearer t" } : {} }), null);
   const ok = await get(staff(["applications.read", "resumes.read"]), "file-a");
   expect(ok.status).toBe(200);
-  expect(ok.headers.get("cache-control")).toBe("private, no-store");
+  expect(ok.headers.get("cache-control")).toBe("no-store");
   expect(ok.headers.get("content-disposition")).toBe(`attachment; filename="a.pdf"; filename*=UTF-8''a.pdf`);
   expect((await get(intern("app-a"), "file-a")).status).toBe(200);
   await expect(get(staff(["resumes.read"]), "file-a")).rejects.toMatchObject({ code: "FORBIDDEN" });

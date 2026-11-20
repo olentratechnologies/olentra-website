@@ -79,7 +79,7 @@ test("staff with resume access can describe and download any applicant's resume"
     expect(response.status).toBe(200);
     expect(await response.text()).toBe(pdf + "A");
     expect(response.headers.get("content-type")).toBe("application/pdf");
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("content-disposition")).toContain("filename*=UTF-8''R%C3%A9sum%C3%A9%20A.pdf");
     expect((await download(fileIds.b, tokens[role])).status).toBe(200);
   }

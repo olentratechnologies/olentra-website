@@ -146,7 +146,7 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
         ? objectStore && file.cleanKey ? await objectStore.download(file.cleanKey) : null
         : Readable.toWeb(bucket.openDownloadStream(file.gridId)) as ReadableStream;
       if (!stream) throw new DomainError("SERVICE_UNAVAILABLE", "Object storage is unavailable.");
-      return new Response(stream, { headers: withCors(origin, { "Content-Type": file.type, "Content-Disposition": `attachment; filename="${String(file.name).replace(/[^\x20-\x7e]|["\\]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(String(file.name)).replace(/['()*]/g, character => "%" + character.charCodeAt(0).toString(16).toUpperCase())}`, "Content-Length": String(file.size), "Cache-Control": "private, no-store", "Access-Control-Expose-Headers": "Content-Disposition", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox" }) });
+      return new Response(stream, { headers: withCors(origin, { "Content-Type": file.type, "Content-Disposition": `attachment; filename="${String(file.name).replace(/[^\x20-\x7e]|["\\]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(String(file.name)).replace(/['()*]/g, character => "%" + character.charCodeAt(0).toString(16).toUpperCase())}`, "Content-Length": String(file.size), "Cache-Control": "no-store", "Access-Control-Expose-Headers": "Content-Disposition", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox" }) });
     },
   };
 }

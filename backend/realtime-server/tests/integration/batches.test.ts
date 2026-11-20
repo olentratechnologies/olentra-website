@@ -47,8 +47,8 @@ test("startup files earlier records under the first batch and leaves named batch
 }, 30000);
 
 test("new applications join the current batch, which staff can filter by and applicants never see", async () => {
-  await domain.execute("program.configure", { programId: "software-engineer", fee: 0, stipend: 0, enabled: true }, staff, "batch-track");
-  await domain.execute("settings.update", { patch: { programEnabled: true } }, staff, "batch-enable");
+  await domain.execute("program.configure", { programId: "software-engineer", fee: 0, stipend: 0, enabled: true }, staff, "batch-track-program-0001");
+  await domain.execute("settings.update", { patch: { programEnabled: true } }, staff, "batch-enable-program-0001");
   await domain.collection("files").insertOne({ _id: "batch-file", kind: "resume", status: "ready", accessTokenHash: digest("batch-token") });
   const { applicationId } = await domain.execute("application.submit", { name: "New Applicant", email: "new-batch@example.test", linkedin: "https://www.linkedin.com/in/new-batch", programId: "software-engineer", schedule: "part_time", resumeAttachmentId: "batch-file", resumeAccessToken: "batch-token" }, null, "batch-apply-0001");
   expect((await domain.collection("applications").findOne({ _id: applicationId }))?.batch).toBe("Batch 2026-1");
@@ -68,7 +68,7 @@ test("an intern keeps the batch they applied in even after the next batch opens"
   await domain.collection("applications").insertOne({ _id: "late", email: "late@example.test", name: "Late Joiner", ...base, status: "Selected", appliedOn: "2026-11-10", batch: "Batch 2026-1", version: 1, history: [] });
   await domain.collection("offers").insertOne({ _id: "offer-late", applicationId: "late", status: "Accepted", startOn: "2026-12-01", endOn: "2027-02-28", currentVersion: 1 });
   await domain.collection("onboarding").insertOne({ _id: "onboarding-late", applicationId: "late", status: "Submitted", documents: {} });
-  await domain.execute("settings.update", { patch: { defaultBatch: "Batch 2026-2" } }, staff, "batch-next");
+  await domain.execute("settings.update", { patch: { defaultBatch: "Batch 2026-2" } }, staff, "batch-next-default-0001");
   const intern = await domain.execute("onboarding.approve", { applicationId: "late" }, staff, "batch-approve-late");
   expect(intern.batch).toBe("Batch 2026-1");
 }, 30000);
