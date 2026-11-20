@@ -370,7 +370,7 @@ data.applications = records.map(
       email: `${slug}.${String(index + 1).padStart(4, "0")}@example.com`,
       programId,
       program,
-      batch: "Batch 2026-1",
+      batch: "Batch 1",
       appliedOn,
       status,
       initials: name
@@ -399,7 +399,7 @@ const joinedApplicants = data.applications.filter(
 data.interns = joinedApplicants.map((applicant, index) => ({
   id: formatId("INT", index + 1),
   applicationId: applicant.id,
-  batch: "Batch 2026-1",
+  batch: "Batch 1",
   joinedOn: plusDays(applicant.appliedOn, 4),
   status: index < 520 ? "Active" : index < 700 ? "Completed" : "Dropped",
   projectIds: [],
@@ -555,7 +555,7 @@ data.settings = {
   programEnabled: true,
   maxStipend: 20000,
   programName: "Olentra Internship Program",
-  defaultBatch: "Batch 2026-1",
+  defaultBatch: "Batch 1",
   reviewReminder: true,
   integrations: { github: false, slack: false, googleDrive: false },
 };
