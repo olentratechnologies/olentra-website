@@ -55,9 +55,9 @@ test("long recipient and offer fields wrap onto additional pages rather than cli
 });
 
 
-test("offer letters show the dynamic duration without calendar wording and keep the confirmed version in the header", () => {
+test("offer letters show the dynamic duration without exposing the internal version", () => {
   const pdf=generateOfferLetterPdf({name:"China Chin",email:"candidate@example.test",program:"Software Engineer Intern",applicationId:"OL-SCHEDULE",durationLabel:"1 calendar month",offerVersion:2,startOn:"2026-11-24",endOn:"2026-12-23",issueDate:"2026-11-17"}).toString();
-  expect(pdf).toContain("Offer version: 2");
+  expect(pdf).not.toContain("Offer version:");
   expect(pdf).toContain("1.1 Tc 2 Tw");
   expect(pdf).toContain("(INTERNSHIP PROGRAM) Tj");
   expect(pdf).toContain("Duration");

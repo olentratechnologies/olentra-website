@@ -58,6 +58,40 @@ test("shortlisted applicant emails have a distinct status subject without a port
   }
 });
 
+test("offer status emails omit the internal version but preserve historical-offer guidance", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests: Record<string, unknown>[] = [];
+  globalThis.fetch = (async (_input, init) => {
+    requests.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+    return new Response(JSON.stringify({ success: true, id: "email-offer" }), { status: 200 });
+  }) as typeof fetch;
+
+  try {
+    const mailer = createInternshipMailer("delivery-test-token", "http://email-server.test");
+    await mailer.sendApplicantStatus({
+      to: "intern@example.test",
+      name: "Test Intern",
+      programName: "Software Engineer Intern",
+      status: "offer-revised",
+      portalUrl: "https://example.test/intern/portal",
+      schedule: {
+        version: 2,
+        startOn: "2026-11-20",
+        endOn: "2026-12-19",
+        durationLabel: "1 calendar month",
+        historical: true,
+      },
+    });
+
+    assert.doesNotMatch(String(requests[0]?.html), /Offer version:/);
+    assert.doesNotMatch(String(requests[0]?.text), /Offer version:/);
+    assert.match(String(requests[0]?.html), /This message records an earlier offer version/);
+    assert.match(String(requests[0]?.text), /This message records an earlier offer version/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("interview emails include the time, meeting link, and candidate portal", async () => {
   const originalFetch = globalThis.fetch;
   const requests: Record<string, unknown>[] = [];

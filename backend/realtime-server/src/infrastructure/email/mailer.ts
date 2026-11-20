@@ -155,7 +155,6 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     if(id !== "application-received" && !id.startsWith("interview-") && id!=="signin") {
       const schedule=options.schedule;
       if(schedule?.startOn && schedule?.endOn) {
-        details.push(`Offer version: ${schedule.version||schedule.currentVersion||1}`);
         if(schedule.historical)details.push("This message records an earlier offer version. Your current accepted terms are available in Certificates & Documents.");
         details.push(`Duration: ${schedule.durationLabel||scheduleDisplay(schedule).duration}`, `Start date: ${displayDate(schedule.startOn)}`, `Completion date: ${displayDate(schedule.endOn)}`, `Work arrangement: ${schedule.workMode||"Remote"}${schedule.schedule?` · ${schedule.schedule}`:""}`);
         if(["offer","offer-revised"].includes(id)&&schedule.expiresOn)details.push(`Decision deadline: ${new Date(schedule.expiresOn).toLocaleString("en-GB",{timeZone:"Asia/Kolkata",dateStyle:"long",timeStyle:"short"})} IST (separate from the internship completion date)`);
