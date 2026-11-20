@@ -47,7 +47,7 @@ export function renderInternshipEmail({ title, content, preheader = "" }) {
           <p style="margin:4px 0 0;font-size:13px;line-height:20px;color:#46596f;text-align:center;">
             <a href="${SITE}/" target="_blank" style="color:#1555a2;text-decoration:underline;">Website</a>&nbsp;·&nbsp;<a href="mailto:${SUPPORT_EMAIL}" style="color:#1555a2;text-decoration:underline;">Internship support</a>
           </p>
-          <p style="margin:8px 0 0;font-size:12px;line-height:18px;color:#536479;text-align:center;">© 2026 Olentra Technologies</p>
+          <p style="margin:8px 0 0;font-size:12px;line-height:18px;color:#536479;text-align:center;">© 2026 Olentra Technologies. All rights reserved.</p>
         </td></tr>
       </table>
     </td></tr>

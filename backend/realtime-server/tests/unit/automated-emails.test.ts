@@ -41,6 +41,17 @@ test("all fifteen defaults render required links and details, with no portal lin
     if (definition.id === "application-received") {
       expect(rendered.subject).toBe("Application Received: Software Engineer Intern (Ref: OL-123)");
       expect(rendered.text).toContain("3–5 business days");
+      expect(rendered.text).toContain("Application Details");
+      expect(rendered.text).toContain("Position: Software Engineer Intern");
+      expect(rendered.text).toContain("Application Status: Received");
+      expect(rendered.text).toContain("Internship Information");
+      expect(rendered.text).toContain("Duration: 1 calendar month");
+      expect(rendered.text).toContain("Start Date: To be confirmed in the official offer letter.");
+      expect(rendered.text).toContain("What Happens Next?");
+      expect(rendered.text).toContain("Talent Acquisition Team");
+      expect(rendered.html).toContain("Application Details");
+      expect(rendered.html).toContain("Talent Acquisition Team");
+      expect(rendered.html).toContain("All rights reserved.");
     }
     if (definition.id === "selected") {
       expect(rendered.subject).toBe("Congratulations! Welcome to the Olentra Internship Program");

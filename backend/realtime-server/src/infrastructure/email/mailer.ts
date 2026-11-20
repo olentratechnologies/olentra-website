@@ -152,7 +152,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     }
     const details: string[] = [], buttons: { label: string; url: string }[] = [];
     const attachments: Attachment[] = [];
-    if(!id.startsWith("interview-") && id!=="signin") {
+    if(id !== "application-received" && !id.startsWith("interview-") && id!=="signin") {
       const schedule=options.schedule;
       if(schedule?.startOn && schedule?.endOn) {
         details.push(`Offer version: ${schedule.version||schedule.currentVersion||1}`);
@@ -173,27 +173,45 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       customPanelHtml = `
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;margin:2px 0;">
           <tr>
-            <td style="font-family:Arial,Helvetica,sans-serif;padding:2px 0 10px;">
-              <span style="display:block;font-size:11px;line-height:1.4;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin-bottom:6px;">Application Reference</span>
-              <span style="display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.4;font-weight:600;color:#0f172a;background:#eef2f6;border:1px solid #dce4ee;padding:6px 10px;border-radius:4px;letter-spacing:-0.01em;overflow-wrap:anywhere;word-break:break-all;">${escapeHtml(refId)}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="font-family:Arial,Helvetica,sans-serif;padding:12px 0;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;table-layout:fixed;">
+            <td style="font-family:Arial,Helvetica,sans-serif;padding:2px 0 12px;">
+              <h2 style="margin:0 0 12px;font-size:18px;line-height:26px;color:#172033;">Application Details</h2>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;border:1px solid #dce4ee;">
                 <tr>
-                  <td width="28%" valign="top" style="font-family:Arial,Helvetica,sans-serif;padding:0 12px 10px 0;font-size:13px;line-height:1.5;color:#475569;">Review timeline</td>
-                  <td valign="top" style="font-family:Arial,Helvetica,sans-serif;padding:0 0 10px;font-size:13px;line-height:1.5;font-weight:700;color:#1555a2;">Review within 3–5 business days</td>
+                  <td width="38%" style="padding:10px 12px;border-bottom:1px solid #dce4ee;background:#f8fafc;font-size:13px;line-height:20px;font-weight:700;color:#334155;">Position</td>
+                  <td style="padding:10px 12px;border-bottom:1px solid #dce4ee;font-size:13px;line-height:20px;color:#334155;">${escapeHtml(String(options.programName || ""))}</td>
                 </tr>
                 <tr>
-                  <td valign="top" style="font-family:Arial,Helvetica,sans-serif;padding:10px 12px 0 0;border-top:1px solid #e2e8f0;font-size:13px;line-height:1.5;color:#475569;">Next step</td>
-                  <td valign="top" style="font-family:Arial,Helvetica,sans-serif;padding:10px 0 0;border-top:1px solid #e2e8f0;font-size:13px;line-height:1.5;color:#334155;">No portal account or action is required at this stage.</td>
+                  <td style="padding:10px 12px;border-bottom:1px solid #dce4ee;background:#f8fafc;font-size:13px;line-height:20px;font-weight:700;color:#334155;">Application Reference</td>
+                  <td style="padding:10px 12px;border-bottom:1px solid #dce4ee;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:20px;font-weight:600;color:#0f172a;overflow-wrap:anywhere;word-break:break-all;">${escapeHtml(refId)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 12px;border-bottom:1px solid #dce4ee;background:#f8fafc;font-size:13px;line-height:20px;font-weight:700;color:#334155;">Application Status</td>
+                  <td style="padding:10px 12px;border-bottom:1px solid #dce4ee;font-size:13px;line-height:20px;color:#334155;">Received</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 12px;background:#f8fafc;font-size:13px;line-height:20px;font-weight:700;color:#334155;">Expected Review Timeline</td>
+                  <td style="padding:10px 12px;font-size:13px;line-height:20px;color:#334155;">3–5 business days</td>
                 </tr>
               </table>
             </td>
           </tr>
+          <tr>
+            <td style="font-family:Arial,Helvetica,sans-serif;padding:12px 0 18px;">
+              <h2 style="margin:0 0 10px;font-size:18px;line-height:26px;color:#172033;">Internship Information</h2>
+              <ul style="margin:0;padding:0 0 0 20px;font-size:14px;line-height:24px;color:#334155;">
+                <li>Duration: ${escapeHtml(options.schedule?.durationLabel || "1 calendar month")}</li>
+                <li>Start Date: To be confirmed in the official offer letter.</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-family:Arial,Helvetica,sans-serif;padding:2px 0 4px;">
+              <h2 style="margin:0 0 10px;font-size:18px;line-height:26px;color:#172033;">What Happens Next?</h2>
+              <p style="margin:0 0 10px;font-size:15px;line-height:24px;color:#334155;">No portal registration or additional action is required from your side at this stage. Please keep an eye on your registered email address for further updates from our team.</p>
+              <p style="margin:0;font-size:15px;line-height:24px;color:#334155;">Thank you for considering Olentra Technologies as part of your professional journey.</p>
+            </td>
+          </tr>
         </table>
-        <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Duration: ${escapeHtml(options.schedule?.durationLabel||"As described in the program")}. Start date to be confirmed in your offer.</p>
       `.trim();
     }
     if (id.startsWith("interview-")) {
@@ -230,12 +248,29 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       ? emailPanel(details.map(item => `<p style="margin:4px 0;font-size:14px;line-height:22px;overflow-wrap:anywhere;">${escapeHtml(item)}</p>`).join(""))
       : "");
     const actions = buttons.filter(button => button.url);
+    const signoffTeam = id === "application-received" ? "Talent Acquisition Team" : "The Olentra Team";
     const content = emailMessage(body)
       + panelContent
       + actions.map(button => emailAction(button.label, button.url)).join("")
-      + (template.body === definition.body ? emailSignOff("The Olentra Team") : "");
+      + (template.body === definition.body ? emailSignOff(signoffTeam) : "");
     const html = renderInternshipEmail({ title: subject, preheader: body.slice(0, 180), content });
-    const text = [body, ...details, ...actions.map(button => `${button.label}: ${button.url}`), "The Olentra Team"].join("\n\n");
+    const text = id === "application-received"
+      ? [
+          body,
+          "Application Details",
+          `Position: ${options.programName || ""}`,
+          `Application Reference: ${String(options.applicationId || "pending")}`,
+          "Application Status: Received",
+          "Expected Review Timeline: 3–5 business days",
+          "Internship Information",
+          `- Duration: ${options.schedule?.durationLabel || "1 calendar month"}`,
+          "- Start Date: To be confirmed in the official offer letter.",
+          "What Happens Next?",
+          "No portal registration or additional action is required from your side at this stage. Please keep an eye on your registered email address for further updates from our team.",
+          "Thank you for considering Olentra Technologies as part of your professional journey.",
+          `Best regards,\n${signoffTeam}\nOlentra Technologies`,
+        ].join("\n\n")
+      : [body, ...details, ...actions.map(button => `${button.label}: ${button.url}`), "The Olentra Team"].join("\n\n");
     return { subject, html, text, attachments };
   }
   async function automated(id: AutomatedEmailId, options: Record<string, any>) {
