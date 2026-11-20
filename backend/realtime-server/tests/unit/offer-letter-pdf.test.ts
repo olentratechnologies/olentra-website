@@ -55,9 +55,12 @@ test("long recipient and offer fields wrap onto additional pages rather than cli
 });
 
 
-test("one-month letters retain the approved one-page design and show their confirmed version", () => {
+test("one-month letters show duration in the details grid and keep the confirmed version in the header", () => {
   const pdf=generateOfferLetterPdf({name:"China Chin",email:"candidate@example.test",program:"Software Engineer Intern",applicationId:"OL-SCHEDULE",durationLabel:"1 calendar month",offerVersion:2,startOn:"2026-11-24",endOn:"2026-12-23",issueDate:"2026-11-17"}).toString();
-  expect(pdf).toContain("Duration: 1 calendar month | Offer version: 2");
+  expect(pdf).toContain("Offer version: 2");
+  expect(pdf).toContain("Duration");
+  expect(pdf).toContain("1 calendar month");
+  expect(pdf).not.toContain("Duration: 1 calendar month | Offer version: 2");
   expect(pdf).toContain("24 Nov 2026");
   expect(pdf).toContain("23 Dec 2026");
   expect(pdf).toContain("/Count 1");

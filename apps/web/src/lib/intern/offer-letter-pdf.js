@@ -85,8 +85,8 @@ export function buildOfferLetterPdfBytes(details) {
   path('32 723 539 2 re',blue);
   text(`Ref: OL-OFR-${clean(details.applicationId||'intern').replace(/^OL-/,'').slice(0,18)}`,32,696,10,true,'0.02 0.04 0.07');
   panel(425,687,143,25,9);icon('calendar',435,693,14,navy);text(`Issued: ${date(details.issueDate||new Date().toISOString())}`,457,695,10,false,'0.02 0.04 0.07');
-  if(details.durationLabel)text(`Duration: ${details.durationLabel} | Offer version: ${details.offerVersion||1}`,32,682,8,false,gray);
-  let y=details.durationLabel?660:672;
+  text(`Offer version: ${details.offerVersion||1}`,32,682,8,false,gray);
+  let y=660;
   y=para(`To: ${details.name||'Candidate'}`,32,y,530,11.5,true,navy);
   icon('mail',33,y-10,13,navy);y=para(details.email,57,y-7,506,10,false,'0.02 0.04 0.07');
   if(details.college)y=para(details.college,57,y-3,506,9.5);
@@ -107,6 +107,7 @@ export function buildOfferLetterPdfBytes(details) {
     ['Completion Date',date(details.endOn),'calendar-check'],
     ['Work Mode',details.workMode||'Remote','laptop'],
     ['Stipend / Honorarium',Number(details.stipend)>0?`INR ${Number(details.stipend).toLocaleString('en-IN')} / ${details.stipendPeriod||'month'}`:'No stipend','indian-rupee'],
+    ['Duration',details.durationLabel||'To be confirmed','calendar'],
   ];
   const colX=[26,202,400], colW=[176,198,171];
   const rowHeights=[0,1].map(row=>Math.max(...cells.slice(row*3,row*3+3).map(([,value],col)=>wrap(value,colW[col]-59,9.5).length))*12.54+27);
