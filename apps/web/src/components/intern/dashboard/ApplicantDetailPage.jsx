@@ -30,10 +30,8 @@ import { useInternship } from "@/components/intern/InternshipProvider";
 import { applicationDurationLabel, internScheduleLabel } from "@/lib/intern/opportunities.mjs";
 import LoadingIndicator from "@olentra/ui/LoadingIndicator";
 import { hasStaffPermission } from "./staffAccess";
-import {
-  downloadAttachment,
-  downloadSampleResume,
-} from "@/lib/intern-attachments.mjs";
+import { downloadAttachment } from "@/lib/intern-attachments.mjs";
+import ResumeViewer from "./ResumeViewer";
 import { ApplicantNextAction, ApplicantWorkflow } from "./CompanyWorkflow";
 import StaffAccountControls from "./StaffAccountControls";
 import EraseApplicantPanel from "./EraseApplicantPanel";
@@ -108,7 +106,9 @@ export default function ApplicantDetailPage({ applicationId }) {
   const { commands, account, ready } = useInternship();
   const isAdmin = account?.staffRole === "admin";
   const canReview = hasStaffPermission(account, "applications.review");
+  // Resumes need the narrower "Download applicant resumes" grant on top of applications.read.
   const canResume = hasStaffPermission(account, "resumes.read");
+  const [resumeOpen, setResumeOpen] = useState(false);
   const canProjects = hasStaffPermission(account, "projects.read");
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [recoveryBusy, setRecoveryBusy] = useState(false);
@@ -309,13 +309,15 @@ export default function ApplicantDetailPage({ applicationId }) {
   }
 
   async function downloadResume() {
+    if (!application.resumeAttachmentId) {
+      notify("No resume is on file for this application.");
+      return;
+    }
     try {
-      if (application.resumeAttachmentId)
-        await downloadAttachment(application.resumeAttachmentId);
-      else await downloadSampleResume(application);
+      await downloadAttachment(application.resumeAttachmentId);
       notify(`${application.name}’s resume downloaded.`);
-    } catch {
-      notify("This resume is unavailable in this browser.");
+    } catch (error) {
+      notify(error?.message || "This resume could not be downloaded.");
     }
   }
 
@@ -493,9 +495,9 @@ export default function ApplicantDetailPage({ applicationId }) {
           Back to Applications
         </Link>
         <div className={styles.profileActions}>
-          {canResume && <Button variant="secondary" onClick={downloadResume}>
-            <ArrowDownToLine size={15} />
-            Download Resume
+          {canResume && <Button variant="secondary" onClick={() => setResumeOpen(true)}>
+            <FileText size={15} />
+            View Resume
           </Button>}
           {canMessage && <Button onClick={() => setContactOpen(true)}>
             <Mail size={15} />
@@ -503,6 +505,7 @@ export default function ApplicantDetailPage({ applicationId }) {
           </Button>}
         </div>
       </div>
+      {canResume && <ResumeViewer application={application} open={resumeOpen} onOpenChange={setResumeOpen} />}
       <header className={styles.profileHeader}>
         <Avatar person={application} size={90} />
         <div className={styles.profileIdentity}>
@@ -573,10 +576,16 @@ export default function ApplicantDetailPage({ applicationId }) {
                   <strong>{application.id}</strong>
                   <span>Submitted {formatDate(application.appliedOn)}</span>
                 </div>
-                {canResume && <Button variant="ghost" onClick={downloadResume}>
-                  <ArrowDownToLine size={15} />
-                  Resume
-                </Button>}
+                {canResume && <div className={styles.resumeActions}>
+                  <Button variant="ghost" onClick={() => setResumeOpen(true)}>
+                    <FileText size={15} />
+                    View resume
+                  </Button>
+                  <Button variant="ghost" onClick={downloadResume} aria-label={`Download ${application.name}’s resume`}>
+                    <ArrowDownToLine size={15} />
+                    Download
+                  </Button>
+                </div>}
               </div>
             </Panel>
             {applicationDetails}

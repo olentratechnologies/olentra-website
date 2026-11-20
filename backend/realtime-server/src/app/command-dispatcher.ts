@@ -4,6 +4,7 @@ import { createCommunications } from "../modules/communications/communications.s
 import { createLifecycle } from "../modules/lifecycle/lifecycle.service";
 import { createInternshipQueries } from "../modules/queries/query.service";
 import { createStaffManagement } from "../modules/staff/staff.service";
+import { createResumeAccess } from "../modules/files/resume-access";
 import { authorizeStaff, can, isAdmin } from "../modules/access/policy";
 import { acceptsCompensationMode, normalizeCompensationMode, type CompensationMode } from "../modules/programs/compensation";
 import { normalizeDeadline } from "../modules/programs/deadline";
@@ -274,9 +275,11 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   const checkins = createCheckins({ collection, transact });
   const feedback = createFeedback({ collection, transact });
   const staffManagement = createStaffManagement({ collection, transact, client });
+  const resumeAccess = createResumeAccess({ applications, files });
   async function execute(method: string, params: Record<string, any> = {}, actor: Principal | null = null, key = ""): Promise<any> {
     if (actor?.role === "company") authorizeStaff(method, params, actor);
     if (staffManagement.supports(method)) return staffManagement.execute(method, params, actor, key);
+    if (resumeAccess.supports(method)) return resumeAccess.execute(params, actor);
     if (actor?.role === "company" && !isAdmin(actor) && (method === "message.list" || method === "message.send")) {
       const application = await applications.findOne({ _id: str(params.applicationId) }, { projection: { status: 1 } });
       if (!application || !can(actor, application.status === "Joined" ? "messages.interns" : "messages.applicants")) throw new DomainError("FORBIDDEN", "Your role cannot access this conversation.");

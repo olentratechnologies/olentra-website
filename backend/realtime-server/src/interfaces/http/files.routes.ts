@@ -13,6 +13,7 @@ import type { createResumeGrants } from "../../modules/files/resume-grant";
 import type { DirectUploads } from "../../modules/files/direct-uploads";
 import type { ObjectStore } from "../../infrastructure/files/oci.store";
 import { SIGNATURE_BYTES, allowedType, matchesSignature } from "../../modules/files/file-types";
+import { canReadResumes, linkedApplicationId } from "../../modules/files/resume-access";
 
 export const FILES_PATH = "/intern/files";
 
@@ -136,15 +137,16 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
       if (!file) throw new DomainError("NOT_FOUND", "File not found.");
       const account = await authenticate(request);
       const accessToken = request.headers.get("x-file-token") || "";
-      const staffAccess = account?.role === "company" && (file.kind === "resume" ? can(account, "resumes.read") : can(account, "submissions.read"));
-      const ownerAccess = account?.role === "intern" && account.applicationId && account.applicationId === (file.applicationId || file.ownerApplicationId);
+      // Staff only reach files that belong to an application; unclaimed anonymous uploads stay private.
+      const staffAccess = account?.role === "company" && !!linkedApplicationId(file) && (file.kind === "resume" ? canReadResumes(account) : can(account, "submissions.read"));
+      const ownerAccess = account?.role === "intern" && account.applicationId && account.applicationId === linkedApplicationId(file);
       const pendingUploadAccess = !account && !file.applicationId && !file.ownerApplicationId && accessToken && file.accessTokenHash === hash(accessToken);
       if (!(staffAccess || ownerAccess || pendingUploadAccess)) throw new DomainError("FORBIDDEN", "File access denied.");
       const stream = file.storage === "oci"
         ? objectStore && file.cleanKey ? await objectStore.download(file.cleanKey) : null
         : Readable.toWeb(bucket.openDownloadStream(file.gridId)) as ReadableStream;
       if (!stream) throw new DomainError("SERVICE_UNAVAILABLE", "Object storage is unavailable.");
-      return new Response(stream, { headers: withCors(origin, { "Content-Type": file.type, "Content-Disposition": `attachment; filename="${file.name.replace(/["\\]/g, "_")}"`, "Content-Length": String(file.size), "Access-Control-Expose-Headers": "Content-Disposition", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox" }) });
+      return new Response(stream, { headers: withCors(origin, { "Content-Type": file.type, "Content-Disposition": `attachment; filename="${String(file.name).replace(/[^\x20-\x7e]|["\\]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(String(file.name)).replace(/['()*]/g, character => "%" + character.charCodeAt(0).toString(16).toUpperCase())}`, "Content-Length": String(file.size), "Cache-Control": "private, no-store", "Access-Control-Expose-Headers": "Content-Disposition", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox" }) });
     },
   };
 }

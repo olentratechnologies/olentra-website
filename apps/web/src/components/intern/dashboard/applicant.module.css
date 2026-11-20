@@ -1333,3 +1333,81 @@
 .duplicateNote a {
   color: var(--ad-blue);
 }
+
+/* Resume viewer */
+.resumeModal {
+  width: min(960px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+}
+.resumeBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--ad-border, #d8e4fe);
+  border-radius: 10px;
+  background: var(--ad-panel-alt, #eef4ff);
+  color: var(--ad-muted, #3e5a88);
+}
+.resumeBar > div {
+  flex: 1;
+  min-width: 0;
+}
+.resumeBar strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ad-text, #17385f);
+  font-size: 12px;
+  font-weight: 600;
+}
+.resumeBar span {
+  display: block;
+  margin-top: 3px;
+  color: var(--ad-subtle, #8ca0c0);
+  font-size: 10.5px;
+}
+.resumeStage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  margin-top: 14px;
+  color: var(--ad-muted, #3e5a88);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+.resumeStage p {
+  max-width: 420px;
+  margin: 0;
+}
+.resumeFrame {
+  width: 100%;
+  height: min(72dvh, 900px);
+  border: 1px solid var(--ad-border, #d8e4fe);
+  border-radius: 10px;
+  background: #fff;
+}
+.resumeActions {
+  display: flex;
+  gap: 6px;
+}
+@media (max-width: 640px) {
+  .resumeModal {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+  }
+  .resumeFrame {
+    height: 62dvh;
+  }
+  .resumeBar > button {
+    flex: 1;
+    justify-content: center;
+  }
+}

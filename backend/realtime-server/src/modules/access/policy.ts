@@ -16,7 +16,7 @@ export function authorizeStaff(method: string, params: Record<string, any>, acto
   if (isAdmin(actor)) return;
   const basic: Record<string, string[]> = {
     "intern.public": [], "intern.snapshot": [],
-    "application.list": ["applications.read"], "application.get": ["applications.read"], "application.workflow": ["applications.read"],
+    "application.list": ["applications.read"], "application.get": ["applications.read"], "application.workflow": ["applications.read"], "application.resume": ["applications.read", "resumes.read"],
     "intern.list": ["interns.read"], "task.list": ["tasks.read"], "submission.list": ["submissions.read"], "certificate.list": ["certificates.read"], "story.list": ["certificates.read"], "certificate.verify": [], "story.public": [],
     "analytics.get": ["overview.read"], "notification.list": ["notifications.read"], "notification.markRead": ["notifications.read"],
     "project.create": ["projects.read", "projects.manage"], "project.update": ["projects.read", "projects.manage"], "project.delete": ["projects.read", "projects.manage"],

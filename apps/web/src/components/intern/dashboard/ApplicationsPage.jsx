@@ -24,6 +24,7 @@ import {
 import { hasStaffPermission } from "./staffAccess";
 import { useInternQuery, useInternSearch } from "../useInternQuery";
 import QueryStatus from "./QueryStatus";
+import ResumeViewer from "./ResumeViewer";
 import {
   Avatar,
   Button,
@@ -72,6 +73,8 @@ const LAYOUT_KEY = "olentra_applications_layout_v1";
 export default function ApplicationsPage() {
   const { data, query, setQuery, notify, updateApplication, account } = useDashboard();
   const canReview = hasStaffPermission(account, "applications.review");
+  const canResume = hasStaffPermission(account, "resumes.read");
+  const [resumeApplication, setResumeApplication] = useState(null);
   const isAdmin = account?.staffRole === "admin";
   const { commands, connected, staffEvents } = useInternship();
   const [selected, setSelected] = useState(() => new Set());
@@ -714,6 +717,7 @@ export default function ApplicationsPage() {
                             label: "View application",
                             href: `/intern/dashboard/applications/${application.id}`,
                           },
+                          ...(canResume && application.resumeAttachmentId ? [{ label: "View resume", onClick: () => setResumeApplication(application) }] : []),
                           ...(isAdmin ? [{ label: "Delete application", danger: true, onClick: () => setDeletingApplication(application) }] : []),
                           ...(canReview && (isAdmin || ["Applied", "Under Review", "Shortlisted"].includes(application.status)) ? [{
                             label: "Update status",
@@ -861,6 +865,7 @@ export default function ApplicationsPage() {
           </Button>
         </div>
       </Modal>
+      {canResume && <ResumeViewer application={resumeApplication} open={Boolean(resumeApplication)} onOpenChange={(open) => !open && setResumeApplication(null)} />}
     </div>
   );
 }
