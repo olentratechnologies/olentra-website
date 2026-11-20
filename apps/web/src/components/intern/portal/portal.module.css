@@ -1809,6 +1809,20 @@
   min-height: 31px;
   padding: 7px 10px;
 }
+.offerLetterModal {
+  display: flex;
+  flex-direction: column;
+  width: min(960px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+}
+.offerLetterFrame {
+  width: 100%;
+  height: min(72dvh, 900px);
+  margin-top: 16px;
+  border: 1px solid var(--ad-border, #d8e4fe);
+  border-radius: 10px;
+  background: #fff;
+}
 .notificationList {
   list-style: none;
   display: grid;

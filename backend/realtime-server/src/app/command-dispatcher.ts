@@ -240,7 +240,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
           email: str(offer?.email||application.email),
           college: str(offer?.college ?? application.college ?? ""),
           program: str(offer?.program||application.program),
-          durationLabel: offer?.durationLabel,
+          durationLabel: offer?.durationLabel || (offer?.duration ? durationLabel(offer.duration) : legacyDuration(offer?.startOn, offer?.endOn)),
           offerVersion: offer?.version || offer?.currentVersion,
           issueDate: offer?.issueDate || offer?.sentOn,
           startOn: offer?.startOn ? str(offer.startOn) : undefined,

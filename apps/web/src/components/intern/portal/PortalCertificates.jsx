@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { offerDocumentState } from "@/lib/intern/offer-document.mjs";
+import { durationLabel as scheduleDurationLabel } from "@/lib/intern/schedule.mjs";
 import CompanyBrand from "@/components/intern/CompanyBrand";
 import { Award, Copy, Download, Eye, FileText, Linkedin, Printer, ShieldCheck } from "lucide-react";
 import { linkedInAddUrl, verifyUrl } from "@/lib/intern/certificate-share.mjs";
-import { downloadOfferLetterPdf } from "@/lib/intern/offer-letter-pdf";
+import { buildOfferLetterPdfBytes, downloadOfferLetterPdf } from "@/lib/intern/offer-letter-pdf";
 import PortalStory from "./PortalStory";
 import ExitFeedback from "./ExitFeedback";
 import { useInternship } from "@/components/intern/InternshipProvider";
@@ -43,14 +44,39 @@ function certificateHtml(certificate, organization) {
 export default function PortalCertificates() {
   const { ready, my, data, notify, commands } = useInternship();
   const [selected, setSelected] = useState(null);
+  const [offerPdfUrl, setOfferPdfUrl] = useState("");
   const [offerVersions,setOfferVersions] = useState([]);
   const action = useAction();
   useEffect(()=>{let live=true;if(my.application?.id)commands.listOfferVersions(my.application.id).then(result=>{if(live&&result.ok)setOfferVersions(result.data);});return()=>{live=false;};},[commands,my.application?.id,my.offer?.currentVersion]);
+  useEffect(() => {
+    if (!offerPdfUrl) return undefined;
+    return () => URL.revokeObjectURL(offerPdfUrl);
+  }, [offerPdfUrl]);
   if (!ready) return <Loading />;
   const certificates = my.certificates || [];
   const application = my.application;
   const offer = my.offer;
   const offerDocument = offerDocumentState(application, offer);
+  const offerLetterDetails = {
+    ...offer,
+    name: offer?.name || application?.name,
+    email: offer?.email || application?.email,
+    college: offer?.college ?? application?.college,
+    program: offer?.program || application?.program,
+    startOn: offer?.startOn,
+    endOn: offer?.endOn,
+    stipend: offer?.stipend,
+    stipendPeriod: offer?.stipendPeriod,
+    applicationId: application?.id,
+    durationLabel: offer?.durationLabel || (offer?.duration ? scheduleDurationLabel(offer.duration) : undefined),
+    offerVersion: offer?.currentVersion || 1,
+    issueDate: offer?.issueDate || offer?.sentOn || offer?.decidedOn,
+  };
+  function viewOfferLetter() {
+    const bytes = buildOfferLetterPdfBytes(offerLetterDetails);
+    const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+    setOfferPdfUrl(url);
+  }
   async function download(certificate) {
     await action.run(async () => {
       if (certificate.status !== "Issued")
@@ -132,38 +158,54 @@ export default function PortalCertificates() {
               </div>
               <Status value={offerDocument.status} />
               <div className={styles.actions}>
-                {offerDocument.downloadable ? <Button
-                  variant="secondary"
-                  onClick={() => action.run(async () => {
-                    downloadOfferLetterPdf({
-                      ...offer,
-                      name: offer.name || application?.name,
-                      email: offer.email || application?.email,
-                      college: offer.college ?? application?.college,
-                      program: offer.program || application?.program,
-                      startOn: offer.startOn,
-                      endOn: offer.endOn,
-                      stipend: offer.stipend,
-                      stipendPeriod: offer.stipendPeriod,
-                      applicationId: application?.id,
-                      durationLabel: offer.durationLabel,
-                      offerVersion: offer.currentVersion || 1,
-                      issueDate: offer.issueDate || offer.sentOn || offer.decidedOn,
-                    });
-                    return { ok: true };
-                  })}
-                  busy={action.busy}
-                  disabled={action.busy}
-                >
-                  <Download size={14} />
-                  Download PDF
-                </Button> : <Link href="/intern/portal/application#internship-offer" className={styles.textLink}>{offerDocument.status === "Expired" ? "View offer details" : "Review and accept offer"}</Link>}
+                {offerDocument.downloadable ? <>
+                  <Button
+                    variant="secondary"
+                    onClick={() => action.run(async () => {
+                      viewOfferLetter();
+                      return { ok: true };
+                    })}
+                    busy={action.busy}
+                    disabled={action.busy}
+                  >
+                    <Eye size={14} />
+                    View PDF
+                  </Button>
+                  <Button
+                    onClick={() => action.run(async () => {
+                      downloadOfferLetterPdf(offerLetterDetails);
+                      return { ok: true };
+                    })}
+                    busy={action.busy}
+                    disabled={action.busy}
+                  >
+                    <Download size={14} />
+                    Download PDF
+                  </Button>
+                </> : <Link href="/intern/portal/application#internship-offer" className={styles.textLink}>{offerDocument.status === "Expired" ? "View offer details" : "Review and accept offer"}</Link>}
               </div>
             </article>
           </div>
           {offerVersions.some(v=>(v.decision==="Accepted"||v.status==="Accepted")&&v.version!==(offer.currentVersion||1))&&<details><summary>Previous accepted offer letters</summary>{offerVersions.filter(v=>(v.decision==="Accepted"||v.status==="Accepted")&&v.version!==(offer.currentVersion||1)).map(v=><p key={v.version}>Version {v.version} · {formatDate(v.startOn)} – {formatDate(v.endOn)} <Button variant="secondary" onClick={()=>downloadOfferLetterPdf({...v,applicationId:application.id,offerVersion:v.version})}>Download previous version</Button></p>)}</details>}
         </Panel>
       )}
+      <Modal
+        open={Boolean(offerPdfUrl)}
+        onOpenChange={(open) => {
+          if (!open) setOfferPdfUrl("");
+        }}
+        title="Internship offer letter"
+        description="Preview your accepted internship offer letter."
+        className={styles.offerLetterModal}
+      >
+        {offerPdfUrl && (
+          <iframe
+            className={styles.offerLetterFrame}
+            src={offerPdfUrl}
+            title="Internship offer letter PDF"
+          />
+        )}
+      </Modal>
       <Panel>
         <div className={styles.panelHeader}>
           <h2>Completion Certificates</h2>
