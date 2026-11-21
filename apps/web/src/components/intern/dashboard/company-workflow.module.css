@@ -543,3 +543,50 @@
 .hint[role="alert"] {
   color: var(--ad-danger, #c2410c);
 }
+
+.routeChooser {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.routeChooser legend {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ad-muted, #2a4772);
+}
+
+.routeChooser label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--ad-border, #dce4ee);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.routeChooser label[data-selected="true"] {
+  border-color: var(--ad-blue, #407ef0);
+  box-shadow: 0 0 0 1px var(--ad-blue, #407ef0);
+}
+
+.routeChooser input {
+  margin-top: 3px;
+}
+
+.routeChooser span {
+  display: grid;
+  gap: 4px;
+}
+
+.routeChooser small {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ad-subtle, #7389ad);
+}

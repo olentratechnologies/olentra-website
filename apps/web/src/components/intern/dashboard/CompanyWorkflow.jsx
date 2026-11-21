@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { completionDate, displayDate, durationLabel, civilToday } from "@/lib/intern/schedule.mjs";
 import OfferScheduleRevision from "../OfferScheduleRevision";
+import DirectEnrolForm from "./DirectEnrolForm";
 import { useInternship } from "@/components/intern/InternshipProvider";
 import { downloadAttachment } from "@/lib/intern-attachments.mjs";
 import {
@@ -166,6 +167,8 @@ export function ApplicantWorkflow({ applicationId }) {
       "We’re excited to welcome you to the Olentra internship program. Review your offer and take the next step in your journey.",
   });
   const [offerPreview, setOfferPreview] = useState(null);
+  // Two ways to give an internship: send an offer the student accepts online, or enrol directly.
+  const [route, setRoute] = useState("offer");
   const [extendDays, setExtendDays] = useState("");
   // Offers must close a lead time before day one (program setting, default 3 days).
   const leadDays = normalizeLeadDays(data.settings.onboardingLeadDays);
@@ -207,10 +210,17 @@ export function ApplicantWorkflow({ applicationId }) {
   const canOffer =
     isAdmin && application.status === "Selected" &&
     !["Sent", "Accepted"].includes(offer?.status);
+  const canEnrollDirect =
+    isAdmin && ["Applied", "Under Review", "Shortlisted", "Selected"].includes(application.status) &&
+    offer?.status !== "Accepted";
+  // Interns enrolled directly are already active; staff sign off their documents afterwards.
+  const joinedPendingOnboarding =
+    isAdmin && application.status === "Joined" && offer?.status === "Accepted" &&
+    onboarding?.status !== "Approved";
   const canApprove =
-    isAdmin && offer?.status === "Accepted" &&
+    (isAdmin && offer?.status === "Accepted" &&
     onboarding?.status === "Submitted" &&
-    application.status === "Selected";
+    application.status === "Selected") || joinedPendingOnboarding;
 
   async function sendOffer(event) {
     event.preventDefault();
@@ -257,7 +267,7 @@ export function ApplicantWorkflow({ applicationId }) {
       const approved = await perform(
         () => commands.approveOnboarding(applicationId),
         notify,
-        "Onboarding approved. The applicant is now an active intern.",
+        joinedPendingOnboarding ? "Onboarding marked complete." : "Onboarding approved. The applicant is now an active intern.",
       );
       if (approved) burstFrom(trigger, { count: 60 });
     } finally {
@@ -357,6 +367,7 @@ export function ApplicantWorkflow({ applicationId }) {
                   <Button variant="secondary" disabled={busy} onClick={async () => { setBusy(true); try { await perform(() => commands.extendOffer(applicationId, chosen), notify, "Deadline extended. The applicant has been emailed."); } finally { setBusy(false); } }}>Extend deadline</Button>
                 </div>;
               })()}
+              {offer.route === "direct" && <p className={styles.hint}>Accepted in person{offer.agreementNote ? ` · ${offer.agreementNote}` : ""}{offer.acceptedByName ? ` · recorded by ${offer.acceptedByName}` : ""}</p>}
               {offer.message && <p>{offer.message}</p>}
               {(offer.respondedOn || offer.decidedOn) && (
                 <small>
@@ -367,7 +378,28 @@ export function ApplicantWorkflow({ applicationId }) {
             </div>
           )}
           {offer && isAdmin && <OfferScheduleRevision application={application} offer={offer} admin />}
-          {canOffer ? (
+          {canEnrollDirect && (
+            <fieldset className={styles.routeChooser}>
+              <legend>How is this internship being given?</legend>
+              <label data-selected={route === "offer"}>
+                <input type="radio" name="internship-route" value="offer" checked={route === "offer"} onChange={() => setRoute("offer")} />
+                <span><strong>Send offer</strong><small>The student reviews and accepts online before a deadline. Use this for normal hiring.</small></span>
+              </label>
+              <label data-selected={route === "direct"}>
+                <input type="radio" name="internship-route" value="direct" checked={route === "direct"} onChange={() => setRoute("direct")} />
+                <span><strong>Enrol directly</strong><small>The student has already agreed (in person or on a call). They become an intern immediately and get portal access and their offer letter by email.</small></span>
+              </label>
+            </fieldset>
+          )}
+          {canEnrollDirect && route === "direct" ? (
+            <DirectEnrolForm
+              application={application}
+              settings={data.settings}
+              maxStipend={data.programs.find((program) => program.id === application?.programId)?.stipend ?? 0}
+              commands={commands}
+              notify={notify}
+            />
+          ) : canOffer ? (
             <form className={styles.form} onSubmit={sendOffer}>
               <div className={styles.formGrid}>
                 <label>
@@ -460,7 +492,9 @@ export function ApplicantWorkflow({ applicationId }) {
                   ? "The applicant can accept or decline this offer from their portal."
                   : offer?.status === "Accepted"
                     ? "Offer accepted. Continue to Onboarding to review their enrollment details."
-                    : "Select this applicant in the application review to prepare an internship offer."}
+                    : canEnrollDirect
+                      ? "To send an offer, first mark this applicant Selected in the application review. Or choose Enrol directly if they’ve already agreed."
+                      : "Select this applicant in the application review to prepare an internship offer."}
             </p>
           )}
         </div>
@@ -586,9 +620,11 @@ export function ApplicantWorkflow({ applicationId }) {
               <ShieldCheck size={15} />
               {busy
                 ? "Approving…"
-                : application.status === "Joined"
-                  ? "Enrollment approved"
-                  : "Approve onboarding"}
+                : joinedPendingOnboarding
+                  ? "Mark onboarding complete"
+                  : application.status === "Joined"
+                    ? "Enrollment approved"
+                    : "Approve onboarding"}
             </Button>
           </div>
         </div>

@@ -2,6 +2,7 @@
 const LABELS = {
   "application.status": (detail) => `Moved an application from ${detail?.from || "?"} to ${detail?.to || "?"}`,
   "offer.sent": () => "Sent an internship offer",
+  "application.enrolledDirectly": () => "Enrolled an applicant directly",
   "onboarding.approved": () => "Approved onboarding",
   "certificate.issued": (detail) => `Issued certificate ${detail?.certificateNumber || ""}`.trim(),
   "applicant.erased": () => "Erased an applicant's data",

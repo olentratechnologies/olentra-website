@@ -10,10 +10,10 @@ const fail=(message:string):never=>{throw new DomainError('CONFLICT',message);};
 const key=(id:string,version:number)=>`${id}:v${version}`;
 export function createOfferSchedules(collection:any) {
   const offers=collection('offers'), versions=collection('offer_versions'), apps=collection('applications'), settings=collection('settings');
-  const methods=new Set(['offer.preview','offer.versions','offer.send','offer.accept','offer.decline','offer.revise','offer.revision.accept','offer.revision.decline','offer.revision.withdraw']);
+  const methods=new Set(['offer.enrollDirect','offer.preview','offer.versions','offer.send','offer.accept','offer.decline','offer.revise','offer.revision.accept','offer.revision.decline','offer.revision.withdraw']);
   async function execute(method:string,p:any,actor:Principal|null,session?:ClientSession) {
     const opts=session?{session}:{}, applicationId=String(p.applicationId||'');
-    if(['offer.preview','offer.send','offer.revise','offer.revision.withdraw'].includes(method)) requireAdmin(actor);
+    if(['offer.preview','offer.send','offer.revise','offer.revision.withdraw','offer.enrollDirect'].includes(method)) requireAdmin(actor);
     else if(!(actor?.role==='company'&&actor.staffRole==='admin')&&!(actor?.role==='intern'&&actor.applicationId===applicationId)) throw new DomainError('FORBIDDEN','This offer belongs to another account.');
     const app=await apps.findOne({_id:applicationId},opts);if(!app)throw new DomainError('NOT_FOUND','Application not found.');
     const old=await offers.findOne({applicationId},opts),config=await settings.findOne({_id:'program'},opts);
@@ -21,24 +21,55 @@ export function createOfferSchedules(collection:any) {
     const now=new Date().toISOString();
     const history=async(title:string,detail:string)=>apps.updateOne({_id:applicationId},{$inc:{version:1},$push:{history:{id:`HST-${randomUUID()}`,title,detail,date:now}}},opts);
     const archive=async()=>{if(old&&!old.currentVersion)await versions.updateOne({_id:key(applicationId,1)},{$setOnInsert:{...old,_id:key(applicationId,1),applicationId,version:1,durationLabel:legacyDuration(old.startOn,old.endOn),legacy:true,issueDate:old.issueDate||old.sentOn||old.decidedOn,name:app.name,email:app.email,program:app.program,workMode:app.workMode,schedule:internScheduleLabel(app.schedule)}},{...opts,upsert:true});};
-    if(['offer.preview','offer.send','offer.revise'].includes(method)) {
+    // Enrol an applicant who agreed in person: the offer is accepted on their behalf and they join today or on the chosen date.
+    async function enrollDirect(preview:any,reason:string,now:string) {
+      if(!['Applied','Under Review','Shortlisted','Selected'].includes(app.status))fail('Only applicants who are still in the hiring process can be enrolled directly.');
+      if(old?.status==='Accepted')fail('This applicant has already accepted an offer.');
+      if(await collection('interns').findOne({applicationId},opts))fail('This applicant is already an intern.');
+      if(await collection('accounts').findOne({email:String(app.email||'').toLowerCase(),role:'company'},opts))fail('This applicant email belongs to a staff account. Use a separate applicant email before enrolling.');
+      const agreementNote=String(p.agreementNote||'').trim().slice(0,500);
+      if(agreementNote.length<5)throw new DomainError('INVALID_REQUEST','Record how and when the student agreed to the internship.');
+      const program=await collection('programs').findOne({_id:app.programId},opts),stipend=Number(p.stipend??0);
+      if(!program||!Number.isSafeInteger(stipend)||stipend<0||stipend>Number(program.stipend))throw new DomainError('INVALID_REQUEST','Choose a stipend within the program limit.');
+      await archive();
+      const version=Number(old?.latestVersion||old?.currentVersion||(old?1:0))+1;
+      if(old?.status==='Sent')await versions.updateOne({_id:key(applicationId,Number(old.currentVersion||1))},{$set:{decision:'Superseded',decidedOn:now}},opts);
+      const {direct:_direct,maxOpenDays:_max,leadDays:_lead,...schedule}=preview;
+      const snapshot={...schedule,_id:key(applicationId,version),version,name:app.name,email:app.email,college:app.college||'',program:app.program,stipend,stipendPeriod:'month',message:String(p.message??'').slice(0,2000),reason,sentOn:now,issueDate:civilToday(new Date(now)),expiresOn:null,createdBy:actor!.id,status:'Accepted',decision:'Accepted',decidedOn:now,route:'direct',acceptedBy:actor!.id,acceptedByName:actor!.name||'',agreementNote};
+      await versions.insertOne(snapshot,opts);
+      const offer={...snapshot,_id:old?._id||`OFFER-${randomUUID()}`,currentVersion:version,latestVersion:version,revision:Number(old?.revision||0)+1};
+      await offers.replaceOne({applicationId},offer,{...opts,upsert:true});
+      await apps.updateOne({_id:applicationId},{$set:{status:'Joined',statusChangedOn:now},$inc:{version:1},$push:{history:{$each:[
+        {id:`HST-${randomUUID()}`,title:'Internship offer accepted in person',detail:agreementNote,date:now},
+        {id:`HST-${randomUUID()}`,title:'Joined directly',detail:`${snapshot.durationLabel}: ${snapshot.startOn} to ${snapshot.endOn}. Upload your onboarding documents in the portal.`,date:now},
+      ]}}} as any,opts);
+      const intern={_id:`INT-${randomUUID()}`,applicationId,batch:app.batch||config?.defaultBatch||'',joinedOn:civilToday(),startOn:snapshot.startOn,endOn:snapshot.endOn,offerVersion:version,duration:snapshot.duration,durationLabel:snapshot.durationLabel,status:'Active',projectIds:[],revision:1,route:'direct'};
+      await collection('interns').insertOne(intern,opts);
+      // Documents are collected after joining; staff mark onboarding complete once they're approved.
+      await collection('onboarding').updateOne({applicationId},{$setOnInsert:{_id:`ONB-${randomUUID()}`,applicationId,status:'Draft',acknowledged:false,documents:{}}},{...opts,upsert:true});
+      return {...offer,id:offer._id,applicationId,intern:{...intern,id:intern._id},emailSnapshot:snapshot,emailStatus:'direct-enrolled'};
+    }
+    if(['offer.preview','offer.send','offer.revise','offer.enrollDirect'].includes(method)) {
+      // Direct enrolment: the student already agreed, so there is no decision window to wait for.
+      const direct=method==='offer.enrollDirect'||(method==='offer.preview'&&p.direct===true);
       const duration=parseDuration(p.durationOverride||config?.durationSpec||config?.duration);
       if(!duration)throw new DomainError('INVALID_REQUEST','Set a precise program duration in Settings before preparing an offer.');
       const reason=String(p.reason||'').trim().slice(0,2000);
       if(p.durationOverride&&!reason)throw new DomainError('INVALID_REQUEST','A duration exception requires a reason.');
       let endOn:string;try{endOn=completionDate(p.startOn,duration);}catch(e:any){throw new DomainError('INVALID_REQUEST',e.message);}
       if(method!=='offer.revise'&&!(method==='offer.preview'&&p.revising&&old)&&p.startOn<civilToday())throw new DomainError('INVALID_REQUEST','Choose a start date today or later.');
-      const days=Number(p.expiresInDays??7);if(!Number.isInteger(days)||days<1||days>MAX_OPEN_DAYS)throw new DomainError('INVALID_REQUEST',`Choose a decision deadline of 1 to ${MAX_OPEN_DAYS} days.`);
+      const days=direct?0:Number(p.expiresInDays??7);if(!direct&&(!Number.isInteger(days)||days<1||days>MAX_OPEN_DAYS))throw new DomainError('INVALID_REQUEST',`Choose a decision deadline of 1 to ${MAX_OPEN_DAYS} days.`);
       // The offer must close a lead time before day one. A revision that keeps an
       // already-running internship's start date only changes its length, so it is exempt.
-      const leadDays=normalizeLeadDays(config?.onboardingLeadDays),expiresOn=decisionDeadline(now,days);
+      const leadDays=normalizeLeadDays(config?.onboardingLeadDays),expiresOn=direct?null:decisionDeadline(now,days);
       const revising=method==='offer.revise'||(method==='offer.preview'&&p.revising&&old);
-      if(!revising||p.startOn!==old?.startOn){const problem=offerWindowProblem({startOn:p.startOn,deadlineIso:expiresOn,leadDays});if(problem)throw new DomainError('INVALID_REQUEST',problem);}
+      if(!direct&&(!revising||p.startOn!==old?.startOn)){const problem=offerWindowProblem({startOn:p.startOn,deadlineIso:expiresOn!,leadDays});if(problem)throw new DomainError('INVALID_REQUEST',problem);}
       const configRevision=String(config?.scheduleRevision||config?.duration||'');
-      const preview={applicationId,startOn:p.startOn,endOn,duration,durationLabel:durationLabel(duration),configRevision,workMode:app.workMode||'remote',schedule:internScheduleLabel(app.schedule),expiresOn,leadDays,maxOpenDays:maxOpenDays(p.startOn,civilToday(),leadDays)};
+      const preview={applicationId,startOn:p.startOn,endOn,duration,durationLabel:durationLabel(duration),configRevision,workMode:app.workMode||'remote',schedule:internScheduleLabel(app.schedule),expiresOn,leadDays,maxOpenDays:direct?0:maxOpenDays(p.startOn,civilToday(),leadDays),direct};
       if(method==='offer.preview')return preview;
       if(String(p.configRevision)!==configRevision)fail('Program duration changed or the preview is missing. Review the schedule again.');
       if(p.endOn&&p.endOn!==endOn)fail('The submitted completion date differs from the calculated schedule. Refresh the preview.');
+      if(method==='offer.enrollDirect')return enrollDirect(preview,reason,now);
       if(method==='offer.send'&&app.status!=='Selected')fail('Select this applicant before sending an offer.');
       if(method==='offer.send'&&old&&['Sent','Accepted'].includes(old.status))fail('An offer already exists. Use Revise schedule to preserve its history.');
       if(method==='offer.revise') {

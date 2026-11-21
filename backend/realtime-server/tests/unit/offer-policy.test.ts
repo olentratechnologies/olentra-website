@@ -84,3 +84,15 @@ test("each open offer or revision gets one reminder per deadline", async () => {
   ]);
   expect(JSON.parse(queued[1].payload.offerSnapshot)).toMatchObject({ version: 2, startOn: "2030-02-01" });
 });
+
+test("direct enrolment email welcomes the intern with an activation link and the offer letter", () => {
+  const mailer = createInternshipMailer("");
+  const pdfAttachment = { filename: "Olentra_Offer_Letter.pdf", content: Buffer.from("%PDF"), contentType: "application/pdf" };
+  const rendered = mailer.renderAutomated("direct-enrolled", { ...options, schedule: { ...schedule, expiresOn: null, route: "direct" }, portalUrl: "https://example.test/intern/verify?token=abc", pdfAttachment });
+  expect(rendered.subject).toBe("Welcome to Olentra: your internship starts Thursday, 24 January 2030");
+  expect(rendered.html).toContain("Activate your internship portal");
+  expect(rendered.html).toContain("https://example.test/intern/verify?token=abc");
+  expect(rendered.text).toContain("upload your onboarding documents");
+  expect(rendered.text).not.toContain("Respond by");
+  expect(rendered.attachments?.map((file: any) => file.filename)).toContain("Olentra_Offer_Letter.pdf");
+});

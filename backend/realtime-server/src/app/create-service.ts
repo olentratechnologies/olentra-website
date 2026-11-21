@@ -152,7 +152,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificateVerifyUrl)}`
           : undefined;
         let portalUrl = `${siteOrigin}/intern/portal${notice.status.startsWith("offer-revi")?"/application#schedule-revision":""}`;
-        if (notice.status === "selected") {
+        if (notice.status === "selected" || notice.status === "direct-enrolled") {
           const app = await domain.findApplicationByEmail(notice.to);
           const appId = app ? String(app._id) : "";
           if (!app || !["Selected", "Joined"].includes(String(app.status))) return;
@@ -249,7 +249,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         server?.publish(uploadTopic(record.uploadId), JSON.stringify({ type: "event", event: "intern.file_status", data: { id: record.uploadId, status: record.status } }), false);
         return;
       }
-      if (["application.created", "application.updated", "onboarding.save", "onboarding.submit", "onboarding.approve", "offer.decline", "profile.update"].includes(record.type)) domain.invalidateAnalytics();
+      if (["application.created", "application.updated", "onboarding.save", "onboarding.submit", "onboarding.approve", "offer.decline", "offer.enrollDirect", "profile.update"].includes(record.type)) domain.invalidateAnalytics();
       if (record.public === true || record.type === "program.configure") (domain as any).invalidatePublicData?.();
       // Public events include program/track toggles, which change which tracks insights cover.
       if (affectsInsights(record.type) || record.public === true) { insights.invalidate(); broadcastInsights(); }

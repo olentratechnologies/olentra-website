@@ -42,7 +42,7 @@ export function createTemplates({ collection, transact }: { collection: (name: s
         const template = validateEmailTemplate(definition.id, params);
         const preview = createInternshipMailer("").renderAutomated(definition.id, {
           name: "Alex Kumar", programName: "Software Engineer Intern", applicationId: "OL-SAMPLE-123",
-          scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/interview", portalUrl: definition.id === "selected" ? "https://example.test/intern/verify?token=sample-only" : "https://example.test/intern/portal",
+          scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/interview", portalUrl: ["selected", "direct-enrolled"].includes(definition.id) ? "https://example.test/intern/verify?token=sample-only" : "https://example.test/intern/portal",
           magicLinkUrl: "https://example.test/intern/verify?token=sample-only", certificateVerifyUrl: "https://example.test/certificates/verify/SAMPLE",
           linkedinShareUrl: definition.id === "offer-accepted" ? "https://www.linkedin.com/feed/?shareActive=true" : "https://www.linkedin.com/sharing/share-offsite/?url=sample", schedule: {durationLabel:"1 calendar month",startOn:"2030-01-24",endOn:"2030-02-23",expiresOn:"2030-01-20T18:29:59.000Z",workMode:"Remote",schedule:"Part-time"}, interviewId: "INTV-SAMPLE", sequence: 1, cancelReason: definition.id === "interview-cancelled" ? "The interviewer is unavailable." : "",
         }, template);

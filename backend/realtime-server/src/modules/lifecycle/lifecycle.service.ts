@@ -32,7 +32,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
   const schedules = createOfferSchedules(collection);
-  const names = new Set(["offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "project.delete", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.update", "project.delete", "task.create", "task.update", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       schedules.initialize(),
@@ -158,6 +158,17 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
       }
       if (method === "onboarding.approve") {
         staff(actor); const applicationId = required(p.applicationId, "application");
+        // Interns enrolled directly are already active: completing onboarding only signs off their documents.
+        const joined = await applications.findOne({ _id: applicationId, status: "Joined" }, opts);
+        if (joined && await interns.findOne({ applicationId }, opts)) {
+          const checklist = ((await settings.findOne({ _id: "program" }, { ...opts, projection: { onboardingDocuments: 1 } }))?.onboardingDocuments || []) as ChecklistItem[];
+          const missing = missingDocuments(checklist, (await onboarding.findOne({ applicationId }, opts))?.documents);
+          if (missing.length) throw new DomainError("CONFLICT", `Approve these documents first: ${missing.map(item => item.label).join(", ")}.`);
+          const completed = await onboarding.findOneAndUpdate({ applicationId, status: { $ne: "Approved" } }, { $set: { status: "Approved", approvedOn: now }, $setOnInsert: { _id: newId("ONB"), applicationId, documents: {} } }, { ...opts, upsert: true, returnDocument: "after" });
+          if (!completed) throw new DomainError("CONFLICT", "Onboarding is already complete.");
+          await applications.updateOne({ _id: applicationId }, { $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: "Onboarding complete", detail: "Your onboarding documents have been approved.", date: now } } as any }, opts);
+          return plain(completed);
+        }
         const app = await applications.findOne({ _id: applicationId, status: "Selected" }, opts); const offer = await offers.findOne({ applicationId, status: "Accepted" }, opts);
         if (!app || !offer) throw new DomainError("CONFLICT", "Only selected applicants with an accepted offer can be onboarded.");
         // Interns are never backdated: a missed start date needs a revised schedule first.
@@ -167,7 +178,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         const missing = missingDocuments(checklist, pendingRow?.documents);
         if (missing.length) throw new DomainError("CONFLICT", `Approve these documents first: ${missing.map(item => item.label).join(", ")}.`);
         const updated = await onboarding.findOneAndUpdate({ applicationId, status: "Submitted" }, { $set: { status: "Approved", approvedOn: now } }, { ...opts, returnDocument: "after" }); if (!updated) throw new DomainError("CONFLICT", "The applicant must submit onboarding before approval.");
-        await applications.updateOne({ _id: applicationId, status: "Selected" }, { $set: { status: "Joined" }, $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: "Intern onboarded", detail: "Onboarding approved. Your internship workspace is ready.", date: now } } as any }, opts);
+        await applications.updateOne({ _id: applicationId, status: "Selected" }, { $set: { status: "Joined", statusChangedOn: now }, $inc: { version: 1 }, $push: { history: { id: newId("HST"), title: "Intern onboarded", detail: "Onboarding approved. Your internship workspace is ready.", date: now } } as any }, opts);
         const config = await settings.findOne({ _id: "program" }, opts);
         const intern: Row = { _id: newId("INT"), applicationId, batch: app.batch || config?.defaultBatch || "", joinedOn: day(), startOn: offer.startOn, endOn: offer.endOn, offerVersion: offer.currentVersion || 1, duration: offer.duration, durationLabel: offer.durationLabel, status: "Active", projectIds: [], revision: 1 };
         await interns.insertOne(intern, opts); return plain(intern);
@@ -337,10 +348,11 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
       // Decisions are audited in the same transaction as the change itself.
       if (method === "offer.send" && result && !Array.isArray(result)) await auditDecision(audit, session, actor, "offer.sent", String((result as any).applicationId), { startOn: (result as any).startOn, endOn: (result as any).endOn, stipend: (result as any).stipend });
       if (method === "onboarding.approve" && result && !Array.isArray(result)) await auditDecision(audit, session, actor, "onboarding.approved", String((result as any).applicationId));
+      if (method === "offer.enrollDirect") await auditDecision(audit, session, actor, "application.enrolledDirectly", String(scheduledResult.applicationId), { startOn: scheduledResult.startOn, endOn: scheduledResult.endOn, stipend: scheduledResult.stipend, agreementNote: scheduledResult.agreementNote });
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);
-      const labels: Record<string, string> = { "offer.revise": "Internship schedule revision awaiting your decision", "offer.revision.accept": "Schedule revision accepted", "offer.revision.decline": "Schedule revision declined", "offer.revision.withdraw": "Schedule revision withdrawn", "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "intern.assignMentor": "Your mentor was updated", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "project.delete": "Your project was deleted", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
+      const labels: Record<string, string> = { "offer.revise": "Internship schedule revision awaiting your decision", "offer.revision.accept": "Schedule revision accepted", "offer.revision.decline": "Schedule revision declined", "offer.revision.withdraw": "Schedule revision withdrawn", "offer.enrollDirect": "Welcome! Your internship is confirmed", "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "intern.assignMentor": "Your mentor was updated", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.update": "Your project was updated", "project.delete": "Your project was deleted", "task.create": "A new task is ready", "task.update": "Your task was updated", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
       const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
       const label = labels[method];
       if (label && actor) {
@@ -352,6 +364,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
           const name = text(application.name) || "An applicant";
           const program = text(application.program) || "the internship program";
           if (method === "offer.accept") return `${name} accepted the ${program} offer.`;
+          if (method === "offer.enrollDirect") return `${name} joined ${program} directly.`;
           if (method === "offer.decline") return `${name} declined the ${program} offer.`;
           if (method === "application.withdraw") return `${name} withdrew from ${program}.`;
           return `${name} · ${program}`;

@@ -237,7 +237,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (preferences?.rejectionEmails !== true) return;
       }
       let pdfAttachment: { filename: string; content: Buffer; contentType: string } | undefined;
-      if (["offer-accepted","offer-revision-accepted"].includes(status)) {
+      if (["offer-accepted","offer-revision-accepted","direct-enrolled"].includes(status)) {
         const offer = schedule;
         const pdf = generateOfferLetterPdf({
           name: str(offer?.name||application.name),
