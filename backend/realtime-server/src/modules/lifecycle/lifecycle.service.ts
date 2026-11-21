@@ -80,6 +80,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         if (!Number.isInteger(days) || days < 1 || days > 30) throw new DomainError("INVALID_REQUEST", "Extend by 1 to 30 days.");
         const current = await offers.findOne({ applicationId, status: "Sent" }, opts);
         if (!current) throw new DomainError("CONFLICT", "Only an open offer can be extended.");
+        if (current.route === "instant") throw new DomainError("INVALID_REQUEST", "Instant offers stay open until the end of the start date. Use Revise schedule to change it.");
         const config = await settings.findOne({ _id: "program" }, opts), expiresOn = offerDeadline(now, days);
         if (current.expiresOn && expiresOn <= current.expiresOn) throw new DomainError("INVALID_REQUEST", "Choose more days: that would not move the deadline later.");
         const problem = offerWindowProblem({ startOn: current.startOn, deadlineIso: expiresOn, leadDays: normalizeLeadDays(config?.onboardingLeadDays) });
@@ -363,6 +364,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         const activityDetails = activityApplications.map((application) => {
           const name = text(application.name) || "An applicant";
           const program = text(application.program) || "the internship program";
+          if (method === "offer.accept" && (result as any)?.intern?.route === "instant") return `${name} accepted an instant offer and joined ${program}.`;
           if (method === "offer.accept") return `${name} accepted the ${program} offer.`;
           if (method === "offer.enrollDirect") return `${name} joined ${program} directly.`;
           if (method === "offer.decline") return `${name} declined the ${program} offer.`;

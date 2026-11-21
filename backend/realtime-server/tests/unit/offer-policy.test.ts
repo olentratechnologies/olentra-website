@@ -96,3 +96,13 @@ test("direct enrolment email welcomes the intern with an activation link and the
   expect(rendered.text).not.toContain("Respond by");
   expect(rendered.attachments?.map((file: any) => file.filename)).toContain("Olentra_Offer_Letter.pdf");
 });
+
+test("instant offer email carries the activation link and closes at the end of the start day", () => {
+  const rendered = createInternshipMailer("").renderAutomated("instant-offer", { ...options, schedule: { ...schedule, route: "instant", expiresOn: "2030-01-24T18:29:59.000Z" }, portalUrl: "https://example.test/intern/verify?token=xyz" });
+  expect(rendered.subject).toBe("Your Olentra internship offer: Software Engineer Intern");
+  expect(rendered.html).toContain("Activate your internship portal");
+  expect(rendered.html).toContain("https://example.test/intern/verify?token=xyz");
+  expect(rendered.text).toContain("accept or decline it by Thursday, 24 January 2030, 11:59 PM IST");
+  expect(rendered.text).toContain("Respond by: Thursday, 24 January 2030, 11:59 PM IST");
+  expect(rendered.attachments ?? []).toHaveLength(0);
+});

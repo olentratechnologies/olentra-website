@@ -221,12 +221,12 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         pinned=await collection("offer_versions").findOne({applicationId,version:1});
       }
       if(status==="offer-reminder"&&!pinned)return {suppressed:true};
-      if(pinned && ["offer","offer-revised","offer-reminder"].includes(status)) {
+      if(pinned && ["offer","instant-offer","offer-revised","offer-reminder"].includes(status)) {
         const expected=currentOffer?.pendingRevision?.version || currentOffer?.currentVersion || 1;
         if(Number(expected)!==Number(pinned.version))return {suppressed:true};
         const deadline=currentOffer?.pendingRevision?.expiresOn||currentOffer?.expiresOn;
         if(pinned.expiresOn && pinned.expiresOn!==deadline)return {suppressed:true};
-        if(status==="offer"&&currentOffer?.status!=="Sent")return {suppressed:true};
+        if(["offer","instant-offer"].includes(status)&&currentOffer?.status!=="Sent")return {suppressed:true};
         // A reminder only goes out while that exact offer or revision is still open.
         if(status==="offer-reminder"&&(!pinned.expiresOn||pinned.expiresOn<=new Date().toISOString()||(Number(currentOffer?.pendingRevision?.version)!==Number(pinned.version)&&currentOffer?.status!=="Sent")))return {suppressed:true};
         if(status==="offer-revised"&&currentOffer?.status==="Accepted"&& !currentOffer.pendingRevision)return {suppressed:true};

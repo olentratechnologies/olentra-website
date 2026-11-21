@@ -6,7 +6,7 @@ import type { SigninEmailTemplateVariant } from "../../modules/email-templates/s
 import { emailAction, emailMessage, emailParagraph, emailSignOff, escapeEmailHtml as escapeHtml, renderInternshipEmail, renderInternshipTextEmail } from "../../modules/email-templates/internship-email-layout.mjs";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
-type ApplicantStatus = "direct-enrolled" | "offer-reminder" | "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
+type ApplicantStatus = "instant-offer" | "direct-enrolled" | "offer-reminder" | "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
 
 interface ApplicantStatusEmailOptions {
   to: string;
@@ -159,7 +159,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       if(schedule?.startOn && schedule?.endOn) {
         if(schedule.historical)details.push("This message records an earlier offer version. Your current accepted terms are available in Certificates & Documents.");
         details.push(`Duration: ${schedule.durationLabel||scheduleDisplay(schedule).duration}`, `Start date: ${displayDate(schedule.startOn)}`, `Completion date: ${displayDate(schedule.endOn)}`, `Work arrangement: ${schedule.workMode||"Remote"}${schedule.schedule?` · ${schedule.schedule}`:""}`);
-        if(["offer","offer-revised","offer-reminder"].includes(id)&&schedule.expiresOn) {
+        if(["offer","instant-offer","offer-revised","offer-reminder"].includes(id)&&schedule.expiresOn) {
           if(id==="offer"&&schedule.extendedOn)details.push("Your decision deadline has been extended.");
           details.push(`Respond by: ${formatDeadline(schedule.expiresOn)}`,"Need more time? Write to intern.support@olentratechnologies.com before the deadline.");
         }
@@ -228,7 +228,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
         attachments.push({ filename: "interview.ics", contentType: `text/calendar; charset=utf-8; method=${method}`, content: interviewIcs({ uid: options.interviewId, sequence: options.sequence ?? 0, startsAt: options.scheduledAt, summary: `Olentra interview · ${options.programName}`, description: method === "CANCEL" ? "This interview was cancelled." : `Join: ${options.meetingUrl}`, url: options.meetingUrl, method }) });
       }
     }
-    if (id === "selected" || id === "direct-enrolled") {
+    if (id === "selected" || id === "direct-enrolled" || id === "instant-offer") {
       buttons.push({ label: "Activate your internship portal", url: options.portalUrl });
       details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
     }
@@ -247,7 +247,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       buttons.push({ label: "Open candidate portal", url: options.magicLinkUrl });
       details.push("Single-use link · Expires in 24 hours", "This single-use link expires in 24 hours. If you didn’t request this link, you can safely ignore this email.");
     }
-    if (id === "signin" || id === "selected" || id === "direct-enrolled") details.push(ACCOUNT_SECURITY_NOTICE);
+    if (id === "signin" || id === "selected" || id === "direct-enrolled" || id === "instant-offer") details.push(ACCOUNT_SECURITY_NOTICE);
     const panelContent = customPanelHtml || (details.length
       ? emailPanel(details.map(item => `<p style="margin:4px 0;font-size:14px;line-height:22px;overflow-wrap:anywhere;">${escapeHtml(item)}</p>`).join(""))
       : "");

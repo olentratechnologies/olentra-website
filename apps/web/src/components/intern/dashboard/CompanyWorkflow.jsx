@@ -213,6 +213,8 @@ export function ApplicantWorkflow({ applicationId }) {
   const canEnrollDirect =
     isAdmin && ["Applied", "Under Review", "Shortlisted", "Selected"].includes(application.status) &&
     offer?.status !== "Accepted";
+  // An instant offer is a new offer, so it needs no offer already open.
+  const canInstantOffer = canEnrollDirect && offer?.status !== "Sent";
   // Interns enrolled directly are already active; staff sign off their documents afterwards.
   const joinedPendingOnboarding =
     isAdmin && application.status === "Joined" && offer?.status === "Accepted" &&
@@ -351,7 +353,7 @@ export function ApplicantWorkflow({ applicationId }) {
                   <dd>{formatDeadline(offer.expiresOn)} · {offerTimeLeft(offer.expiresOn)?.label}</dd>
                 </div>}
               </dl>
-              {isAdmin && offer.status === "Sent" && (() => {
+              {isAdmin && offer.status === "Sent" && offer.route !== "instant" && (() => {
                 // New deadlines count from today and must still close the lead time before the start date.
                 const longest = maxOpenDays(offer.startOn, today, leadDays);
                 const current = offer.expiresOn ? civilDaysBetween(today, deadlineDay(offer.expiresOn)) : 0;
@@ -367,6 +369,7 @@ export function ApplicantWorkflow({ applicationId }) {
                   <Button variant="secondary" disabled={busy} onClick={async () => { setBusy(true); try { await perform(() => commands.extendOffer(applicationId, chosen), notify, "Deadline extended. The applicant has been emailed."); } finally { setBusy(false); } }}>Extend deadline</Button>
                 </div>;
               })()}
+              {offer.route === "instant" && offer.status === "Sent" && <p className={styles.hint}>Instant offer · open until the end of the start date. To give more time, use Revise schedule to move the start date.</p>}
               {offer.route === "direct" && <p className={styles.hint}>Accepted in person{offer.agreementNote ? ` · ${offer.agreementNote}` : ""}{offer.acceptedByName ? ` · recorded by ${offer.acceptedByName}` : ""}</p>}
               {offer.message && <p>{offer.message}</p>}
               {(offer.respondedOn || offer.decidedOn) && (
@@ -383,15 +386,28 @@ export function ApplicantWorkflow({ applicationId }) {
               <legend>How is this internship being given?</legend>
               <label data-selected={route === "offer"}>
                 <input type="radio" name="internship-route" value="offer" checked={route === "offer"} onChange={() => setRoute("offer")} />
-                <span><strong>Send offer</strong><small>The student reviews and accepts online before a deadline. Use this for normal hiring.</small></span>
+                <span><strong>Send offer</strong><small>The student accepts online before a deadline that closes {leadDays} days before the start date. Use this for normal hiring.</small></span>
               </label>
+              {canInstantOffer && <label data-selected={route === "instant"}>
+                <input type="radio" name="internship-route" value="instant" checked={route === "instant"} onChange={() => setRoute("instant")} />
+                <span><strong>Instant offer</strong><small>You pick the start date. The student activates their portal now and accepts or declines by the end of that day. Accepting makes them an intern straight away.</small></span>
+              </label>}
               <label data-selected={route === "direct"}>
                 <input type="radio" name="internship-route" value="direct" checked={route === "direct"} onChange={() => setRoute("direct")} />
                 <span><strong>Enrol directly</strong><small>The student has already agreed (in person or on a call). They become an intern immediately and get portal access and their offer letter by email.</small></span>
               </label>
             </fieldset>
           )}
-          {canEnrollDirect && route === "direct" ? (
+          {canInstantOffer && route === "instant" ? (
+            <DirectEnrolForm
+              mode="instant"
+              application={application}
+              settings={data.settings}
+              maxStipend={data.programs.find((program) => program.id === application?.programId)?.stipend ?? 0}
+              commands={commands}
+              notify={notify}
+            />
+          ) : canEnrollDirect && route === "direct" ? (
             <DirectEnrolForm
               application={application}
               settings={data.settings}

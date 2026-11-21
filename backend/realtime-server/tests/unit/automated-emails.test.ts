@@ -20,9 +20,9 @@ function fixture() {
 }
 const options = { schedule: {durationLabel:"1 calendar month",startOn:"2030-01-24",endOn:"2030-02-23",workMode:"Remote",schedule:"Part-time"}, to: "intern@example.test", name: "Alex <Kumar>", programName: "Software Engineer Intern", applicationId: "OL-123", scheduledAt: "2030-01-15T10:00:00.000Z", meetingUrl: "https://example.test/meeting", portalUrl: "https://example.test/intern/portal", magicLinkUrl: "https://example.test/intern/verify?token=one-time", linkedinShareUrl: "https://www.linkedin.com/feed/?shareActive=true", certificateVerifyUrl: "https://example.test/certificates/verify/CERT-123", interviewId: "INTV-123", sequence: 2 };
 
-test("all seventeen defaults render required links and details, with no portal links before selection", () => {
+test("all eighteen defaults render required links and details, with no portal links before selection", () => {
   const mailer = createInternshipMailer("");
-  expect(AUTOMATED_EMAILS).toHaveLength(17);
+  expect(AUTOMATED_EMAILS).toHaveLength(18);
   for (const definition of AUTOMATED_EMAILS) {
     const template = validateEmailTemplate(definition.id, definition);
     const rendered = mailer.renderAutomated(definition.id, options, template);

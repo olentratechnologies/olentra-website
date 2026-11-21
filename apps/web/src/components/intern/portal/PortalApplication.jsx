@@ -118,7 +118,7 @@ export default function PortalApplication() {
       <Celebration
         open={celebrating}
         title={`Welcome aboard${application.name ? `, ${application.name.split(/\s+/)[0]}` : ""}!`}
-        message={`You’ve accepted your offer for ${application.program || "the Olentra internship"}. You’re officially part of the team — your onboarding checklist is ready.`}
+        message={`You’ve accepted your offer for ${application.program || "the Olentra internship"}. You’re officially part of the team — ${offer?.route === "instant" ? "your internship workspace is open. Upload your onboarding documents next." : "your onboarding checklist is ready."}`}
         actionLabel="Start onboarding"
         onAction={() => {
           setCelebrating(false);
@@ -126,7 +126,7 @@ export default function PortalApplication() {
         }}
         onClose={() => {
           setCelebrating(false);
-          notify("Offer accepted. Your onboarding is ready to complete.");
+          notify(offer?.route === "instant" ? "Offer accepted. Your internship workspace is ready." : "Offer accepted. Your onboarding is ready to complete.");
         }}
       />
       <Heading
