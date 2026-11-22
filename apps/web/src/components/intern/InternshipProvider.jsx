@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { InternClient, internAuth, refreshInternSession, forgetInternToken, internLogoutPending, internCommandFailure } from "@/lib/intern-client.mjs";
+import { InternClient, internAuth, refreshInternSession, forgetInternToken, internLogoutPending, internCommandFailure, submitApplication } from "@/lib/intern-client.mjs";
 import { createSnapshotRefresh } from "@/lib/intern-snapshot-refresh.mjs";
 import { prepareInternSession } from "@/lib/intern-session-startup.mjs";
 import { createInternQueryCache } from "@/lib/intern-query-cache.mjs";
@@ -38,8 +38,6 @@ function shapeSnapshot(snapshot) {
 }
 export function InternshipProvider({ children }) {
   const [snapshot,setSnapshot]=useState(()=>shapeSnapshot(null)), [ready,setReady]=useState(false), [authReady,setAuthReady]=useState(false), [sessionReady,setSessionReady]=useState(false), [authUnavailable,setAuthUnavailable]=useState(false), [connected,setConnected]=useState(false), [workspaceState,setWorkspaceState]=useState(null), [sessionNotice,setSessionNotice]=useState(""), [toast,setToast]=useState(""), [query,setQuery]=useState(""), [dateRange,setDateRange]=useState("all"), [notificationDialog,setNotificationDialog]=useState(false);
-  const publicClient = useRef(null);
-  useEffect(() => () => { publicClient.current?.close(); publicClient.current = null; }, []);
   const client = useRef(null), snapshotRef = useRef(snapshot), mounted = useRef(false), refreshTimer = useRef(null), applicationCache = useRef(new Map()), snapshotVersion = useRef(0), refreshCoordinator = useRef(null), queryCacheRef = useRef(null);
   snapshotRef.current = snapshot;
   const notify = useCallback(message=>setToast(message),[]);
@@ -134,9 +132,8 @@ export function InternshipProvider({ children }) {
   const commands=useMemo(()=>({
     // Each email can submit one application; repeated requests with a new key are rejected.
     submitApplication:async payload=>{
-      // Keep the public application independent of the signed-in dashboard.
-      publicClient.current ||= new InternClient({ publicOnly: true });
-      try { const data=await publicClient.current.request("application.submit",payload,true); void invalidateSnapshot(); return {ok:true,data}; }
+      // One plain HTTPS request, independent of the signed-in dashboard's WebSocket.
+      try { const data=await submitApplication(payload); void invalidateSnapshot(); return {ok:true,data}; }
       catch(error) { return internCommandFailure(error); }
     },
     saveAutomatedEmail:template=>call("automatedEmail.save",{id:template.id,subject:template.subject,body:template.body}), previewAutomatedEmail:template=>call("automatedEmail.preview",{id:template.id,subject:template.subject,body:template.body},false), resetAutomatedEmail:id=>call("automatedEmail.reset",{id}),

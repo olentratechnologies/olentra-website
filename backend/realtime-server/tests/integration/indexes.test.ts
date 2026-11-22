@@ -52,3 +52,15 @@ test("the staff snapshot says when it is showing only the newest applications", 
   expect(full.data.truncated.applications).toBe(true);
   expect(full.data.applications).toHaveLength(100);
 });
+
+test("every lookup in an application submit is index-backed", async () => {
+  const byIndexOrId = (plan: unknown) => { const text = JSON.stringify(plan); return /IXSCAN|IDHACK/.test(text) && !text.includes("COLLSCAN"); };
+  const applications = domain.collection("applications");
+  expect(usesIndex(await applications.find({ email: "candidate@example.test" }).limit(1).explain())).toBe(true);
+  expect(usesIndex(await applications.find({ linkedinKey: "linkedin.com/in/candidate" }).limit(5).explain())).toBe(true);
+  expect(byIndexOrId(await domain.collection("commands").find({ _id: `anonymous:${randomUUID()}` }).limit(1).explain())).toBe(true);
+  expect(byIndexOrId(await domain.collection("files").find({ _id: randomUUID(), kind: "resume", status: "ready" }).limit(1).explain())).toBe(true);
+  expect(byIndexOrId(await domain.collection("programs").find({ _id: "software-engineer" }).limit(1).explain())).toBe(true);
+  const names = (await applications.indexes()).map(index => index.name);
+  expect(names).toEqual(expect.arrayContaining(["email_1", "linkedinKey_1"]));
+});

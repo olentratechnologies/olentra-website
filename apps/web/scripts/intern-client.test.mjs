@@ -214,3 +214,41 @@ test("public application and resume upload leave a signed-in staff session intac
     assert.equal(internToken(), "staff-session");
   } finally { client.close(); forgetInternToken(); globalThis.fetch = originalFetch; }
 });
+
+test("the apply form submits over one HTTP request and reuses its key on retry", async () => {
+  const { submitApplication } = await import("../src/lib/intern-client.mjs");
+  const calls = [];
+  let failFirst = true;
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, options });
+    if (failFirst) { failFirst = false; throw new TypeError("network down"); }
+    return { ok: true, status: 200, json: async () => ({ ok: true, data: { received: true, applicationId: "OL-1" } }) };
+  };
+  const payload = { email: "candidate@example.test", name: "Candidate" };
+  assert.deepEqual(await submitApplication(payload, { fetchImpl }), { received: true, applicationId: "OL-1" });
+  assert.equal(calls.length, 2);
+  assert.match(calls[0].url, /\/intern\/applications$/);
+  assert.equal(calls[0].options.method, "POST");
+  assert.equal(calls[0].options.credentials, "omit");
+  assert.equal(calls[0].options.headers["Content-Type"], "application/json");
+  assert.match(calls[0].options.headers["Idempotency-Key"], /^[a-f0-9]{32}$/);
+  assert.equal(calls[1].options.headers["Idempotency-Key"], calls[0].options.headers["Idempotency-Key"]);
+  assert.deepEqual(JSON.parse(calls[0].options.body), payload);
+});
+
+test("application errors keep their code and a fresh key follows a rejection", async () => {
+  const { submitApplication, internCommandFailure } = await import("../src/lib/intern-client.mjs");
+  const keys = [];
+  const fetchImpl = async (_url, options) => {
+    keys.push(options.headers["Idempotency-Key"]);
+    return { ok: false, status: 409, json: async () => ({ ok: false, error: { code: "ALREADY_APPLIED", message: "An application already exists for this email address." } }) };
+  };
+  const payload = { email: "dupe@example.test" };
+  const error = await submitApplication(payload, { fetchImpl }).catch(caught => caught);
+  assert.deepEqual(internCommandFailure(error), { ok: false, error: "An application already exists for this email address.", errorCode: "ALREADY_APPLIED" });
+  await submitApplication(payload, { fetchImpl }).catch(() => {});
+  assert.equal(keys.length, 2);
+  assert.notEqual(keys[0], keys[1]);
+  const unavailable = await submitApplication({ email: "x@example.test" }, { fetchImpl: async () => ({ ok: false, status: 502, json: async () => { throw new Error("html"); } }) }).catch(caught => caught);
+  assert.equal(unavailable.code, "SERVICE_UNAVAILABLE");
+});

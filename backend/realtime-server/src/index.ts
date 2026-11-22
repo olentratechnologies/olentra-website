@@ -1,3 +1,4 @@
+import { createIntakeCheck } from "./modules/programs/intake-cache";
 import { connectInternDatabase, createInternshipDomain } from "./app/command-dispatcher";
 import { createRealtimeServer } from "./app/create-service";
 import { readRealtimeEnvironment } from "./config/env";
@@ -47,13 +48,14 @@ async function initializeInternship() {
     connection = await connectInternDatabase(environment.mongodbUri);
     stage = "internship module setup (including file storage)";
     const site = environment.siteOrigin;
-    const domain = createInternshipDomain({ ...connection, intakeOpen: async () => {
-      try {
-        const response = await fetch(new URL("/api/site-features", site), { signal: AbortSignal.timeout(3000) });
-        const state = await response.json() as { features?: { internships?: boolean; applications?: boolean } };
-        return response.ok && state.features?.internships === true && state.features?.applications === true;
-      } catch { return false; }
-    } });
+    // Cached so a burst of applications doesn't call the website once per submit.
+    const intakeOpen = createIntakeCheck(async () => {
+      const response = await fetch(new URL("/api/site-features", site), { signal: AbortSignal.timeout(3000) });
+      if (!response.ok) throw new Error(`Site features answered ${response.status}`);
+      const state = await response.json() as { features?: { internships?: boolean; applications?: boolean } };
+      return state.features?.internships === true && state.features?.applications === true;
+    });
+    const domain = createInternshipDomain({ ...connection, intakeOpen });
     await realtime.attachInternship({ domain, secret: await loadJwtSecret(environment.jwtSecret), siteOrigin: site });
     retryDelay = 1000;
     logger.info("Internship modules attached", { mongodb: "connected" });

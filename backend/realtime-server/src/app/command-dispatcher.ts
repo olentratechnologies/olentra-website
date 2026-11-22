@@ -418,8 +418,11 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         message: "Thanks for applying. Check your email for your application reference ID and next steps.",
         applicationId: appId || undefined,
       });
+      // Checked before the transaction so no transaction waits on the network; a replay of an
+      // already-saved submission still returns its stored result inside `transact`.
+      const open = await intakeOpen();
       return transact(key, null, { method, params }, async session => {
-        if (!(await intakeOpen())) throw new DomainError("CLOSED", "Internship applications are currently closed.");
+        if (!open) throw new DomainError("CLOSED", "Internship applications are currently closed.");
         const existing = await applications.findOne({ email }, { session });
         if (existing) throw alreadyApplied();
         const program = await programs.findOne({ _id: programId }, { session });

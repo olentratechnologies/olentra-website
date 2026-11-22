@@ -81,6 +81,55 @@ export async function refreshInternSession() {
 }
 export function forgetInternToken() { accessToken = null; clearRefreshAttempt(); }
 
+// The public apply form submits with one plain HTTPS request (no WebSocket).
+// Retrying the same application reuses its Idempotency-Key, so a resend after a
+// network drop returns the original reference ID instead of creating a duplicate.
+const applicationRetryKeys = new Map();
+export async function submitApplication(payload, { fetchImpl = globalThis.fetch, timeoutMs = 20000 } = {}) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(payload)));
+  const fingerprint = Array.from(new Uint8Array(bytes), value => value.toString(16).padStart(2, "0")).join("");
+  const now = Date.now();
+  for (const [hash, value] of applicationRetryKeys) if (now - value.createdAt > 60 * 60 * 1000) applicationRetryKeys.delete(hash);
+  let saved = applicationRetryKeys.get(fingerprint);
+  if (!saved) {
+    if (applicationRetryKeys.size >= 128) applicationRetryKeys.delete(applicationRetryKeys.keys().next().value);
+    saved = { key: crypto.randomUUID().replaceAll("-", ""), createdAt: now };
+    applicationRetryKeys.set(fingerprint, saved);
+  }
+  const attempt = async () => {
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), timeoutMs);
+    try {
+      const response = await fetchImpl(`${endpoint()}/intern/applications`, {
+        method: "POST",
+        credentials: "omit",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": saved.key },
+        body: JSON.stringify(payload),
+        signal: abort.signal,
+      });
+      let body = null;
+      try { body = await response.json(); } catch { /* non-JSON answer from a proxy */ }
+      if (!response.ok || !body?.ok) throw apiError(body?.error || (response.status >= 500 ? { code: "SERVICE_UNAVAILABLE" } : undefined));
+      return body.data;
+    } catch (error) {
+      if (error?.code) throw error;
+      throw apiError(undefined); // network failure or timeout: no code, safe to retry
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  try {
+    let data;
+    try { data = await attempt(); }
+    catch (error) { if (error.code) throw error; data = await attempt(); }
+    applicationRetryKeys.delete(fingerprint);
+    return data;
+  } catch (error) {
+    if (!uncertainError(error)) applicationRetryKeys.delete(fingerprint);
+    throw error;
+  }
+}
+
 export class InternClient {
   constructor({ onChange, onConnection, onSessionChanged, publicOnly = false }) { this.publicOnly = publicOnly; this.onChange = onChange; this.onConnection = onConnection; this.onSessionChanged = onSessionChanged; this.pending = new Map(); this.retryKeys = new Map(); this.closed = false; this.socket = null; this.opening = null; this.authenticatedToken = null; this.authenticatedAccount = null; this.fileListeners = new Set(); this.insightsListeners = new Set(); this.staffListeners = new Set(); }
   addFileListener(listener) { this.fileListeners.add(listener); return () => this.fileListeners.delete(listener); }

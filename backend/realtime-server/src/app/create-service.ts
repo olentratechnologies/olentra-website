@@ -1,3 +1,4 @@
+import { APPLICATIONS_PATH, createApplicationRoutes } from "../interfaces/http/applications.routes";
 import type { Server, ServerWebSocket } from "bun";
 import { DomainError } from "../shared/errors";
 import type { createInternshipDomain } from "./command-dispatcher";
@@ -43,6 +44,7 @@ type InternshipRuntime = {
   domain: Domain;
   authRoutes: ReturnType<typeof createAuthRoutes>;
   fileRoutes: ReturnType<typeof createFilesRoutes>;
+  applicationRoutes: ReturnType<typeof createApplicationRoutes>;
   directUploads?: DirectUploads;
   limiter: RateLimiter;
   siteFeatures: ReturnType<typeof createSiteFeatureStore>;
@@ -337,12 +339,14 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const turnstileSecret = process.env.INTERNSHIP_TURNSTILE_SECRET_KEY;
     const resumeGrants = turnstileSecret ? createResumeGrants(secret, turnstileSecret) : undefined;
     const fileRoutes = createFilesRoutes({ auth, bucket, files, withCors, sendJson, limiter, resumeGrants, direct: directUploads, directEnabled, objectStore });
+    const applicationRoutes = createApplicationRoutes({ execute: (method, params, actor, key) => domain.execute(method, params, actor, key), limiter, sendJson });
     const siteFeatures = createSiteFeatureStore(domain.collection("site_features") as any);
     const nextRuntime: InternshipRuntime = {
       auth,
       domain,
       authRoutes,
       fileRoutes,
+      applicationRoutes,
       directUploads,
       limiter,
       siteFeatures,
@@ -406,6 +410,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           const body = await request.json() as { state?: unknown; expectedRevision?: unknown };
           return sendJson({ ok: true, data: await runtime.siteFeatures.write(body.state, Number(body.expectedRevision)) }, origin);
         }
+        if (url.pathname === APPLICATIONS_PATH && request.method === "POST") return await runtime.applicationRoutes.submit(request, origin);
         if (url.pathname === RESUME_GRANT_PATH && request.method === "POST") return await runtime.fileRoutes.authorizeResume(request, origin);
         if (url.pathname === "/intern/files/config" && request.method === "GET") return sendJson({ ok: true, data: { directUploads: Boolean(runtime.directUploads) } }, origin);
         if (runtime.directUploads) {
