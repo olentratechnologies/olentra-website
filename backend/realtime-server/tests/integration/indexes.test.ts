@@ -56,6 +56,9 @@ test("the staff snapshot says when it is showing only the newest applications", 
 test("every lookup in an application submit is index-backed", async () => {
   const byIndexOrId = (plan: unknown) => { const text = JSON.stringify(plan); return /IXSCAN|IDHACK/.test(text) && !text.includes("COLLSCAN"); };
   const applications = domain.collection("applications");
+  // A collection that doesn't exist yet explains as an empty plan, so give each one a row first.
+  await domain.collection("commands").insertOne({ _id: `anonymous:${randomUUID()}`, fingerprint: "x", result: {}, createdAt: new Date() });
+  await domain.collection("files").insertOne({ _id: randomUUID(), kind: "resume", status: "ready" });
   expect(usesIndex(await applications.find({ email: "candidate@example.test" }).limit(1).explain())).toBe(true);
   expect(usesIndex(await applications.find({ linkedinKey: { $eq: "linkedin.com/in/candidate", $type: "string" } }).limit(5).explain())).toBe(true);
   expect(byIndexOrId(await domain.collection("commands").find({ _id: `anonymous:${randomUUID()}` }).limit(1).explain())).toBe(true);
