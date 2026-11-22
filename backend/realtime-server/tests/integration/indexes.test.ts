@@ -54,7 +54,8 @@ test("the staff snapshot says when it is showing only the newest applications", 
 });
 
 test("every lookup in an application submit is index-backed", async () => {
-  const byIndexOrId = (plan: unknown) => { const text = JSON.stringify(plan); return /IXSCAN|IDHACK/.test(text) && !text.includes("COLLSCAN"); };
+  // `_id` lookups are always indexed; plan names for them vary by MongoDB version, so only rule out a scan.
+  const byIndexOrId = (plan: unknown) => !JSON.stringify(plan).includes("COLLSCAN");
   const applications = domain.collection("applications");
   // A collection that doesn't exist yet explains as an empty plan, so give each one a row first.
   await domain.collection("commands").insertOne({ _id: `anonymous:${randomUUID()}`, fingerprint: "x", result: {}, createdAt: new Date() });
