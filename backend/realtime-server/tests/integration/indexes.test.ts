@@ -57,7 +57,7 @@ test("every lookup in an application submit is index-backed", async () => {
   const byIndexOrId = (plan: unknown) => { const text = JSON.stringify(plan); return /IXSCAN|IDHACK/.test(text) && !text.includes("COLLSCAN"); };
   const applications = domain.collection("applications");
   expect(usesIndex(await applications.find({ email: "candidate@example.test" }).limit(1).explain())).toBe(true);
-  expect(usesIndex(await applications.find({ linkedinKey: "linkedin.com/in/candidate" }).limit(5).explain())).toBe(true);
+  expect(usesIndex(await applications.find({ linkedinKey: { $eq: "linkedin.com/in/candidate", $type: "string" } }).limit(5).explain())).toBe(true);
   expect(byIndexOrId(await domain.collection("commands").find({ _id: `anonymous:${randomUUID()}` }).limit(1).explain())).toBe(true);
   expect(byIndexOrId(await domain.collection("files").find({ _id: randomUUID(), kind: "resume", status: "ready" }).limit(1).explain())).toBe(true);
   expect(byIndexOrId(await domain.collection("programs").find({ _id: "software-engineer" }).limit(1).explain())).toBe(true);

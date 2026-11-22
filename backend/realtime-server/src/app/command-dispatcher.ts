@@ -438,7 +438,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const profileKey = linkedinKey(linkedin);
         if (profileKey) {
           row.linkedinKey = profileKey;
-          const matches = (await applications.find({ linkedinKey: profileKey }, { session, projection: { _id: 1 }, limit: 5 }).toArray()).map(match => String(match._id));
+          // `$type` matches the partial index filter, so this lookup uses the index instead of scanning.
+          const matches = (await applications.find({ linkedinKey: { $eq: profileKey, $type: "string" } }, { session, projection: { _id: 1 }, limit: 5 }).toArray()).map(match => String(match._id));
           if (matches.length) {
             row.possibleDuplicates = matches;
             await applications.updateMany({ _id: { $in: matches } }, { $addToSet: { possibleDuplicates: applicationId } } as any, { session });
