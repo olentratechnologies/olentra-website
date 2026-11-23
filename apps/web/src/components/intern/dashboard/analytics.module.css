@@ -850,3 +850,5 @@
   font: inherit;
   font-size: 13px;
 }
+
+.chartHeader, .chartHeaderRight, .legend { flex-wrap: wrap; }

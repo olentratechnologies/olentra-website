@@ -130,3 +130,10 @@
     transition: none;
   }
 }
+
+.board {
+  min-width: 0;
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+}
+.column { min-width: 0; overflow-wrap: anywhere; }

@@ -1308,3 +1308,13 @@
     width: 100%;
   }
 }
+
+.resetPage .authLayout, .resetPage .authPanel, .verifyResendControls input { min-width: 0; }
+@media (max-width: 680px), (max-height: 500px) {
+  .resetPage, .verifyPage {
+    min-height: 100dvh;
+    padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+  .resetPage .authForm input { font-size: 16px; }
+}

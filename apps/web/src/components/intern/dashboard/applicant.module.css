@@ -1439,3 +1439,51 @@
   cursor: progress;
   opacity: 0.6;
 }
+
+.columnHeader, .columnOption, .columnOption label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.columnHeader { cursor: grab; }
+.columnOptions {
+  display: grid;
+  max-height: 55vh;
+  overflow: auto;
+}
+.columnOption {
+  padding: 5px 2px;
+  border-bottom: 1px solid var(--ad-border, #d1defb);
+}
+.columnOption label { flex: 1; }
+.columnOption button {
+  display: grid;
+  place-items: center;
+  padding: 5px;
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--ad-border, #d1defb);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.columnOption button:disabled { opacity: .35; cursor: default; }
+
+/* Allow search and actions to use separate lines as the workspace narrows. */
+.listToolbar, .listToolbarRight, .resumeActions {
+  flex-wrap: wrap;
+}
+.listToolbarRight {
+  min-width: 0;
+  max-width: 100%;
+  justify-content: flex-start;
+}
+.pageSize, .pageSize select { min-width: 0; max-width: 100%; }
+.pageSize select { flex: 1 1 auto; }
+.columnOptions { max-height: 55dvh; overscroll-behavior-y: contain; }
+.columnOption label { min-width: 0; overflow-wrap: anywhere; }
+@media (pointer: coarse) {
+  .columnOption button { min-width: 44px; min-height: 44px; }
+}
+@media (max-width: 680px) {
+  .listToolbarRight { gap: 8px; }
+}

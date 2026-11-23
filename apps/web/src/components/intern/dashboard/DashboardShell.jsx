@@ -274,6 +274,7 @@ export default function DashboardShell({ children }) {
       )}
       <aside
         className={`${styles.sidebar} ${mobileNav ? styles.sidebarOpen : ""}`}
+        id="intern-dashboard-sidebar"
         aria-label="Internship workspace"
       >
         <Link
@@ -329,6 +330,8 @@ export default function DashboardShell({ children }) {
           <button
             className={styles.menuButton}
             aria-label="Open navigation"
+            aria-controls="intern-dashboard-sidebar"
+            aria-expanded={mobileNav}
             onClick={() => setMobileNav(true)}
           >
             <Menu size={23} />

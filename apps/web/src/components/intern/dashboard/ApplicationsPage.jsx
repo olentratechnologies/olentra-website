@@ -8,6 +8,8 @@ import {
   ArrowUp,
   ArrowUpDown,
   Check,
+  Columns3,
+  GripVertical,
   RotateCcw,
   SlidersHorizontal,
   Sparkles,
@@ -77,6 +79,22 @@ function applicationMetric(data, id, label, value, tone, icon) {
 
 const VIDEOS_FIRST_KEY = "olentra_applications_videos_first_v1";
 const LAYOUT_KEY = "olentra_applications_layout_v1";
+
+const COLUMN_SORT_KEYS = {
+  Applicant: "name", Track: "program", College: "college", "Applied On": "appliedOn",
+  Status: "status", Score: "score", "AI Score": "aiScore",
+  "AI Recommendation": null, Reviewer: null, Actions: null,
+};
+const DEFAULT_COLUMNS = Object.keys(COLUMN_SORT_KEYS);
+const COLUMNS_KEY = "olentra_application_columns_v1";
+
+function moveColumn(order, source, target) {
+  const index = order.indexOf(target);
+  if (!order.includes(source) || index < 0 || source === target) return order;
+  const next = order.filter((column) => column !== source);
+  next.splice(index, 0, source);
+  return next;
+}
 
 export default function ApplicationsPage() {
   const { data, query, setQuery, notify, updateApplication, account } = useDashboard();
@@ -175,7 +193,31 @@ export default function ApplicationsPage() {
     void viewsQuery.refresh();
   }
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const [columnOrder, setColumnOrder] = useState(DEFAULT_COLUMNS);
+  const [hiddenColumns, setHiddenColumns] = useState([]);
+  const [columnsLoaded, setColumnsLoaded] = useState(false);
+  const draggedColumn = useRef(null);
+  const visibleColumns = columnOrder.filter((column) => !hiddenColumns.includes(column));
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(COLUMNS_KEY));
+      if (Array.isArray(saved?.order) && Array.isArray(saved.hidden)) {
+        const order = [...new Set([...saved.order.filter((id) => DEFAULT_COLUMNS.includes(id)), ...DEFAULT_COLUMNS])];
+        setColumnOrder(order);
+        const hidden = order.filter((id) => saved.hidden.includes(id));
+        setHiddenColumns(hidden.length === order.length ? [] : hidden);
+      }
+    } catch { /* Browser storage may be unavailable. */ }
+    setColumnsLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (columnsLoaded) {
+      try { localStorage.setItem(COLUMNS_KEY, JSON.stringify({ order: columnOrder, hidden: hiddenColumns })); }
+      catch { /* Preferences still apply for this session. */ }
+    }
+  }, [columnOrder, hiddenColumns, columnsLoaded]);
+  const [pageSize, setPageSize] = useState(25);
   const [sort, setSort] = useState({ key: "appliedOn", direction: "desc" });
   const [editingApplication, setEditingApplication] = useState(null);
   const [nextStatus, setNextStatus] = useState("");
@@ -447,6 +489,108 @@ export default function ApplicationsPage() {
     }
   }
 
+  function renderCell(column, application) {
+    switch (column) {
+      case "Applicant":
+        return (
+          <td key={column}>
+            <div className={styles.applicantCell}>
+              <Link
+                className={styles.applicantLink}
+                href={`/intern/dashboard/applications/${application.id}`}
+              >
+                <Avatar person={application} size={31} />
+                <span>{application.name}</span>
+                {application.hasVideo && (
+                  <span className={styles.videoBadge} title="Intro video shared">
+                    <Video size={12} aria-hidden="true" />
+                    <span className={styles.srOnlyText}>Intro video shared</span>
+                  </span>
+                )}
+              </Link>
+              <BookmarkToggle
+                bookmarked={bookmarks.isBookmarked(application)}
+                name={application.name}
+                by={application.bookmarkedByName}
+                on={application.bookmarkedOn}
+                canEdit={canReview}
+                busy={bookmarks.isBusy(application)}
+                onToggle={(next) => void bookmarks.setBookmarked([application], next)}
+              />
+            </div>
+          </td>
+        );
+      case "Track":
+        return (
+          <td key={column}>
+            <TrackBadge programId={application.programId} />
+            <small>{internScheduleLabel(application.schedule)}</small>
+          </td>
+        );
+      case "College":
+        return (
+          <td key={column} className={styles.collegeCell}>
+            {application.college || "Not provided"}
+          </td>
+        );
+      case "Applied On":
+        return (
+          <td key={column}>{formatDate(application.appliedOn)}</td>
+        );
+      case "Status":
+        return (
+          <td key={column}>
+            <StatusBadge status={application.status} />
+          </td>
+        );
+      case "Score":
+        return (
+          <td key={column} className={styles.scoreCell}>
+            {typeof application.score === "number" ? application.score.toFixed(1) : <span aria-label="Not scored">—</span>}
+          </td>
+        );
+      case "AI Score":
+        return (
+          <td key={column} className={styles.scoreCell}>
+            {canReview && application.resumeAttachmentId && application.aiReviewStatus !== "pending" && typeof application.aiScore !== "number"
+              ? <button type="button" className={styles.aiGetScore} disabled={aiQueuing.has(application.id)} onClick={() => void queueAiReview(application)}>{aiQueuing.has(application.id) ? "Queuing…" : application.aiReviewStatus === "manual" ? "Retry" : "Get score"}</button>
+              : <AiScore application={application} />}
+          </td>
+        );
+      case "AI Recommendation":
+        return (
+          <td key={column}><AiRecommendationBadge application={application} /></td>
+        );
+      case "Reviewer":
+        return (
+          <td key={column} className={styles.reviewerCell}>{application.assignedToName || <span aria-label="Unassigned">—</span>}</td>
+        );
+      case "Actions":
+        return (
+          <td key={column} className={styles.actionCell}>
+            <RowMenu
+              items={[
+                {
+                  label: "View application",
+                  href: `/intern/dashboard/applications/${application.id}`,
+                },
+                ...(canResume && application.resumeAttachmentId ? [{ label: "View resume", onClick: () => setResumeApplication(application) }] : []),
+                ...(canReview && application.resumeAttachmentId && application.aiReviewStatus !== "pending" ? [{ label: application.aiRecommendation ? "Re-scan resume with AI" : "Get AI score", onClick: () => void queueAiReview(application) }] : []),
+                ...(isAdmin ? [{ label: "Delete application", danger: true, onClick: () => setDeletingApplication(application) }] : []),
+                ...(canReview && (isAdmin || ["Applied", "Under Review", "Shortlisted"].includes(application.status)) ? [{
+                  label: "Update status",
+                  onClick: () => {
+                    setEditingApplication(application);
+                    setNextStatus(application.status);
+                  },
+                }] : []),
+              ]}
+            />
+          </td>
+        );
+    }
+  }
+
   function SortHeading({ label, sortKey }) {
     const active = sort.key === sortKey;
     const Icon = active
@@ -646,6 +790,11 @@ export default function ApplicationsPage() {
                 Reset
               </Button>
             )}
+            {layout === "table" && (
+              <Button variant="ghost" onClick={() => setColumnsOpen(true)}>
+                <Columns3 size={15} /> Columns
+              </Button>
+            )}
             <label className={styles.pageSize}>
               Rows
               <select
@@ -719,86 +868,33 @@ export default function ApplicationsPage() {
                       />
                     </th>
                   )}
-                  <th
-                    aria-sort={
-                      sort.key === "name"
-                        ? sort.direction === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <SortHeading label="Applicant" sortKey="name" />
-                  </th>
-                  <th
-                    aria-sort={
-                      sort.key === "program"
-                        ? sort.direction === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <SortHeading label="Track" sortKey="program" />
-                  </th>
-                  <th
-                    aria-sort={
-                      sort.key === "college"
-                        ? sort.direction === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <SortHeading label="College" sortKey="college" />
-                  </th>
-                  <th
-                    aria-sort={
-                      sort.key === "appliedOn"
-                        ? sort.direction === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <SortHeading label="Applied On" sortKey="appliedOn" />
-                  </th>
-                  <th
-                    aria-sort={
-                      sort.key === "status"
-                        ? sort.direction === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <SortHeading label="Status" sortKey="status" />
-                  </th>
-                  <th
-                    aria-sort={
-                      sort.key === "score"
-                        ? sort.direction === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <SortHeading label="Score" sortKey="score" />
-                  </th>
-                  <th
-                    aria-sort={
-                      sort.key === "aiScore"
-                        ? sort.direction === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                  >
-                    <SortHeading label="AI Score" sortKey="aiScore" />
-                  </th>
-                  <th>AI Recommendation</th>
-                  <th>Reviewer</th>
-                  <th className={styles.actionHeading}>Actions</th>
+                  {visibleColumns.map((column) => {
+                    const sortKey = COLUMN_SORT_KEYS[column];
+                    return (
+                      <th key={column} scope="col" draggable
+                        className={column === "Actions" ? styles.actionHeading : undefined}
+                        aria-sort={sortKey ? (sort.key === sortKey ? (sort.direction === "asc" ? "ascending" : "descending") : "none") : undefined}
+                        onDragStart={(event) => {
+                          draggedColumn.current = column;
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData("text/plain", column);
+                        }}
+                        onDragOver={(event) => { if (draggedColumn.current) event.preventDefault(); }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const source = draggedColumn.current;
+                          setColumnOrder((order) => moveColumn(order, source, column));
+                          draggedColumn.current = null;
+                        }}
+                        onDragEnd={() => { draggedColumn.current = null; }}
+                      >
+                        <span className={styles.columnHeader}>
+                          <GripVertical size={13} aria-hidden="true" />
+                          {sortKey ? <SortHeading label={column} sortKey={sortKey} /> : column}
+                        </span>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -816,73 +912,7 @@ export default function ApplicationsPage() {
                         />
                       </td>
                     )}
-                    <td>
-                      <div className={styles.applicantCell}>
-                        <Link
-                          className={styles.applicantLink}
-                          href={`/intern/dashboard/applications/${application.id}`}
-                        >
-                          <Avatar person={application} size={31} />
-                          <span>{application.name}</span>
-                          {application.hasVideo && (
-                            <span className={styles.videoBadge} title="Intro video shared">
-                              <Video size={12} aria-hidden="true" />
-                              <span className={styles.srOnlyText}>Intro video shared</span>
-                            </span>
-                          )}
-                        </Link>
-                        <BookmarkToggle
-                          bookmarked={bookmarks.isBookmarked(application)}
-                          name={application.name}
-                          by={application.bookmarkedByName}
-                          on={application.bookmarkedOn}
-                          canEdit={canReview}
-                          busy={bookmarks.isBusy(application)}
-                          onToggle={(next) => void bookmarks.setBookmarked([application], next)}
-                        />
-                      </div>
-                    </td>
-                    <td>
-                      <TrackBadge programId={application.programId} />
-                      <small>{internScheduleLabel(application.schedule)}</small>
-                    </td>
-                    <td className={styles.collegeCell}>
-                      {application.college || "Not provided"}
-                    </td>
-                    <td>{formatDate(application.appliedOn)}</td>
-                    <td>
-                      <StatusBadge status={application.status} />
-                    </td>
-                    <td className={styles.scoreCell}>
-                      {typeof application.score === "number" ? application.score.toFixed(1) : <span aria-label="Not scored">—</span>}
-                    </td>
-                    <td className={styles.scoreCell}>
-                      {canReview && application.resumeAttachmentId && application.aiReviewStatus !== "pending" && typeof application.aiScore !== "number"
-                        ? <button type="button" className={styles.aiGetScore} disabled={aiQueuing.has(application.id)} onClick={() => void queueAiReview(application)}>{aiQueuing.has(application.id) ? "Queuing…" : application.aiReviewStatus === "manual" ? "Retry" : "Get score"}</button>
-                        : <AiScore application={application} />}
-                    </td>
-                    <td><AiRecommendationBadge application={application} /></td>
-                    <td className={styles.reviewerCell}>{application.assignedToName || <span aria-label="Unassigned">—</span>}</td>
-                    <td className={styles.actionCell}>
-                      <RowMenu
-                        items={[
-                          {
-                            label: "View application",
-                            href: `/intern/dashboard/applications/${application.id}`,
-                          },
-                          ...(canResume && application.resumeAttachmentId ? [{ label: "View resume", onClick: () => setResumeApplication(application) }] : []),
-                          ...(canReview && application.resumeAttachmentId && application.aiReviewStatus !== "pending" ? [{ label: application.aiRecommendation ? "Re-scan resume with AI" : "Get AI score", onClick: () => void queueAiReview(application) }] : []),
-                          ...(isAdmin ? [{ label: "Delete application", danger: true, onClick: () => setDeletingApplication(application) }] : []),
-                          ...(canReview && (isAdmin || ["Applied", "Under Review", "Shortlisted"].includes(application.status)) ? [{
-                            label: "Update status",
-                            onClick: () => {
-                              setEditingApplication(application);
-                              setNextStatus(application.status);
-                            },
-                          }] : []),
-                        ]}
-                      />
-                    </td>
+                    {visibleColumns.map((column) => renderCell(column, application))}
                   </tr>
                 ))}
               </tbody>
@@ -915,6 +945,32 @@ export default function ApplicationsPage() {
         </div>}
       </Panel>
 
+      <Modal open={columnsOpen} onOpenChange={setColumnsOpen} title="Customize columns"
+        description="Choose which columns appear. Drag a table header or use the arrows here to change the order.">
+        <div className={styles.columnOptions}>
+          {columnOrder.map((column, index) => (
+            <div key={column} className={styles.columnOption}>
+              <label>
+                <input type="checkbox" checked={!hiddenColumns.includes(column)}
+                  disabled={visibleColumns.length === 1 && visibleColumns[0] === column}
+                  onChange={(event) => {
+                    const show = event.target.checked;
+                    setHiddenColumns((hidden) => show ? hidden.filter((id) => id !== column) : [...hidden, column]);
+                  }} />
+                {column}
+              </label>
+              {[-1, 1].map((step) => (
+                <button key={step} type="button" aria-label={`Move ${column} ${step < 0 ? "earlier" : "later"}`}
+                  disabled={!columnOrder[index + step]}
+                  onClick={() => setColumnOrder(moveColumn(columnOrder, column, columnOrder[index + step]))}>
+                  {step < 0 ? <ArrowUp size={15} /> : <ArrowDown size={15} />}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+        <Button variant="ghost" onClick={() => { setColumnOrder(DEFAULT_COLUMNS); setHiddenColumns([]); }}>Restore default columns</Button>
+      </Modal>
       <Modal
         open={confirmScoreAll}
         onOpenChange={(open) => { if (!scoringAll) setConfirmScoreAll(open); }}

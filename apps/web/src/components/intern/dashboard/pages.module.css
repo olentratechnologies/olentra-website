@@ -839,3 +839,20 @@ span.bookmarkToggle {
   color: var(--ad-muted, #35558f);
   font-size: 11px;
 }
+
+.pageHeader, .toolbar, .panel { min-width: 0; overflow-wrap: anywhere; }
+.pageHeader > *, .filters, .actions { min-width: 0; max-width: 100%; }
+.tableWrap { overscroll-behavior-x: contain; }
+.filterPopover, .rowMenu {
+  max-width: calc(100vw - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.filterPopover { max-height: min(calc(100dvh - 24px), var(--radix-popover-content-available-height, 100dvh)); }
+.rowMenu { max-height: min(calc(100dvh - 24px), var(--radix-dropdown-menu-content-available-height, 100dvh)); }
+@media (max-width: 680px) {
+  .actions .button, .toolbar .button {
+    white-space: normal;
+    max-width: 100%;
+  }
+}

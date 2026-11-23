@@ -486,3 +486,7 @@
     min-height: 0;
   }
 }
+
+@media (max-height: 560px) {
+  .htmlPreview { min-height: 0; height: 75dvh; }
+}

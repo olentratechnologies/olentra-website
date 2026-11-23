@@ -3530,3 +3530,26 @@
   .acceptedOfferActions { align-items: stretch; flex-direction: column; }
   .acceptedOfferActions a { justify-content: center; text-align: center; }
 }
+
+.content { min-width: 0; overflow-wrap: anywhere; }
+.heading, .modalToolbar { flex-wrap: wrap; }
+.heading > *, .modalToolbar > *, .formGrid > *, .projectGrid > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.tableWrap { overscroll-behavior-x: contain; }
+@media (max-width: 680px) {
+  .field input, .field select, .field textarea { font-size: 16px; }
+}
+
+@media (max-width: 680px), (max-height: 500px) {
+  .main {
+    padding-inline-start: max(16px, env(safe-area-inset-left));
+    padding-inline-end: max(16px, env(safe-area-inset-right));
+    padding-bottom: calc(30px + env(safe-area-inset-bottom));
+  }
+  .sidebar {
+    overscroll-behavior-y: contain;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  }
+}
