@@ -27,7 +27,7 @@ const day = () => civilToday();
 const validDate = (v: unknown) => { const value = text(v), parsed = new Date(value); return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; };
 const validUrl = (value: unknown) => { const v = text(value); if (v) { try { if (!["https:", "http:"].includes(new URL(v).protocol)) throw 0; } catch { throw new DomainError("INVALID_REQUEST", "Use an http or https link."); } } return v; };
 
-export function createLifecycle({ collection, transact, outbox }: { collection: (name: string) => Collection<Row>; transact: Tx; outbox: Pick<Outbox, "enqueue" | "enqueueMany"> }) {
+export function createLifecycle({ collection, transact, outbox, onResumeChanged }: { collection: (name: string) => Collection<Row>; transact: Tx; outbox: Pick<Outbox, "enqueue" | "enqueueMany">; onResumeChanged?: (applicationId: string, fileId: string, session: ClientSession) => Promise<void> }) {
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
@@ -117,6 +117,8 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         if (old?.documents) data.documents = old.documents; // uploaded checklist documents are managed separately
         await onboarding.replaceOne({ applicationId }, data, { ...opts, upsert: true });
         await applications.updateOne({ _id: applicationId }, { $set: { phone: data.phone, college: data.college, location: data.location, skills: data.skills, resumeAttachmentId: data.resumeAttachmentId }, $inc: { version: 1 }, ...(method === "onboarding.submit" ? { $push: { history: { id: newId("HST"), title: "Onboarding submitted", detail: "The company team will review your onboarding details.", date: now } } as any } : {}) }, opts);
+        // A new resume gets a fresh AI review.
+        if (data.resumeAttachmentId && data.resumeAttachmentId !== app.resumeAttachmentId) await onResumeChanged?.(applicationId, data.resumeAttachmentId, session);
         return plain(data);
       }
       if (method === "intern.assignMentor") {
@@ -193,6 +195,7 @@ export function createLifecycle({ collection, transact, outbox }: { collection: 
         if (p.skills !== undefined) { if (!Array.isArray(p.skills)) throw new DomainError("INVALID_REQUEST", "Choose valid skills."); patch.skills = p.skills.map(text).filter(Boolean).slice(0, 50); }
         if (p.resumeAttachmentId && p.resumeAttachmentId !== app.resumeAttachmentId) { const file = await files.findOne({ _id: p.resumeAttachmentId, kind: "resume", status: "ready", ownerApplicationId: actor.applicationId }, opts); if (!file) throw new DomainError("FORBIDDEN", "Resume does not belong to this account."); patch.resumeAttachmentId = p.resumeAttachmentId; await files.updateOne({ _id: file._id }, { $set: { applicationId: actor.applicationId } }, opts); }
         await applications.updateOne({ _id: actor.applicationId }, { $set: patch, $inc: { version: 1 } }, opts); if (patch.name) await accounts.updateOne({ _id: actor.id }, { $set: { name: patch.name } }, opts);
+        if (patch.resumeAttachmentId) await onResumeChanged?.(actor.applicationId, patch.resumeAttachmentId, session);
         return { applicationId: actor.applicationId };
       }
       if (method === "project.create") {

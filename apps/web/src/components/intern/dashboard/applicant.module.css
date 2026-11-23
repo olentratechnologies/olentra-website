@@ -1421,3 +1421,21 @@
   align-items: center;
   gap: 4px;
 }
+.aiGetScore {
+  padding: 4px 10px;
+  border: 1px solid var(--ad-border, #cfdcf6);
+  border-radius: 999px;
+  color: var(--ad-blue, #2465e9);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.aiGetScore:hover:not(:disabled) {
+  background: var(--ad-panel-alt, #eef3ff);
+}
+.aiGetScore:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}

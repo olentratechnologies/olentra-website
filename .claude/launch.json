@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "olentra-all",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:all"],
-      "port": 3000
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["-u", "PORT", "npm", "run", "dev:all"],
+      "port": 3000,
+      "autoPort": false
     }
   ]
 }

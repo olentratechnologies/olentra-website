@@ -19,3 +19,6 @@ yarn-error.log*
 
 # Local video/reel projects and renders (large, not part of the site)
 /media/
+
+# Local Groq API experiments (holds an API key in .env)
+/bun-GroqCloud-test/

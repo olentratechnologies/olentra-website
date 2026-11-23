@@ -18,13 +18,16 @@
     "promote-admin": "bun scripts/promote-admin.ts",
     "healthcheck": "bun scripts/healthcheck.ts",
     "admin-access": "bun scripts/admin-access.ts",
-    "storage:smoke": "bun scripts/storage-smoke.ts"
+    "storage:smoke": "bun scripts/storage-smoke.ts",
+    "ai-review:backfill": "bun scripts/ai-review-backfill.ts",
+    "ai-review:sample": "bun scripts/ai-review-sample.ts"
   },
   "devDependencies": {
     "bun-types": "latest",
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "fflate": "^0.8.3",
     "jose": "^6.2.15",
     "mongodb": "^7.8.0",
     "oci-common": "^2.147.0",

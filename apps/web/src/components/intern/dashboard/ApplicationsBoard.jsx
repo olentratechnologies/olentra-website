@@ -53,6 +53,7 @@ function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, o
             <small>{application.program}{application.hasVideo ? <span className={styles.video}><Video size={11} aria-hidden="true" /> video</span> : null}</small>
             <small>{internScheduleLabel(application.schedule)}</small>
             {typeof application.score === "number" && <small>Score {application.score.toFixed(1)}</small>}
+            {application.aiReviewStatus === "pending" ? <small>AI reviewing…</small> : typeof application.aiScore === "number" ? <small>AI {application.aiScore.toFixed(1)} / 10 · {application.aiRecommendation}</small> : application.aiRecommendation ? <small>{application.aiRecommendation}</small> : null}
             <select
               aria-label={`Move ${application.name}`}
               value=""

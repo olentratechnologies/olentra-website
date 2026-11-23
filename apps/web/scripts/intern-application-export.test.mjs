@@ -63,3 +63,14 @@ test("application export marks the team's bookmarked candidates", () => {
   assert.equal(applicationExportRow({ bookmarked: true })[column], "Yes");
   assert.equal(applicationExportRow({})[column], "");
 });
+
+test("application export includes the AI score and recommendation", () => {
+  const score = APPLICATION_EXPORT_COLUMNS.indexOf("AI Score");
+  const recommendation = APPLICATION_EXPORT_COLUMNS.indexOf("AI Recommendation");
+  assert.equal(recommendation, score + 1);
+  const row = applicationExportRow({ aiScore: 7, aiRecommendation: "Recommended", aiReviewStatus: "done" });
+  assert.equal(row[score], "7.0");
+  assert.equal(row[recommendation], "Recommended");
+  assert.equal(applicationExportRow({ aiReviewStatus: "pending" })[recommendation], "Reviewing");
+  assert.equal(applicationExportRow({})[score], "");
+});

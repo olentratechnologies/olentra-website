@@ -1,6 +1,8 @@
 FROM oven/bun:1
 
 WORKDIR /app
+# AI resume review: poppler reads PDFs (and renders scans), antiword reads .doc files.
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils antiword && rm -rf /var/lib/apt/lists/*
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 COPY src ./src

@@ -10,6 +10,7 @@ import {
   Check,
   RotateCcw,
   SlidersHorizontal,
+  Sparkles,
   Star,
   Video,
 } from "lucide-react";
@@ -27,7 +28,11 @@ import { useInternQuery, useInternSearch } from "../useInternQuery";
 import QueryStatus from "./QueryStatus";
 import ResumeViewer from "./ResumeViewer";
 import { useBookmarks } from "./useBookmarks";
+import AiLivePanel from "./AiLivePanel";
 import {
+  AI_RECOMMENDATIONS,
+  AiRecommendationBadge,
+  AiScore,
   Avatar,
   BookmarkToggle,
   Button,
@@ -117,6 +122,8 @@ export default function ApplicationsPage() {
   const [skill, setSkill] = useState("all");
   // Team bookmarks: show only the candidates someone starred.
   const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
+  // AI resume review: one recommendation, "pending" (still reviewing) or "all".
+  const [aiRecommendation, setAiRecommendation] = useState("all");
   // "Videos first" is a per-reviewer preference, remembered in this browser only.
   const [videosFirst, setVideosFirst] = useState(false);
   useEffect(() => { try { setVideosFirst(localStorage.getItem(VIDEOS_FIRST_KEY) === "1"); } catch { /* storage blocked */ } }, []);
@@ -146,14 +153,14 @@ export default function ApplicationsPage() {
     if (!view) return;
     const f = view.filters || {};
     setSearch(f.search || ""); setStatus(f.status || "all"); setTrack(f.programId || "all"); setBatch(f.batch || "all"); setVideo(f.video || "all");
-    setSkill(f.skill || "all"); setDateFrom(f.dateFrom || ""); setDateTo(f.dateTo || ""); setAssignee(f.assignee || "all"); setBookmarkedOnly(f.bookmarked === "true");
+    setSkill(f.skill || "all"); setDateFrom(f.dateFrom || ""); setDateTo(f.dateTo || ""); setAssignee(f.assignee || "all"); setBookmarkedOnly(f.bookmarked === "true"); setAiRecommendation(f.aiRecommendation || "all");
     if (f.sortKey) setSort({ key: f.sortKey, direction: f.sortDirection === "asc" ? "asc" : "desc" });
     setPage(1);
   }
   async function saveView() {
     const name = window.prompt("Name this view", savedViews.find((item) => item.id === activeView)?.name || "")?.trim();
     if (!name) return;
-    const result = await commands.saveView(name, { search, status, programId: track, batch, video, skill, dateFrom, dateTo, assignee, bookmarked: bookmarkedOnly, sortKey: sort.key, sortDirection: sort.direction });
+    const result = await commands.saveView(name, { search, status, programId: track, batch, video, skill, dateFrom, dateTo, assignee, bookmarked: bookmarkedOnly, aiRecommendation, sortKey: sort.key, sortDirection: sort.direction });
     if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Could not save the view."); return; }
     notify(`Saved “${name}”.`);
     setActiveView(result.data.id);
@@ -180,21 +187,22 @@ export default function ApplicationsPage() {
     Number(assignee !== "all") +
     Number(bookmarkedOnly) +
     Number(skill !== "all") +
+    Number(aiRecommendation !== "all") +
     Number(Boolean(dateFrom)) +
     Number(Boolean(dateTo));
   const invalidDateRange = Boolean(dateFrom && dateTo && dateFrom > dateTo);
 
   useEffect(() => {
     setPage(1);
-  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, bookmarkedOnly]);
+  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, bookmarkedOnly, aiRecommendation]);
   // Selection is scoped to the rows on screen; any change of view clears it.
   useEffect(() => {
     setSelected(new Set());
-  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, page, sort.key, sort.direction, videosFirst, bookmarkedOnly]);
+  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, page, sort.key, sort.direction, videosFirst, bookmarkedOnly, aiRecommendation]);
 
   const debouncedSearch = useInternSearch(search);
   const debouncedQuery = useInternSearch(query);
-  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, batch, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }), ...(bookmarkedOnly ? { bookmarked: true } : {}) };
+  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, batch, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }), ...(bookmarkedOnly ? { bookmarked: true } : {}), ...(aiRecommendation === "all" ? {} : { aiRecommendation }) };
   const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction, videosFirst }, { enabled: !invalidDateRange });
   // Tab-count summary must NOT include programId — otherwise switching tracks
   // causes the facet response to be scoped to a single program and the other
@@ -242,6 +250,7 @@ export default function ApplicationsPage() {
     setVideo("all");
     setAssignee("all");
     setBookmarkedOnly(false);
+    setAiRecommendation("all");
     setSkill("all");
     setDateFrom("");
     setDateTo("");
@@ -391,6 +400,53 @@ export default function ApplicationsPage() {
     }
   }
 
+  // Rows whose AI review is being queued right now (buttons stay disabled meanwhile).
+  const [aiQueuing, setAiQueuing] = useState(() => new Set());
+  async function queueAiReview(application) {
+    if (aiQueuing.has(application.id)) return;
+    setAiQueuing((current) => new Set(current).add(application.id));
+    try {
+      const result = await commands.rerunAiReview([application.id]);
+      if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Couldn't queue the AI review."); return; }
+      notify(result.data?.queued ? `${application.name}'s resume is queued for AI review.` : `${application.name} has no resume to review.`);
+      refreshListsRef.current?.();
+    } finally {
+      setAiQueuing((current) => { const next = new Set(current); next.delete(application.id); return next; });
+    }
+  }
+  const [scoringAll, setScoringAll] = useState(false);
+  // An in-page dialog, not window.confirm: some embedded browsers silently answer "cancel".
+  const [confirmScoreAll, setConfirmScoreAll] = useState(false);
+  async function scoreAllUnscored() {
+    if (scoringAll) return;
+    setScoringAll(true);
+    try {
+      const result = await commands.scoreAllApplications();
+      if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Couldn't queue the AI reviews."); return; }
+      const queued = result.data?.queued || 0;
+      notify(queued ? `${queued.toLocaleString()} ${queued === 1 ? "application" : "applications"} queued for AI review.` : "Every application with a resume already has an AI review.");
+      refreshListsRef.current?.();
+    } finally {
+      setScoringAll(false);
+      setConfirmScoreAll(false);
+    }
+  }
+
+  async function rerunAiSelected() {
+    if (bulkBusy || !selectedRows.length) return;
+    setBulkBusy(true);
+    try {
+      const result = await commands.rerunAiReview(selectedRows.map((application) => application.id));
+      if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Couldn't queue the AI review."); return; }
+      const { queued = 0, skipped = 0 } = result.data || {};
+      notify(`${queued} ${queued === 1 ? "resume" : "resumes"} queued for AI review${skipped ? ` · ${skipped} without a resume skipped` : ""}.`);
+      setSelected(new Set());
+      refreshListsRef.current?.();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   function SortHeading({ label, sortKey }) {
     const active = sort.key === sortKey;
     const Icon = active
@@ -474,6 +530,16 @@ export default function ApplicationsPage() {
               </select>
             </label>
             <label>
+              AI recommendation
+              <select value={aiRecommendation} onChange={(event) => { setAiRecommendation(event.target.value); setPage(1); }}>
+                <option value="all">Any</option>
+                {AI_RECOMMENDATIONS.map((value) => (
+                  <option key={value} value={value}>{value}{summary?.counts?.aiRecommendations ? ` (${summary.counts.aiRecommendations[value] || 0})` : ""}</option>
+                ))}
+                <option value="pending">Still reviewing{summary?.counts?.aiPending != null ? ` (${summary.counts.aiPending})` : ""}</option>
+              </select>
+            </label>
+            <label>
               Intro video
               <select
                 value={video}
@@ -554,6 +620,13 @@ export default function ApplicationsPage() {
               <Star size={14} aria-hidden="true" fill={bookmarkedOnly ? "currentColor" : "none"} />
               Bookmarked{summary?.counts?.bookmarked != null ? ` (${summary.counts.bookmarked})` : ""}
             </button>
+            <AiLivePanel pendingCount={summary?.counts?.aiPending || 0} />
+            {isAdmin && (
+              <Button variant="ghost" onClick={() => setConfirmScoreAll(true)} disabled={scoringAll}>
+                <Sparkles size={14} />
+                {scoringAll ? "Queuing…" : "Score all unscored"}
+              </Button>
+            )}
             <div className={styles.layoutToggle} role="group" aria-label="Layout">
               <button type="button" aria-pressed={layout === "table"} onClick={() => chooseLayout("table")}>Table</button>
               <button type="button" aria-pressed={layout === "board"} onClick={() => chooseLayout("board")}>Board</button>
@@ -604,6 +677,7 @@ export default function ApplicationsPage() {
                 </button>
               ))}
               <button type="button" className={styles.bulkButton} disabled={bulkBusy} onClick={() => void bookmarkSelected(true)}>Bookmark</button>
+              <button type="button" className={styles.bulkButton} disabled={bulkBusy} onClick={() => void rerunAiSelected()}>Get AI score</button>
               <button type="button" className={styles.bulkButton} disabled={bulkBusy} onClick={() => void bookmarkSelected(false)}>Remove bookmark</button>
               {isAdmin && <button type="button" className={`${styles.bulkButton} ${styles.bulkDanger}`} disabled={bulkBusy || loadingDeletion} onClick={() => void prepareDeletion(false)}>Delete selected</button>}
               {reviewers.length > 0 && (
@@ -711,6 +785,18 @@ export default function ApplicationsPage() {
                   >
                     <SortHeading label="Score" sortKey="score" />
                   </th>
+                  <th
+                    aria-sort={
+                      sort.key === "aiScore"
+                        ? sort.direction === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                  >
+                    <SortHeading label="AI Score" sortKey="aiScore" />
+                  </th>
+                  <th>AI Recommendation</th>
                   <th>Reviewer</th>
                   <th className={styles.actionHeading}>Actions</th>
                 </tr>
@@ -770,6 +856,12 @@ export default function ApplicationsPage() {
                     <td className={styles.scoreCell}>
                       {typeof application.score === "number" ? application.score.toFixed(1) : <span aria-label="Not scored">—</span>}
                     </td>
+                    <td className={styles.scoreCell}>
+                      {canReview && application.resumeAttachmentId && application.aiReviewStatus !== "pending" && typeof application.aiScore !== "number"
+                        ? <button type="button" className={styles.aiGetScore} disabled={aiQueuing.has(application.id)} onClick={() => void queueAiReview(application)}>{aiQueuing.has(application.id) ? "Queuing…" : application.aiReviewStatus === "manual" ? "Retry" : "Get score"}</button>
+                        : <AiScore application={application} />}
+                    </td>
+                    <td><AiRecommendationBadge application={application} /></td>
                     <td className={styles.reviewerCell}>{application.assignedToName || <span aria-label="Unassigned">—</span>}</td>
                     <td className={styles.actionCell}>
                       <RowMenu
@@ -779,6 +871,7 @@ export default function ApplicationsPage() {
                             href: `/intern/dashboard/applications/${application.id}`,
                           },
                           ...(canResume && application.resumeAttachmentId ? [{ label: "View resume", onClick: () => setResumeApplication(application) }] : []),
+                          ...(canReview && application.resumeAttachmentId && application.aiReviewStatus !== "pending" ? [{ label: application.aiRecommendation ? "Re-scan resume with AI" : "Get AI score", onClick: () => void queueAiReview(application) }] : []),
                           ...(isAdmin ? [{ label: "Delete application", danger: true, onClick: () => setDeletingApplication(application) }] : []),
                           ...(canReview && (isAdmin || ["Applied", "Under Review", "Shortlisted"].includes(application.status)) ? [{
                             label: "Update status",
@@ -822,6 +915,17 @@ export default function ApplicationsPage() {
         </div>}
       </Panel>
 
+      <Modal
+        open={confirmScoreAll}
+        onOpenChange={(open) => { if (!scoringAll) setConfirmScoreAll(open); }}
+        title="Score all unscored applications?"
+        description="Every application with a resume and no AI review yet is queued. Resumes are reviewed one at a time, so a large backlog can take a while; you can keep working meanwhile."
+      >
+        <div className={styles.modalActions}>
+          <Button variant="secondary" type="button" disabled={scoringAll} onClick={() => setConfirmScoreAll(false)}>Cancel</Button>
+          <Button type="button" disabled={scoringAll} onClick={() => void scoreAllUnscored()}>{scoringAll ? "Queuing…" : "Queue AI reviews"}</Button>
+        </div>
+      </Modal>
       <Modal
         open={Boolean(bulkDeletion)}
         onOpenChange={(open) => { if (!open && !bulkBusy) setBulkDeletion(null); }}

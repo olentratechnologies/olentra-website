@@ -25,6 +25,7 @@ import { createTemplates } from "../modules/templates/templates.service";
 import { createCustomEmails } from "../modules/templates/custom-email.service";
 import { renderCustomEmailGreeting } from "../modules/templates/custom-email-greeting.mjs";
 import { createViews } from "../modules/views/views.service";
+import { AI_APPLICATION_FIELDS, createAiReviews, isRecommendation } from "../modules/ai-review/ai-review.service";
 import { createResources } from "../modules/resources/resources.service";
 import { createCheckins } from "../modules/checkins/checkins.service";
 import { createFeedback } from "../modules/feedback/feedback.service";
@@ -47,7 +48,7 @@ const alreadyApplied = () => new DomainError("ALREADY_APPLIED", "An application 
 const publicAccount = (row: Row): Principal => ({ id: row._id, role: row.role, name: row.name, email: row.email, applicationId: row.applicationId ?? null, sessionVersion: row.sessionVersion ?? 1 });
 const publicApplication = (row: Row, staff: boolean) => {
   const { _id, claimHash, claimExpiresAt, communicationFence, ...record } = row;
-  if (!staff) { delete record.notes; delete record.internalNotes; delete record.batch; for (const field of BOOKMARK_FIELDS) delete record[field]; }
+  if (!staff) { delete record.notes; delete record.internalNotes; delete record.batch; for (const field of [...BOOKMARK_FIELDS, ...AI_APPLICATION_FIELDS]) delete record[field]; }
   return { ...record, id: _id };
 };
 /** Team bookmark on an application; staff-only and never shown to the applicant. */
@@ -70,6 +71,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       templates.initialize(),
       customEmails.initialize(),
       views.initialize(),
+      aiReviews.initialize(),
       resources.initialize(),
       checkins.initialize(),
       feedback.initialize(),
@@ -274,7 +276,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       });
     }
   }
-  const lifecycle = createLifecycle({ collection, transact, outbox });
+  const aiReviews = createAiReviews({ collection, transact });
+  const lifecycle = createLifecycle({ collection, transact, outbox, onResumeChanged: (applicationId, fileId, session) => aiReviews.enqueue(applicationId, fileId, session) });
   const communications = createCommunications({ collection, transact });
   const queries = createInternshipQueries(collection);
   const stories = createStories({ collection, transact });
@@ -309,6 +312,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       if (params.assignee === "me") filter.assignedTo = actor!.id;
       else if (params.assignee === "unassigned") filter.assignedTo = { $exists: false };
       if (params.bookmarked === true || params.bookmarked === "true") filter.bookmarked = true;
+      if (isRecommendation(params.aiRecommendation)) filter.aiRecommendation = params.aiRecommendation;
+      else if (params.aiRecommendation === "pending") filter.aiReviewStatus = "pending";
       const queries = [str(params.search), str(params.query)].filter(Boolean);
       if (queries.length) filter.$and = queries.map(value => { const q = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 120); return { $or: ["name", "email", "college", "program", "status", "_id", "skills"].map(field => ({ [field]: { $regex: q, $options: "i" } })) }; });
       if (params.skill && params.skill !== "all") {
@@ -318,14 +323,14 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const from = str(params.dateFrom), to = str(params.dateTo);
       if ((from && !/^\d{4}-\d{2}-\d{2}$/.test(from)) || (to && !/^\d{4}-\d{2}-\d{2}$/.test(to)) || (from && to && from > to)) throw new DomainError("INVALID_REQUEST", "Choose a valid application date range.");
       if (from || to) filter.appliedOn = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
-      const allowed = ["name", "program", "college", "appliedOn", "status", "score"], sortField = allowed.includes(params.sortField) ? params.sortField : "appliedOn", direction = params.sortDirection === "asc" ? 1 : -1;
+      const allowed = ["name", "program", "college", "appliedOn", "status", "score", "aiScore"], sortField = allowed.includes(params.sortField) ? params.sortField : "appliedOn", direction = params.sortDirection === "asc" ? 1 : -1;
       const [rows, total, aggregate] = await Promise.all([
         applications.find(filter).sort(applicationSort(sortField, direction, params.videosFirst)).skip((page - 1) * limit).limit(limit).toArray(), applications.countDocuments(filter),
         // Counts are only computed when asked for; the list itself doesn't need them.
-        params.facets !== true ? Promise.resolve(null) : applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], bookmarked: [{ $match: { bookmarked: true } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
+        params.facets !== true ? Promise.resolve(null) : applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], bookmarked: [{ $match: { bookmarked: true } }, { $count: "count" }], aiRecommendations: [{ $match: { aiRecommendation: { $type: "string" } } }, { $group: { _id: "$aiRecommendation", count: { $sum: 1 } } }], aiPending: [{ $match: { aiReviewStatus: "pending" } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
       ]);
       if (!aggregate) return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit };
-      return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, bookmarked: aggregate[0]?.bookmarked?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) }, batches: (aggregate[0]?.batches || []).map((item: any) => item._id).filter(Boolean) };
+      return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, bookmarked: aggregate[0]?.bookmarked?.[0]?.count || 0, aiRecommendations: Object.fromEntries((aggregate[0]?.aiRecommendations || []).map((item: any) => [item._id, item.count])), aiPending: aggregate[0]?.aiPending?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) }, batches: (aggregate[0]?.batches || []).map((item: any) => item._id).filter(Boolean) };
     }
     if (method === "application.get") {
       if (!actor) throw new DomainError("UNAUTHENTICATED", "Sign in to view applications.");
@@ -450,8 +455,11 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
             await applications.updateMany({ _id: { $in: matches } }, { $addToSet: { possibleDuplicates: applicationId } } as any, { session });
           }
         }
+        row.aiReviewStatus = "pending";
         await applications.insertOne(row, { session });
         await files.updateOne({ _id: fileId, applicationId: { $exists: false } }, { $set: { applicationId } }, { session });
+        // Queued inside the transaction, so the AI review exists only if the application does.
+        await aiReviews.enqueue(applicationId, fileId, session, { markApplication: false });
         if (config?.applicationAlerts !== false) await collection("notifications").insertOne({ _id: id("NTF"), recipientRole: "company", applicationId, title: "New internship application", body: `${name} applied to ${program.name}.`, href: `/intern/dashboard/applications/${applicationId}`, createdOn: now.toISOString() }, { session });
         await collection("activity").insertOne({ _id: id("ACT"), title: "Application received", detail: `${name} applied to ${program.name}.`, applicationId, icon: "application", tone: "blue", occurredOn: now.toISOString() }, { session });
         await events.insertOne({ _id: id("EVT"), type: "application.created", applicationIds: [applicationId], createdAt: now }, { session });
@@ -625,6 +633,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     if (customEmails.supports(method)) return customEmails.execute(method, params, actor, key);
     if (templates.supports(method)) return templates.execute(method, params, actor, key);
     if (views.supports(method)) return views.execute(method, params, actor, key);
+    if (aiReviews.supports(method)) return aiReviews.execute(method, params, actor, key);
     if (resources.supports(method)) return resources.execute(method, params, actor, key);
     if (checkins.supports(method)) return checkins.execute(method, params, actor, key);
     if (feedback.supports(method)) return feedback.execute(method, params, actor, key);
@@ -845,5 +854,5 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     const passwordHash = await Bun.password.hash(nextPassword, { algorithm: "argon2id" });
     return savePassword(user, passwordHash, user.sessionVersion ?? 1, "account.passwordChanged");
   }
-  return { readAutomatedEmailTemplate: templates.readAutomated, db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runRetention, runReminders: remind, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
+  return { readAutomatedEmailTemplate: templates.readAutomated, aiReviews, db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runRetention, runReminders: remind, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
 }

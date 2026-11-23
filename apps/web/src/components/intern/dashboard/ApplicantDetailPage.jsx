@@ -36,6 +36,7 @@ import { ApplicantNextAction, ApplicantWorkflow } from "./CompanyWorkflow";
 import StaffAccountControls from "./StaffAccountControls";
 import EraseApplicantPanel from "./EraseApplicantPanel";
 import ApplicantScorePanel from "./ApplicantScorePanel";
+import AiReviewPanel from "./AiReviewPanel";
 import TemplatePicker from "./TemplatePicker";
 import { toEmbed } from "@/lib/intern/video-embed.mjs";
 import { useBookmarks } from "./useBookmarks";
@@ -567,6 +568,7 @@ export default function ApplicantDetailPage({ applicationId }) {
             {applicationFlow}
           </div>
           <IntroVideoPanel url={application.videoUrl} name={application.name} />
+          <AiReviewPanel application={application} commands={commands} notify={notify} canReview={canReview} />
           <ApplicantScorePanel applicationId={application.id} assignedTo={application.assignedTo} canReview={canReview} commands={commands} notify={notify} onAssigned={() => void commands.getApplication(application.id)} />
           {isAdmin && <ApplicantNextAction
             applicationId={applicationId}

@@ -182,6 +182,24 @@ export function TrackBadge({ programId, label }) {
     </span>
   );
 }
+export const AI_RECOMMENDATIONS = ["Strongly recommended", "Recommended", "Maybe", "Not recommended", "Needs manual review"];
+const aiTone = (recommendation) => ({ "Strongly recommended": "strong", Recommended: "good", Maybe: "maybe", "Not recommended": "low", "Needs manual review": "manual" })[recommendation] || "none";
+
+/** The AI's recommendation for an application, or its progress while the review runs. */
+export function AiRecommendationBadge({ application }) {
+  const status = application?.aiReviewStatus;
+  if (status === "pending") return <span className={styles.aiBadge} data-tone="pending">Reviewing…</span>;
+  if (!application?.aiRecommendation) return <span className={styles.aiEmpty} aria-label="No AI review">—</span>;
+  return <span className={styles.aiBadge} data-tone={aiTone(application.aiRecommendation)}>{application.aiRecommendation}</span>;
+}
+
+/** "7.8 / 10", "Reviewing…" or a dash. */
+export function AiScore({ application }) {
+  if (application?.aiReviewStatus === "pending") return <span className={styles.aiEmpty}>Reviewing…</span>;
+  if (typeof application?.aiScore !== "number") return <span className={styles.aiEmpty} aria-label="No AI score">—</span>;
+  return <span className={styles.aiScore}><strong>{application.aiScore.toFixed(1)}</strong><small> / 10</small></span>;
+}
+
 export function StatusBadge({ status }) {
   return (
     <span

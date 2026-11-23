@@ -20,6 +20,9 @@ import { SITE_FEATURES_PATH, canControlWebsite, createSiteFeatureStore } from ".
 import { createSigninEmailTemplateSettings } from "../modules/email-templates/signin-template-settings";
 import { bearerToken } from "../interfaces/http/middleware";
 import { removeOrphanedUploads } from "../modules/files/cleanup";
+import { createGroq } from "../modules/ai-review/groq";
+import { analyzeResume } from "../modules/ai-review/review";
+import { Readable } from "node:stream";
 import { createRateLimiter, type RateLimiter } from "../modules/auth/rate-limit";
 import { createFilesRoutes, isFileDownloadPath, isFileUploadPath } from "../interfaces/http/files.routes";
 import { createResumeGrants, RESUME_GRANT_PATH } from "../modules/files/resume-grant";
@@ -332,6 +335,25 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const stopRetention = runLeasedJob(jobLeases, "applicant-retention", 6 * 60 * 60_000, () => domain.runRetention(), error => logger.error("Applicant retention run failed", { error }));
     const stopReminders = runLeasedJob(jobLeases, "reminders", 60 * 60_000, () => domain.runReminders(), error => logger.error("Reminder run failed", { error }));
     const stopOutbox = runLeasedJob(jobLeases, "email-outbox", 2000, () => domain.processOutbox(), error => logger.error("Email outbox run failed", { error }));
+    // AI resume review: off until GROQ_API_KEY is set; one resume at a time keeps within Groq's rate limits.
+    const groqKey = process.env.GROQ_API_KEY?.trim();
+    if (!groqKey) logger.warn("AI resume review is off: GROQ_API_KEY is not set");
+    const groq = groqKey ? createGroq({ apiKey: groqKey, reviewModel: process.env.GROQ_REVIEW_MODEL?.trim() || undefined, visionModel: process.env.GROQ_VISION_MODEL?.trim() || undefined, reasoningEffort: ["low", "medium", "high"].includes(process.env.GROQ_REASONING_EFFORT?.trim() || "") ? process.env.GROQ_REASONING_EFFORT!.trim() as "low" | "medium" | "high" : undefined }) : null;
+    const readResume = async (file: any) => {
+      const stream = file.storage === "oci"
+        ? objectStore && file.cleanKey ? await objectStore.download(file.cleanKey) : null
+        : Readable.toWeb(bucket.openDownloadStream(file.gridId)) as ReadableStream;
+      if (!stream) throw new Error("Object storage is unavailable.");
+      const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+      if (bytes.length > 6 * 1024 * 1024) throw new Error("The resume file is larger than allowed.");
+      return bytes;
+    };
+    const stopAiReview = groq ? runLeasedJob(jobLeases, "ai-resume-review", 5000, () => domain.aiReviews.process({
+      readFile: readResume,
+      analyze: (file, applicant, progress) => analyzeResume(file, applicant, groq, progress),
+      // Only the reason is logged, never resume content.
+      onManual: (applicationId, reason) => logger.warn("AI resume review needs a person", { applicationId, reason }),
+    }), error => logger.error("AI resume review run failed", { error })) : () => {};
     const limiter = createRateLimiter(mongoAttemptStore(domain.collection("rate_limits")));
     await domain.collection("rate_limits").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
     const signinEmailTemplates = createSigninEmailTemplateSettings(domain.collection("email_template_settings"));
@@ -358,7 +380,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       broadcastViewers,
       async close() {
         localStopped = true;
-        stopDirectWorker(); stopDirectCleanup(); stopOutbox(); stopUploadCleanup(); stopRetention(); stopReminders();
+        stopDirectWorker(); stopDirectCleanup(); stopOutbox(); stopAiReview(); stopUploadCleanup(); stopRetention(); stopReminders();
         broadcastInsights.cancel(); broadcastViewers.cancel();
         await changes.close().catch(() => {});
         if (runtime === nextRuntime) runtime = null;

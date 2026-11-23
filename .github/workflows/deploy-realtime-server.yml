@@ -29,6 +29,9 @@ jobs:
         working-directory: backend/realtime-server
         run: bun install --frozen-lockfile
 
+      - name: Install resume readers for AI review tests
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends poppler-utils antiword
+
       - name: Start isolated MongoDB test replica set
         run: |
           docker run -d --name mongo-test -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
@@ -66,11 +69,14 @@ jobs:
           OLENTRA_REPOSITORY: ${{ github.repository }}
           EMAIL_SERVER_URL: ${{ vars.EMAIL_SERVER_URL }}
           EMAIL_DELIVERY_TOKEN: ${{ secrets.EMAIL_DELIVERY_TOKEN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_REVIEW_MODEL: ${{ vars.GROQ_REVIEW_MODEL }}
+          GROQ_VISION_MODEL: ${{ vars.GROQ_VISION_MODEL }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GITHUB_TOKEN,OLENTRA_REPOSITORY,EMAIL_SERVER_URL,EMAIL_DELIVERY_TOKEN
+          envs: GITHUB_TOKEN,OLENTRA_REPOSITORY,EMAIL_SERVER_URL,EMAIL_DELIVERY_TOKEN,GROQ_API_KEY,GROQ_REVIEW_MODEL,GROQ_VISION_MODEL
           script: |
             set -Eeuo pipefail
 
@@ -129,6 +135,17 @@ jobs:
             bun install --frozen-lockfile
             bun run build
 
+            # AI resume review reads PDFs with poppler and old .doc files with antiword.
+            if ! command -v pdftotext >/dev/null || ! command -v pdftoppm >/dev/null; then
+              if command -v apt-get >/dev/null; then
+                { sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends poppler-utils antiword; } || sudo apt-get install -y -qq --no-install-recommends poppler-utils || echo "Could not install poppler-utils: AI review will send resumes to manual review"
+              elif command -v dnf >/dev/null; then
+                { sudo dnf install -y -q poppler-utils && { sudo dnf install -y -q antiword || echo "antiword unavailable: .doc resumes will go to manual review"; }; } || echo "Could not install poppler-utils: AI review will send resumes to manual review"
+              else
+                echo "Install poppler-utils on this host for AI resume review"
+              fi
+            fi
+
             if [ -z "${EMAIL_SERVER_URL:-}" ] || [ -z "${EMAIL_DELIVERY_TOKEN:-}" ]; then
               echo "Configure EMAIL_SERVER_URL and EMAIL_DELIVERY_TOKEN in GitHub before deploying."
               exit 1
@@ -137,8 +154,10 @@ jobs:
             bun -e '
               const file = process.env.OLENTRA_TARGET_ENV_FILE;
               let text = await Bun.file(file).text();
-              for (const key of ["EMAIL_SERVER_URL", "EMAIL_DELIVERY_TOKEN"]) {
+              for (const key of ["EMAIL_SERVER_URL", "EMAIL_DELIVERY_TOKEN", "GROQ_API_KEY", "GROQ_REVIEW_MODEL", "GROQ_VISION_MODEL"]) {
                 const value = process.env[key];
+                // Optional AI settings are left as they are on the host when GitHub has none.
+                if (key.startsWith("GROQ_") && !value) continue;
                 const pattern = new RegExp("^" + key + "=.*$", "gm");
                 text = pattern.test(text) ? text.replace(pattern, () => key + "=" + value) : text.trimEnd() + "\n" + key + "=" + value + "\n";
               }
