@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { RowMenu } from "./DashboardUI";
+import { BookmarkToggle, RowMenu } from "./DashboardUI";
 import { Video } from "lucide-react";
 import { useInternQuery } from "../useInternQuery";
 import { BOARD_COLUMNS, canMoveCard } from "@/lib/intern/board.mjs";
@@ -11,7 +11,7 @@ import { internScheduleLabel } from "@/lib/intern/opportunities.mjs";
 
 const PER_COLUMN = 20;
 
-function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, onMove, onDelete, refreshKey }) {
+function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, onMove, onDelete, refreshKey, bookmarks, canBookmark }) {
   const query = useInternQuery("application.list", { ...queryParams, status, page: 1, pageSize: PER_COLUMN, sortField: "appliedOn", sortDirection: "desc", refreshKey });
   const items = query.data?.items || [];
   const total = query.data?.total ?? 0;
@@ -33,7 +33,22 @@ function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, o
             onDragStart={() => onDragStart(application)}
             onDragEnd={() => onDragStart(null)}
           >
-            <Link href={`/intern/dashboard/applications/${application.id}`} className={styles.cardName}>{application.name}</Link>
+            <div className={styles.cardHead}>
+              <Link href={`/intern/dashboard/applications/${application.id}`} className={styles.cardName}>{application.name}</Link>
+              {bookmarks && (
+                <BookmarkToggle
+                  className={styles.cardStar}
+                  size={14}
+                  bookmarked={bookmarks.isBookmarked(application)}
+                  name={application.name}
+                  by={application.bookmarkedByName}
+                  on={application.bookmarkedOn}
+                  canEdit={canBookmark}
+                  busy={bookmarks.isBusy(application)}
+                  onToggle={(next) => void bookmarks.setBookmarked([application], next)}
+                />
+              )}
+            </div>
             {isAdmin && onDelete && <RowMenu items={[{ label: "Delete application", danger: true, onClick: () => onDelete(application) }]} />}
             <small>{application.program}{application.hasVideo ? <span className={styles.video}><Video size={11} aria-hidden="true" /> video</span> : null}</small>
             <small>{internScheduleLabel(application.schedule)}</small>
@@ -56,7 +71,7 @@ function Column({ status, queryParams, isAdmin, dragging, onDragStart, onDrop, o
 }
 
 /** Kanban view of the pipeline. Moves use the normal status update and its rules. */
-export default function ApplicationsBoard({ queryParams, isAdmin, commands, notify, onChanged, onDelete }) {
+export default function ApplicationsBoard({ queryParams, isAdmin, commands, notify, onChanged, onDelete, bookmarks, canBookmark }) {
   const [dragging, setDragging] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   async function move(application, status) {
@@ -71,7 +86,7 @@ export default function ApplicationsBoard({ queryParams, isAdmin, commands, noti
     <div className={styles.board}>
       {BOARD_COLUMNS.map((status) => (
         <Column key={status} status={status} queryParams={queryParams} isAdmin={isAdmin} dragging={dragging} refreshKey={refreshKey}
-          onDragStart={setDragging} onMove={move} onDelete={onDelete}
+          onDragStart={setDragging} onMove={move} onDelete={onDelete} bookmarks={bookmarks} canBookmark={canBookmark}
           onDrop={(next) => { const card = dragging; setDragging(null); if (card) void move(card, next); }} />
       ))}
     </div>

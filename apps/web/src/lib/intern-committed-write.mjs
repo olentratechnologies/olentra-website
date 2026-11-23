@@ -1,8 +1,9 @@
 // These commands have committed before the WebSocket acknowledgement. Their
 // callers either consume the returned record directly or refresh their own
 // lists, so they need not block on the larger workspace snapshot.
-const backgroundWrites = new Set(["program.configure", "settings.update"]);
-const locallyReconciled = backgroundWrites;
+// Bookmarks refresh their own lists, so the star never waits on the snapshot.
+const backgroundWrites = new Set(["program.configure", "settings.update", "application.bookmark"]);
+const locallyReconciled = new Set(["program.configure", "settings.update"]);
 export const canRefreshInternWriteInBackground = method => backgroundWrites.has(method);
 export const canReconcileInternWrite = method => locallyReconciled.has(method);
 

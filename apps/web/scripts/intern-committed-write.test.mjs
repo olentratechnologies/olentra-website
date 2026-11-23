@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canRefreshInternWriteInBackground, reconcileInternWrite } from "../src/lib/intern-committed-write.mjs";
+import { canReconcileInternWrite, canRefreshInternWriteInBackground, reconcileInternWrite } from "../src/lib/intern-committed-write.mjs";
 
 const admin = { id: "admin", role: "company", sessionVersion: 2 };
 const original = { account: admin, data: { programs: [{ id: "software-engineer", fee: 0, stipend: 0, enabled: false }], settings: { programEnabled: false, maxStipend: 0 } }, my: {} };
@@ -16,6 +16,8 @@ test("confirmed track and general settings update immediately without altering t
   assert.equal(canRefreshInternWriteInBackground("program.configure"), true);
   assert.equal(canRefreshInternWriteInBackground("settings.update"), true);
   assert.equal(canRefreshInternWriteInBackground("offer.send"), false);
+  assert.equal(canRefreshInternWriteInBackground("application.bookmark"), true);
+  assert.equal(canReconcileInternWrite("application.bookmark"), false);
 });
 
 test("a response from an older account or session never changes the current workspace", () => {

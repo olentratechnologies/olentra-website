@@ -56,3 +56,10 @@ test("application export records each applicant's batch", () => {
   assert.equal(applicationExportRow({ batch: "Batch 1" })[column], "Batch 1");
   assert.equal(applicationExportRow({})[column], "");
 });
+
+test("application export marks the team's bookmarked candidates", () => {
+  const column = APPLICATION_EXPORT_COLUMNS.indexOf("Bookmarked");
+  assert.equal(APPLICATION_EXPORT_COLUMNS[column - 1], "Status");
+  assert.equal(applicationExportRow({ bookmarked: true })[column], "Yes");
+  assert.equal(applicationExportRow({})[column], "");
+});

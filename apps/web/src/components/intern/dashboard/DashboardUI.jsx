@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   Search,
   SearchX,
+  Star,
   X,
 } from "lucide-react";
 import { MetricGlyph, Sparkline } from "./DashboardVisuals";
@@ -189,6 +190,39 @@ export function StatusBadge({ status }) {
     >
       {status}
     </span>
+  );
+}
+/**
+ * Team bookmark star. Reviewers get a toggle; everyone else only sees the star
+ * on bookmarked candidates.
+ */
+export function BookmarkToggle({ bookmarked, name = "this candidate", by, on, canEdit, busy = false, onToggle, size = 16, className = "" }) {
+  const detail = bookmarked ? [by ? `Bookmarked by ${by}` : "Bookmarked", on ? formatDate(on) : ""].filter(Boolean).join(" · ") : "";
+  if (!canEdit) {
+    if (!bookmarked) return null;
+    return (
+      <span className={`${styles.bookmarkToggle} ${className}`} data-on="true" role="img" aria-label={detail} title={detail}>
+        <Star size={size} aria-hidden="true" fill="currentColor" />
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className={`${styles.bookmarkToggle} ${className}`}
+      data-on={bookmarked ? "true" : undefined}
+      aria-pressed={Boolean(bookmarked)}
+      aria-label={bookmarked ? `Remove bookmark from ${name}` : `Bookmark ${name}`}
+      title={detail || "Bookmark this candidate"}
+      disabled={busy}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onToggle?.(!bookmarked);
+      }}
+    >
+      <Star size={size} aria-hidden="true" fill={bookmarked ? "currentColor" : "none"} />
+    </button>
   );
 }
 export function SearchBox({ value, onChange, placeholder = "Search..." }) {

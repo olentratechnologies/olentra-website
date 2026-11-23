@@ -16,3 +16,6 @@ yarn-error.log*
 
 # Generated PDF/email previews used for visual verification
 /output/pdf/
+
+# Local video/reel projects and renders (large, not part of the site)
+/media/

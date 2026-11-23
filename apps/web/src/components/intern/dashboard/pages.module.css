@@ -749,3 +749,40 @@
     transition: none;
   }
 }
+
+/* Team bookmark star (BookmarkToggle). */
+.bookmarkToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ad-muted, #35558f);
+  background: transparent;
+  opacity: 0.55;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, opacity 0.15s;
+}
+.bookmarkToggle:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--ad-panel-alt, #eef3ff);
+}
+.bookmarkToggle:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--ad-blue, #2465e9);
+  outline-offset: 1px;
+}
+.bookmarkToggle[data-on="true"] {
+  color: var(--ad-warning, #855000);
+  opacity: 1;
+}
+.bookmarkToggle:disabled {
+  cursor: progress;
+}
+span.bookmarkToggle {
+  cursor: default;
+}

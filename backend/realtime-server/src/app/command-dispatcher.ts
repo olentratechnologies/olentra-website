@@ -47,9 +47,11 @@ const alreadyApplied = () => new DomainError("ALREADY_APPLIED", "An application 
 const publicAccount = (row: Row): Principal => ({ id: row._id, role: row.role, name: row.name, email: row.email, applicationId: row.applicationId ?? null, sessionVersion: row.sessionVersion ?? 1 });
 const publicApplication = (row: Row, staff: boolean) => {
   const { _id, claimHash, claimExpiresAt, communicationFence, ...record } = row;
-  if (!staff) { delete record.notes; delete record.internalNotes; delete record.batch; }
+  if (!staff) { delete record.notes; delete record.internalNotes; delete record.batch; for (const field of BOOKMARK_FIELDS) delete record[field]; }
   return { ...record, id: _id };
 };
+/** Team bookmark on an application; staff-only and never shown to the applicant. */
+const BOOKMARK_FIELDS = ["bookmarked", "bookmarkedBy", "bookmarkedByName", "bookmarkedOn"] as const;
 
 export function createInternshipDomain({ db, client, prefix = "intern_", intakeOpen = async () => true, hooks }: {
   db: Db; client: MongoClient; prefix?: string; intakeOpen?: () => Promise<boolean>; hooks?: InternshipHooks;
@@ -96,6 +98,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       applications.createIndex({ assignedTo: 1, appliedOn: -1 }),
       applications.createIndex({ linkedinKey: 1 }, { partialFilterExpression: { linkedinKey: { $type: "string" } } }),
       applications.createIndex({ batch: 1, appliedOn: -1 }),
+      // Only bookmarked rows are indexed, so the "Bookmarked" filter stays cheap.
+      applications.createIndex({ bookmarked: 1, appliedOn: -1, _id: -1 }, { partialFilterExpression: { bookmarked: true } }),
       // Retention counts from when a final decision was made; older rows start counting today.
       applications.updateMany({ status: { $in: FINAL_STATUSES }, statusChangedOn: { $exists: false } }, { $set: { statusChangedOn: new Date().toISOString() } }),
     ]);
@@ -304,6 +308,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       Object.assign(filter, videoFilter(params.video));
       if (params.assignee === "me") filter.assignedTo = actor!.id;
       else if (params.assignee === "unassigned") filter.assignedTo = { $exists: false };
+      if (params.bookmarked === true || params.bookmarked === "true") filter.bookmarked = true;
       const queries = [str(params.search), str(params.query)].filter(Boolean);
       if (queries.length) filter.$and = queries.map(value => { const q = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 120); return { $or: ["name", "email", "college", "program", "status", "_id", "skills"].map(field => ({ [field]: { $regex: q, $options: "i" } })) }; });
       if (params.skill && params.skill !== "all") {
@@ -317,10 +322,10 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const [rows, total, aggregate] = await Promise.all([
         applications.find(filter).sort(applicationSort(sortField, direction, params.videosFirst)).skip((page - 1) * limit).limit(limit).toArray(), applications.countDocuments(filter),
         // Counts are only computed when asked for; the list itself doesn't need them.
-        params.facets !== true ? Promise.resolve(null) : applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
+        params.facets !== true ? Promise.resolve(null) : applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], bookmarked: [{ $match: { bookmarked: true } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
       ]);
       if (!aggregate) return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit };
-      return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) }, batches: (aggregate[0]?.batches || []).map((item: any) => item._id).filter(Boolean) };
+      return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, bookmarked: aggregate[0]?.bookmarked?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) }, batches: (aggregate[0]?.batches || []).map((item: any) => item._id).filter(Boolean) };
     }
     if (method === "application.get") {
       if (!actor) throw new DomainError("UNAUTHENTICATED", "Sign in to view applications.");
@@ -489,6 +494,22 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
           : { $unset: { assignedTo: "", assignedToName: "", assignedOn: "" } }, { session });
         await events.insertOne({ _id: id("EVT"), type: "application.assigned", applicationIds: ids, ...(assigneeId ? { assigneeId, assignedBy: actor!.id } : {}), createdAt: new Date() }, { session });
         return { updated: result.modifiedCount, assigneeId, assigneeName: assignee ? String(assignee.name || "") : null };
+      });
+    }
+    if (method === "application.bookmark") {
+      // Bookmark (or clear) up to 100 applications for the whole team. Leaves
+      // `version` alone so it never conflicts with a status change in progress.
+      company(actor);
+      const ids = (Array.isArray(params.applicationIds) ? params.applicationIds : [params.applicationId]).map(str).filter(Boolean);
+      if (!ids.length || ids.length > 100 || [...new Set(ids)].length !== ids.length || typeof params.bookmarked !== "boolean") throw new DomainError("INVALID_REQUEST", "Choose up to 100 applications to bookmark or clear.");
+      const bookmarked = params.bookmarked;
+      return transact(key, actor, { method, params }, async session => {
+        // Rows already bookmarked keep whoever bookmarked them first.
+        const result = bookmarked
+          ? await applications.updateMany({ _id: { $in: ids }, bookmarked: { $ne: true } }, { $set: { bookmarked: true, bookmarkedBy: actor!.id, bookmarkedByName: String(actor!.name || ""), bookmarkedOn: new Date().toISOString() } }, { session })
+          : await applications.updateMany({ _id: { $in: ids }, bookmarked: true }, { $unset: Object.fromEntries(BOOKMARK_FIELDS.map(field => [field, ""])) }, { session });
+        await events.insertOne({ _id: id("EVT"), type: "application.bookmarked", applicationIds: ids, bookmarked, bookmarkedBy: actor!.id, createdAt: new Date() }, { session });
+        return { updated: result.modifiedCount, bookmarked };
       });
     }
     if (method === "applicant.erase") {

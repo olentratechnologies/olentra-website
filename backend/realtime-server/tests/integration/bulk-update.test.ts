@@ -113,6 +113,46 @@ test("applications can be assigned to a reviewer and filtered by assignee", asyn
   expect(event?.assignedBy).toBe(admin.id);
 });
 
+test("reviewers bookmark applications for the whole team and filter by them", async () => {
+  const items = await seed(4, "bookmark");
+  const starred = items.slice(0, 3).map(i => i.id);
+  const key = `bookmark-${randomUUID()}`;
+  expect(await domain.execute("application.bookmark", { applicationIds: starred, bookmarked: true }, recruiter, key)).toMatchObject({ updated: 3, bookmarked: true });
+  // A retry with the same key is not applied twice.
+  expect(await domain.execute("application.bookmark", { applicationIds: starred, bookmarked: true }, recruiter, key)).toMatchObject({ updated: 3 });
+  // Another reviewer sees the same bookmarks, and the first bookmarker is kept.
+  const list = await domain.execute("application.list", { search: "bookmark-", bookmarked: true, facets: true }, admin) as any;
+  expect(list.items.map((row: any) => row.id).sort()).toEqual([...starred].sort());
+  expect(list.counts.bookmarked).toBe(3);
+  expect(list.items[0]).toMatchObject({ bookmarked: true, bookmarkedBy: recruiter.id, bookmarkedByName: "Recruiter" });
+  // The applicant never sees the team's bookmark.
+  const applicant = { id: "bookmark-applicant", role: "intern", name: "Bulk 0", email: "bookmark-0@example.test", applicationId: starred[0], sessionVersion: 1 } as any;
+  const own = await domain.execute("application.get", { id: starred[0] }, applicant) as any;
+  for (const field of ["bookmarked", "bookmarkedBy", "bookmarkedByName", "bookmarkedOn"]) expect(own[field]).toBeUndefined();
+  expect(await domain.execute("application.bookmark", { applicationIds: [starred[0]], bookmarked: true }, admin, `bookmark-${randomUUID()}`)).toMatchObject({ updated: 0 });
+  expect((await domain.collection("applications").findOne({ _id: starred[0] }))?.bookmarkedBy).toBe(recruiter.id);
+  // Bookmarks never bump the version, so an open status edit still saves.
+  expect((await domain.collection("applications").findOne({ _id: starred[1] }))?.version).toBe(1);
+  await domain.execute("application.update", { id: starred[1], status: "Under Review", expectedVersion: 1 }, recruiter, `bookmark-${randomUUID()}`);
+  // "true" from a saved view filters the same way.
+  expect(((await domain.execute("application.list", { search: "bookmark-", bookmarked: "true" }, admin)) as any).total).toBe(3);
+  // Clearing removes every bookmark field.
+  await domain.execute("application.bookmark", { applicationIds: [starred[2]], bookmarked: false }, admin, `bookmark-${randomUUID()}`);
+  const cleared = await domain.collection("applications").findOne({ _id: starred[2] });
+  for (const field of ["bookmarked", "bookmarkedBy", "bookmarkedByName", "bookmarkedOn"]) expect(cleared?.[field]).toBeUndefined();
+  expect(((await domain.execute("application.list", { search: "bookmark-", bookmarked: true }, admin)) as any).total).toBe(2);
+  expect(await domain.collection("events").findOne({ type: "application.bookmarked", bookmarked: false, bookmarkedBy: admin.id })).not.toBeNull();
+});
+
+test("bookmarks need review permission and a bounded, valid request", async () => {
+  const items = await seed(1, "bookmark-rules");
+  const viewer = { ...recruiter, id: "bookmark-viewer", permissions: ["applications.read"] };
+  await expect(domain.execute("application.bookmark", { applicationIds: [items[0]!.id], bookmarked: true }, viewer, `bookmark-${randomUUID()}`)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  await expect(domain.execute("application.bookmark", { applicationIds: Array.from({ length: 101 }, (_, i) => `OL-x-${i}`), bookmarked: true }, admin, `bookmark-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(domain.execute("application.bookmark", { applicationIds: [items[0]!.id], bookmarked: "yes" }, admin, `bookmark-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(domain.execute("application.bookmark", { applicationIds: [items[0]!.id, items[0]!.id], bookmarked: true }, admin, `bookmark-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+});
+
 test("admins manage message templates; staff who can message can read them", async () => {
   const saved = await domain.execute("template.save", { name: "Interview invite", subject: "Interview for {track}", body: "Hi {firstName}, …" }, admin, `tpl-${randomUUID()}`) as any;
   expect(saved.id).toMatch(/^TPL-/);

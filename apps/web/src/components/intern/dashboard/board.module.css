@@ -68,6 +68,20 @@
   cursor: grabbing;
 }
 
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cardStar {
+  width: 24px;
+  height: 24px;
+  margin: -4px -4px -4px 0;
+}
+
 .cardName {
   color: var(--ad-text);
   font-size: 13px;

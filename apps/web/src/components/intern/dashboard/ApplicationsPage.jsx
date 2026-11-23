@@ -10,6 +10,7 @@ import {
   Check,
   RotateCcw,
   SlidersHorizontal,
+  Star,
   Video,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
@@ -25,8 +26,10 @@ import { hasStaffPermission } from "./staffAccess";
 import { useInternQuery, useInternSearch } from "../useInternQuery";
 import QueryStatus from "./QueryStatus";
 import ResumeViewer from "./ResumeViewer";
+import { useBookmarks } from "./useBookmarks";
 import {
   Avatar,
+  BookmarkToggle,
   Button,
   EmptyState,
   FilterMenu,
@@ -112,6 +115,8 @@ export default function ApplicationsPage() {
   const reviewersQuery = useInternQuery("staff.reviewers", {}, { enabled: canReview });
   const reviewers = reviewersQuery.data || [];
   const [skill, setSkill] = useState("all");
+  // Team bookmarks: show only the candidates someone starred.
+  const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
   // "Videos first" is a per-reviewer preference, remembered in this browser only.
   const [videosFirst, setVideosFirst] = useState(false);
   useEffect(() => { try { setVideosFirst(localStorage.getItem(VIDEOS_FIRST_KEY) === "1"); } catch { /* storage blocked */ } }, []);
@@ -141,14 +146,14 @@ export default function ApplicationsPage() {
     if (!view) return;
     const f = view.filters || {};
     setSearch(f.search || ""); setStatus(f.status || "all"); setTrack(f.programId || "all"); setBatch(f.batch || "all"); setVideo(f.video || "all");
-    setSkill(f.skill || "all"); setDateFrom(f.dateFrom || ""); setDateTo(f.dateTo || ""); setAssignee(f.assignee || "all");
+    setSkill(f.skill || "all"); setDateFrom(f.dateFrom || ""); setDateTo(f.dateTo || ""); setAssignee(f.assignee || "all"); setBookmarkedOnly(f.bookmarked === "true");
     if (f.sortKey) setSort({ key: f.sortKey, direction: f.sortDirection === "asc" ? "asc" : "desc" });
     setPage(1);
   }
   async function saveView() {
     const name = window.prompt("Name this view", savedViews.find((item) => item.id === activeView)?.name || "")?.trim();
     if (!name) return;
-    const result = await commands.saveView(name, { search, status, programId: track, batch, video, skill, dateFrom, dateTo, assignee, sortKey: sort.key, sortDirection: sort.direction });
+    const result = await commands.saveView(name, { search, status, programId: track, batch, video, skill, dateFrom, dateTo, assignee, bookmarked: bookmarkedOnly, sortKey: sort.key, sortDirection: sort.direction });
     if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Could not save the view."); return; }
     notify(`Saved “${name}”.`);
     setActiveView(result.data.id);
@@ -173,6 +178,7 @@ export default function ApplicationsPage() {
     Number(batch !== "all") +
     Number(video !== "all") +
     Number(assignee !== "all") +
+    Number(bookmarkedOnly) +
     Number(skill !== "all") +
     Number(Boolean(dateFrom)) +
     Number(Boolean(dateTo));
@@ -180,15 +186,15 @@ export default function ApplicationsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize]);
+  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, bookmarkedOnly]);
   // Selection is scoped to the rows on screen; any change of view clears it.
   useEffect(() => {
     setSelected(new Set());
-  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, page, sort.key, sort.direction, videosFirst]);
+  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, page, sort.key, sort.direction, videosFirst, bookmarkedOnly]);
 
   const debouncedSearch = useInternSearch(search);
   const debouncedQuery = useInternSearch(query);
-  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, batch, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }) };
+  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, batch, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }), ...(bookmarkedOnly ? { bookmarked: true } : {}) };
   const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction, videosFirst }, { enabled: !invalidDateRange });
   // Tab-count summary must NOT include programId — otherwise switching tracks
   // causes the facet response to be scoped to a single program and the other
@@ -201,6 +207,7 @@ export default function ApplicationsPage() {
   // cards, skill facets, and video counts that should reflect the active tab.
   const summaryQuery = useInternQuery("application.list", { ...queryParams, skill: "all", page: 1, pageSize: 1, facets: true }, { enabled: !invalidDateRange });
   refreshListsRef.current = () => { void listQuery.refresh(); void tabSummaryQuery.refresh(); void summaryQuery.refresh(); };
+  const bookmarks = useBookmarks({ commands, notify, onChanged: () => Promise.all([listQuery.refresh(), tabSummaryQuery.refresh(), summaryQuery.refresh()]) });
   const result = listQuery.data || { items: [], total: 0 };
   const tabSummary = tabSummaryQuery.data;
   const summary = summaryQuery.data;
@@ -234,6 +241,7 @@ export default function ApplicationsPage() {
     setBatch("all");
     setVideo("all");
     setAssignee("all");
+    setBookmarkedOnly(false);
     setSkill("all");
     setDateFrom("");
     setDateTo("");
@@ -363,6 +371,21 @@ export default function ApplicationsPage() {
       notify(name ? `${selectedRows.length} ${selectedRows.length === 1 ? "application" : "applications"} assigned to ${name}.` : `${selectedRows.length} unassigned.`);
       setSelected(new Set());
       void listQuery.refresh();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  async function bookmarkSelected(bookmarked) {
+    if (bulkBusy || !selectedRows.length) return;
+    setBulkBusy(true);
+    try {
+      const count = selectedRows.length;
+      const result = await bookmarks.setBookmarked(selectedRows, bookmarked);
+      if (!result) return;
+      const noun = `${count} ${count === 1 ? "applicant" : "applicants"}`;
+      notify(bookmarked ? `${noun} bookmarked.` : `Bookmark removed from ${noun}.`);
+      setSelected(new Set());
     } finally {
       setBulkBusy(false);
     }
@@ -521,6 +544,16 @@ export default function ApplicationsPage() {
               <Video size={14} aria-hidden="true" />
               Videos first
             </button>
+            <button
+              type="button"
+              className={`${styles.videosFirst} ${bookmarkedOnly ? styles.videosFirstOn : ""}`}
+              aria-pressed={bookmarkedOnly}
+              onClick={() => { setBookmarkedOnly((value) => !value); setPage(1); }}
+              title="Show only candidates the team bookmarked"
+            >
+              <Star size={14} aria-hidden="true" fill={bookmarkedOnly ? "currentColor" : "none"} />
+              Bookmarked{summary?.counts?.bookmarked != null ? ` (${summary.counts.bookmarked})` : ""}
+            </button>
             <div className={styles.layoutToggle} role="group" aria-label="Layout">
               <button type="button" aria-pressed={layout === "table"} onClick={() => chooseLayout("table")}>Table</button>
               <button type="button" aria-pressed={layout === "board"} onClick={() => chooseLayout("board")}>Board</button>
@@ -570,6 +603,8 @@ export default function ApplicationsPage() {
                   {action.label}
                 </button>
               ))}
+              <button type="button" className={styles.bulkButton} disabled={bulkBusy} onClick={() => void bookmarkSelected(true)}>Bookmark</button>
+              <button type="button" className={styles.bulkButton} disabled={bulkBusy} onClick={() => void bookmarkSelected(false)}>Remove bookmark</button>
               {isAdmin && <button type="button" className={`${styles.bulkButton} ${styles.bulkDanger}`} disabled={bulkBusy || loadingDeletion} onClick={() => void prepareDeletion(false)}>Delete selected</button>}
               {reviewers.length > 0 && (
                 <select
@@ -592,7 +627,7 @@ export default function ApplicationsPage() {
           </div>
         )}
         {layout === "board" ? (
-          <ApplicationsBoard key={boardVersion} onDelete={setDeletingApplication} queryParams={queryParams} isAdmin={isAdmin} commands={commands} notify={notify} onChanged={() => { void listQuery.refresh(); void tabSummaryQuery.refresh(); void summaryQuery.refresh(); }} />
+          <ApplicationsBoard key={boardVersion} onDelete={setDeletingApplication} queryParams={queryParams} isAdmin={isAdmin} commands={commands} notify={notify} bookmarks={bookmarks} canBookmark={canReview} onChanged={() => { void listQuery.refresh(); void tabSummaryQuery.refresh(); void summaryQuery.refresh(); }} />
         ) : filtered.length ? (
           <div className={`${common.tableWrap} ${styles.applicationTableWrap}`}>
             <table className={`${common.table} ${styles.applicationTable}`}>
@@ -696,19 +731,30 @@ export default function ApplicationsPage() {
                       </td>
                     )}
                     <td>
-                      <Link
-                        className={styles.applicantLink}
-                        href={`/intern/dashboard/applications/${application.id}`}
-                      >
-                        <Avatar person={application} size={31} />
-                        <span>{application.name}</span>
-                        {application.hasVideo && (
-                          <span className={styles.videoBadge} title="Intro video shared">
-                            <Video size={12} aria-hidden="true" />
-                            <span className={styles.srOnlyText}>Intro video shared</span>
-                          </span>
-                        )}
-                      </Link>
+                      <div className={styles.applicantCell}>
+                        <Link
+                          className={styles.applicantLink}
+                          href={`/intern/dashboard/applications/${application.id}`}
+                        >
+                          <Avatar person={application} size={31} />
+                          <span>{application.name}</span>
+                          {application.hasVideo && (
+                            <span className={styles.videoBadge} title="Intro video shared">
+                              <Video size={12} aria-hidden="true" />
+                              <span className={styles.srOnlyText}>Intro video shared</span>
+                            </span>
+                          )}
+                        </Link>
+                        <BookmarkToggle
+                          bookmarked={bookmarks.isBookmarked(application)}
+                          name={application.name}
+                          by={application.bookmarkedByName}
+                          on={application.bookmarkedOn}
+                          canEdit={canReview}
+                          busy={bookmarks.isBusy(application)}
+                          onToggle={(next) => void bookmarks.setBookmarked([application], next)}
+                        />
+                      </div>
                     </td>
                     <td>
                       <TrackBadge programId={application.programId} />
@@ -752,11 +798,13 @@ export default function ApplicationsPage() {
         ) : listQuery.data || invalidDateRange ? (
           <div className={styles.emptyContainer}>
             <EmptyState
-              title="No applications found"
+              title={bookmarkedOnly && !invalidDateRange ? "No bookmarked applications" : "No applications found"}
               description={
                 invalidDateRange
                   ? "Choose a valid application date range."
-                  : "Try a different search, track, or status filter."
+                  : bookmarkedOnly
+                    ? "Star a candidate to find them here, or widen the other filters."
+                    : "Try a different search, track, or status filter."
               }
             />
             <Button variant="secondary" onClick={resetFilters}>

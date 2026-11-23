@@ -38,8 +38,10 @@ import EraseApplicantPanel from "./EraseApplicantPanel";
 import ApplicantScorePanel from "./ApplicantScorePanel";
 import TemplatePicker from "./TemplatePicker";
 import { toEmbed } from "@/lib/intern/video-embed.mjs";
+import { useBookmarks } from "./useBookmarks";
 import {
   Avatar,
+  BookmarkToggle,
   Button,
   EmptyState,
   Modal,
@@ -129,6 +131,7 @@ export default function ApplicantDetailPage({ applicationId }) {
   const [subject, setSubject] = useState("Your Olentra internship application");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState("");
+  const bookmarks = useBookmarks({ commands, notify, onChanged: () => commands.getApplication(applicationId) });
 
   useEffect(() => {
     setStatus(application?.status || "Applied");
@@ -515,7 +518,16 @@ export default function ApplicantDetailPage({ applicationId }) {
         <div className={styles.profileIdentity}>
           <h1>
             {application.name}
-
+            <BookmarkToggle
+              size={20}
+              bookmarked={bookmarks.isBookmarked(application)}
+              name={application.name}
+              by={application.bookmarkedByName}
+              on={application.bookmarkedOn}
+              canEdit={canReview}
+              busy={bookmarks.isBusy(application)}
+              onToggle={(next) => void bookmarks.setBookmarked([application], next)}
+            />
           </h1>
           <p>
             {application.program}
@@ -525,6 +537,12 @@ export default function ApplicantDetailPage({ applicationId }) {
           <div className={styles.profileMeta}>
             <TrackBadge programId={application.programId} />
             <StatusBadge status={application.status} />
+            {application.bookmarked && bookmarks.isBookmarked(application) && (
+              <span className={styles.bookmarkMeta}>
+                Bookmarked{application.bookmarkedByName ? ` by ${application.bookmarkedByName}` : ""}
+                {application.bookmarkedOn ? ` · ${formatDate(application.bookmarkedOn)}` : ""}
+              </span>
+            )}
           </div>
         </div>
       </header>
