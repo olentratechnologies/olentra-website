@@ -23,6 +23,8 @@ beforeAll(async () => {
   await domain.initialize();
   await domain.collection("programs").updateOne({ _id: "software-engineer" }, { $set: { enabled: true, fee: 0, stipend: 0 } });
   await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true } });
+  // Writes check the staff account still exists, as in production.
+  await domain.collection("accounts").insertMany([admin, reviewer, viewer].map(({ id, ...person }) => ({ _id: id, role: "company", staffRole: person.staffRole, name: person.name, email: person.email, sessionVersion: 1 })));
 }, 20000);
 afterAll(async () => {
   if (!connection) return;
@@ -165,6 +167,8 @@ test("admins can score every unscored application from the dashboard; other staf
 });
 
 test("the live queue shows who is being reviewed, who is next and recent results", async () => {
+  // Clear anything earlier tests left due, so the worker picks one of these two next.
+  await domain.aiReviews.process(deps(async () => outcome(5)), 50);
   const first = await apply("live-a"), second = await apply("live-b");
   let snapshot: any;
   await domain.aiReviews.process(deps(async (_file, _applicant, progress) => {
