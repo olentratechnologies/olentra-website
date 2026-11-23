@@ -14,7 +14,7 @@ let connection: Awaited<ReturnType<typeof connectInternDatabase>>;
 let domain: ReturnType<typeof createInternshipDomain>;
 const admin = { id: "ai-admin", role: "company", staffRole: "admin", name: "Admin", email: "ai-admin@example.test", applicationId: null, sessionVersion: 1 } as any;
 const reviewer = { id: "ai-reviewer", role: "company", staffRole: "recruiter", name: "Reviewer", email: "ai-reviewer@example.test", applicationId: null, sessionVersion: 1, permissions: ["applications.read", "applications.review"] } as any;
-const viewer = { ...reviewer, id: "ai-viewer", permissions: ["applications.read"] } as any;
+const viewer = { ...reviewer, id: "ai-viewer", email: "ai-viewer@example.test", permissions: ["applications.read"] } as any;
 
 beforeAll(async () => {
   connection = await connectInternDatabase(uri!);
