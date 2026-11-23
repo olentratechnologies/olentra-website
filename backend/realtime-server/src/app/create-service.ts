@@ -338,7 +338,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     // AI resume review: off until GROQ_API_KEY is set; one resume at a time keeps within Groq's rate limits.
     const groqKey = process.env.GROQ_API_KEY?.trim();
     if (!groqKey) logger.warn("AI resume review is off: GROQ_API_KEY is not set");
-    const groq = groqKey ? createGroq({ apiKey: groqKey, reviewModel: process.env.GROQ_REVIEW_MODEL?.trim() || undefined, visionModel: process.env.GROQ_VISION_MODEL?.trim() || undefined, reasoningEffort: ["low", "medium", "high"].includes(process.env.GROQ_REASONING_EFFORT?.trim() || "") ? process.env.GROQ_REASONING_EFFORT!.trim() as "low" | "medium" | "high" : undefined }) : null;
+    const groq = groqKey ? createGroq({ apiKey: groqKey, reviewModel: process.env.GROQ_REVIEW_MODEL?.trim() || undefined, fallbackModels: process.env.GROQ_FALLBACK_MODELS !== undefined ? process.env.GROQ_FALLBACK_MODELS.split(",").map(model => model.trim()).filter(Boolean) : undefined, visionModel: process.env.GROQ_VISION_MODEL?.trim() || undefined, reasoningEffort: ["low", "medium", "high"].includes(process.env.GROQ_REASONING_EFFORT?.trim() || "") ? process.env.GROQ_REASONING_EFFORT!.trim() as "low" | "medium" | "high" : undefined }) : null;
     const readResume = async (file: any) => {
       const stream = file.storage === "oci"
         ? objectStore && file.cleanKey ? await objectStore.download(file.cleanKey) : null

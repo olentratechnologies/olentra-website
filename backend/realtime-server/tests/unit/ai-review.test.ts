@@ -190,6 +190,31 @@ describe("Groq client", () => {
     expect(await always.review([], REVIEW_SCHEMA).catch(e => e)).toBeInstanceOf(TransientAiError);
   });
 
+  test("a rate-limited model hands over to the fallback, and is skipped until its limit lifts", async () => {
+    let clock = 0;
+    const models: string[] = [];
+    const daily = { error: { message: "Rate limit reached for model on tokens per day (TPD)" } };
+    const groq = createGroq({ apiKey: "k", reviewModel: "main", fallbackModels: ["backup"], now: () => clock, fetchImpl: (async (_url: string, init: RequestInit) => {
+      const model = JSON.parse(String(init.body)).model;
+      models.push(model);
+      return model === "main" ? new Response(JSON.stringify(daily), { status: 429, headers: { "retry-after": "240" } }) : new Response(JSON.stringify({ model, choices: [{ message: { content: "{}" } }] }));
+    }) as any });
+    expect((await groq.review([], REVIEW_SCHEMA)).model).toBe("backup");
+    expect((await groq.review([], REVIEW_SCHEMA)).model).toBe("backup");
+    expect(models).toEqual(["main", "backup", "backup"]); // main is not retried while cooling down
+    clock = 241_000;
+    await groq.review([], REVIEW_SCHEMA);
+    expect(models.at(-2)).toBe("main"); // tried again once its limit lifted
+  });
+
+  test("when every model is rate-limited the caller waits for the soonest one", async () => {
+    const groq = createGroq({ apiKey: "k", reviewModel: "a", fallbackModels: ["b"], now: () => 0, fetchImpl: (async (_url: string, init: RequestInit) => new Response("{}", { status: 429, headers: { "retry-after": JSON.parse(String(init.body)).model === "a" ? "300" : "30" } })) as any });
+    const error = await groq.review([], REVIEW_SCHEMA).catch(e => e);
+    expect(error).toBeInstanceOf(TransientAiError);
+    expect(error.rateLimited).toBe(true);
+    expect(error.retryAfterMs).toBe(30_000);
+  });
+
   test("OCR strips model thinking and sends the image inline", async () => {
     let body: any;
     const groq = createGroq({ apiKey: "k", visionModel: "vision", fetchImpl: (async (_url: string, init: RequestInit) => { body = JSON.parse(String(init.body)); return new Response(JSON.stringify({ choices: [{ message: { content: "<think>hmm</think>\nAlex Morgan" } }] })); }) as any });

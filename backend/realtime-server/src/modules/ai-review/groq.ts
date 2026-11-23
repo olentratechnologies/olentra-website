@@ -9,6 +9,11 @@ export const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 /** Fastest model that still reviews well; uses about half the tokens of gpt-oss-120b, so more reviews fit in Groq's per-minute limit. */
 export const DEFAULT_REVIEW_MODEL = "openai/gpt-oss-20b";
 export type ReasoningEffort = "low" | "medium" | "high";
+/**
+ * Used in order when the main model is rate-limited. Each Groq model has its own
+ * per-minute and per-day token limits, so a second model roughly doubles capacity.
+ */
+export const DEFAULT_FALLBACK_MODELS = ["openai/gpt-oss-120b"];
 /** gpt-oss models are text-only; this Qwen model on Groq reads images. */
 export const DEFAULT_VISION_MODEL = "qwen/qwen3.8-27b";
 
@@ -23,14 +28,17 @@ export class SchemaMismatchError extends Error {
 }
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string | ({ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } })[] };
-export type GroqConfig = { apiKey: string; reviewModel?: string; visionModel?: string; reasoningEffort?: ReasoningEffort; fetchImpl?: typeof fetch; timeoutMs?: number };
+export type GroqConfig = { apiKey: string; reviewModel?: string; fallbackModels?: string[]; visionModel?: string; reasoningEffort?: ReasoningEffort; fetchImpl?: typeof fetch; timeoutMs?: number; now?: () => number };
 
 const retryAfter = (response: Response) => {
   const seconds = Number(response.headers.get("retry-after"));
   return Number.isFinite(seconds) && seconds > 0 ? Math.min(seconds * 1000, 10 * 60_000) : undefined;
 };
 
-export function createGroq({ apiKey, reviewModel = DEFAULT_REVIEW_MODEL, visionModel = DEFAULT_VISION_MODEL, reasoningEffort = "low", fetchImpl = fetch, timeoutMs = 90_000 }: GroqConfig) {
+export function createGroq({ apiKey, reviewModel = DEFAULT_REVIEW_MODEL, fallbackModels = DEFAULT_FALLBACK_MODELS, visionModel = DEFAULT_VISION_MODEL, reasoningEffort = "low", fetchImpl = fetch, timeoutMs = 90_000, now = Date.now }: GroqConfig) {
+  const reviewModels = [reviewModel, ...fallbackModels.filter(model => model && model !== reviewModel)];
+  /** Model → time its rate limit lifts. Skipped until then. */
+  const coolingDown = new Map<string, number>();
   async function chat(body: Record<string, unknown>) {
     let response: Response;
     try {
@@ -73,10 +81,31 @@ export function createGroq({ apiKey, reviewModel = DEFAULT_REVIEW_MODEL, visionM
     return content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
   }
 
-  /** Runs the review prompt and returns the model's JSON object (still unvalidated). */
+  /**
+   * Runs the review prompt and returns the model's JSON object (still unvalidated).
+   * A rate-limited model is skipped until its limit lifts and the next one is tried;
+   * only when every model is limited does the caller see a rate limit.
+   */
   async function review(messages: ChatMessage[], schema: Record<string, unknown>) {
+    let soonest = Number.POSITIVE_INFINITY;
+    for (const model of reviewModels) {
+      const until = coolingDown.get(model) || 0;
+      if (until > now()) { soonest = Math.min(soonest, until); continue; }
+      try {
+        return await reviewWith(model, messages, schema);
+      } catch (error) {
+        if (!(error instanceof TransientAiError && error.rateLimited)) throw error;
+        const lifts = now() + (error.retryAfterMs ?? 60_000);
+        coolingDown.set(model, lifts);
+        soonest = Math.min(soonest, lifts);
+      }
+    }
+    throw new TransientAiError("Every review model is rate-limited by Groq.", Math.max(1_000, soonest - now()), true);
+  }
+
+  async function reviewWith(model: string, messages: ChatMessage[], schema: Record<string, unknown>) {
     const request = {
-      model: reviewModel,
+      model,
       temperature: 0,
       // Reasoning tokens count against the per-minute limit; "low" is plenty for a scored rubric.
       reasoning_effort: reasoningEffort,
@@ -100,6 +129,6 @@ export function createGroq({ apiKey, reviewModel = DEFAULT_REVIEW_MODEL, visionM
     catch { throw new TransientAiError("Groq returned malformed JSON."); }
   }
 
-  return { transcribe, review, reviewModel, visionModel };
+  return { transcribe, review, reviewModel, reviewModels, visionModel };
 }
 export type Groq = ReturnType<typeof createGroq>;
