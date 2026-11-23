@@ -101,6 +101,11 @@ test("rate limits only delay a review and never use up its attempts", async () =
     const row = await queueRow(applicationId);
     expect(row).toMatchObject({ status: "queued", attempts: 0 });
     expect(row!.nextAttemptAt.getTime()).toBeGreaterThan(Date.now() + 10_000);
+    // While paused, the worker leaves every other resume alone.
+    let touched = false;
+    await domain.aiReviews.process(deps(async () => { touched = true; return outcome(5); }), 5);
+    expect(touched).toBe(false);
+    domain.aiReviews.clearRateLimitPause();
     await domain.collection("ai_reviews").updateOne({ _id: applicationId }, { $set: { nextAttemptAt: new Date(0) } });
   }
   expect(await application(applicationId)).toMatchObject({ aiReviewStatus: "pending" });

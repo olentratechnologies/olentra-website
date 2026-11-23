@@ -13,7 +13,7 @@ const LEASE_MS = 5 * 60_000;
 /** While the resume is still being virus-scanned. */
 const SCAN_WAIT_MS = 30_000;
 /** When Groq rate-limits without saying how long to wait. */
-const RATE_LIMIT_WAIT_MS = 20_000;
+const RATE_LIMIT_WAIT_MS = 10_000;
 /** 1, 2, 4, 8 minutes between failed attempts. */
 export const aiBackoff = (attempts: number) => Math.min(60_000 * 2 ** Math.max(0, attempts - 1), 30 * 60_000);
 
@@ -37,6 +37,9 @@ export type AiWorkerDeps = {
 export function createAiReviews({ collection, transact, now = Date.now }: { collection: (name: string) => Collection<Row>; transact: Tx; now?: () => number }) {
   const queue = collection("ai_reviews"), applications = collection("applications"), files = collection("files"), events = collection("events");
   const methods = new Set(["application.aiReview", "application.aiReviewRerun", "application.aiReviewBackfill", "application.aiQueue"]);
+  // A Groq rate limit applies to the whole account, so the worker pauses as a whole
+  // instead of pushing each waiting resume further back (which spread the queue out).
+  let pausedUntil = 0;
 
   async function initialize() {
     await Promise.all([
@@ -81,6 +84,7 @@ export function createAiReviews({ collection, transact, now = Date.now }: { coll
 
   /** Reviews up to `limit` due resumes. */
   async function process(deps: AiWorkerDeps, limit = 1) {
+    if (now() < pausedUntil) return 0;
     let handled = 0;
     while (handled < limit) {
       const at = new Date(now()), leaseId = randomUUID();
@@ -111,7 +115,9 @@ export function createAiReviews({ collection, transact, now = Date.now }: { coll
       } catch (error) {
         // A rate limit says nothing about this resume: wait and try again without using up an attempt.
         if (error instanceof TransientAiError && error.rateLimited) {
-          await release({ $set: { error: "Waiting for Groq's rate limit.", nextAttemptAt: new Date(now() + Math.max(error.retryAfterMs || 0, RATE_LIMIT_WAIT_MS)) } });
+          const wait = Math.max(2_000, error.retryAfterMs ?? RATE_LIMIT_WAIT_MS);
+          pausedUntil = now() + wait;
+          await release({ $set: { error: "Waiting for Groq's rate limit.", nextAttemptAt: new Date(pausedUntil) } });
           break;
         }
         const attempts = Number(row.attempts || 0) + 1;
@@ -208,7 +214,10 @@ export function createAiReviews({ collection, transact, now = Date.now }: { coll
     });
   }
 
-  return { initialize, enqueue, process, backfill, supports: (method: string) => methods.has(method), execute };
+  /** Lets the worker try again before a rate-limit pause ends (tests, or after upgrading the Groq plan). */
+  const clearRateLimitPause = () => { pausedUntil = 0; };
+
+  return { initialize, enqueue, process, backfill, clearRateLimitPause, supports: (method: string) => methods.has(method), execute };
 }
 export type AiReviews = ReturnType<typeof createAiReviews>;
 
