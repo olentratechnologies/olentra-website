@@ -34,9 +34,15 @@ test("live insights read recent events of one type through an index", async () =
 });
 
 test("the bookmarked applications filter reads through its partial index", async () => {
-  await domain.collection("applications").insertOne({ _id: `OL-bm-${randomUUID()}`, email: `bm-${randomUUID()}@example.test`, appliedOn: "2026-11-01", bookmarked: true });
-  const plan = await domain.collection("applications").find({ bookmarked: true }).sort({ appliedOn: -1, _id: -1 }).limit(20).explain();
-  expect(usesIndex(plan)).toBe(true);
+  const rowId = `OL-bm-${randomUUID()}`;
+  await domain.collection("applications").insertOne({ _id: rowId, email: `bm-${randomUUID()}@example.test`, appliedOn: "2026-11-01", bookmarked: true });
+  try {
+    const plan = await domain.collection("applications").find({ bookmarked: true }).sort({ appliedOn: -1, _id: -1 }).limit(20).explain();
+    expect(usesIndex(plan)).toBe(true);
+  } finally {
+    // Later tests count every application in this collection.
+    await domain.collection("applications").deleteOne({ _id: rowId });
+  }
 });
 
 test("certificate numbers are unique and the unused events index is gone", async () => {
