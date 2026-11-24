@@ -272,7 +272,12 @@ test("manual offer reminders share deadline coverage with the scheduler and supp
   await remind(early, key);
   await remind(manualFirst);
   await domain.runReminders(now);
-  expect(await remind(automaticFirst)).toMatchObject({ queued: false });
+  expect(await remind(automaticFirst)).toMatchObject({ queued: false, covered: true });
+  // An admin can deliberately send one more, but not twice within 10 minutes.
+  expect(await domain.execute("offer.remind", { applicationId: automaticFirst, force: true }, admin, randomUUID())).toMatchObject({ queued: true });
+  expect(await domain.execute("offer.remind", { applicationId: automaticFirst, force: true }, admin, randomUUID())).toMatchObject({ queued: false });
+  expect(await count(automaticFirst)).toBe(2);
+  await queue.deleteMany({ "payload.applicationId": automaticFirst, "payload.status": "offer-manual-reminder" });
   expect(await count(manualFirst)).toBe(1);
   expect(await count(automaticFirst)).toBe(1);
   expect(await count(early)).toBe(1);

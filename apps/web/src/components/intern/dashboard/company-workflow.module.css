@@ -590,3 +590,19 @@
   line-height: 1.45;
   color: var(--ad-subtle, #7389ad);
 }
+/* Shown when the 24-hour deadline reminder has already gone out. */
+.reminderNote {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--ad-border, #d4e0ff);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ad-panel-alt, #eef4ff) 60%, transparent);
+  color: var(--ad-muted, #344f87);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.reminderNote p { margin: 0; }
+.reminderNote strong { color: var(--ad-text, #071443); }
+.reminderNote .formActions { margin-top: 8px; flex-wrap: wrap; }

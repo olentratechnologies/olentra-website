@@ -148,6 +148,41 @@ export function ApplicantNextAction({ applicationId, onOpenWorkflow }) {
   );
 }
 
+/**
+ * Offer reminders. Only one reminder normally goes out in an offer's last 24 hours; when it already has,
+ * the reason is shown and an admin can deliberately send one more after confirming.
+ */
+export function OfferReminderActions({ offer, applicationId, name, busy, setBusy }) {
+  const { commands, notify } = useInternship();
+  const [confirming, setConfirming] = useState(false);
+  const finalDay = Date.parse(offer.expiresOn) <= Date.now() + 86_400_000;
+  const covered = finalDay && offer.reminderSentFor === offer.expiresOn && (offer.reminderSentVersion == null || offer.reminderSentVersion === (offer.currentVersion || 1));
+  const who = name?.split(" ")[0] || "This candidate";
+  const sentAt = offer.lastReminderQueuedAt ? new Date(offer.lastReminderQueuedAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
+  async function send(force) {
+    setBusy(true);
+    try {
+      const result = await commands.remindOffer(applicationId, { force });
+      notify(result.ok ? (result.data.queued ? "Offer reminder queued." : result.data.reason) : result.error);
+      if (result.ok) { setConfirming(false); await commands.getApplication(applicationId); }
+    } finally { setBusy(false); }
+  }
+  if (!covered) return <div className={styles.formActions}>
+    {offer.lastReminderQueuedAt && <span>Last reminder queued {new Date(offer.lastReminderQueuedAt).toLocaleString()}</span>}
+    <Button variant="secondary" disabled={busy} onClick={() => send(false)}>Send offer reminder</Button>
+  </div>;
+  return <div className={styles.reminderNote} role="status">
+    <p><strong>{who} already got the 24-hour deadline reminder{sentAt ? ` (${sentAt})` : ""}.</strong> Only one reminder goes out automatically on an offer’s last day, so candidates aren’t emailed repeatedly.</p>
+    {confirming ? <div className={styles.formActions}>
+      <span>Send {who} a second reminder today?</span>
+      <Button variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>Cancel</Button>
+      <Button disabled={busy} onClick={() => send(true)}>{busy ? "Sending…" : "Send reminder"}</Button>
+    </div> : <div className={styles.formActions}>
+      <Button variant="secondary" disabled={busy} onClick={() => setConfirming(true)}>Send another reminder</Button>
+    </div>}
+  </div>;
+}
+
 export function ApplicantWorkflow({ applicationId }) {
   const { data, account, commands, notify } = useInternship();
   const isAdmin = account?.staffRole === "admin";
@@ -354,17 +389,7 @@ export function ApplicantWorkflow({ applicationId }) {
                   <dd>{formatDeadline(offer.expiresOn)} · {offerTimeLeft(offer.expiresOn)?.label}</dd>
                 </div>}
               </dl>
-              {isAdmin && offer.status === "Sent" && Date.parse(offer.expiresOn) > Date.now() && <div className={styles.formActions}>
-                {offer.lastReminderQueuedAt && <span>Last reminder queued {new Date(offer.lastReminderQueuedAt).toLocaleString()}</span>}
-                <Button variant="secondary" disabled={busy || (offer.reminderSentFor === offer.expiresOn && (offer.reminderSentVersion == null || offer.reminderSentVersion === (offer.currentVersion || 1)))} onClick={async () => {
-                  setBusy(true);
-                  try {
-                    const result = await commands.remindOffer(applicationId);
-                    notify(result.ok ? (result.data.queued ? "Offer reminder queued." : result.data.reason) : result.error);
-                    if (result.ok) await commands.getApplication(applicationId);
-                  } finally { setBusy(false); }
-                }}>Send offer reminder</Button>
-              </div>}
+              {isAdmin && offer.status === "Sent" && Date.parse(offer.expiresOn) > Date.now() && <OfferReminderActions offer={offer} applicationId={applicationId} name={application?.name} busy={busy} setBusy={setBusy} />}
               {isAdmin && offer.status === "Sent" && offer.route !== "instant" && (() => {
                 // New deadlines count from today and must still close the lead time before the start date.
                 const longest = maxOpenDays(offer.startOn, today, leadDays);
