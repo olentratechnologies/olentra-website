@@ -15,6 +15,16 @@ const LABELS = {
   "project.link.added": (detail) => `Added project link ${detail?.label || ""}`.trim(),
   "project.link.updated": (detail) => `Updated project link ${detail?.label || ""}`.trim(),
   "project.link.deleted": (detail) => `Deleted project link ${detail?.label || ""}`.trim(),
+  "team.created": (detail) => `Created team ${detail?.names?.[0] || ""}`.trim(),
+  "team.createdMany": (detail) => `Created ${detail?.count || ""} teams`.replace("  ", " "),
+  "team.membersAdded": (detail) => `Added ${detail?.added?.length || ""} team ${detail?.added?.length === 1 ? "member" : "members"}`,
+  "team.memberRemoved": () => "Removed a team member",
+  "team.memberMoved": () => "Moved an intern to another team",
+  "team.projectAssigned": (detail) => `Assigned a team to ${detail?.name || "a project"}`,
+  "team.projectRemoved": (detail) => `Took a team off ${detail?.name || "a project"}`,
+  "team.archived": (detail) => `Archived team ${detail?.name || ""}`.trim(),
+  "team.restored": (detail) => `Restored team ${detail?.name || ""}`.trim(),
+  "team.settings": (detail) => `Set the usual team size to ${detail?.size ?? "?"}`,
   "project.link.access": (detail) => detail?.status === "granted" ? "Marked repository access as granted" : "Marked repository access as pending",
 };
 

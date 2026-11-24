@@ -1,6 +1,6 @@
 const dashboardTitles = Object.freeze({
   applications: "Applications", analytics: "Analytics", interns: "Interns",
-  projects: "Projects", certificates: "Certificates", settings: "Settings",
+  projects: "Projects", teams: "Teams", certificates: "Certificates", settings: "Settings",
   staff: "Staff & Roles",
 });
 const portalTitles = Object.freeze({
@@ -17,6 +17,7 @@ export function workspacePageTitle(pathname) {
   if (area !== "intern") return "Workspace";
   if (workspace === "dashboard") {
     if (page === "applications" && detail) return "Application details";
+    if (page === "teams" && detail) return "Team details";
     return page ? dashboardTitles[page] || "Workspace" : "Dashboard";
   }
   if (workspace === "portal") {

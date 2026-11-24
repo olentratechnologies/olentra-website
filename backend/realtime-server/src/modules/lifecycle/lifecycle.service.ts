@@ -11,7 +11,7 @@ type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session
 const text = (v: unknown) => typeof v === "string" ? v.trim() : "";
 const newId = (p: string) => `${p}-${randomUUID()}`;
 import { auditDecision } from "../audit/decision-audit";
-import { linkIsFor } from "./link-audience";
+import { linkIsFor, linksWithout } from "./link-audience";
 import { civilToday } from "../programs/schedule.mjs";
 import { decisionDeadline, formatDeadline, normalizeLeadDays, offerWindowProblem } from "../programs/offer-policy.mjs";
 import { mentorScope } from "../access/mentor-scope";
@@ -378,15 +378,11 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         if (input.team !== undefined) { patch.team = await validateTeam(input.team, session); for (const removed of (project.team || []).filter((v: string) => !patch.team.includes(v))) if (await tasks.findOne({ projectId: project._id, applicationId: removed, status: { $ne: "Approved" } }, opts)) throw new DomainError("CONFLICT", "Finish this intern's tasks before removing them from the project."); }
         if (patch.team && Array.isArray(project.links)) {
           const removed = (project.team || []).filter((id: string) => !patch.team.includes(id));
-          if (removed.length) patch.links = project.links.map((link: any) => {
-            const next = { ...link, access: Object.fromEntries(Object.entries(link.access || {}).filter(([id]) => !removed.includes(id))) };
-            // A link limited to interns who all left becomes staff-only rather than open to the whole team.
-            if (Array.isArray(link.members)) {
-              next.members = link.members.filter((id: string) => !removed.includes(id));
-              if (!next.members.length) { delete next.members; next.visibleToInterns = false; }
-            }
-            return next;
-          });
+          if (removed.length) patch.links = linksWithout(project.links, removed);
+        }
+        // Team-sourced members removed by hand no longer belong to that team's record on the project.
+        if (patch.team && project.teamSources) {
+          patch.teamSources = Object.fromEntries(Object.entries(project.teamSources).filter(([id]) => patch.team.includes(id)));
         }
         const result = await projects.findOneAndUpdate({ _id: project._id }, { $set: patch }, { ...opts, returnDocument: "after" }); return { ...plain(result!), affectedApplications: [...new Set([...(project.team || []), ...(result?.team || [])])] };
       }
@@ -397,6 +393,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         const project = await projects.findOneAndDelete({ _id: projectId }, opts);
         if (!project) throw new DomainError("NOT_FOUND", "Project not found.");
         await plans.deleteOne({ _id: projectId }, opts);
+        await collection("teams").updateMany({ projectIds: projectId }, { $pull: { projectIds: projectId } } as any, opts);
         const projectTasks = await tasks.find({ projectId }, opts).project({ _id: 1, applicationId: 1 }).toArray();
         await submissions.deleteMany({ taskId: { $in: projectTasks.map(task => task._id) } }, opts);
         await tasks.deleteMany({ projectId }, opts);

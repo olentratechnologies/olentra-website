@@ -30,6 +30,7 @@ import styles from "./portal.module.css";
 import { displayDate } from "@/lib/intern/schedule.mjs";
 import { portalJourney } from "@/lib/intern/portal-journey.mjs";
 import LearningResources from "./LearningResources";
+import { MyTeamCard } from "./MyTeam";
 import WeeklyCheckin from "./WeeklyCheckin";
 import badgeStyles from "./badges.module.css";
 
@@ -182,6 +183,7 @@ export default function PortalDashboard() {
           <a href={repository.invite.acceptUrl} target="_blank" rel="noopener noreferrer">Accept invite on GitHub <ArrowRight size={14} /></a>
         </Notice>
       )}
+      {canViewWork && <MyTeamCard team={data?.myTeam} />}
       <div className={styles.summaryGrid}>
         {[
           {

@@ -3,6 +3,7 @@ import { isCurrentInterviewEmail } from "../modules/interviews/email-delivery";
 import { createCommunications } from "../modules/communications/communications.service";
 import { createLifecycle } from "../modules/lifecycle/lifecycle.service";
 import { createGithubAccess } from "../modules/github/github-access";
+import { createTeams } from "../modules/teams/teams.service";
 import { createGithubApp, readGithubConfig, type GithubApp } from "../modules/github/github-app";
 import { createInternshipQueries } from "../modules/queries/query.service";
 import { createStaffManagement } from "../modules/staff/staff.service";
@@ -72,6 +73,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   async function initialize() {
     await Promise.all([
       githubAccess.initialize(),
+      teams.initialize(),
       lifecycle.initialize(),
       stories.initialize(),
       reviews.initialize(),
@@ -287,6 +289,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     }
   }
   const aiReviews = createAiReviews({ collection, transact });
+  const teams = createTeams({ collection, transact });
   const lifecycle = createLifecycle({ collection, transact, outbox, onResumeChanged: (applicationId, fileId, session) => aiReviews.enqueue(applicationId, fileId, session) });
   const communications = createCommunications({ collection, transact });
   const queries = createInternshipQueries(collection);
@@ -440,6 +443,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!can(actor, "overview.read")) data.analytics = null;
       }
       if (ownApplication) data.applications = [publicApplication(ownApplication, false)];
+      if (actor?.role === "intern" && actor.applicationId) data.myTeam = await teams.myTeam(actor.applicationId);
       data.githubIntegration = { enabled: githubAccess.enabled, ...(actor?.role === "company" ? { installUrl: githubAccess.installUrl } : {}) };
       return { data, my: { application: actor?.role === "intern" ? data.applications[0] || null : null, intern: data.interns[0] || null, offer: data.offers[0] || null, interview: actor?.role === "intern" ? data.interviews[0] || null : null, onboarding: data.onboarding[0] || { applicationId: actor?.applicationId, status: "Not started", acknowledged: false }, projects: data.projects, tasks: data.tasks, submissions: data.submissions, certificates: data.certificates, messages: data.messages, notifications: data.notifications, resources: actor?.role === "intern" ? learning : [], hasPassword: await hasPasswordPromise, documentChecklist: actor?.role === "intern" ? (await publicData()).settings.onboardingDocuments : [] }, account: actor };
     }
@@ -664,6 +668,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       return queries.execute(method, params, actor);
     }
     if (githubAccess.supports(method)) return githubAccess.execute(method, params, actor);
+    if (teams.supports(method)) return teams.execute(method, params, actor, key);
     if (lifecycle.supports(method)) return lifecycle.execute(method, params, actor, key);
     if (stories.supports(method)) return stories.execute(method, params, actor, key);
     if (reviews.supports(method)) return reviews.execute(method, params, actor, key);

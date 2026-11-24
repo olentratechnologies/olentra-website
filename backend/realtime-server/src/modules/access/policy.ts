@@ -1,5 +1,6 @@
 import { DomainError } from "../../shared/errors";
 import type { Principal } from "../../shared/principal";
+import { isTeamMethod, TEAM_WRITE_METHODS } from "../teams/team-methods";
 
 export const isAdmin = (actor: Principal | null) => actor?.role === "company" && actor.staffRole === "admin";
 export const can = (actor: Principal | null, permission: string) => !!actor && actor.role === "company" && (isAdmin(actor) || !!actor.staffRole && !!actor.permissions?.includes(permission));
@@ -27,6 +28,13 @@ export function authorizeStaff(method: string, params: Record<string, any>, acto
   };
   if (method === "project.list") {
     if (!can(actor, "projects.read") && !can(actor, "projects.summary")) throw new DomainError("FORBIDDEN", "Your internship staff role does not allow this action.");
+    return;
+  }
+  // Teams: staff who can see projects can see teams, and project managers can manage them,
+  // so roles created before teams existed keep working.
+  if (isTeamMethod(method)) {
+    const write = TEAM_WRITE_METHODS.has(method);
+    if (!(can(actor, write ? "teams.manage" : "teams.read") || can(actor, write ? "projects.manage" : "projects.read"))) throw new DomainError("FORBIDDEN", "Your internship staff role does not allow this action.");
     return;
   }
   if (!Object.hasOwn(basic, method)) return requireAdmin(actor);

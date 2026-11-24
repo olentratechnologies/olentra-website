@@ -295,6 +295,8 @@ test("public route invariants and normalized route segments are preserved", () =
     "/intern/dashboard/projects/:param",
     "/intern/dashboard/settings",
     "/intern/dashboard/staff",
+    "/intern/dashboard/teams",
+    "/intern/dashboard/teams/:param",
     "/intern/login",
     "/intern/portal",
     "/intern/portal/application",

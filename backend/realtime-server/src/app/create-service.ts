@@ -289,7 +289,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
             }
           }
         })();
-      } else if (/^(project|task|submission|intern|certificate)\./.test(String(record.type))) {
+      } else if (/^(project|task|submission|intern|certificate|team)\./.test(String(record.type))) {
         server?.publish(INTERN_TOPICS.work, event, false);
       } else {
         server?.publish(INTERN_TOPICS.applications, event, false);

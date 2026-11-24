@@ -3588,3 +3588,15 @@
 @media (max-width: 560px) {
   .accountAction, .accountAction > * { width: 100%; justify-content: center; }
 }
+
+/* My team */
+.myTeam h2 { display: inline-flex; align-items: center; gap: 8px; overflow-wrap: anywhere; }
+.myTeamIntro { margin: 0 0 12px; font-size: 12px; line-height: 1.6; color: var(--ad-muted, #46567c); }
+.myTeamIntro a { color: var(--ad-link, #2465d4); font-weight: 600; }
+.teamList { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.teamList li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--ad-border, #d0ddf8); border-radius: 12px; background: color-mix(in srgb, var(--ad-panel-alt, #edf5ff) 50%, transparent); min-width: 0; }
+.teamAvatar { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--ad-panel-soft, #e1ebff); color: var(--ad-text, #0b1838); font-size: 11px; font-weight: 700; }
+.teamName { display: grid; gap: 2px; flex: 1 1 120px; min-width: 0; }
+.teamName strong { font-size: 12px; color: var(--ad-text, #0b1838); overflow-wrap: anywhere; }
+.teamName small { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--ad-subtle, #59739e); overflow-wrap: anywhere; }
+.teamLead { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--ad-warning-bg, #fff4dd); color: var(--ad-warning, #855000); font-size: 10px; font-weight: 650; }

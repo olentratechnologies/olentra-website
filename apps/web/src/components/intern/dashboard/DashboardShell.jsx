@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { useInternship } from "@/components/intern/InternshipProvider";
-import { UserPlus as UserPlusIcon, Video as VideoIcon } from "lucide-react";
+import { UserPlus as UserPlusIcon, UsersRound, Video as VideoIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { exportCsv } from "./DashboardUI";
 import {
@@ -64,6 +64,7 @@ const icons = {
   download: Download,
   send: Send,
   application: ClipboardCheck,
+  team: UsersRound,
 };
 
 function BackgroundWaves() {

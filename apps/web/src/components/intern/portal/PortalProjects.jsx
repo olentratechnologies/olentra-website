@@ -2,6 +2,7 @@
 
 import ProjectPlan from "../ProjectPlan";
 import { InternProjectLinks, TaskLinks } from "../ProjectLinks";
+import { MyTeamCard } from "./MyTeam";
 
 import { useState } from "react";
 import { repositoryAccess } from "@/lib/intern/repository-access.mjs";
@@ -354,6 +355,7 @@ export function PortalProjectDetail({ projectId }) {
                 <p>Small steps. Meaningful progress.</p>
               </Panel>
             </div>
+            <MyTeamCard team={data?.myTeam} projectId={project.id} />
             {project.links?.length > 0 && (
               <Panel className={styles.sectionGap}>
                 <InternProjectLinks

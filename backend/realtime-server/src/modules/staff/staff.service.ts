@@ -17,6 +17,8 @@ export const STAFF_PERMISSIONS = [
   { id: "interns.read", label: "View basic intern information" },
   { id: "projects.read", label: "View project teams and details" },
   { id: "projects.manage", label: "Create and manage projects" },
+  { id: "teams.read", label: "View intern teams" },
+  { id: "teams.manage", label: "Create teams, move members and assign team projects" },
   { id: "tasks.read", label: "View project tasks" },
   { id: "tasks.manage", label: "Assign and edit tasks" },
   { id: "submissions.read", label: "View work submissions" },
@@ -36,9 +38,9 @@ export type StaffPermission = typeof STAFF_PERMISSIONS[number]["id"];
 const allowed = new Set<string>(STAFF_PERMISSIONS.map(p => p.id));
 const defaults: { id: string; name: string; permissions: readonly StaffPermission[] }[] = [
   { id: "admin", name: "Admin", permissions: [] },
-  { id: "manager", name: "Internship manager", permissions: ["overview.read", "projects.summary", "interns.read", "projects.read", "projects.manage", "tasks.read", "tasks.manage", "messages.interns", "notifications.read"] },
+  { id: "manager", name: "Internship manager", permissions: ["overview.read", "projects.summary", "interns.read", "projects.read", "projects.manage", "teams.read", "teams.manage", "tasks.read", "tasks.manage", "messages.interns", "notifications.read"] },
   { id: "recruiter", name: "Recruiter", permissions: ["overview.read", "applications.read", "applications.review", "resumes.read", "messages.applicants", "notifications.read"] },
-  { id: "mentor", name: "Mentor", permissions: ["overview.read", "projects.summary", "interns.read", "projects.read", "tasks.read", "submissions.read", "submissions.feedback", "messages.interns", "notifications.read"] },
+  { id: "mentor", name: "Mentor", permissions: ["overview.read", "projects.summary", "interns.read", "projects.read", "teams.read", "tasks.read", "submissions.read", "submissions.feedback", "messages.interns", "notifications.read"] },
   { id: "viewer", name: "Viewer", permissions: ["overview.read", "projects.summary"] },
 ];
 const text = (value: unknown) => typeof value === "string" ? value.trim() : "";
@@ -51,7 +53,7 @@ const requirePassword = (value: unknown) => { if (typeof value !== "string" || v
 const validatePermissions = (value: unknown): string[] => {
   if (!Array.isArray(value) || value.some(item => typeof item !== "string" || !allowed.has(item))) throw new DomainError("INVALID_REQUEST", "Choose permissions from the allowed list. Admin-only powers cannot be assigned to custom roles.");
   const result = [...new Set(value)] as string[];
-  const dependencies: Record<string, string[]> = { "applications.review": ["applications.read"], "resumes.read": ["applications.read"], "projects.read": ["projects.summary", "interns.read"], "projects.manage": ["projects.read", "interns.read"], "tasks.read": ["projects.read", "interns.read"], "tasks.manage": ["tasks.read"], "submissions.read": ["tasks.read"], "submissions.feedback": ["submissions.read"], "messages.applicants": ["applications.read"], "messages.interns": ["interns.read"] };
+  const dependencies: Record<string, string[]> = { "applications.review": ["applications.read"], "resumes.read": ["applications.read"], "projects.read": ["projects.summary", "interns.read"], "projects.manage": ["projects.read", "interns.read"], "teams.read": ["interns.read"], "teams.manage": ["teams.read", "interns.read"], "tasks.read": ["projects.read", "interns.read"], "tasks.manage": ["tasks.read"], "submissions.read": ["tasks.read"], "submissions.feedback": ["submissions.read"], "messages.applicants": ["applications.read"], "messages.interns": ["interns.read"] };
   for (const [permission, prerequisites] of Object.entries(dependencies)) for (const prerequisite of prerequisites) if (result.includes(permission) && !result.includes(prerequisite)) throw new DomainError("INVALID_REQUEST", `${permission} requires ${prerequisite}.`);
   return result;
 };

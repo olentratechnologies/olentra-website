@@ -93,6 +93,8 @@ backend/
 /intern/dashboard/interns        Active intern management
 /intern/dashboard/projects       Project & task management
 /intern/dashboard/projects/[projectId]  Project page: overview, resources, team, tasks
+/intern/dashboard/teams          Intern teams: build teams for a batch, unassigned interns
+/intern/dashboard/teams/[teamId] Team page: overview, members, projects
 /intern/dashboard/certificates   Certificate issuance
 /intern/dashboard/settings       Program configuration, track settings
 /intern/dashboard/staff          Staff accounts & RBAC roles
