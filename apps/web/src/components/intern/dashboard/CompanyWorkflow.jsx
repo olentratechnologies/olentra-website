@@ -724,12 +724,22 @@ export function ApplicantWorkflow({ applicationId }) {
   );
 }
 
+function ReminderDelay({ form, setForm }) {
+  return <label>Remind if not started
+    <select value={form.reminderAfterDays ?? ""} onChange={event => setForm({ ...form, reminderAfterDays: event.target.value ? Number(event.target.value) : null })}>
+      <option value="">Off</option>
+      {Array.from({ length: 30 }, (_, i) => i + 1).map(days => <option key={days} value={days}>After {days} {days === 1 ? "day" : "days"}</option>)}
+    </select>
+  </label>;
+}
+
 export function TaskEditor({ task, onSave, onCancel, busy }) {
   const [form, setForm] = useState({
     title: task.title,
     description: task.description,
     dueOn: task.dueOn,
     required: task.required,
+    reminderAfterDays: task.reminderAfterDays ?? null,
   });
   return (
     <form
@@ -769,6 +779,7 @@ export function TaskEditor({ task, onSave, onCancel, busy }) {
           required
         />
       </label>
+      <ReminderDelay form={form} setForm={setForm} />
       <label className={styles.checkbox}>
         <input
           type="checkbox"
@@ -941,6 +952,7 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
     description: "",
     dueOn: localDate(7),
     required: true,
+    reminderAfterDays: 1,
   });
   const [page,setPage] = useState(1), pageSize=10;
   const [listing,setListing] = useState({items:[],total:0,counts:{statuses:{}}});
@@ -1019,6 +1031,7 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
           description: "",
           dueOn: localDate(7),
           required: true,
+          reminderAfterDays: 1,
         });
       }
     } finally {
@@ -1159,6 +1172,7 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
                 required
               />
             </label>
+            <ReminderDelay form={form} setForm={setForm} />
             <label className={styles.checkbox}>
               <input
                 type="checkbox"

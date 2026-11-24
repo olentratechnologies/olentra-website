@@ -30,6 +30,17 @@ export async function runReminders({ collection, outbox, transact, now = new Dat
   const sent = { interviews: 0, offers: 0, reviews: 0, digests: 0 };
   const admins = async () => (await accounts.find({ role: "company", staffRole: "admin", disabled: { $ne: true } }, { projection: { email: 1, name: 1 } }).toArray()).filter(row => typeof row.email === "string" && row.email);
 
+  const dueTasks = tasks.find({ status: "Todo", reminderDueAt: { $type: "string", $lte: now.toISOString() }, reminderQueued: { $ne: true } });
+  for await (const task of dueTasks) {
+    const version = String(task.reminderVersion);
+    const key = createHash("sha256").update(`task-reminder:${task._id}:${version}`).digest("hex");
+    await transact(key, null, { taskId: task._id, version }, async session => {
+      const claimed = await tasks.updateOne({ _id: task._id, status: "Todo", reminderVersion: version, reminderQueued: { $ne: true } }, { $set: { reminderQueued: true } }, { session });
+      if (claimed.modifiedCount) await outbox.enqueue("taskReminder", { taskId: task._id, applicationId: task.applicationId, mode: "automatic", version }, session);
+      return Boolean(claimed.modifiedCount);
+    });
+  }
+
   // Interview reminders, about a day ahead.
   const soon = await interviews.find({ status: { $ne: "Cancelled" }, reminderSentOn: { $exists: false }, scheduledAt: { $gt: now.toISOString(), $lte: new Date(now.getTime() + DAY).toISOString() } }).limit(100).toArray();
   for (const interview of soon) {

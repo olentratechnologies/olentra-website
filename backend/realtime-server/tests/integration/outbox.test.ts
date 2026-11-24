@@ -152,3 +152,93 @@ test("new task mail uses current assignment details, retries delivery, and suppr
     transport.stop(true);
   }
 });
+
+test("task reminders respect the assignment clock, current status, permissions and delivery retries", async () => {
+  const staff = { id: "reminder-admin", role: "company", staffRole: "admin", name: "Admin", email: "reminder-admin@example.test", applicationId: null, sessionVersion: 1 } as const;
+  const applicationId = "reminder-intern", projectId = "reminder-project", to = "reminder@example.test";
+  const mentor = { ...staff, id: "other-mentor", email: "reminder-mentor@example.test", staffRole: "mentor", permissions: ["tasks.manage", "tasks.read"] };
+  for (const actor of [staff, mentor]) await domain.collection("accounts").insertOne({ ...actor, _id: actor.id });
+  await domain.collection("applications").insertOne({ _id: applicationId, email: to, name: "Reminder Intern", status: "Joined" });
+  await domain.collection("interns").insertOne({ _id: "reminder-internship", applicationId, status: "Active" });
+  await domain.collection("projects").insertOne({ _id: projectId, name: "Reminder project", team: [applicationId] });
+  const call = (method: string, params: Record<string, unknown>, key = randomUUID()) => domain.execute(method, params, staff, key);
+  const assignment = { applicationId, projectId, title: "Review layout", description: "Check mobile", dueOn: "2030-01-12" };
+  const task = await call("task.create", assignment);
+  const tasks = domain.collection("tasks"), queue = domain.collection("outbox");
+  const filter = { type: "taskReminder", "payload.taskId": task.id };
+  const patch = (reminderAfterDays: number | null) => call("task.update", { id: task.id, patch: { reminderAfterDays } });
+  const at = (hours: number) => new Date(Date.parse(task.createdOn) + hours * 3600000);
+  const mails: any[] = [];
+  let fail = false;
+  const transport = Bun.serve({ hostname: "127.0.0.1", port: 0, async fetch(request) {
+    if (fail) return new Response(null, { status: 503 });
+    mails.push(await request.json());
+    return Response.json({ success: true, id: "mail" });
+  } });
+  try {
+    const mailer = createInternshipMailer("test", transport.url.origin);
+    domain.setHooks({ async sendNotice(notice) {
+      const result = await mailer.sendNotice({ ...notice, ctaUrl: "https://example.test" + notice.ctaPath });
+      if (!result.ok) throw new Error(result.error);
+    } });
+    const reminders = () => mails.filter(m => m.subject === "Task reminder: Review layout" && m.to.includes(to));
+    expect(task.reminderAfterDays).toBe(1);
+    await expect(patch(31)).rejects.toThrow();
+    await domain.runReminders(at(23.99));
+    expect(await queue.countDocuments(filter)).toBe(0);
+    await domain.runReminders(at(24));
+    expect(await queue.countDocuments(filter)).toBe(1);
+    await patch(null);
+    await domain.processOutbox();
+    expect(reminders()).toHaveLength(0);
+    await patch(2);
+    await domain.runReminders(at(47.99));
+    expect(await queue.countDocuments({ ...filter, status: "pending" })).toBe(0);
+    await Promise.all([domain.runReminders(at(48)), domain.runReminders(at(48))]);
+    expect(await queue.countDocuments({ ...filter, status: "pending" })).toBe(1);
+    fail = true;
+    await domain.processOutbox();
+    expect(await queue.findOne({ ...filter, status: "pending" })).toMatchObject({ attempts: 1 });
+    fail = false;
+    await queue.updateOne({ ...filter, status: "pending" }, { $set: { nextAttemptAt: new Date(0) } });
+    await domain.processOutbox();
+    expect(reminders()).toHaveLength(1);
+    expect(reminders()[0].text).toContain("Start task");
+    expect(reminders()[0].html).toContain("https://example.test/intern/portal/projects/reminder-project");
+    await patch(1);
+    await domain.runReminders(at(72));
+    expect(await queue.countDocuments(filter)).toBe(2); // one cancelled, one delivered
+    const params = { taskId: task.id }, key = randomUUID();
+    await expect(domain.execute("task.remind", params, mentor, randomUUID())).rejects.toThrow();
+    await expect(domain.execute("task.remind", params, { ...mentor, permissions: ["tasks.read"] }, randomUUID())).rejects.toThrow();
+    await call("task.remind", params, key);
+    await call("task.remind", params, key);
+    await call("task.remind", params);
+    expect(await queue.countDocuments({ ...filter, "payload.mode": "manual" })).toBe(1);
+    await tasks.updateOne({ _id: task.id }, { $set: { status: "In progress" } });
+    await domain.processOutbox();
+    expect(reminders()[1].text).toContain("Continue your task");
+    await tasks.updateOne({ _id: task.id }, { $set: { status: "Changes requested" }, $unset: { lastManualReminderAt: "" } });
+    await call("task.remind", params);
+    await domain.processOutbox();
+    expect(reminders()[2].text).toContain("resubmit");
+    for (const status of ["Under review", "Approved"]) {
+      await tasks.updateOne({ _id: task.id }, { $set: { status } });
+      await expect(call("task.remind", params)).rejects.toThrow();
+    }
+    const pending = await call("task.create", assignment);
+    await domain.runReminders(at(72));
+    await tasks.updateOne({ _id: pending.id }, { $set: { status: "In progress" } });
+    await domain.processOutbox();
+    expect(reminders()).toHaveLength(3);
+    await call("task.remind", { taskId: pending.id });
+    await call("task.delete", { id: pending.id });
+    await domain.processOutbox();
+    expect(reminders()).toHaveLength(3);
+    await tasks.insertOne({ _id: "legacy-reminder", ...assignment, status: "Todo", createdOn: task.createdOn });
+    await domain.runReminders(at(200));
+    expect(await queue.countDocuments({ type: "taskReminder", "payload.taskId": "legacy-reminder" })).toBe(0);
+  } finally {
+    transport.stop(true);
+  }
+});

@@ -27,12 +27,19 @@ const day = () => civilToday();
 const validDate = (v: unknown) => { const value = text(v), parsed = new Date(value); return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; };
 const validUrl = (value: unknown) => { const v = text(value); if (v) { try { if (!["https:", "http:"].includes(new URL(v).protocol)) throw 0; } catch { throw new DomainError("INVALID_REQUEST", "Use an http or https link."); } } return v; };
 
+function reminderSchedule(days: unknown, assignedOn: string) {
+  if (days !== null && (typeof days !== "number" || !Number.isInteger(days) || days < 1 || days > 30)) {
+    throw new DomainError("INVALID_REQUEST", "Choose Off or a reminder delay of 1 to 30 days.");
+  }
+  return { reminderAfterDays: days, reminderDueAt: days === null ? null : new Date(Date.parse(assignedOn) + days * 86_400_000).toISOString(), reminderVersion: randomUUID() };
+}
+
 export function createLifecycle({ collection, transact, outbox, onResumeChanged }: { collection: (name: string) => Collection<Row>; transact: Tx; outbox: Pick<Outbox, "enqueue" | "enqueueMany">; onResumeChanged?: (applicationId: string, fileId: string, session: ClientSession) => Promise<void> }) {
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
   const schedules = createOfferSchedules(collection);
-  const names = new Set(["offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.assign", "project.update", "project.delete", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       schedules.initialize(),
@@ -51,6 +58,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
       certificates.createIndex({ certificateNumber: 1 }, { unique: true, partialFilterExpression: { certificateNumber: { $type: "string" } } }),
       interviews.createIndex({ applicationId: 1 }, { unique: true }),
       projects.createIndex({ team: 1 }),
+      tasks.createIndex({ status: 1, reminderDueAt: 1 }),
     ]);
   }
   async function active(applicationId: string, session: ClientSession) {
@@ -244,10 +252,26 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
       if (method === "task.create") {
         staff(actor); const projectId = required(p.projectId, "project"), applicationId = required(p.applicationId, "intern"); const project = await projects.findOne({ _id: projectId, team: applicationId }, opts); if (!project) throw new DomainError("CONFLICT", "Choose an intern on this project team."); const intern = await active(applicationId, session); await touch(intern, session); await projects.updateOne({ _id: projectId, team: applicationId }, { $inc: { revision: 1 } }, opts);
         const title = required(p.title, "task title", 200), description = required(p.description, "task description", 5000); if (!validDate(p.dueOn)) throw new DomainError("INVALID_REQUEST", "Choose a valid task due date.");
-        const task: Row = { _id: newId("TASK"), projectId, applicationId, title, description, dueOn: p.dueOn, required: !!p.required, status: "Todo", createdOn: now, submissionVersion: 0 };
+        const task: Row = { _id: newId("TASK"), projectId, applicationId, title, description, dueOn: p.dueOn, required: !!p.required, status: "Todo", createdOn: now, submissionVersion: 0, ...reminderSchedule(p.reminderAfterDays === undefined ? 1 : p.reminderAfterDays, now) };
         await tasks.insertOne(task, opts);
         await outbox.enqueue("taskAssigned", { taskId: task._id, applicationId }, session);
         return plain(task);
+      }
+      if (method === "task.remind") {
+        staff(actor);
+        const task = await tasks.findOne({ _id: required(p.taskId, "task") }, opts);
+        if (!task) throw new DomainError("NOT_FOUND", "Task not found.");
+        const scope = await mentorScope(actor, interns);
+        if (scope && !scope.includes(task.applicationId)) throw new DomainError("FORBIDDEN", "You can only remind interns you mentor.");
+        await active(task.applicationId, session);
+        if (!["Todo", "In progress", "Changes requested"].includes(task.status) || !await projects.findOne({ _id: task.projectId, team: task.applicationId }, opts)) {
+          throw new DomainError("CONFLICT", "This task is no longer awaiting work from this intern.");
+        }
+        // Coalesce a rapid second click even if the browser gave it a new request key.
+        const cutoff = new Date(Date.parse(now) - 2000).toISOString();
+        const claim = await tasks.updateOne({ _id: task._id, $or: [{ lastManualReminderAt: { $exists: false } }, { lastManualReminderAt: { $lt: cutoff } }] }, { $set: { lastManualReminderAt: now } }, opts);
+        if (claim.modifiedCount) await outbox.enqueue("taskReminder", { taskId: task._id, applicationId: task.applicationId, mode: "manual" }, session);
+        return { id: task._id, applicationId: task.applicationId };
       }
       if (method === "task.delete") {
         staff(actor);
@@ -265,6 +289,19 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         const input = p.patch || {}, patch: Record<string, any> = {}; if (input.applicationId && input.applicationId !== task.applicationId) throw new DomainError("INVALID_REQUEST", "Create a new task to change the assignee.");
         for (const name of ["title", "description", "dueOn"]) if (input[name] !== undefined) patch[name] = required(input[name], name, 5000);
         if (patch.dueOn && !validDate(patch.dueOn)) throw new DomainError("INVALID_REQUEST", "Choose a valid task due date."); if (input.required !== undefined) patch.required = !!input.required;
+        if (input.reminderAfterDays !== undefined && input.reminderAfterDays !== (task.reminderAfterDays ?? null)) {
+          Object.assign(patch, reminderSchedule(input.reminderAfterDays, task.createdOn));
+          if (task.reminderQueued) {
+            // A pending automatic email may be replaced. A delivered one stays consumed even after outbox expiry.
+            const mail = collection("outbox");
+            const queued = await mail.findOne({ type: "taskReminder", "payload.taskId": task._id, "payload.version": task.reminderVersion, status: "pending" }, opts);
+            if (queued) {
+              if (queued.leaseUntil && queued.leaseUntil > new Date()) throw new DomainError("CONFLICT", "Reminder delivery is in progress. Try again shortly.");
+              await mail.updateOne({ _id: queued._id }, { $set: { status: "superseded", expiresAt: new Date(Date.now() + 7 * 86_400_000) } }, opts);
+              patch.reminderQueued = false;
+            }
+          }
+        }
         const result = await tasks.findOneAndUpdate({ _id: task._id }, { $set: patch }, { ...opts, returnDocument: "after" }); return plain(result!);
       }
       if (method === "task.start" || method === "submission.create") {

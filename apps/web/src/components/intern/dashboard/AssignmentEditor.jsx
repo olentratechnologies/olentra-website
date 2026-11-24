@@ -58,7 +58,7 @@ export default function AssignmentEditor({ editor, application, onClose }) {
           <Button disabled={busy} onClick={() => save()}>{title}</Button>
         </div>
       </> : isTask ? (
-        <TaskEditor task={record || { title: "", description: "", dueOn: project.dueOn || "", required: true }}
+        <TaskEditor task={record || { title: "", description: "", dueOn: project.dueOn || "", required: true, reminderAfterDays: 1 }}
           busy={busy} onSave={save} onCancel={() => { if (!busy) onClose(); }} />
       ) : (
         <form className={styles.formGrid} onSubmit={event => {

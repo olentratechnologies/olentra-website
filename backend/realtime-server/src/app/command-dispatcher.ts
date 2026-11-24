@@ -764,7 +764,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const hook = row.type === "interviewReminder" ? activeHooks?.sendInterviewReminder : p.status === "Cancelled" ? activeHooks?.sendInterviewCancelled : activeHooks?.sendInterviewScheduled;
         if (!hook) throw new Error("No interview email sender is configured.");
         await hook({ to: str(application.email), name: str(application.name), programName: str(application.program), scheduledAt: p.scheduledAt!, meetingUrl: p.meetingUrl!, interviewId: p.interviewId, sequence: Number(p.sequence || 0), cancelReason: p.cancelReason });
-      } else if (row.type === "taskAssigned") {
+      } else if (row.type === "taskAssigned" || row.type === "taskReminder") {
         const task = await collection("tasks").findOne({ _id: row.payload.taskId, applicationId });
         if (!task) return { suppressed: true };
         const [project, recipient] = await Promise.all([
@@ -772,11 +772,23 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
           applications.findOne({ _id: applicationId }, { projection: { name: 1, email: 1 } }),
         ]);
         if (!project || !recipient) return { suppressed: true };
+        let nextStep = "";
+        const reminder = row.type === "taskReminder";
+        if (reminder) {
+          if (row.payload.mode === "automatic" && (task.status !== "Todo" || task.reminderVersion !== row.payload.version || !task.reminderAfterDays)) return { suppressed: true };
+          const steps: Record<string, string> = {
+            Todo: "Open the project and click Start task to begin.",
+            "In progress": "Continue your task and submit your work when it is ready.",
+            "Changes requested": "Review the feedback, revise your work, and resubmit it.",
+          };
+          nextStep = steps[task.status];
+          if (!nextStep || !await collection("interns").findOne({ applicationId, status: "Active" }, { projection: { _id: 1 } })) return { suppressed: true };
+        }
         if (!activeHooks?.sendNotice) throw new Error("No task assignment email sender is configured.");
         await activeHooks.sendNotice({
           to: recipient.email,
-          subject: `New task assigned: ${String(task.title).replace(/[\r\n]+/g, " ")}`,
-          intro: `Hi ${recipient.name},\n\nYou have a new task on ${project.name}.`,
+          subject: `${reminder ? "Task reminder" : "New task assigned"}: ${String(task.title).replace(/[\r\n]+/g, " ")}`,
+          intro: `Hi ${recipient.name},\n\n${reminder ? `Your task on ${project.name} is pending. ${nextStep}` : `You have a new task on ${project.name}.`}`,
           items: [`Task: ${task.title}`, `Instructions: ${task.description}`, `Due date: ${task.dueOn}`, `Required for internship completion: ${task.required ? "Yes" : "No"}`],
           ctaLabel: "Open project",
           ctaPath: `/intern/portal/projects/${encodeURIComponent(task.projectId)}`,

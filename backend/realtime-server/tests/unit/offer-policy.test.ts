@@ -73,7 +73,7 @@ test("each open offer or revision gets one reminder per deadline", async () => {
       return { modifiedCount: 1 };
     },
   };
-  const collection = (name: string) => name === "offers" ? offers : name === "interviews" ? { find: () => ({ limit: () => ({ toArray: async () => [] }) }) } : { findOne: async () => null };
+  const collection = (name: string) => name === "tasks" ? { find: () => [] } : name === "offers" ? offers : name === "interviews" ? { find: () => ({ limit: () => ({ toArray: async () => [] }) }) } : { findOne: async () => null };
   const outbox = { enqueue: async (type: string, payload: any) => { queued.push({ type, payload }); } };
   const transact = async (_key: string, _actor: any, _input: any, run: any) => run(session);
   expect(await runReminders({ collection: collection as any, outbox: outbox as any, transact, now })).toMatchObject({ offers: 2 });

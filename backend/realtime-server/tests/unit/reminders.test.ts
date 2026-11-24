@@ -15,7 +15,7 @@ test("reminder claim and enqueue share a transaction; only the due current inter
   const now = new Date("2030-01-15T10:00:00Z"), session = {};
   const interview: any = { _id: "INTV-1", applicationId: "OL-1", status: "Scheduled", sequence: 2, scheduledAt: "2030-01-16T09:30:00Z", meetingUrl: "https://example.test/meeting" };
   const queued: any[] = [];
-  const collection = (name: string) => name === "interviews" ? {
+  const collection = (name: string) => name === "tasks" ? { find: () => [] } : name === "interviews" ? {
     find: () => ({ limit: () => ({ toArray: async () => interview.reminderSentOn ? [] : [interview] }) }),
     updateOne: async (filter: any, update: any, options: any) => { expect(options.session).toBe(session); expect(filter.sequence).toBe(2); Object.assign(interview, update.$set); return { modifiedCount: 1 }; },
   } : name === "offers" ? { find: () => ({ limit: () => ({ toArray: async () => [] }) }) } : { findOne: async () => null };

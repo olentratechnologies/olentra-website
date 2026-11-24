@@ -1000,6 +1000,24 @@ function IntroVideoPanel({ url, name }) {
   );
 }
 
+function TaskReminderButton({ taskId }) {
+  const { commands, notify } = useInternship();
+  const [busy, setBusy] = useState(false);
+  async function remind() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await commands.remindTask(taskId);
+      notify(result.ok ? "Reminder queued" : result.error || "Could not queue the reminder. Try again.");
+    } catch {
+      notify("Could not queue the reminder. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return <Button variant="secondary" disabled={busy} onClick={remind}>{busy ? "Queuing…" : "Send reminder"}</Button>;
+}
+
 function AssignedTasks({ applicationId, canManage, onEdit }) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -1027,6 +1045,7 @@ function AssignedTasks({ applicationId, canManage, onEdit }) {
               {task.description && <p>{task.description}</p>}
               <div className={styles.projectFooter}>
                 {canManage && <>
+                  {["Todo", "In progress", "Changes requested"].includes(task.status) && <TaskReminderButton taskId={task.id} />}
                   <Button variant="secondary" onClick={() => onEdit({ kind: "task", action: "edit", record: task })}>Edit task</Button>
                   <Button variant="ghost" onClick={() => onEdit({ kind: "task", action: "delete", record: task })}>Delete task</Button>
                 </>}
