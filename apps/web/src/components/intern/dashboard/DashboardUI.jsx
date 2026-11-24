@@ -306,6 +306,7 @@ export function RowMenu({ items }) {
             ) : (
               <DropdownMenu.Item
                 key={index}
+                disabled={item.disabled}
                 onSelect={item.onClick}
                 className={item.danger ? styles.dangerText : ""}
               >

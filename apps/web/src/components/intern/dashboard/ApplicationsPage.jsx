@@ -351,6 +351,7 @@ export default function ApplicationsPage() {
   }
 
   const selectable = canReview ? displayed.filter((application) => isAdmin || canBulkUpdate(application, { isAdmin })) : [];
+  const eligibleOffer = row => row.offerReminder && !row.offerReminder.covered && Date.parse(row.offerReminder.expiresOn) > Date.now();
   const selectedRows = selectable.filter((application) => selected.has(application.id));
   const allSelected = selectable.length > 0 && selectedRows.length === selectable.length;
   function toggleRow(id) {
@@ -362,6 +363,28 @@ export default function ApplicationsPage() {
   }
   function toggleAll() {
     setSelected(allSelected ? new Set() : new Set(selectable.map((application) => application.id)));
+  }
+  async function remindOffers(rows, bulk = false) {
+    if (bulkBusy) return;
+    setBulkBusy(true);
+    try {
+      const eligible = rows.filter(eligibleOffer);
+      let queued = 0;
+      let skipped = rows.length - eligible.length;
+      const { failed } = await runBulk(eligible, async row => {
+        const result = await commands.remindOffer(row.id);
+        if (result.ok) {
+          if (result.data.queued) queued++;
+          else skipped++;
+        }
+        return result;
+      });
+      if (bulk) setSelected(new Set(failed.map(({ item }) => item.id)));
+      notify(`Offer reminders: ${queued} queued, ${skipped} skipped, ${failed.length} failed.${failed[0] ? " " + failed[0].error : ""}`);
+      await listQuery.refresh();
+    } finally {
+      setBulkBusy(false);
+    }
   }
   async function applyBulk(action, trigger) {
     if (bulkBusy || !selectedRows.length) return;
@@ -585,6 +608,10 @@ export default function ApplicationsPage() {
                   label: "View application",
                   href: `/intern/dashboard/applications/${application.id}`,
                 },
+                ...(isAdmin && application.offerReminder ? [{
+                  label: `Send offer reminder${application.offerReminder.lastQueuedAt ? " · Last queued " + new Date(application.offerReminder.lastQueuedAt).toLocaleString() : ""}`,
+                  disabled: bulkBusy || !eligibleOffer(application), onClick: () => void remindOffers([application]),
+                }] : []),
                 ...(canResume && application.resumeAttachmentId ? [{ label: "View resume", onClick: () => setResumeApplication(application) }] : []),
                 ...(canReview && application.resumeAttachmentId && application.aiReviewStatus !== "pending" ? [{ label: application.aiRecommendation ? "Re-scan resume with AI" : "Get AI score", onClick: () => void queueAiReview(application) }] : []),
                 ...(isAdmin ? [{ label: "Delete application", danger: true, onClick: () => setDeletingApplication(application) }] : []),
@@ -854,6 +881,8 @@ export default function ApplicationsPage() {
           <div className={styles.bulkBar} role="toolbar" aria-label="Bulk actions">
             <strong>{selectedRows.length} selected</strong>
             <div className={styles.bulkActions}>
+              {isAdmin && <button type="button" className={styles.bulkButton} disabled={bulkBusy || !selectedRows.some(eligibleOffer)}
+                onClick={() => void remindOffers(selectedRows, true)}>Remind about offers ({selectedRows.filter(eligibleOffer).length} eligible)</button>}
               {bulkActionsFor({ isAdmin }).map((action) => (
                 <button
                   key={action.status}

@@ -15,7 +15,7 @@ export type ApplicantStatusNotice = {
   to: string;
   name: string;
   programName: string;
-  status: "instant-offer" | "direct-enrolled" | "offer-reminder" | "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
+  status: "instant-offer" | "direct-enrolled" | "offer-manual-reminder" | "offer-reminder" | "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
   certificateNumber?: string;
   schedule?: Record<string, any>;
   pdfAttachment?: { filename: string; content: Buffer; contentType: string };

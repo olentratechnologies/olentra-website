@@ -242,3 +242,67 @@ test("task reminders respect the assignment clock, current status, permissions a
     transport.stop(true);
   }
 });
+
+test("manual offer reminders share deadline coverage with the scheduler and suppress stale mail", async () => {
+  const admin = { id: "offer-reminder-admin", role: "company", staffRole: "admin", name: "Admin", email: "offer-admin@example.test", applicationId: null, sessionVersion: 1 } as const;
+  await domain.collection("accounts").insertOne({ ...admin, _id: admin.id });
+  const offers = domain.collection("offers"), queue = domain.collection("outbox");
+  const now = new Date(), deadline = (hours: number) => new Date(now.getTime() + hours * 3600000).toISOString();
+  async function candidate(id: string, status: string, hours: number, route = "standard") {
+    const applicationId = "offer-reminder-" + id;
+    await domain.collection("applications").insertOne({ _id: applicationId, name: "Nia Rao", email: id + "@example.test", program: "Software Engineer Intern", status: "Selected" });
+    if (status) await offers.insertOne({ _id: applicationId, applicationId, route, currentVersion: 1, status, expiresOn: deadline(hours), startOn: "2030-01-01", endOn: "2030-02-01" });
+    return applicationId;
+  }
+  const remind = (applicationId: string, key = randomUUID()) => domain.execute("offer.remind", { applicationId }, admin, key);
+  const count = (applicationId: string) => queue.countDocuments({ "payload.applicationId": applicationId, "payload.status": { $in: ["offer-reminder", "offer-manual-reminder"] } });
+  const early = await candidate("early", "Sent", 36, "instant"), manualFirst = await candidate("manual", "Sent", 12);
+  const automaticFirst = await candidate("automatic", "Sent", 12), concurrent = await candidate("concurrent", "Sent", 36);
+  const skipped = [await candidate("accepted", "Accepted", 10), await candidate("declined", "Declined", 10), await candidate("expired", "Sent", -1), await candidate("selected-only", "", 0)];
+  const list = await domain.execute("application.list", { pageSize: 100 }, admin);
+  for (const id of skipped) {
+    expect(list.items.find((x: any) => x.id === id)?.offerReminder).toBeUndefined();
+    expect(await remind(id)).toMatchObject({ queued: false });
+  }
+  expect(list.items.find((x: any) => x.id === early)?.offerReminder.covered).toBe(false);
+  await expect(domain.execute("offer.remind", { applicationId: early }, { ...admin, staffRole: "mentor" }, randomUUID())).rejects.toThrow();
+  const key = randomUUID();
+  await remind(early, key);
+  await remind(early, key);
+  await remind(manualFirst);
+  await domain.runReminders(now);
+  expect(await remind(automaticFirst)).toMatchObject({ queued: false });
+  expect(await count(manualFirst)).toBe(1);
+  expect(await count(automaticFirst)).toBe(1);
+  expect(await count(early)).toBe(1);
+  await offers.updateOne({ _id: concurrent }, { $set: { expiresOn: deadline(10) } });
+  await Promise.all([remind(concurrent), domain.runReminders(now)]);
+  expect(await count(concurrent)).toBe(1);
+  await domain.runReminders(new Date(deadline(13)));
+  expect(await count(early)).toBe(2);
+  await offers.updateOne({ _id: manualFirst }, { $set: { status: "Accepted" } });
+  const received: any[] = [];
+  let available = false;
+  const receiver = Bun.serve({ hostname: "127.0.0.1", port: 0, async fetch(request) {
+    if (!available) return new Response(null, { status: 503 });
+    received.push(await request.json());
+    return Response.json({ success: true, id: "offer-test" });
+  } });
+  try {
+    const mailer = createInternshipMailer("test", receiver.url.origin);
+    domain.setHooks({ async sendApplicantStatus(notice) {
+      const result = await mailer.sendApplicantStatus({ ...notice, portalUrl: "https://example.test/intern/portal/application" });
+      if (!result.ok) throw new Error(result.error);
+    } });
+    await domain.processOutbox();
+    expect(await queue.findOne({ "payload.applicationId": manualFirst, "payload.status": "offer-manual-reminder" })).toMatchObject({ status: "superseded" });
+    available = true;
+    await queue.updateMany({ status: "pending" }, { $set: { nextAttemptAt: new Date(0) } });
+    await domain.processOutbox();
+    const mail = received.find(row => row.to.includes("early@example.test") && row.subject === "A friendly reminder about your Olentra internship offer");
+    for (const part of [mail.html, mail.text]) {
+      for (const value of ["Hi Nia", "Software Engineer Intern", "IST", "Review my offer", "https://example.test/intern/portal/application"]) expect(part).toContain(value);
+    }
+    expect(received.some(row => row.to.includes("manual@example.test"))).toBe(false);
+  } finally { receiver.stop(true); }
+});

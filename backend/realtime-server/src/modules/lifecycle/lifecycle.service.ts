@@ -39,7 +39,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
   const schedules = createOfferSchedules(collection);
-  const names = new Set(["offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.remind", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       schedules.initialize(),
@@ -82,6 +82,20 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
       const result = await (async () => {
       const opts = { session }, now = new Date().toISOString();
       if (schedules.supports(method)) return schedules.execute(method, p, actor, session);
+      if (method === "offer.remind") {
+        if (!isAdmin(actor)) throw new DomainError("FORBIDDEN", "Admin access is required to send offer reminders.");
+        const applicationId = required(p.applicationId, "application");
+        const offer = await offers.findOne({ applicationId, status: "Sent", expiresOn: { $gt: now } }, opts);
+        if (!offer) return { queued: false, reason: "This candidate has no open offer." };
+        const version = Number(offer.currentVersion || 1);
+        const finalDay = Date.parse(offer.expiresOn) <= Date.parse(now) + 86_400_000;
+        if ((finalDay && offer.reminderSentFor === offer.expiresOn && (offer.reminderSentVersion ?? version) === version) || Date.parse(offer.lastReminderQueuedAt) >= Date.parse(now) - 2000) {
+          return { queued: false, reason: "A reminder has already been queued for this offer." };
+        }
+        await offers.updateOne({ _id: offer._id }, { $set: { lastReminderQueuedAt: now, ...(finalDay ? { reminderSentFor: offer.expiresOn, reminderSentVersion: version } : {}) } }, opts);
+        await outbox.enqueue("applicantStatus", { applicationId, status: "offer-manual-reminder", offerVersion: String(version), offerSnapshot: JSON.stringify({ ...offer, version }) }, session);
+        return { queued: true, applicationId };
+      }
       if (method === "offer.extend") {
         staff(actor); const applicationId = required(p.applicationId, "application");
         const days = Number(p.days ?? 7);

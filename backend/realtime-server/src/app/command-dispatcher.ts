@@ -226,6 +226,9 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if(status==="offer")return {suppressed:true};
         pinned=await collection("offer_versions").findOne({applicationId,version:1});
       }
+      if (status === "offer-manual-reminder" && (!pinned || !currentOffer || currentOffer.status !== "Sent" ||
+        Number(currentOffer.currentVersion || 1) !== Number(pinned.version) || currentOffer.expiresOn !== pinned.expiresOn ||
+        !currentOffer.expiresOn || currentOffer.expiresOn <= new Date().toISOString())) return { suppressed: true };
       if(status==="offer-reminder"&&!pinned)return {suppressed:true};
       if(pinned && ["offer","instant-offer","offer-revised","offer-reminder"].includes(status)) {
         const expected=currentOffer?.pendingRevision?.version || currentOffer?.currentVersion || 1;
@@ -344,8 +347,18 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         // Counts are only computed when asked for; the list itself doesn't need them.
         params.facets !== true ? Promise.resolve(null) : applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], bookmarked: [{ $match: { bookmarked: true } }, { $count: "count" }], aiRecommendations: [{ $match: { aiRecommendation: { $type: "string" } } }, { $group: { _id: "$aiRecommendation", count: { $sum: 1 } } }], aiPending: [{ $match: { aiReviewStatus: "pending" } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
       ]);
-      if (!aggregate) return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit };
-      return { items: rows.map(row => publicApplication(row, true)), total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, bookmarked: aggregate[0]?.bookmarked?.[0]?.count || 0, aiRecommendations: Object.fromEntries((aggregate[0]?.aiRecommendations || []).map((item: any) => [item._id, item.count])), aiPending: aggregate[0]?.aiPending?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) }, batches: (aggregate[0]?.batches || []).map((item: any) => item._id).filter(Boolean) };
+      const openOffers = isAdmin(actor) && rows.length && !params.facets ? await collection("offers").find({
+        applicationId: { $in: rows.map(row => row._id) }, status: "Sent", expiresOn: { $gt: new Date().toISOString() },
+      }, { projection: { applicationId: 1, expiresOn: 1, currentVersion: 1, reminderSentVersion: 1, reminderSentFor: 1, lastReminderQueuedAt: 1 } }).toArray() : [];
+      const offerByApplicant = new Map(openOffers.map(offer => [offer.applicationId, offer]));
+      const items = rows.map(row => {
+        const offer = offerByApplicant.get(row._id);
+        return { ...publicApplication(row, true), ...(offer ? { offerReminder: {
+          expiresOn: offer.expiresOn, covered: offer.reminderSentFor === offer.expiresOn && (offer.reminderSentVersion == null || offer.reminderSentVersion === (offer.currentVersion || 1)), lastQueuedAt: offer.lastReminderQueuedAt || null,
+        } } : {}) };
+      });
+      if (!aggregate) return { items, total, page, pageSize: limit };
+      return { items, total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, bookmarked: aggregate[0]?.bookmarked?.[0]?.count || 0, aiRecommendations: Object.fromEntries((aggregate[0]?.aiRecommendations || []).map((item: any) => [item._id, item.count])), aiPending: aggregate[0]?.aiPending?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) }, batches: (aggregate[0]?.batches || []).map((item: any) => item._id).filter(Boolean) };
     }
     if (method === "application.get") {
       if (!actor) throw new DomainError("UNAUTHENTICATED", "Sign in to view applications.");

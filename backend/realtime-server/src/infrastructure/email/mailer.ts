@@ -6,7 +6,7 @@ import type { SigninEmailTemplateVariant } from "../../modules/email-templates/s
 import { emailAction, emailMessage, emailParagraph, emailSignOff, escapeEmailHtml as escapeHtml, renderInternshipEmail, renderInternshipTextEmail } from "../../modules/email-templates/internship-email-layout.mjs";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
-type ApplicantStatus = "instant-offer" | "direct-enrolled" | "offer-reminder" | "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
+type ApplicantStatus = "instant-offer" | "direct-enrolled" | "offer-manual-reminder" | "offer-reminder" | "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
 
 interface ApplicantStatusEmailOptions {
   to: string;
@@ -233,6 +233,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
     }
     if (["offer", "offer-reminder", "offer-accepted", "onboarding", "certificate", "offer-revised", "offer-revision-accepted", "offer-revision-declined", "offer-revision-withdrawn"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
+    if (id === "offer-manual-reminder") buttons.push({ label: "Review my offer", url: options.portalUrl });
     if (id === "offer-accepted" && options.linkedinShareUrl) {
       buttons.push({ label: "Share on LinkedIn (optional)", url: options.linkedinShareUrl });
     }

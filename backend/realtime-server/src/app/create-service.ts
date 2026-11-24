@@ -157,6 +157,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
           ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(certificateVerifyUrl)}`
           : undefined;
         let portalUrl = `${siteOrigin}/intern/portal${notice.status.startsWith("offer-revi")?"/application#schedule-revision":""}`;
+        if (notice.status === "offer-manual-reminder") portalUrl = `${siteOrigin}/intern/portal/application`;
         if (["selected", "direct-enrolled", "instant-offer"].includes(notice.status)) {
           const app = await domain.findApplicationByEmail(notice.to);
           const appId = app ? String(app._id) : "";

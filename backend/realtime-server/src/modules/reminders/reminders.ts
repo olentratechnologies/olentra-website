@@ -65,12 +65,14 @@ export async function runReminders({ collection, outbox, transact, now = new Dat
   for (const offer of closing) {
     const revision = offer.status === "Accepted" ? offer.pendingRevision : null;
     const target = revision || offer, deadline = String(target.expiresOn);
-    if (offer.reminderSentFor === deadline) continue;
     const version = Number(target.version || offer.currentVersion || 1);
+    if (offer.reminderSentFor === deadline && (offer.reminderSentVersion ?? version) === version) continue;
     const key = createHash("sha256").update(`offer-reminder:${offer._id}:${version}:${deadline}`).digest("hex");
     const queued = await transact(key, null, { offerId: offer._id, version, deadline }, async session => {
       const deadlineField = revision ? "pendingRevision.expiresOn" : "expiresOn";
-      const claimed = await offers.updateOne({ _id: offer._id, status: offer.status, [deadlineField]: deadline, reminderSentFor: { $ne: deadline } }, { $set: { reminderSentFor: deadline } }, { session });
+      const claimed = await offers.updateOne({ _id: offer._id, status: offer.status, [deadlineField]: deadline, $or: [{ reminderSentFor: { $ne: deadline } }, { reminderSentVersion: { $exists: true, $ne: version } }],
+        [revision ? "pendingRevision.version" : "currentVersion"]: revision || offer.currentVersion ? version : { $exists: false },
+      }, { $set: { reminderSentFor: deadline, reminderSentVersion: version, lastReminderQueuedAt: nowIso } }, { session });
       if (!claimed.modifiedCount) return false;
       const snapshot = revision ? { ...revision, version } : { ...offer, version };
       await outbox.enqueue("applicantStatus", { applicationId: String(offer.applicationId), status: "offer-reminder", offerVersion: String(version), offerSnapshot: JSON.stringify(snapshot) }, session);

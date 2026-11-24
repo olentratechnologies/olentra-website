@@ -353,6 +353,17 @@ export function ApplicantWorkflow({ applicationId }) {
                   <dd>{formatDeadline(offer.expiresOn)} · {offerTimeLeft(offer.expiresOn)?.label}</dd>
                 </div>}
               </dl>
+              {isAdmin && offer.status === "Sent" && Date.parse(offer.expiresOn) > Date.now() && <div className={styles.formActions}>
+                {offer.lastReminderQueuedAt && <span>Last reminder queued {new Date(offer.lastReminderQueuedAt).toLocaleString()}</span>}
+                <Button variant="secondary" disabled={busy || (offer.reminderSentFor === offer.expiresOn && (offer.reminderSentVersion == null || offer.reminderSentVersion === (offer.currentVersion || 1)))} onClick={async () => {
+                  setBusy(true);
+                  try {
+                    const result = await commands.remindOffer(applicationId);
+                    notify(result.ok ? (result.data.queued ? "Offer reminder queued." : result.data.reason) : result.error);
+                    if (result.ok) await commands.getApplication(applicationId);
+                  } finally { setBusy(false); }
+                }}>Send offer reminder</Button>
+              </div>}
               {isAdmin && offer.status === "Sent" && offer.route !== "instant" && (() => {
                 // New deadlines count from today and must still close the lead time before the start date.
                 const longest = maxOpenDays(offer.startOn, today, leadDays);
