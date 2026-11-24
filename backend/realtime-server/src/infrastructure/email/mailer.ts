@@ -3,7 +3,7 @@ import { formatDeadline } from "../../modules/programs/offer-policy.mjs";
 import { emailDefinition, fillEmailTemplate, type AutomatedEmailId, type EmailTemplate } from "../../modules/email-templates/automated-templates";
 import { interviewIcs, interviewTimeLabel } from "../../modules/interviews/ics";
 import type { SigninEmailTemplateVariant } from "../../modules/email-templates/signin-template-settings";
-import { emailAction, emailMessage, emailParagraph, emailSignOff, escapeEmailHtml as escapeHtml, renderInternshipEmail, renderInternshipTextEmail } from "../../modules/email-templates/internship-email-layout.mjs";
+import { emailAction, emailMessage, emailOfferHelp, emailParagraph, emailSignOff, escapeEmailHtml as escapeHtml, offerHelpText, renderInternshipEmail, renderInternshipTextEmail } from "../../modules/email-templates/internship-email-layout.mjs";
 
 type SendResult = { ok: boolean; delivered: boolean; id?: string; error?: string };
 type ApplicantStatus = "instant-offer" | "direct-enrolled" | "offer-manual-reminder" | "offer-reminder" | "offer-revised" | "offer-revision-accepted" | "offer-revision-declined" | "offer-revision-withdrawn" | "shortlisted" | "selected" | "offer" | "offer-accepted" | "rejected" | "onboarding" | "certificate";
@@ -136,6 +136,8 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       .trim();
   }
 
+  const OFFER_HELP_EMAILS = new Set<string>(["offer", "instant-offer", "offer-manual-reminder", "offer-reminder"]);
+  const LEGACY_LATER_START = "Would you like to start on a later date? Email us at intern.support@olentratechnologies.com with the date you’d like to join, and we’ll let you know whether we can adjust your schedule. You can also write to us at the same address with any other questions about your offer.";
   function renderAutomated(id: AutomatedEmailId, options: Record<string, any>, template: EmailTemplate = emailDefinition(id)) {
     const definition = emailDefinition(id);
     const resolved = resolveCandidateGreeting(options.name);
@@ -152,6 +154,9 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     if (resolved.greeting === "Hello,") {
       body = body.replace(/^(Hi\s+[^\n,]+,|Hello,)/, "Hello,");
     }
+    // Offer emails show this help as its own box; drop the old paragraph from templates saved before it existed.
+    const offerHelp = OFFER_HELP_EMAILS.has(id);
+    if (offerHelp) body = body.split(LEGACY_LATER_START).join("").replace(/\n{3,}/g, "\n\n").trim();
     const details: string[] = [], buttons: { label: string; url: string }[] = [];
     const attachments: Attachment[] = [];
     if(id !== "application-received" && !id.startsWith("interview-") && id!=="signin") {
@@ -250,12 +255,13 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     }
     if (id === "signin" || id === "selected" || id === "direct-enrolled" || id === "instant-offer") details.push(ACCOUNT_SECURITY_NOTICE);
     const panelContent = customPanelHtml || (details.length
-      ? emailPanel(details.map(item => `<p style="margin:4px 0;font-size:14px;line-height:22px;overflow-wrap:anywhere;">${escapeHtml(item)}</p>`).join(""))
+      ? emailPanel(details.map(item => `<p style="margin:4px 0;font-size:14px;line-height:22px;overflow-wrap:break-word;word-wrap:break-word;">${escapeHtml(item)}</p>`).join(""))
       : "");
     const actions = buttons.filter(button => button.url);
     const signoffTeam = id === "application-received" ? "Talent Acquisition Team" : "The Olentra Team";
     const content = emailMessage(body)
       + panelContent
+      + (offerHelp ? emailOfferHelp() : "")
       + actions.map(button => emailAction(button.label, button.url)).join("")
       + (template.body === definition.body ? emailSignOff(signoffTeam) : "");
     const html = renderInternshipEmail({ title: subject, preheader: body.slice(0, 180), content });
@@ -275,7 +281,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
           "Thank you for considering Olentra Technologies as part of your professional journey.",
           `Best regards,\n${signoffTeam}\nOlentra Technologies`,
         ].join("\n\n")
-      : [body, ...details, ...actions.map(button => `${button.label}: ${button.url}`), "The Olentra Team"].join("\n\n");
+      : [body, ...details, ...(offerHelp ? [offerHelpText()] : []), ...actions.map(button => `${button.label}: ${button.url}`), "The Olentra Team"].join("\n\n");
     return { subject, html, text, attachments };
   }
   async function automated(id: AutomatedEmailId, options: Record<string, any>) {

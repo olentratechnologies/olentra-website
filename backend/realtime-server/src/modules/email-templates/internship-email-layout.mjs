@@ -58,7 +58,41 @@ export function renderInternshipEmail({ title, content, preheader = "" }) {
 }
 
 export function emailParagraph(html) {
-  return `<p style="margin:0 0 16px;font-size:16px;line-height:26px;overflow-wrap:anywhere;">${html}</p>`;
+  // break-word only splits a word that can't fit on its own line, so addresses and links stay whole.
+  return `<p style="margin:0 0 16px;font-size:16px;line-height:26px;overflow-wrap:break-word;word-wrap:break-word;">${html}</p>`;
+}
+
+/** The support address as a link that can only wrap at the "@", never mid-word. */
+export function supportEmailLink() {
+  const [user, domain] = SUPPORT_EMAIL.split("@");
+  return `<a href="mailto:${SUPPORT_EMAIL}" style="color:#1555a2;text-decoration:underline;"><span style="white-space:nowrap;">${user}@</span><wbr><span style="white-space:nowrap;">${domain}</span></a>`;
+}
+
+/** Help box for offer emails: a heading, short points, and the support address on its own line. */
+export const OFFER_HELP = {
+  title: "Questions about your offer?",
+  points: [
+    ["Want to start on a later date?", "Email us the date you’d like to join, and we’ll let you know whether we can adjust your schedule."],
+    ["Anything else?", "Write to us with any other questions about your offer."],
+  ],
+};
+export function emailOfferHelp() {
+  const points = OFFER_HELP.points.map(([lead, rest]) => `<p style="margin:0 0 10px;font-size:15px;line-height:23px;color:#33415c;"><strong style="color:#172033;">${escapeEmailHtml(lead)}</strong> ${escapeEmailHtml(rest)}</p>`).join("");
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 24px;">
+            <tr><td style="padding:18px 20px;background:#eef5ff;border:1px solid #cfe0f7;border-radius:10px;">
+              <p style="margin:0 0 12px;font-size:16px;line-height:22px;font-weight:700;color:#172033;">${escapeEmailHtml(OFFER_HELP.title)}</p>
+              ${points}
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 8px;">
+                <tr><td bgcolor="#ffffff" style="border:1px solid #1555a2;border-radius:6px;">
+                  <a href="mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("Question about my internship offer")}" style="display:inline-block;padding:10px 18px;font-size:15px;line-height:20px;font-weight:700;color:#1555a2;text-decoration:none;border-radius:6px;">Email intern support&nbsp;→</a>
+                </td></tr>
+              </table>
+              <p style="margin:0;font-size:13px;line-height:20px;color:#526075;">${supportEmailLink()}</p>
+            </td></tr>
+          </table>`;
+}
+export function offerHelpText() {
+  return [OFFER_HELP.title, ...OFFER_HELP.points.map(([lead, rest]) => `${lead} ${rest}`), `Email: ${SUPPORT_EMAIL}`].join("\n");
 }
 
 export function emailMessage(message) {

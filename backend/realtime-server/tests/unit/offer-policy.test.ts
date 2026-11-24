@@ -106,3 +106,25 @@ test("instant offer email carries the activation link and closes at the end of t
   expect(rendered.text).toContain("Respond by: Thursday, 24 January 2030, 11:59 PM IST");
   expect(rendered.attachments ?? []).toHaveLength(0);
 });
+
+test("offer emails show later-start help as its own box, once, with an address that never breaks mid-word", () => {
+  const mailer = createInternshipMailer("");
+  const legacy = "Would you like to start on a later date? Email us at intern.support@olentratechnologies.com with the date you’d like to join, and we’ll let you know whether we can adjust your schedule. You can also write to us at the same address with any other questions about your offer.";
+  for (const id of ["offer", "instant-offer", "offer-manual-reminder", "offer-reminder"] as const) {
+    const definition = AUTOMATED_EMAILS.find(item => item.id === id)!;
+    expect(definition.body).not.toContain("Would you like to start");
+    // A template an admin saved before this change still carries the old paragraph.
+    const saved = validateEmailTemplate(id, { ...definition, body: `${definition.body}\n\n${legacy}` });
+    for (const rendered of [mailer.renderAutomated(id, options), mailer.renderAutomated(id, options, saved)]) {
+      expect(rendered.html).toContain("Questions about your offer?");
+      expect(rendered.html).toContain("Want to start on a later date?");
+      expect(rendered.html).toContain('<span style="white-space:nowrap;">intern.support@</span><wbr><span style="white-space:nowrap;">olentratechnologies.com</span>');
+      expect(rendered.html).not.toContain("Would you like to start");
+      expect(rendered.text).toContain("Want to start on a later date?");
+      expect(rendered.text).toContain("Email: intern.support@olentratechnologies.com");
+      expect(rendered.text).not.toContain("Would you like to start");
+      expect(rendered.html).not.toContain("overflow-wrap:anywhere");
+    }
+  }
+  expect(mailer.renderAutomated("offer-accepted", options).html).not.toContain("Questions about your offer?");
+});
