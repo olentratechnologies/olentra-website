@@ -9,8 +9,10 @@ import {
   Check,
   ClipboardCheck,
   Clock3,
+  Github,
   Sparkles,
 } from "lucide-react";
+import { portalRepositoryAccess } from "@/lib/intern/repository-access.mjs";
 import { useInternship } from "@/components/intern/InternshipProvider";
 import { ALL_BADGES, earnedBadges } from "@/lib/intern/badges.mjs";
 import { PlanetArtwork } from "../dashboard/DashboardVisuals";
@@ -72,7 +74,7 @@ function BadgesRow({ my }) {
 }
 
 export default function PortalDashboard() {
-  const { ready, account, my } = useInternship();
+  const { ready, account, my, data } = useInternship();
   if (!ready) return <Loading />;
   const application = my.application;
   const tasks = my.tasks || [];
@@ -82,6 +84,7 @@ export default function PortalDashboard() {
   const completed = my.intern?.status === "Completed";
   const canViewWork = active || (application?.status === "Joined" && completed);
   const journey = portalJourney(my);
+  const repository = portalRepositoryAccess(my.projects, my.application?.githubAccount, Boolean(data?.githubIntegration?.enabled));
   const steps = journey.steps;
   return (
     <>
@@ -159,6 +162,24 @@ export default function PortalDashboard() {
           <Link href="/intern/portal/onboarding">
             Complete onboarding <ArrowRight size={14} />
           </Link>
+        </Notice>
+      )}
+      {canViewWork && repository.stage === "connect" && (
+        <Notice>
+          <div>
+            <strong><Github size={13} aria-hidden="true" /> Connect GitHub to get your project repository</strong>
+            <p>{repository.project.name} uses a GitHub repository. Connect your GitHub account once, and you’ll be invited automatically.</p>
+          </div>
+          <Link href="/intern/portal/profile#github">Connect in Profile settings <ArrowRight size={14} /></Link>
+        </Notice>
+      )}
+      {canViewWork && repository.stage === "accept" && (
+        <Notice>
+          <div>
+            <strong><Github size={13} aria-hidden="true" /> Your GitHub invite is ready</strong>
+            <p>Accept the invite to {repository.invite.label} on GitHub to open the {repository.project.name} repository.</p>
+          </div>
+          <a href={repository.invite.acceptUrl} target="_blank" rel="noopener noreferrer">Accept invite on GitHub <ArrowRight size={14} /></a>
         </Notice>
       )}
       <div className={styles.summaryGrid}>

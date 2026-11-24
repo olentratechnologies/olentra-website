@@ -100,11 +100,38 @@
 .repoList button:disabled { cursor: default; opacity: .7; }
 .repoTitle { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; color: var(--ad-text, #101828); font-size: .9rem; overflow-wrap: anywhere; }
 .repoDescription { color: var(--ad-muted, #5f6f86); font-size: .8rem; overflow-wrap: anywhere; }
+/* Intern checklist: connect GitHub → accept invite → open the repository. */
+.steps { display: grid; gap: .75rem; padding: .9rem 1rem; border: 1px solid var(--ad-blue-border, var(--ad-border, #c7daf6)); border-radius: .85rem; background: color-mix(in srgb, var(--ad-blue-soft, #e8effb) 55%, var(--ad-panel, #fff)); }
+.stepsHeader { display: flex; align-items: center; gap: .7rem; }
+.stepsHeader h3 { margin: 0; font-size: .95rem; color: var(--ad-text, #101828); }
+.stepsHeader p { margin: .1rem 0 0; font-size: .8rem; color: var(--ad-muted, #5f6f86); overflow-wrap: anywhere; }
+.steps ol { display: grid; gap: .1rem; margin: 0; padding: 0; list-style: none; }
+.steps li { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: .65rem; padding: .45rem 0; }
+.steps li + li { border-top: 1px dashed color-mix(in srgb, var(--ad-border, #d6deea) 80%, transparent); }
+.stepMarker { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; font-size: .75rem; font-weight: 700; border: 1px solid var(--ad-border, #d6deea); color: var(--ad-muted, #5f6f86); background: var(--ad-panel, #fff); }
+.steps li[data-state="current"] .stepMarker { border-color: var(--ad-blue, #3866bd); background: var(--ad-blue, #3866bd); color: var(--ad-primary-text, #fff); }
+.steps li[data-state="done"] .stepMarker { border-color: var(--ad-success-border, #b9e2c9); background: var(--ad-success-bg, #e6f5ec); color: var(--ad-success, #1f7a4d); }
+.stepBody { display: grid; gap: .25rem; min-width: 0; padding-top: .15rem; }
+.stepBody strong { font-size: .88rem; color: var(--ad-text, #101828); overflow-wrap: anywhere; }
+.steps li[data-state="todo"] .stepBody strong, .steps li[data-state="done"] .stepBody strong { font-weight: 500; color: var(--ad-muted, #5f6f86); }
+.stepBody p { margin: 0; font-size: .82rem; line-height: 1.5; color: var(--ad-muted, #5f6f86); }
+.stepActions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; margin-top: .55rem; }
+.stepActions > a:not(.primary) { color: var(--ad-link, #2465d4); font-size: .82rem; font-weight: 600; }
+a.primary { text-decoration: none; }
+.accessDone { display: flex; align-items: center; gap: .4rem; margin: 0; padding: .55rem .75rem; border-radius: .6rem; font-size: .85rem; color: var(--ad-success, #1f7a4d); background: var(--ad-success-bg, #e6f5ec); overflow-wrap: anywhere; }
+.row[data-locked="true"] .icon { color: var(--ad-muted, #5f6f86); background: var(--ad-panel-alt, #f4f7fb); }
+.lockedLink { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--ad-text, #101828); cursor: pointer; text-align: left; text-decoration: underline dotted; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.lockedLink:focus-visible { outline: 2px solid var(--ad-blue, #3866bd); outline-offset: 2px; border-radius: .25rem; }
+.lockMessage { display: flex; gap: .45rem; align-items: flex-start; padding: .55rem .7rem; border-radius: .55rem; font-size: .82rem; line-height: 1.5; color: var(--ad-text, #101828); background: var(--ad-panel-alt, #f4f7fb); }
+.lockMessage svg { flex: none; margin-top: .2rem; color: var(--ad-muted, #5f6f86); }
+.lockMessage a, .inlineAction { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--ad-link, #2465d4); text-decoration: underline; cursor: pointer; display: inline-flex; align-items: center; gap: .25rem; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 @media (max-width: 560px) {
   .fields { grid-template-columns: 1fr; }
   .audienceOptions { grid-template-columns: 1fr; }
   .headerButtons, .headerButtons > * { flex: 1 1 auto; justify-content: center; }
+  .steps { padding: .8rem; }
+  .stepActions > .primary { flex: 1 1 auto; justify-content: center; }
   .row { padding: .6rem; gap: .6rem; }
   .icon { width: 1.75rem; height: 1.75rem; }
   /* Status and actions move under the name instead of squeezing beside it. */

@@ -20,7 +20,8 @@
     "test:board": "node --test scripts/intern-board.test.mjs",
     "test:offer": "node --test scripts/offer-deadline.test.mjs",
     "test:draft": "node --test scripts/apply-draft.test.mjs",
-    "test:uploads": "node --test scripts/direct-upload.test.mjs scripts/intern-client.test.mjs"
+    "test:uploads": "node --test scripts/direct-upload.test.mjs scripts/intern-client.test.mjs",
+    "test:repo-access": "node --test scripts/repository-access.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "2.1.2",

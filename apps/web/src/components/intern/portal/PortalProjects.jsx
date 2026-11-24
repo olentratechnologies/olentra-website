@@ -4,6 +4,7 @@ import ProjectPlan from "../ProjectPlan";
 import { InternProjectLinks, TaskLinks } from "../ProjectLinks";
 
 import { useState } from "react";
+import { repositoryAccess } from "@/lib/intern/repository-access.mjs";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,6 +13,7 @@ import {
   Check,
   ClipboardCheck,
   FileUp,
+  Github,
   Play,
   Send,
   Upload,
@@ -166,7 +168,15 @@ export function SubmitWorkModal({ task, onClose }) {
   );
 }
 
-function ProjectCard({ project, tasks }) {
+const ACCESS_BADGES = {
+  connect: { label: "GitHub needed", tone: "amber" },
+  accept: { label: "Invite waiting", tone: "blue" },
+  waiting: { label: "Invite on its way", tone: "blue" },
+};
+
+function ProjectCard({ project, tasks, githubAccount, githubEnabled }) {
+  const access = repositoryAccess({ links: project.links, githubAccount, githubEnabled });
+  const badge = ACCESS_BADGES[access.stage];
   const approved = tasks.filter((task) => task.status === "Approved").length;
   const progress = tasks.length ? (approved / tasks.length) * 100 : 0;
   return (
@@ -189,6 +199,7 @@ function ProjectCard({ project, tasks }) {
           <span>{project.program || "Olentra Internship"}</span>
           <Status value={project.status} />
         </div>
+        {badge && <Link href={`/intern/portal/projects/${project.id}`} className={styles.accessBadge} data-tone={badge.tone}><Github size={12} aria-hidden="true" /> {badge.label}</Link>}
         <h2>
           <Link href={`/intern/portal/projects/${project.id}`}>
             {project.name}
@@ -218,7 +229,7 @@ function ProjectCard({ project, tasks }) {
 }
 
 export default function PortalProjects() {
-  const { ready, my } = useInternship();
+  const { ready, my, data } = useInternship();
   if (!ready) return <Loading />;
   return (
     <>
@@ -233,6 +244,8 @@ export default function PortalProjects() {
               <ProjectCard
                 key={project.id}
                 project={project}
+                githubAccount={my.application?.githubAccount}
+                githubEnabled={Boolean(data?.githubIntegration?.enabled)}
                 tasks={(my.tasks || []).filter(
                   (task) => task.projectId === project.id,
                 )}
@@ -345,7 +358,6 @@ export function PortalProjectDetail({ projectId }) {
               <Panel className={styles.sectionGap}>
                 <InternProjectLinks
                   links={project.links}
-                  githubProfile={my.application?.github}
                   githubAccount={my.application?.githubAccount}
                   githubEnabled={Boolean(data?.githubIntegration?.enabled)}
                 />

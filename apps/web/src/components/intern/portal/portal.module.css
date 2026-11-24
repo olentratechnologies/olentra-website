@@ -3553,3 +3553,38 @@
     padding-bottom: calc(22px + env(safe-area-inset-bottom));
   }
 }
+
+/* Project card: what the intern still needs to do for GitHub access. */
+.accessBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--ad-link, #2465d4);
+  background: var(--ad-blue-soft, #e3edff);
+}
+.accessBadge[data-tone="amber"] {
+  color: var(--ad-warning, #855000);
+  background: var(--ad-warning-bg, #fff4dd);
+}
+.notice strong svg { vertical-align: -2px; margin-right: 4px; }
+
+/* Profile → Connected accounts */
+.connectedAccounts { scroll-margin-top: 90px; border-radius: 18px; transition: box-shadow .4s; }
+.connectedAccounts[data-highlight="true"] { box-shadow: 0 0 0 3px var(--ad-blue, #3866f5); }
+.accountRow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.accountIcon { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 12px; color: var(--ad-text, #0b1838); background: var(--ad-panel-soft, #e3edff); }
+.accountText { flex: 1 1 220px; min-width: 0; }
+.accountText > strong { font-size: 14px; color: var(--ad-text, #0b1838); }
+.accountText p { margin: 3px 0 0; font-size: 12px; line-height: 1.6; color: var(--ad-muted, #46567c); overflow-wrap: anywhere; }
+.accountAction { flex: none; }
+.accountHint { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 12px; color: var(--ad-success, #25856d); }
+@media (max-width: 560px) {
+  .accountAction, .accountAction > * { width: 100%; justify-content: center; }
+}

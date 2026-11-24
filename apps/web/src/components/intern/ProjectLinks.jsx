@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, BookOpen, Check, Clock, ExternalLink, Github, Link2, Lock, Mail, Palette, Pencil, Plus, RefreshCw, Server, SquareKanban, Trash2, Users } from "lucide-react";
 import { useInternship } from "./InternshipProvider";
+import { GITHUB_RETURN_KEY, repositoryAccess, safeReturnPath } from "@/lib/intern/repository-access.mjs";
 import styles from "./project-links.module.css";
 
 export const LINK_KINDS = [
@@ -43,19 +44,23 @@ export function linkAudience(link, members) {
   return Array.isArray(link.members) ? members.filter(member => link.members.includes(member.id)) : members;
 }
 
-function LinkRow({ link, children, access }) {
+function LinkRow({ link, children, access, locked }) {
   const kind = kindOf(link.kind), Icon = kind.icon, href = safeLink(link.url);
-  return <li className={styles.row}>
-    <span className={styles.icon} data-kind={kind.value} aria-hidden="true"><Icon size={16} /></span>
+  const [showLock, setShowLock] = useState(false);
+  return <li className={styles.row} data-locked={locked ? "true" : undefined}>
+    <span className={styles.icon} data-kind={kind.value} aria-hidden="true">{locked ? <Lock size={15} /> : <Icon size={16} />}</span>
     <div className={styles.body}>
       <div className={styles.titleLine}>
-        {href ? <a href={href} target="_blank" rel="noopener noreferrer">{link.label}<ExternalLink size={12} aria-hidden="true" /><span className={styles.srOnly}> (opens in a new tab)</span></a> : <strong>{link.label}</strong>}
+        {locked
+          ? <button type="button" className={styles.lockedLink} aria-expanded={showLock} onClick={() => setShowLock(value => !value)}>{link.label}</button>
+          : href ? <a href={href} target="_blank" rel="noopener noreferrer">{link.label}<ExternalLink size={12} aria-hidden="true" /><span className={styles.srOnly}> (opens in a new tab)</span></a> : <strong>{link.label}</strong>}
         <span className={styles.kind}>{kind.label}</span>
         {link.visibleToInterns === false && <span className={styles.badge} data-tone="muted"><Lock size={11} aria-hidden="true" /> Staff only</span>}
         {link.visibleToInterns !== false && Array.isArray(link.members) && <span className={styles.badge} data-tone="muted"><Users size={11} aria-hidden="true" /> {link.members.length} selected {link.members.length === 1 ? "intern" : "interns"}</span>}
         {access}
       </div>
       {link.note && <p className={styles.note}>{link.note}</p>}
+      {locked && showLock && <div className={styles.lockMessage} role="status"><Lock size={13} aria-hidden="true" /><div>{locked}</div></div>}
       {children}
     </div>
   </li>;
@@ -85,6 +90,8 @@ export function ConnectGithubButton({ className = styles.primary, children = "Co
     setBusy(true); setError("");
     const result = await commands.githubConnectUrl();
     if (!result.ok) { setError(result.error || "GitHub sign-in is unavailable right now."); setBusy(false); return; }
+    // Come back to this page after GitHub sign-in.
+    try { const here = safeReturnPath(window.location.pathname + window.location.hash); if (here) window.sessionStorage.setItem(GITHUB_RETURN_KEY, here); } catch { /* storage blocked */ }
     window.location.assign(result.data.url);
   }
   return <>
@@ -93,22 +100,75 @@ export function ConnectGithubButton({ className = styles.primary, children = "Co
   </>;
 }
 
-/** Read-only list for interns. Repository links show the intern's own access state. */
-export function InternProjectLinks({ links = [], githubProfile, githubAccount, githubEnabled = false }) {
+/**
+ * The intern's path to a shared repository: connect GitHub, accept the invite, open it.
+ * Only the current step stands out; finished steps collapse to a tick.
+ */
+export function RepositoryAccessSteps({ access }) {
+  if (access.stage === "none") return null;
+  const names = access.repositories.map(link => link.label).join(", ");
+  if (access.stage === "granted") return <p className={styles.accessDone}><Check size={14} aria-hidden="true" /> You have access to {names} on GitHub{access.login ? ` as @${access.login}` : ""}.</p>;
+  const order = ["connect", "accept", "granted"];
+  // Until GitHub is connected that is always the next step; after it, the invite.
+  const current = access.connected ? "accept" : "connect";
+  const state = id => order.indexOf(id) < order.indexOf(current) ? "done" : id === current ? "current" : "todo";
+  const steps = [
+    {
+      id: "connect",
+      title: access.connected ? `GitHub connected as @${access.login}` : "Connect your GitHub account",
+      detail: access.connected ? null : <>
+        {access.automatic ? "We use it to invite you to the project repository. It takes a few seconds." : "Your mentor uses it to invite you to the repository."}
+        <span className={styles.stepActions}><ConnectGithubButton /><Link href="/intern/portal/profile#github">Profile settings</Link></span>
+      </>,
+    },
+    {
+      id: "accept",
+      title: "Accept the invite from GitHub",
+      detail: state("accept") !== "current" ? null : access.stage === "accept"
+        ? <>Your invite to {access.invite.label} is ready. Accept it while signed in as @{access.login || "your GitHub account"}.<span className={styles.stepActions}><a className={styles.primary} href={access.invite.acceptUrl} target="_blank" rel="noopener noreferrer"><Mail size={14} aria-hidden="true" /> Accept invite on GitHub</a></span></>
+        : access.automatic
+          ? <>Your invite is on its way to @{access.login}. It usually arrives within a few minutes, by email and on GitHub. This page updates by itself.</>
+          : <>Your mentor will invite your GitHub account. Watch your GitHub email for the invitation.</>,
+    },
+    { id: "granted", title: "Open the repository", detail: null },
+  ];
+  return <section className={styles.steps} aria-labelledby="repo-access-title">
+    <div className={styles.stepsHeader}>
+      <span className={styles.icon} aria-hidden="true"><Github size={16} /></span>
+      <div><h3 id="repo-access-title">Get repository access</h3><p>{names}</p></div>
+    </div>
+    <ol>
+      {steps.map((step, index) => <li key={step.id} data-state={state(step.id)} aria-current={state(step.id) === "current" ? "step" : undefined}>
+        <span className={styles.stepMarker} aria-hidden="true">{state(step.id) === "done" ? <Check size={13} /> : index + 1}</span>
+        <div className={styles.stepBody}>
+          <strong>{step.title}<span className={styles.srOnly}>{state(step.id) === "done" ? " (done)" : state(step.id) === "current" ? " (next step)" : ""}</span></strong>
+          {step.detail && <p>{step.detail}</p>}
+        </div>
+      </li>)}
+    </ol>
+  </section>;
+}
+
+/** What a locked repository link says when clicked. */
+function lockedMessage(access) {
+  if (access.stage === "connect") return <>Connect your GitHub account first. <ConnectGithubButton className={styles.inlineAction}>Connect GitHub</ConnectGithubButton></>;
+  if (access.stage === "accept") return <>Accept your invite first. <a href={access.invite.acceptUrl} target="_blank" rel="noopener noreferrer">Accept invite on GitHub</a></>;
+  return access.automatic ? "Your invite is on its way. You can open the repository once you’ve accepted it." : "Your mentor will invite you. You can open the repository once you’ve accepted the invite.";
+}
+
+/** Read-only list for interns. Repository links stay locked until the intern has access. */
+export function InternProjectLinks({ links = [], githubAccount, githubEnabled = false }) {
   if (!links.length) return null;
-  const repositories = links.filter(link => link.kind === "repository" && link.myAccess !== "granted");
-  const automatic = githubEnabled && repositories.some(link => link.automatic);
-  const invited = repositories.filter(link => link.myAccess === "invited" && invitationUrl(link.url));
-  let hint = null;
-  if (automatic && !githubAccount) hint = <><span>Connect your GitHub account and you’ll get an invite to the repository automatically.</span> <ConnectGithubButton /></>;
-  else if (invited.length) hint = <span>Your invite is ready. <a href={invitationUrl(invited[0].url)} target="_blank" rel="noopener noreferrer">Accept it on GitHub</a>{githubAccount ? ` while signed in as @${githubAccount.login}` : ""}. Access updates here within a few minutes.</span>;
-  else if (automatic) hint = <span>Your GitHub invite is on its way{githubAccount ? ` to @${githubAccount.login}` : ""}. It usually takes a few minutes.</span>;
-  else if (repositories.length) hint = githubProfile ? "Your mentor will invite your GitHub account to the repository. Check your GitHub email for the invitation." : <>Add your GitHub profile so your mentor can invite you to the repository. <Link href="/intern/portal/profile">Update profile</Link></>;
+  const access = repositoryAccess({ links, githubAccount, githubEnabled });
   return <section className={styles.section} aria-labelledby="project-resources">
     <div className={styles.header}><h2 id="project-resources">Resources</h2><span>{links.length} {links.length === 1 ? "link" : "links"}</span></div>
-    {hint && <div className={styles.hint}>{hint}</div>}
+    <RepositoryAccessSteps access={access} />
     <ul className={styles.list}>
-      {links.map(link => <LinkRow key={link.id} link={link} access={link.kind === "repository" ? <AccessBadge status={link.myAccess} /> : null} />)}
+      {links.map(link => {
+        const repository = link.kind === "repository";
+        const locked = repository && link.myAccess !== "granted" ? lockedMessage(access) : null;
+        return <LinkRow key={link.id} link={link} locked={locked} access={repository ? <AccessBadge status={link.myAccess} /> : null} />;
+      })}
     </ul>
   </section>;
 }
