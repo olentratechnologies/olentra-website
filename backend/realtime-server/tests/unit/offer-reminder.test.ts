@@ -44,3 +44,12 @@ test("only admins can send offer reminders", async () => {
   const { lifecycle } = fixture({ expiresOn: hoursFromNow(48) });
   await expect(lifecycle.execute("offer.remind", { applicationId: "OL-1", force: true }, { ...admin, staffRole: "mentor" }, "1")).rejects.toMatchObject({ code: "FORBIDDEN" });
 });
+
+test("a deliberate resend works right after the automatic reminder, then waits 10 minutes", async () => {
+  const expiresOn = hoursFromNow(5);
+  const { lifecycle, queued } = fixture({ expiresOn, reminderSentFor: expiresOn, reminderSentVersion: 1, lastReminderQueuedAt: new Date().toISOString() });
+  expect(await lifecycle.execute("offer.remind", { applicationId: "OL-1" }, admin, "1")).toMatchObject({ queued: false, covered: true });
+  expect(await lifecycle.execute("offer.remind", { applicationId: "OL-1", force: true }, admin, "2")).toMatchObject({ queued: true });
+  expect(await lifecycle.execute("offer.remind", { applicationId: "OL-1", force: true }, admin, "3")).toMatchObject({ queued: false });
+  expect(queued).toHaveLength(1);
+});

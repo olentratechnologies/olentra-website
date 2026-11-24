@@ -151,11 +151,12 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         const covered = finalDay && offer.reminderSentFor === offer.expiresOn && (offer.reminderSentVersion ?? version) === version;
         // "force" is an admin's deliberate second reminder on the final day; it still can't be repeated within 10 minutes.
         const force = p.force === true;
-        if (Date.parse(offer.lastReminderQueuedAt) >= Date.parse(now) - (force ? 10 * 60_000 : 2000)) {
-          return { queued: false, reason: force ? "A reminder was sent in the last 10 minutes. Wait a little before sending another." : "A reminder has already been queued for this offer." };
-        }
         if (covered && !force) return { queued: false, covered: true, reason: "This candidate already got the 24-hour deadline reminder for this offer." };
-        await offers.updateOne({ _id: offer._id }, { $set: { lastReminderQueuedAt: now, ...(finalDay ? { reminderSentFor: offer.expiresOn, reminderSentVersion: version } : {}) } }, opts);
+        if (force && Date.parse(offer.lastManualReminderAt) >= Date.parse(now) - 10 * 60_000) {
+          return { queued: false, reason: "A reminder was sent in the last 10 minutes. Wait a little before sending another." };
+        }
+        if (!force && Date.parse(offer.lastReminderQueuedAt) >= Date.parse(now) - 2000) return { queued: false, reason: "A reminder has already been queued for this offer." };
+        await offers.updateOne({ _id: offer._id }, { $set: { lastReminderQueuedAt: now, lastManualReminderAt: now, ...(finalDay ? { reminderSentFor: offer.expiresOn, reminderSentVersion: version } : {}) } }, opts);
         await outbox.enqueue("applicantStatus", { applicationId, status: "offer-manual-reminder", offerVersion: String(version), offerSnapshot: JSON.stringify({ ...offer, version }) }, session);
         if (covered) await auditDecision(audit, session, actor, "offer.reminder.resent", applicationId, { expiresOn: offer.expiresOn, version });
         return { queued: true, applicationId };
