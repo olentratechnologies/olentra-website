@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, GripHorizontal, Lock, Timer } from "lucide-react";
+import { CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, GripHorizontal, Lock, Timer } from "lucide-react";
 import { useSiteFeatures } from "@olentra/site-features/react";
-import { deadlineTime, formatDeadline, timeRemaining } from "@/lib/intern/application-deadline.mjs";
+import { REVIEW_DAYS, deadlineTime, formatDay, formatDeadline, resultsBy, timeRemaining } from "@/lib/intern/application-deadline.mjs";
 import styles from "./application-countdown.module.css";
 
 const MAX_TIMEOUT = 2 ** 31 - 1;
@@ -211,8 +211,12 @@ export default function ApplicationCountdown({ deadline }) {
   const dateLabel = deadlineDate.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
   const clockLabel = deadlineDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
   const state = closed ? "closed" : urgent ? "urgent" : "open";
-  const spoken = closed
-    ? `Applications closed ${when}.`
+  const resultsDay = formatDay(resultsBy(time));
+  const shared = closed && now >= resultsBy(time);
+  const spoken = shared
+    ? `Applications closed ${when}. Results have been shared by email.`
+    : closed
+    ? `Applications closed ${when}. We're reviewing them, and results will be shared within ${REVIEW_DAYS} days, by ${resultsDay}.`
     : `${left.days} days, ${left.hours} hours and ${left.minutes} minutes left to apply. Applications close ${when}.`;
 
   const style = drag
@@ -237,7 +241,7 @@ export default function ApplicationCountdown({ deadline }) {
       data-footer-visible={footerVisible || undefined}
       style={style}
       aria-label="Application deadline"
-      title={closed ? `Applications closed ${when}` : `Applications close ${when}`}
+      title={closed ? `Applications closed ${when} · Results by ${resultsDay}` : `Applications close ${when}`}
       onPointerDown={onPointerDown}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -249,7 +253,7 @@ export default function ApplicationCountdown({ deadline }) {
         {!collapsed && <>
           <span className={styles.emblem} aria-hidden="true"><Timer size={18} strokeWidth={1.8} /></span>
           <div className={styles.heading}>
-            <span className={styles.title}>Application deadline</span>
+            <span className={styles.title}>{closed ? "Application status" : "Application deadline"}</span>
             <span className={styles.status}>
               <span className={styles.statusDot} aria-hidden="true" />
               {closed ? "Applications closed" : urgent ? "Closing soon" : "Applications open"}
@@ -262,12 +266,21 @@ export default function ApplicationCountdown({ deadline }) {
       </div>
 
       <div className={styles.body} role="timer" aria-live="off" aria-label={spoken}>
-        {closed ? (
+        {closed ? (collapsed ? (
           <span className={styles.closed} aria-hidden="true">
             <Lock size={20} strokeWidth={1.7} />
-            <span>{collapsed ? "Closed" : "This application window has ended."}</span>
+            <span>Closed</span>
           </span>
         ) : (
+          <div className={styles.review} aria-hidden="true">
+            <span className={styles.reviewIcon}><ClipboardCheck size={18} strokeWidth={1.8} /></span>
+            <div className={styles.reviewText}>
+              <strong>{shared ? "Results have been shared" : "We’re reviewing applications"}</strong>
+              <span>{shared ? "Check the inbox of the email you applied with." : `Thank you for applying. Results will be shared by email within ${REVIEW_DAYS} days.`}</span>
+              <span className={styles.resultsBy}><CalendarCheck size={13} strokeWidth={1.8} /> {shared ? `Shared by ${resultsDay}` : `Results by ${resultsDay}`}</span>
+            </div>
+          </div>
+        )) : (
           <>
             {collapsed ? (
               <span className={styles.compact} aria-hidden="true">

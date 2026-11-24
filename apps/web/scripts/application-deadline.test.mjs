@@ -26,3 +26,9 @@ test("datetime-local values round-trip", () => {
   assert.equal(toLocalInputValue(iso), "2026-11-30T23:59");
   assert.equal(fromLocalInputValue(""), null);
 });
+
+test("results are due three days after the deadline", async () => {
+  const { REVIEW_DAYS, resultsBy } = await import("../src/lib/intern/application-deadline.mjs");
+  assert.equal(REVIEW_DAYS, 3);
+  assert.equal(resultsBy(Date.parse("2026-11-28T18:29:00Z")), Date.parse("2026-12-01T18:29:00Z"));
+});

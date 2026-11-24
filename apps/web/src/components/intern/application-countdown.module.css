@@ -260,6 +260,57 @@
   flex: none;
 }
 
+/* Closed: applications are under review. */
+.review {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 12px;
+  border: 1px solid #e6ecf6;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f9fbff, #f2f5fc);
+}
+
+.reviewIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  color: var(--accent);
+  background: #e8efff;
+}
+
+.reviewText {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.reviewText strong {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.reviewText > span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.reviewText .resultsBy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .tab[data-collapsed] {
   width: 60px;
   padding: 6px;
@@ -456,6 +507,26 @@
     gap: 8px;
     padding: 10px;
     border-radius: 10px;
+    font-size: 10px;
+  }
+
+  .review {
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .reviewIcon {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+  }
+
+  .reviewText strong {
+    font-size: 11.5px;
+  }
+
+  .reviewText > span {
     font-size: 10px;
   }
 

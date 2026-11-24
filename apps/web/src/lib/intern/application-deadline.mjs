@@ -46,3 +46,16 @@ export function fromLocalInputValue(value) {
   const time = new Date(value).getTime();
   return Number.isFinite(time) ? new Date(time).toISOString() : null;
 }
+
+/** After applications close, the team reviews them; results go out within this many days. */
+export const REVIEW_DAYS = 3;
+
+/** When results are due after the deadline at `time`. */
+export function resultsBy(time, days = REVIEW_DAYS) {
+  return time + days * 86_400_000;
+}
+
+/** "Mon, 30 Nov 2026" in the viewer's own time zone. */
+export function formatDay(time, locale) {
+  return new Date(time).toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+}

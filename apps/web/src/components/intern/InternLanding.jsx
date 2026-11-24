@@ -13,6 +13,7 @@ import {
   Globe2,
   Clock3,
   Upload,
+  Lock,
   X,
 } from "lucide-react";
 import ApplicationLaunch from "./ApplicationLaunch";
@@ -28,6 +29,7 @@ import SuccessStories from "./SuccessStories";
 import InternFaq from "./InternFaq";
 import InternPrerequisites from "./InternPrerequisites";
 import ApplicationCountdown, { useDeadlineClosed } from "./ApplicationCountdown";
+import { REVIEW_DAYS, deadlineTime, formatDay, resultsBy } from "@/lib/intern/application-deadline.mjs";
 import { Feature, useSiteFeatures } from "@olentra/site-features/react";
 import { DRAFT_FIELDS, clearApplyDraft, readApplyDraft, writeApplyDraft } from "@/lib/intern/apply-draft.mjs";
 import { INTERNSHIP_OPPORTUNITIES } from "@/lib/intern/opportunities.mjs";
@@ -1172,7 +1174,7 @@ export default function InternLanding() {
             >
               <LaunchAnimation />
             </aside>
-          </div> : featuresReady && <div className={styles.applicationClosed} id="internship-application" role="status">
+          </div> : featuresReady && deadlineClosed && connected && deadlineTime(data.settings.applicationDeadline) !== null ? <ApplicationsUnderReview deadline={deadlineTime(data.settings.applicationDeadline)} portal={features.portal} /> : featuresReady && <div className={styles.applicationClosed} id="internship-application" role="status">
             <h2>Applications are currently closed</h2>
             <p>{deadlineClosed && connected ? "The application deadline for this internship cycle has passed. Follow Olentra for the next intake." : !connected ? "The internship service is unavailable. Please try again shortly." : !data.opportunities ? "The application form is being updated. Please try again shortly." : "Please check back for the next internship intake."}</p>
             {features.portal && <Link href="/intern/login?role=intern" className={styles.secondaryButton}>Existing intern? Sign in <ArrowRight size={15} /></Link>}
@@ -1192,4 +1194,45 @@ export default function InternLanding() {
       )}
     </div>
   );
+}
+
+/**
+ * Shown once the application deadline passes: applications are closed and being reviewed,
+ * then, after the review window, that results have been shared. Dates use the viewer's
+ * own time zone, so they're filled in after the page loads.
+ */
+export function ApplicationsUnderReview({ deadline, portal }) {
+  const [now, setNow] = useState(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const until = resultsBy(deadline) - Date.now();
+    if (until <= 0 || until > 2 ** 31 - 1) return undefined;
+    const timer = setTimeout(() => setNow(Date.now()), until + 50);
+    return () => clearTimeout(timer);
+  }, [deadline]);
+  const closedOn = now ? formatDay(deadline) : "", resultsDay = now ? formatDay(resultsBy(deadline)) : "";
+  const shared = now !== null && now >= resultsBy(deadline);
+  return <div className={`${styles.applicationClosed} ${styles.underReview}`} id="internship-application" role="status">
+    <span className={styles.closedBadge}><Lock size={13} aria-hidden="true" /> Applications closed</span>
+    <h2>{shared ? "Results have been shared" : "We’re reviewing applications"}</h2>
+    <p>{shared
+      ? "Thank you to everyone who applied for this internship cycle. Results were shared by email. If you applied and haven’t heard from us, check your spam folder or write to intern.support@olentratechnologies.com."
+      : `Thank you to everyone who applied for this internship cycle. Our team is now reviewing every application, and results will be shared by email within ${REVIEW_DAYS} days.`}</p>
+    <ol className={styles.reviewSteps} aria-label="What happens next">
+      <li data-state="done">
+        <span className={styles.reviewMarker} aria-hidden="true"><Check size={14} /></span>
+        <span><strong>Applications closed</strong><small>{closedOn}</small></span>
+      </li>
+      <li data-state={shared ? "done" : "current"} aria-current={shared ? undefined : "step"}>
+        <span className={styles.reviewMarker} aria-hidden="true">{shared && <Check size={14} />}</span>
+        <span><strong>Under review</strong><small>{shared ? "Complete" : "In progress"}</small></span>
+      </li>
+      <li data-state={shared ? "done" : "next"} aria-current={shared ? "step" : undefined}>
+        <span className={styles.reviewMarker} aria-hidden="true">{shared && <Check size={14} />}</span>
+        <span><strong>Results shared</strong><small>{shared ? "By email" : resultsDay && `By ${resultsDay}`}</small></span>
+      </li>
+    </ol>
+    {!shared && <p className={styles.reviewNote}>Applied already? Watch the inbox of the email you applied with. There’s nothing more you need to do.</p>}
+    {portal && <Link href="/intern/login?role=intern" className={styles.secondaryButton}>Existing intern? Sign in <ArrowRight size={15} /></Link>}
+  </div>;
 }
