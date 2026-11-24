@@ -213,3 +213,36 @@ test("removing an intern from the team clears their repository access", async ()
   expect(project().links[0].access).toEqual({});
   expect(project().links[0].label).toBe(repo.label);
 });
+
+test("a link can be limited to chosen team members", async () => {
+  const { lifecycle, project } = fixture();
+  await expect(lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, members: ["intern9"] } }, admin, "outsider")).rejects.toMatchObject({ code: "CONFLICT" });
+  await expect(lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, members: [] } }, admin, "empty")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, members: ["bad id!"] } }, admin, "bad")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  const { link }: any = await lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, members: ["intern1", "intern1"] } }, admin, "chosen");
+  expect(link.members).toEqual(["intern1"]);
+  const staffOnly: any = await lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, visibleToInterns: false, members: ["intern1"] } }, admin, "staff");
+  expect(staffOnly.link.members).toBeUndefined();
+  const everyone: any = await lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, id: link.id } }, admin, "everyone");
+  expect(everyone.link.members).toBeUndefined();
+  expect(project().links).toHaveLength(2);
+});
+
+test("interns only see links meant for them", () => {
+  const links = [
+    { id: "L1", kind: "docs", label: "Everyone", url: "https://a.test" },
+    { id: "L2", kind: "repository", label: "Chosen", url: "https://github.com/o/r", members: ["intern1"], access: {} },
+    { id: "L3", kind: "docs", label: "Staff", url: "https://b.test", visibleToInterns: false },
+  ];
+  expect(internLinks(links, "intern1").map((link: any) => link.label)).toEqual(["Everyone", "Chosen"]);
+  expect(internLinks(links, "intern2").map((link: any) => link.label)).toEqual(["Everyone"]);
+  expect(JSON.stringify(internLinks(links, "intern1"))).not.toContain("members");
+});
+
+test("removing chosen interns from the team narrows the link, and an emptied link becomes staff-only", async () => {
+  const { lifecycle, project } = fixture();
+  await lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, members: ["intern1"] } }, admin, "chosen");
+  await lifecycle.execute("project.update", { id: "p1", patch: { team: [] } }, admin, "remove");
+  expect(project().links[0].members).toBeUndefined();
+  expect(project().links[0].visibleToInterns).toBe(false);
+});

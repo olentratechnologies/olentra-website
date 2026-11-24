@@ -253,6 +253,7 @@ test("connect fails with a clear message when GitHub isn't set up", async () => 
   const access = createGithubAccess({ collection: db.collection, github: null });
   expect(access.enabled).toBe(false);
   await expect(access.execute("github.connectUrl", {}, intern("a1"))).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+  await expect(access.execute("github.repositories", {}, manager)).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE", message: expect.stringContaining("Paste the repository link") });
   expect(await access.reconcile()).toEqual({ skipped: true });
 });
 
@@ -277,4 +278,49 @@ test("the GitHub client signs as the app and sends the invite with an installati
   expect(await app.isCollaborator("olentra", "api", "asha-dev")).toBe(false);
   expect(requests.filter(r => r.url.endsWith("/access_tokens"))).toHaveLength(1);
   expect(await app.installed("someone", "repo")).toBe(false);
+});
+
+test("only interns chosen for a repository link are invited", async () => {
+  const { access, github, connect, db } = setup({ team: ["a1", "a2"] });
+  await db.collection("projects").updateOne({ _id: "p1" }, { $set: { "links.0.members": ["a2"] } });
+  await connect("a1", "asha-dev", 42); await connect("a2", "dev-p", 7);
+  await access.reconcile();
+  expect(github.calls).toEqual(["invite olentra/api dev-p"]);
+  await db.collection("projects").updateOne({ _id: "p1" }, { $set: { "links.0.visibleToInterns": false } });
+  await access.reconcile();
+  expect(github.calls).toEqual(["invite olentra/api dev-p", "cancel olentra/api 100"]);
+});
+
+test("staff can list company repositories; results are cached until refreshed", async () => {
+  const github = fakeGithub();
+  let calls = 0;
+  github.app.companyRepositories = async () => { calls++; return [{ fullName: "olentra/api", name: "api", owner: "olentra", url: "https://github.com/olentra/api", private: true, archived: false, description: "API", updatedAt: "2026-11-24T00:00:00Z" }]; };
+  const { access } = setup({ github });
+  const first: any = await access.execute("github.repositories", {}, manager);
+  expect(first.repositories.map((repo: any) => repo.fullName)).toEqual(["olentra/api"]);
+  expect(first.installUrl).toContain("/apps/olentra-intern-access/");
+  await access.execute("github.repositories", {}, manager);
+  expect(calls).toBe(1);
+  await access.execute("github.repositories", { refresh: true }, manager);
+  expect(calls).toBe(2);
+  await expect(access.execute("github.repositories", {}, intern("a1"))).rejects.toMatchObject({ code: "FORBIDDEN" });
+  github.app.companyRepositories = async () => { throw new Error("boom"); };
+  await expect(access.execute("github.repositories", { refresh: true }, manager)).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+});
+
+test("the repository list only includes the company account's repositories", async () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const repo = (owner: string, name: string, pushed: string, extra = {}) => ({ full_name: `${owner}/${name}`, name, owner: { login: owner }, html_url: `https://github.com/${owner}/${name}`, private: true, archived: false, description: null, pushed_at: pushed, ...extra });
+  const fetcher = async (url: string) => {
+    if (url.endsWith("/app")) return Response.json({ owner: { login: "OlentraTech" } });
+    if (url.includes("/app/installations?")) return Response.json([{ id: 1, account: { login: "olentratech" } }, { id: 2, account: { login: "stranger" } }]);
+    if (url.endsWith("/app/installations/1/access_tokens")) return Response.json({ token: "t1", expires_at: "2099-01-01T00:00:00Z" }, { status: 201 });
+    if (url.includes("/installation/repositories")) return Response.json({ repositories: [repo("olentratech", "old", "2026-01-01T00:00:00Z"), repo("olentratech", "new", "2026-11-01T00:00:00Z", { description: "Fresh" })] });
+    throw new Error(`unexpected ${url}`);
+  };
+  const app = createGithubApp({ appId: "1", slug: "s", clientId: "c", clientSecret: "x", privateKey: privateKey.export({ type: "pkcs1", format: "pem" }).toString(), callbackUrl: "https://site/cb" }, fetcher as any);
+  const repositories = await app.companyRepositories();
+  expect(repositories.map(item => item.fullName)).toEqual(["olentratech/new", "olentratech/old"]);
+  expect(repositories[0]).toMatchObject({ url: "https://github.com/olentratech/new", private: true, description: "Fresh" });
+  expect(repositories[1]!.description).toBe("");
 });

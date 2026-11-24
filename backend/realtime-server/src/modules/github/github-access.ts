@@ -5,6 +5,7 @@ import type { Principal } from "../../shared/principal";
 import type { InternshipRow } from "../../infrastructure/database/collections";
 import { can } from "../access/policy";
 import { GithubError, parseGithubRepo, type GithubApp } from "./github-app";
+import { linkIsFor } from "../lifecycle/link-audience";
 
 type Row = Record<string, any>;
 /** GitHub repository invitations expire after seven days; send a fresh one after that. */
@@ -30,7 +31,8 @@ export function createGithubAccess({ collection, github, now = Date.now, logger 
 }) {
   const applications = collection("applications"), projects = collection("projects"), interns = collection("interns");
   const grants = collection("github_grants"), states = collection("github_states"), notifications = collection("notifications");
-  const methods = new Set(["github.connectUrl", "github.connect", "github.disconnect", "github.resend"]);
+  const methods = new Set(["github.connectUrl", "github.connect", "github.disconnect", "github.resend", "github.repositories"]);
+  let repositoryCache: { at: number; items: unknown[] } | null = null;
 
   async function initialize() {
     await Promise.all([
@@ -78,6 +80,20 @@ export function createGithubAccess({ collection, github, now = Date.now, logger 
       await applications.updateOne({ _id: applicationId }, { $unset: { githubAccount: "" } });
       return { disconnected: true, affectedApplications: [applicationId] };
     }
+    if (method === "github.repositories") {
+      if (!can(actor, "projects.manage")) throw new DomainError("FORBIDDEN", "Your internship staff role does not allow this action.");
+      if (!github) throw new DomainError("SERVICE_UNAVAILABLE", "GitHub isn't connected on this server yet. Paste the repository link instead.");
+      const app = github;
+      // A short cache keeps the picker fast; "refresh" picks up a repository created a moment ago.
+      if (p.refresh === true || !repositoryCache || now() - repositoryCache.at > 60_000) {
+        try { repositoryCache = { at: now(), items: await app.companyRepositories() }; }
+        catch (error) {
+          logger.warn("Listing GitHub repositories failed", { error: String(error) });
+          throw new DomainError("SERVICE_UNAVAILABLE", "GitHub repositories couldn't be loaded. Try again, or paste the repository link instead.");
+        }
+      }
+      return { repositories: repositoryCache.items, installUrl: `https://github.com/apps/${app.config.slug}/installations/new` };
+    }
     if (method === "github.resend") {
       if (!can(actor, "projects.manage")) throw new DomainError("FORBIDDEN", "Your internship staff role does not allow this action.");
       requireGithub();
@@ -114,7 +130,7 @@ export function createGithubAccess({ collection, github, now = Date.now, logger 
       if (!repo) continue;
       for (const applicationId of project.team || []) {
         const account = accounts.get(applicationId);
-        if (!active.has(applicationId) || !account?.login) continue;
+        if (!linkIsFor(link, applicationId) || !active.has(applicationId) || !account?.login) continue;
         const key = grantKey(repo.owner, repo.repo, applicationId);
         desired.set(key, { key, ...repo, applicationId, login: account.login, githubUserId: account.id });
       }

@@ -93,8 +93,42 @@ export function createGithubApp(config: GithubConfig, fetcher: GithubFetch = fet
     return installationToken(id);
   }
 
+  let ownerLogin: string | null = null;
+  /** The account that owns this app (the company). Other accounts may install a public app; they are ignored. */
+  async function owner() {
+    if (ownerLogin) return ownerLogin;
+    const response = await call("/app", appJwt());
+    if (!response.ok) await failure(response, "Reading the GitHub App");
+    ownerLogin = String(((await response.json()) as { owner?: { login?: string } }).owner?.login || "").toLowerCase();
+    if (!ownerLogin) throw new GithubError("GitHub didn't return the app owner.", 502);
+    return ownerLogin;
+  }
+
   return {
     config,
+    /** Repositories the app can manage in the company account, newest activity first. */
+    async companyRepositories(maxPages = 10) {
+      const company = await owner();
+      const response = await call("/app/installations?per_page=100", appJwt());
+      if (!response.ok) await failure(response, "Listing GitHub App installations");
+      const list = await response.json() as { id: number; account?: { login?: string } }[];
+      const ours = list.filter(item => String(item.account?.login || "").toLowerCase() === company);
+      const repositories: GithubRepository[] = [];
+      for (const item of ours) {
+        const token = await installationToken(item.id);
+        for (let page = 1; page <= maxPages; page++) {
+          const result = await call(`/installation/repositories?per_page=100&page=${page}`, token);
+          if (!result.ok) await failure(result, "Listing repositories");
+          const body = await result.json() as { total_count?: number; repositories?: any[] };
+          for (const repo of body.repositories || []) {
+            if (String(repo.owner?.login || "").toLowerCase() !== company) continue;
+            repositories.push({ fullName: repo.full_name, name: repo.name, owner: repo.owner.login, url: repo.html_url, private: Boolean(repo.private), archived: Boolean(repo.archived), description: typeof repo.description === "string" ? repo.description.slice(0, 500) : "", updatedAt: repo.pushed_at || repo.updated_at || null });
+          }
+          if ((body.repositories || []).length < 100) break;
+        }
+      }
+      return repositories.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+    },
     /** Forget cached installations so newly installed repositories are picked up. */
     resetCache() { installations.clear(); },
     installed: async (owner: string, repo: string) => Boolean(await installation(owner, repo)),
@@ -150,4 +184,5 @@ export function createGithubApp(config: GithubConfig, fetcher: GithubFetch = fet
   };
 }
 
+export type GithubRepository = { fullName: string; name: string; owner: string; url: string; private: boolean; archived: boolean; description: string; updatedAt: string | null };
 export type GithubApp = ReturnType<typeof createGithubApp>;

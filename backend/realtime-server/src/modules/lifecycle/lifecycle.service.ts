@@ -11,6 +11,7 @@ type Tx = <T>(key: string, actor: Principal | null, input: unknown, fn: (session
 const text = (v: unknown) => typeof v === "string" ? v.trim() : "";
 const newId = (p: string) => `${p}-${randomUUID()}`;
 import { auditDecision } from "../audit/decision-audit";
+import { linkIsFor } from "./link-audience";
 import { civilToday } from "../programs/schedule.mjs";
 import { decisionDeadline, formatDeadline, normalizeLeadDays, offerWindowProblem } from "../programs/offer-policy.mjs";
 import { mentorScope } from "../access/mentor-scope";
@@ -55,17 +56,29 @@ export function validateLink(value: any) {
   const note = text(value.note);
   if (note.length > 500) throw new DomainError("INVALID_REQUEST", "Keep link notes to 500 characters.");
   if (value.visibleToInterns !== undefined && typeof value.visibleToInterns !== "boolean") throw new DomainError("INVALID_REQUEST", "Choose whether interns can see the link.");
-  return { kind, label, url, note, visibleToInterns: value.visibleToInterns !== false };
+  const visibleToInterns = value.visibleToInterns !== false;
+  const link: { kind: string; label: string; url: string; note: string; visibleToInterns: boolean; members?: string[] } = { kind, label, url, note, visibleToInterns };
+  // `members` limits the link to chosen interns; omitted means everyone on the team.
+  if (visibleToInterns && value.members !== undefined && value.members !== null) {
+    if (!Array.isArray(value.members) || value.members.length > 100 || value.members.some((id: unknown) => typeof id !== "string" || !/^[\w-]{1,80}$/.test(id))) throw new DomainError("INVALID_REQUEST", "Choose valid interns for this link.");
+    if (!value.members.length) throw new DomainError("INVALID_REQUEST", "Choose at least one intern, or make the link available to the whole team.");
+    link.members = [...new Set(value.members as string[])];
+  }
+  return link;
+}
+/** Selected interns must be on the project team. */
+function requireTeamMembers(link: { members?: string[] }, team: string[]) {
+  if (Array.isArray(link.members) && link.members.some((id: string) => !team.includes(id))) throw new DomainError("CONFLICT", "Choose interns who are on this project team.");
 }
 function validateTaskLinks(value: unknown) {
   if (value === undefined) return undefined;
   if (!Array.isArray(value) || value.length > MAX_TASK_LINKS) throw new DomainError("INVALID_REQUEST", `Add up to ${MAX_TASK_LINKS} links to a task.`);
-  return value.map((link: any) => ({ id: typeof link?.id === "string" && /^LNK-[\w-]{1,64}$/.test(link.id) ? link.id : newId("LNK"), ...validateLink(link) }));
+  return value.map((link: any) => ({ id: typeof link?.id === "string" && /^LNK-[\w-]{1,64}$/.test(link.id) ? link.id : newId("LNK"), ...validateLink({ ...link, members: undefined }) }));
 }
 /** What an intern may see of a link list: no staff-only links, and only their own repository access. */
 export function internLinks(links: unknown, applicationId: string) {
   if (!Array.isArray(links)) return [];
-  return links.filter((link: any) => link?.visibleToInterns !== false).map(({ access, ...link }: any) =>
+  return links.filter((link: any) => linkIsFor(link, applicationId)).map(({ access, members, ...link }: any) =>
     link.kind === "repository" ? { ...link, myAccess: ["granted", "invited"].includes(access?.[applicationId]?.status) ? access[applicationId].status : "pending", automatic: link.github?.installed === true } : link);
 }
 
@@ -276,7 +289,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         if (input.planVisibleToInterns === false) project.planHidden = true;
         if (input.links !== undefined) {
           if (!Array.isArray(input.links) || input.links.length > MAX_PROJECT_LINKS) throw new DomainError("INVALID_REQUEST", `Add up to ${MAX_PROJECT_LINKS} links to a project.`);
-          project.links = input.links.map((link: any) => ({ ...validateLink(link), id: newId("LNK"), access: {}, createdOn: now }));
+          project.links = input.links.map((link: any) => { const values = validateLink(link); requireTeamMembers(values, team); return { ...values, id: newId("LNK"), access: {}, createdOn: now }; });
         }
         await projects.insertOne(project, opts);
         if (markdown) await plans.insertOne({ _id: project._id, markdown, revision: 1 }, opts);
@@ -308,6 +321,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
           return { id: projectId, linkId, applicationId, status: p.status, affectedApplications: [applicationId] };
         }
         const values = validateLink(p.link);
+        requireTeamMembers(values, team);
         if (current) {
           const saved = { ...values, id: linkId, access: values.kind === "repository" ? current.access || {} : {}, createdOn: current.createdOn, updatedOn: now };
           await projects.updateOne({ _id: projectId, "links.id": linkId }, { $set: { "links.$": saved } }, opts);
@@ -358,7 +372,15 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         if (input.team !== undefined) { patch.team = await validateTeam(input.team, session); for (const removed of (project.team || []).filter((v: string) => !patch.team.includes(v))) if (await tasks.findOne({ projectId: project._id, applicationId: removed, status: { $ne: "Approved" } }, opts)) throw new DomainError("CONFLICT", "Finish this intern's tasks before removing them from the project."); }
         if (patch.team && Array.isArray(project.links)) {
           const removed = (project.team || []).filter((id: string) => !patch.team.includes(id));
-          if (removed.length) patch.links = project.links.map((link: any) => ({ ...link, access: Object.fromEntries(Object.entries(link.access || {}).filter(([id]) => !removed.includes(id))) }));
+          if (removed.length) patch.links = project.links.map((link: any) => {
+            const next = { ...link, access: Object.fromEntries(Object.entries(link.access || {}).filter(([id]) => !removed.includes(id))) };
+            // A link limited to interns who all left becomes staff-only rather than open to the whole team.
+            if (Array.isArray(link.members)) {
+              next.members = link.members.filter((id: string) => !removed.includes(id));
+              if (!next.members.length) { delete next.members; next.visibleToInterns = false; }
+            }
+            return next;
+          });
         }
         const result = await projects.findOneAndUpdate({ _id: project._id }, { $set: patch }, { ...opts, returnDocument: "after" }); return { ...plain(result!), affectedApplications: [...new Set([...(project.team || []), ...(result?.team || [])])] };
       }
