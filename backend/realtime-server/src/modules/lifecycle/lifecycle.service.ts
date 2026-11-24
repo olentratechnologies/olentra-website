@@ -66,7 +66,7 @@ function validateTaskLinks(value: unknown) {
 export function internLinks(links: unknown, applicationId: string) {
   if (!Array.isArray(links)) return [];
   return links.filter((link: any) => link?.visibleToInterns !== false).map(({ access, ...link }: any) =>
-    link.kind === "repository" ? { ...link, myAccess: access?.[applicationId]?.status === "granted" ? "granted" : "pending" } : link);
+    link.kind === "repository" ? { ...link, myAccess: ["granted", "invited"].includes(access?.[applicationId]?.status) ? access[applicationId].status : "pending", automatic: link.github?.installed === true } : link);
 }
 
 export function createLifecycle({ collection, transact, outbox, onResumeChanged }: { collection: (name: string) => Collection<Row>; transact: Tx; outbox: Pick<Outbox, "enqueue" | "enqueueMany">; onResumeChanged?: (applicationId: string, fileId: string, session: ClientSession) => Promise<void> }) {

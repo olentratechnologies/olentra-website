@@ -184,7 +184,7 @@ test("interns see only visible links and their own repository access", () => {
     { id: "LNK-3", kind: "docs", label: "Docs", url: "https://docs.test", visibleToInterns: true },
   ];
   expect(internLinks(links, "intern1")).toEqual([
-    { id: "LNK-1", kind: "repository", label: "Repo", url: "https://github.com/x", visibleToInterns: true, myAccess: "granted" },
+    { id: "LNK-1", kind: "repository", label: "Repo", url: "https://github.com/x", visibleToInterns: true, myAccess: "granted", automatic: false },
     { id: "LNK-3", kind: "docs", label: "Docs", url: "https://docs.test", visibleToInterns: true },
   ]);
   expect(internLinks(links, "intern2")[0]).toMatchObject({ myAccess: "pending" });

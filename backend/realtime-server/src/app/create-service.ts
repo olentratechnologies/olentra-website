@@ -336,6 +336,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     const stopRetention = runLeasedJob(jobLeases, "applicant-retention", 6 * 60 * 60_000, () => domain.runRetention(), error => logger.error("Applicant retention run failed", { error }));
     const stopReminders = runLeasedJob(jobLeases, "reminders", 60 * 60_000, () => domain.runReminders(), error => logger.error("Reminder run failed", { error }));
     const stopOutbox = runLeasedJob(jobLeases, "email-outbox", 2000, () => domain.processOutbox(), error => logger.error("Email outbox run failed", { error }));
+    if (!domain.githubAccessEnabled) logger.warn("Automatic GitHub repository access is off: GITHUB_APP_* settings are not set");
+    const stopGithubAccess = domain.githubAccessEnabled ? runLeasedJob(jobLeases, "github-access", 2 * 60_000, () => domain.runGithubAccess(), error => logger.error("GitHub access run failed", { error })) : () => {};
     // AI resume review: off until GROQ_API_KEY is set; one resume at a time keeps within Groq's rate limits.
     const groqKey = process.env.GROQ_API_KEY?.trim();
     if (!groqKey) logger.warn("AI resume review is off: GROQ_API_KEY is not set");
@@ -381,7 +383,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
       broadcastViewers,
       async close() {
         localStopped = true;
-        stopDirectWorker(); stopDirectCleanup(); stopOutbox(); stopAiReview(); stopUploadCleanup(); stopRetention(); stopReminders();
+        stopDirectWorker(); stopDirectCleanup(); stopOutbox(); stopGithubAccess(); stopAiReview(); stopUploadCleanup(); stopRetention(); stopReminders();
         broadcastInsights.cancel(); broadcastViewers.cancel();
         await changes.close().catch(() => {});
         if (runtime === nextRuntime) runtime = null;

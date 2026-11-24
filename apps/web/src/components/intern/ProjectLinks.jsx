@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Check, Clock, ExternalLink, Github, Link2, Lock, Palette, Pencil, Plus, Server, SquareKanban, Trash2 } from "lucide-react";
+import { AlertTriangle, BookOpen, Check, Clock, ExternalLink, Github, Link2, Lock, Mail, Palette, Pencil, Plus, RefreshCw, Server, SquareKanban, Trash2 } from "lucide-react";
 import { useInternship } from "./InternshipProvider";
 import styles from "./project-links.module.css";
 
@@ -54,20 +54,51 @@ function LinkRow({ link, children, access }) {
 }
 
 function AccessBadge({ status }) {
-  return status === "granted"
-    ? <span className={styles.badge} data-tone="green"><Check size={11} aria-hidden="true" /> Access granted</span>
-    : <span className={styles.badge} data-tone="amber"><Clock size={11} aria-hidden="true" /> Access pending</span>;
+  if (status === "granted") return <span className={styles.badge} data-tone="green"><Check size={11} aria-hidden="true" /> Access granted</span>;
+  if (status === "invited") return <span className={styles.badge} data-tone="blue"><Mail size={11} aria-hidden="true" /> Invite sent</span>;
+  return <span className={styles.badge} data-tone="amber"><Clock size={11} aria-hidden="true" /> Access pending</span>;
+}
+
+/** `https://github.com/owner/repo/...` → the page where the intern accepts a repository invite. */
+export function invitationUrl(url) {
+  const href = safeLink(url);
+  if (!href) return null;
+  const parsed = new URL(href);
+  const [owner, repo] = parsed.pathname.split("/").filter(Boolean);
+  return /^(www\.)?github\.com$/i.test(parsed.hostname) && owner && repo ? `https://github.com/${owner}/${repo.replace(/\.git$/i, "")}/invitations` : null;
+}
+
+/** Starts GitHub sign-in so the site can learn the intern's verified GitHub username. */
+export function ConnectGithubButton({ className = styles.primary, children = "Connect GitHub" }) {
+  const { commands } = useInternship();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function connect() {
+    setBusy(true); setError("");
+    const result = await commands.githubConnectUrl();
+    if (!result.ok) { setError(result.error || "GitHub sign-in is unavailable right now."); setBusy(false); return; }
+    window.location.assign(result.data.url);
+  }
+  return <>
+    <button type="button" className={className} disabled={busy} onClick={connect}><Github size={14} aria-hidden="true" /> {busy ? "Opening GitHub…" : children}</button>
+    {error && <span role="alert" className={styles.error}>{error}</span>}
+  </>;
 }
 
 /** Read-only list for interns. Repository links show the intern's own access state. */
-export function InternProjectLinks({ links = [], githubProfile }) {
+export function InternProjectLinks({ links = [], githubProfile, githubAccount, githubEnabled = false }) {
   if (!links.length) return null;
-  const pending = links.some(link => link.kind === "repository" && link.myAccess !== "granted");
+  const repositories = links.filter(link => link.kind === "repository" && link.myAccess !== "granted");
+  const automatic = githubEnabled && repositories.some(link => link.automatic);
+  const invited = repositories.filter(link => link.myAccess === "invited" && invitationUrl(link.url));
+  let hint = null;
+  if (automatic && !githubAccount) hint = <><span>Connect your GitHub account and you’ll get an invite to the repository automatically.</span> <ConnectGithubButton /></>;
+  else if (invited.length) hint = <span>Your invite is ready. <a href={invitationUrl(invited[0].url)} target="_blank" rel="noopener noreferrer">Accept it on GitHub</a>{githubAccount ? ` while signed in as @${githubAccount.login}` : ""}. Access updates here within a few minutes.</span>;
+  else if (automatic) hint = <span>Your GitHub invite is on its way{githubAccount ? ` to @${githubAccount.login}` : ""}. It usually takes a few minutes.</span>;
+  else if (repositories.length) hint = githubProfile ? "Your mentor will invite your GitHub account to the repository. Check your GitHub email for the invitation." : <>Add your GitHub profile so your mentor can invite you to the repository. <Link href="/intern/portal/profile">Update profile</Link></>;
   return <section className={styles.section} aria-labelledby="project-resources">
     <div className={styles.header}><h2 id="project-resources">Resources</h2><span>{links.length} {links.length === 1 ? "link" : "links"}</span></div>
-    {pending && <p className={styles.hint}>
-      {githubProfile ? "Your mentor will invite your GitHub account to the repository. Check your GitHub email for the invitation." : <>Add your GitHub profile so your mentor can invite you to the repository. <Link href="/intern/portal/profile">Update profile</Link></>}
-    </p>}
+    {hint && <div className={styles.hint}>{hint}</div>}
     <ul className={styles.list}>
       {links.map(link => <LinkRow key={link.id} link={link} access={link.kind === "repository" ? <AccessBadge status={link.myAccess} /> : null} />)}
     </ul>
@@ -136,8 +167,9 @@ function LinkForm({ initial, onCancel, onSave, busy, idPrefix }) {
  * Staff view of a project's links. Managers add, edit and delete links and record who has
  * repository access; other staff with project access read them.
  */
-export function StaffProjectLinks({ project, members = [], canEdit = false, onNotify }) {
-  const { commands } = useInternship();
+export function StaffProjectLinks({ project, members = [], canEdit = false, onNotify, githubIntegration }) {
+  const { commands, data } = useInternship();
+  const github = githubIntegration || data?.githubIntegration || {};
   const [links, setLinks] = useState(project.links || []);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -167,6 +199,15 @@ export function StaffProjectLinks({ project, members = [], canEdit = false, onNo
       onNotify?.("Link deleted.");
     } finally { setBusy(""); }
   }
+  async function resend(member) {
+    const key = `resend:${member.id}`;
+    setBusy(key); setError("");
+    try {
+      const result = await commands.githubResend(project.id, member.id);
+      if (!result.ok) { setError(result.error || "The invite could not be resent."); return; }
+      onNotify?.(`A new invite will be sent to ${member.name} within a few minutes.`);
+    } finally { setBusy(""); }
+  }
   async function setAccess(link, applicationId, status) {
     const key = `${link.id}:${applicationId}`;
     setBusy(key); setError("");
@@ -192,15 +233,28 @@ export function StaffProjectLinks({ project, members = [], canEdit = false, onNo
         : <LinkRow key={link.id} link={link}>
           {link.kind === "repository" && <div className={styles.access}>
             <strong>Repository access</strong>
+            {github.enabled && invitationUrl(link.url) && link.github?.installed === false && <p className={styles.warningLine}>
+              <AlertTriangle size={13} aria-hidden="true" /><span>The Olentra GitHub app isn’t installed on this repository, so invites aren’t automatic.{github.installUrl && canEdit ? <> <a href={github.installUrl} target="_blank" rel="noopener noreferrer">Install the app</a></> : null}</span>
+            </p>}
+            {github.enabled && link.github?.installed && <p className={styles.optional}>Invites are sent automatically once an intern connects GitHub. Access is removed when they leave the project.</p>}
             {members.length ? <ul>
               {members.map(member => {
-                const status = link.access?.[member.id]?.status === "granted" ? "granted" : "pending";
-                const github = safeLink(member.github);
+                const entry = link.access?.[member.id] || {};
+                const status = ["granted", "invited"].includes(entry.status) ? entry.status : "pending";
+                const automatic = github.enabled && link.github?.installed;
+                const profileUrl = safeLink(member.github);
                 return <li key={member.id}>
-                  <span className={styles.member}>{member.name}{github ? <a href={github} target="_blank" rel="noopener noreferrer"><Github size={12} aria-hidden="true" /> GitHub<span className={styles.srOnly}> profile of {member.name} (opens in a new tab)</span></a> : <span className={styles.optional}>No GitHub profile</span>}</span>
-                  {canEdit
-                    ? <label className={styles.switch}><input type="checkbox" checked={status === "granted"} disabled={busy === `${link.id}:${member.id}`} onChange={event => setAccess(link, member.id, event.target.checked ? "granted" : "pending")} /> {status === "granted" ? "Granted" : "Pending"}<span className={styles.srOnly}> for {member.name}</span></label>
-                    : <AccessBadge status={status} />}
+                  <span className={styles.member}>{member.name}{automatic
+                    ? (member.githubAccount?.login || entry.login ? <span className={styles.optional}>@{member.githubAccount?.login || entry.login}</span> : <span className={styles.optional}>GitHub not connected</span>)
+                    : profileUrl ? <a href={profileUrl} target="_blank" rel="noopener noreferrer"><Github size={12} aria-hidden="true" /> GitHub<span className={styles.srOnly}> profile of {member.name} (opens in a new tab)</span></a> : <span className={styles.optional}>No GitHub profile</span>}</span>
+                  {automatic
+                    ? <span className={styles.member}>
+                      {entry.error ? <span className={styles.badge} data-tone="red" title={entry.error}><AlertTriangle size={11} aria-hidden="true" /> Invite failed</span> : <AccessBadge status={status} />}
+                      {canEdit && (status === "invited" || entry.error) && <button type="button" className={styles.ghost} disabled={busy === `resend:${member.id}`} onClick={() => resend(member)}><RefreshCw size={12} aria-hidden="true" /> Resend<span className={styles.srOnly}> invite to {member.name}</span></button>}
+                    </span>
+                    : canEdit
+                      ? <label className={styles.switch}><input type="checkbox" checked={status === "granted"} disabled={busy === `${link.id}:${member.id}`} onChange={event => setAccess(link, member.id, event.target.checked ? "granted" : "pending")} /> {status === "granted" ? "Granted" : "Pending"}<span className={styles.srOnly}> for {member.name}</span></label>
+                      : <AccessBadge status={status} />}
                 </li>;
               })}
             </ul> : <p className={styles.optional}>Assign interns to the project to track their access.</p>}

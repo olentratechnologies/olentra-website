@@ -254,7 +254,7 @@ export default function PortalProjects() {
 }
 
 export function PortalProjectDetail({ projectId }) {
-  const { ready, my, commands, notify } = useInternship();
+  const { ready, my, data, commands, notify } = useInternship();
   const [submitting, setSubmitting] = useState(null);
   const action = useAction();
   if (!ready) return <Loading />;
@@ -346,6 +346,8 @@ export function PortalProjectDetail({ projectId }) {
                 <InternProjectLinks
                   links={project.links}
                   githubProfile={my.application?.github}
+                  githubAccount={my.application?.githubAccount}
+                  githubEnabled={Boolean(data?.githubIntegration?.enabled)}
                 />
               </Panel>
             )}

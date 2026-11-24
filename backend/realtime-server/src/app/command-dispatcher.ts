@@ -2,6 +2,8 @@ import { parseDuration, durationLabel, legacyDuration } from "../modules/program
 import { isCurrentInterviewEmail } from "../modules/interviews/email-delivery";
 import { createCommunications } from "../modules/communications/communications.service";
 import { createLifecycle } from "../modules/lifecycle/lifecycle.service";
+import { createGithubAccess } from "../modules/github/github-access";
+import { createGithubApp, readGithubConfig, type GithubApp } from "../modules/github/github-app";
 import { createInternshipQueries } from "../modules/queries/query.service";
 import { createStaffManagement } from "../modules/staff/staff.service";
 import { createResumeAccess } from "../modules/files/resume-access";
@@ -54,8 +56,10 @@ const publicApplication = (row: Row, staff: boolean) => {
 /** Team bookmark on an application; staff-only and never shown to the applicant. */
 const BOOKMARK_FIELDS = ["bookmarked", "bookmarkedBy", "bookmarkedByName", "bookmarkedOn"] as const;
 
-export function createInternshipDomain({ db, client, prefix = "intern_", intakeOpen = async () => true, hooks }: {
+export function createInternshipDomain({ db, client, prefix = "intern_", intakeOpen = async () => true, hooks, github }: {
   db: Db; client: MongoClient; prefix?: string; intakeOpen?: () => Promise<boolean>; hooks?: InternshipHooks;
+  /** GitHub App client; read from GITHUB_APP_* when omitted. `null` turns automatic repository access off. */
+  github?: GithubApp | null;
 }) {
   let activeHooks = hooks;
   const setHooks = (h: InternshipHooks) => { activeHooks = h; };
@@ -63,8 +67,11 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   const users = collection("accounts"), credentials = collection("test_credentials"), applications = collection("applications"), programs = collection("programs"), files = collection("files"), commands = collection("commands");
   const settings = collection("settings"), events = collection("events");
   const outbox = createOutbox(db.collection<OutboxRow>(prefix + "outbox"));
+  const githubConfig = github === undefined ? readGithubConfig() : null;
+  const githubAccess = createGithubAccess({ collection, github: github === undefined ? (githubConfig ? createGithubApp(githubConfig) : null) : github });
   async function initialize() {
     await Promise.all([
+      githubAccess.initialize(),
       lifecycle.initialize(),
       stories.initialize(),
       reviews.initialize(),
@@ -433,6 +440,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!can(actor, "overview.read")) data.analytics = null;
       }
       if (ownApplication) data.applications = [publicApplication(ownApplication, false)];
+      data.githubIntegration = { enabled: githubAccess.enabled, ...(actor?.role === "company" ? { installUrl: githubAccess.installUrl } : {}) };
       return { data, my: { application: actor?.role === "intern" ? data.applications[0] || null : null, intern: data.interns[0] || null, offer: data.offers[0] || null, interview: actor?.role === "intern" ? data.interviews[0] || null : null, onboarding: data.onboarding[0] || { applicationId: actor?.applicationId, status: "Not started", acknowledged: false }, projects: data.projects, tasks: data.tasks, submissions: data.submissions, certificates: data.certificates, messages: data.messages, notifications: data.notifications, resources: actor?.role === "intern" ? learning : [], hasPassword: await hasPasswordPromise, documentChecklist: actor?.role === "intern" ? (await publicData()).settings.onboardingDocuments : [] }, account: actor };
     }
     if (method === "application.submit") {
@@ -655,6 +663,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       if (method === "application.workflow" && actor?.role === "company" && !isAdmin(actor)) return { offer: null, onboarding: null, intern: null };
       return queries.execute(method, params, actor);
     }
+    if (githubAccess.supports(method)) return githubAccess.execute(method, params, actor);
     if (lifecycle.supports(method)) return lifecycle.execute(method, params, actor, key);
     if (stories.supports(method)) return stories.execute(method, params, actor, key);
     if (reviews.supports(method)) return reviews.execute(method, params, actor, key);
@@ -912,5 +921,5 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     const passwordHash = await Bun.password.hash(nextPassword, { algorithm: "argon2id" });
     return savePassword(user, passwordHash, user.sessionVersion ?? 1, "account.passwordChanged");
   }
-  return { readAutomatedEmailTemplate: templates.readAutomated, aiReviews, db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runRetention, runReminders: remind, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
+  return { readAutomatedEmailTemplate: templates.readAutomated, aiReviews, db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runGithubAccess: githubAccess.reconcile, githubAccessEnabled: githubAccess.enabled, runRetention, runReminders: remind, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
 }

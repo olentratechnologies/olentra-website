@@ -16,6 +16,7 @@ import {
   useAction,
 } from "./PortalUI";
 import styles from "./portal.module.css";
+import { GithubConnectionPanel } from "./GithubConnection";
 
 function PasswordInput({ id, label, value, onChange, autoComplete = "current-password", hint }) {
   const [visible, setVisible] = useState(false);
@@ -318,6 +319,7 @@ export default function PortalProfile() {
             account={account}
             application={my.application}
           />
+          <GithubConnectionPanel />
           <ChangePasswordForm key={`${account.id}-pw`} />
         </>
       ) : (
