@@ -2391,3 +2391,8 @@
   .dialogContent { padding: 20px 16px; }
   .dialogTitle { padding-inline-end: 28px; }
 }
+/* iOS Safari zooms the page when a field under 16px gets focus, which breaks the dialog layout. */
+@media (max-width: 680px) {
+  .dialogContent :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) { font-size: 16px; }
+  .dialogTitle { font-size: 20px; }
+}

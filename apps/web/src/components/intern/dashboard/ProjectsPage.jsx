@@ -1,23 +1,20 @@
 "use client";
 
 import ProjectPlan from "../ProjectPlan";
-import { StaffProjectLinks } from "../ProjectLinks";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   CalendarDays,
-  Check,
   FolderKanban,
   Plus,
   Users,
-  X,
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { hasStaffPermission } from "./staffAccess";
 import { useInternQuery, useInternSearch } from "../useInternQuery";
 import QueryStatus from "./QueryStatus";
-import { ProjectWorkflow } from "./CompanyWorkflow";
 import {
   Avatar,
   Button,
@@ -230,7 +227,7 @@ function GeometricArtwork({ kind }) {
   );
 }
 
-function TeamPicker({ selected, onChange, onPeople, label = "Assign team members" }) {
+export function TeamPicker({ selected, onChange, onPeople, label = "Assign team members" }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const debouncedSearch = useInternSearch(search);
@@ -250,7 +247,8 @@ function TeamPicker({ selected, onChange, onPeople, label = "Assign team members
 }
 
 export function ProjectsPage() {
-  const { data, query, notify, createProject, updateProject, deleteProject, account } = useDashboard();
+  const router = useRouter();
+  const { data, query, notify, createProject, account } = useDashboard();
   const canManage = hasStaffPermission(account, "projects.manage");
   const canReadTasks = hasStaffPermission(account, "tasks.read");
   const [tab, setTab] = useState("all");
@@ -266,9 +264,6 @@ export function ProjectsPage() {
     team: [],
   });
   const [formError, setFormError] = useState("");
-  const [detail, setDetail] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [detailError, setDetailError] = useState("");
   const [contributionSearch, setContributionSearch] = useState("");
   const [allContributions, setAllContributions] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -293,7 +288,6 @@ export function ProjectsPage() {
   const people = useMemo(()=>{const map=new Map(data.applications.map(person=>[person.id,person]));Object.values(peopleCache).forEach(person=>map.set(person.id,person));for(const project of projects) for(const member of project.members || []) map.set(member.id,member);return map},[data.applications,peopleCache,projects]);
   const activeIds = useMemo(()=>{const ids=new Set(data.interns.filter(intern=>intern.status==="Active").map(intern=>intern.applicationId));Object.values(peopleCache).forEach(person=>{if(person.internshipStatus==="Active")ids.add(person.id)});for(const project of projects)for(const intern of project.teamInterns || [])if(intern.status==="Active")ids.add(intern.applicationId);return ids},[data.interns,peopleCache,projects]);
   const filtered = projects;
-  const selectedProject = detail ? projects.find(project=>project.id===detail.id) : null;
   const contributions = (data.contributions || []).filter((contribution) => {
     const project = projects.find((item) => item.id === contribution.projectId);
     const person = people.get(contribution.applicationId);
@@ -305,20 +299,7 @@ export function ProjectsPage() {
         haystack.includes(contributionSearch.toLowerCase()))
     );
   });
-  const openProject = (project) => {
-    setDetail({
-      id: project.id,
-      name: project.name,
-      description: project.description,
-      program: project.program,
-      dueOn: project.dueOn,
-      progress: project.progress,
-      status: project.status,
-      team: [...project.team],
-    });
-    setDetailError("");
-    setDeleteConfirm(false);
-  };
+  const openProject = (project) => router.push(`/intern/dashboard/projects/${encodeURIComponent(project.id)}`);
   const saveNewProject = async (event) => {
     event.preventDefault();
     if (saving) return;
@@ -355,45 +336,6 @@ export function ProjectsPage() {
       });
       setFormError("");
       notify(`${project.name} created.`);
-    } finally {
-      setSaving(false);
-    }
-  };
-  const saveProject = async (event) => {
-    event.preventDefault();
-    if (!selectedProject || saving) return;
-    if (
-      !Number.isFinite(Number(detail.progress)) ||
-      Number(detail.progress) < 0 ||
-      Number(detail.progress) > 100
-    )
-      return setDetailError("Progress must be between 0 and 100.");
-    if (detail.name.trim().length < 3) return setDetailError("Enter a project name with at least 3 characters.");
-    if (detail.description.trim().length < 12) return setDetailError("Describe the project in at least 12 characters.");
-    if (!data.programs.some(program => program.name === detail.program)) return setDetailError("Choose a valid internship program.");
-    if (!detail.dueOn) return setDetailError("Choose a project due date.");
-    setDetailError("");
-    const originalIds = new Set(selectedProject.team);
-    if (
-      detail.team.some(
-        (id) => !people.has(id) || (!activeIds.has(id) && !originalIds.has(id)),
-      )
-    )
-      return setDetailError("New team members must be active interns.");
-    setSaving(true);
-    try {
-      const saved = await updateProject(detail.id, {
-        name: detail.name.trim(),
-        description: detail.description.trim(),
-        program: detail.program,
-        dueOn: detail.dueOn,
-        status: detail.status,
-        progress: detail.status === "Completed" ? 100 : Number(detail.progress),
-        team: [...new Set(detail.team)],
-      });
-      if (saved === false) return;
-      setDetail(null);
-      notify("Project changes saved.");
     } finally {
       setSaving(false);
     }
@@ -716,159 +658,6 @@ export function ProjectsPage() {
             </Button>
           </div>
         </form>
-      </Modal>
-      <Modal
-        open={Boolean(detail && selectedProject)}
-        onOpenChange={(open) => !open && setDetail(null)}
-        title={selectedProject?.name || "Project details"}
-        description={selectedProject?.description}
-        className={styles.projectModal}
-      >
-        {selectedProject && detail && (
-          <>
-            <ProjectPlan project={selectedProject} canEdit={canManage} />
-            <StaffProjectLinks
-              project={selectedProject}
-              members={selectedProject.team.map((id) => people.get(id)).filter(Boolean)}
-              canEdit={canManage}
-              onNotify={notify}
-            />
-            <form onSubmit={saveProject}>
-              <div className={styles.detailOverview}>
-                <TrackBadge
-                  programId="software-engineer"
-                  label={selectedProject.program || "Software Engineer Intern"}
-                />
-                <span>
-                  <CalendarDays size={14} /> Due{" "}
-                  {formatDate(selectedProject.dueOn)}
-                </span>
-              </div>
-              <div className={common.formGrid}>
-                <label className={common.field}>
-                  Project name
-                  <input disabled={!canManage || saving} value={detail.name} maxLength={200} required onChange={event => setDetail({ ...detail, name: event.target.value })} />
-                </label>
-                <label className={common.field}>
-                  Program
-                  <select disabled={!canManage || saving} value={detail.program} onChange={event => setDetail({ ...detail, program: event.target.value })}>
-                    {data.programs.map(program => <option key={program.id} value={program.name}>{program.name}</option>)}
-                  </select>
-                </label>
-                <label className={common.field}>
-                  Description
-                  <textarea disabled={!canManage || saving} value={detail.description} maxLength={5000} required rows={4} onChange={event => setDetail({ ...detail, description: event.target.value })} />
-                </label>
-                <label className={common.field}>
-                  Due date
-                  <input disabled={!canManage || saving} type="date" required value={detail.dueOn} onChange={event => setDetail({ ...detail, dueOn: event.target.value })} />
-                </label>
-                <label className={common.field}>
-                  Project status
-                  <select
-                    disabled={!canManage}
-                    value={detail.status}
-                    onChange={(event) =>
-                      setDetail({ ...detail, status: event.target.value })
-                    }
-                  >
-                    {["Planning", "In progress", "In review", "Completed"].map(
-                      (status) => (
-                        <option key={status}>{status}</option>
-                      ),
-                    )}
-                  </select>
-                </label>
-                <label className={common.field}>
-                  Progress (%)
-                  <input
-                    disabled={!canManage}
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={detail.progress}
-                    onChange={(event) =>
-                      setDetail({ ...detail, progress: event.target.value })
-                    }
-                    required
-                  />
-                </label>
-              </div>
-              <div className={styles.selectedMembers}>
-                <h3>
-                  Assigned team <span>{detail.team.length}</span>
-                </h3>
-                {detail.team.length ? (
-                  <div>
-                    {detail.team.map((id) => {
-                      const person = people.get(id);
-                      return (
-                        person && (
-                          <span key={id}>
-                            <Avatar person={person} size={22} />
-                            {person.name}
-                            {canManage && <button
-                              type="button"
-                              aria-label={`Remove ${person.name} from project`}
-                              onClick={() =>
-                                setDetail({
-                                  ...detail,
-                                  team: detail.team.filter(
-                                    (member) => member !== id,
-                                  ),
-                                })
-                              }
-                            >
-                              <X size={12} />
-                            </button>}
-                          </span>
-                        )
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p>No team members assigned yet.</p>
-                )}
-              </div>
-              {canManage && <TeamPicker
-                onPeople={rememberPeople}
-                    selected={detail.team}
-                onChange={(team) => setDetail({ ...detail, team })}
-                label="Add active interns"
-              />}
-              {detailError && (
-                <p className={common.error} role="alert">
-                  {detailError}
-                </p>
-              )}
-              <div className={common.formActions}>
-                <Button variant="ghost" disabled={saving} onClick={() => setDetail(null)}>
-                  Cancel
-                </Button>
-                {canManage && <Button type="button" variant="ghost" disabled={saving} onClick={() => setDeleteConfirm(true)}>Delete project</Button>}
-                {canManage && <Button type="submit" disabled={saving}>
-                  <Check size={15} /> Save Changes
-                </Button>}
-              </div>
-            </form>
-            {canManage && deleteConfirm && <div role="alert" className={common.error}>
-              <p>Delete “{selectedProject.name}”? This permanently removes the project and all its tasks and submissions. This cannot be undone.</p>
-              <Button type="button" disabled={saving} onClick={() => setDeleteConfirm(false)}>Keep project</Button>
-              <Button type="button" disabled={saving} onClick={async () => {
-                if (saving) return;
-                setSaving(true);
-                try {
-                  const result = await deleteProject(detail.id);
-                  if (result === false) return;
-                  setDetail(null);
-                  setDeleteConfirm(false);
-                  notify("Project deleted.");
-                } finally { setSaving(false); }
-              }}>Permanently delete project</Button>
-            </div>}
-            {canReadTasks && <ProjectWorkflow projectId={selectedProject.id} projectRecord={selectedProject} directoryPeople={people} activeMemberIds={activeIds} />}
-          </>
-        )}
       </Modal>
     </div>
   );

@@ -43,6 +43,11 @@ test("staff queries paginate, join safe records, filter and enforce roles", asyn
   const projects = await domain.execute("project.list", { programId: "software-engineer" }, staff);
   expect(projects.total).toBe(1); expect(projects.items[0].members).toHaveLength(2); expect(projects.items[0].teamInterns[0].status).toBeTruthy();
   expect((await domain.execute("project.list", { applicationId: "app-3" }, staff)).total).toBe(0);
+  const [firstProject] = projects.items;
+  const one = await domain.execute("project.list", { id: firstProject.id }, staff);
+  expect(one.total).toBe(1);
+  expect(one.items[0].id).toBe(firstProject.id);
+  expect((await domain.execute("project.list", { id: "PRJ-missing" }, staff)).total).toBe(0);
   expect(await domain.execute("application.workflow", { applicationId: "app-1" }, staff)).toMatchObject({ offer: { id: "offer-1" }, onboarding: { id: "onboarding-1" }, intern: { id: "intern-1" } });
   expect(await domain.execute("application.workflow", { applicationId: "app-3" }, staff)).toMatchObject({ offer: null, onboarding: null, intern: { id: "intern-3" } });
   await expect(domain.execute("application.workflow", { applicationId: "missing" }, staff)).rejects.toBeInstanceOf(DomainError);

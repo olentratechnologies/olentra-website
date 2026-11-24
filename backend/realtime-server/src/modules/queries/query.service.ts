@@ -49,6 +49,7 @@ export function createInternshipQueries(collection: CollectionOf) {
       }
       const searches = [str(params.search), str(params.query)].filter(Boolean);
       if (searches.length) filter.$and = searches.map(search => ({ name: { $regex: escaped(search), $options: "i" } }));
+      if (str(params.id)) filter._id = str(params.id);
       const allowedSort = ["name", "status", "program", "dueOn", "createdOn", "progress"];
       const sortField = allowedSort.includes(str(params.sortField)) ? str(params.sortField) : "createdOn", direction = params.sortDirection === "asc" ? 1 : -1;
       const [rows, total, statuses] = await Promise.all([
@@ -81,6 +82,8 @@ export function createInternshipQueries(collection: CollectionOf) {
       table = "projects";
       if (str(params.availableFor)) initialFilters.push({ team: { $ne: str(params.availableFor) }, "team.99": { $exists: false } });
       if (str(params.applicationId)) initialFilters.push({ team: str(params.applicationId) });
+      // One project by id, for the project page.
+      if (str(params.id)) initialFilters.push({ _id: str(params.id) });
       if (initialFilters.length) pipeline.push({ $match: { $and: initialFilters } });
       pipeline.push({ $lookup: { from: name("applications"), localField: "team", foreignField: "_id", pipeline: [{ $project: { ...personProjection, github: 1, githubAccount: { login: 1 } } }], as: "members" } }, { $lookup: { from: name("interns"), localField: "team", foreignField: "applicationId", pipeline: [{ $project: { _id: 1, applicationId: 1, status: 1, batch: 1 } }], as: "teamInterns" } });
       searchFields = ["name", "description", "program", "status", "members.name", "members.email"];
