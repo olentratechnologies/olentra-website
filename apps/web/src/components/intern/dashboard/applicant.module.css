@@ -845,6 +845,7 @@
 }
 .sectionTitleRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -859,10 +860,12 @@
 }
 .linkedProjects {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
   gap: 17px;
 }
 .linkedProject {
+  min-width: 0;
+  overflow-wrap: anywhere;
   border: 1px solid var(--ad-border, #d3e0ff);
   border-radius: 13px;
   padding: 20px;
@@ -923,6 +926,7 @@
 }
 .projectFooter {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 10px;
@@ -1027,9 +1031,6 @@
   .overviewGrid .flowList p {
     max-width: 160px;
   }
-  .linkedProjects {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 @media (max-width: 850px) {
   .applicationGrid {
@@ -1114,9 +1115,6 @@
   .profilePage .panelHeading {
     font-size: 14px;
     margin-bottom: 18px;
-  }
-  .linkedProjects {
-    grid-template-columns: minmax(0, 1fr);
   }
   .listToolbar {
     align-items: flex-start;
@@ -1486,4 +1484,59 @@
 }
 @media (max-width: 680px) {
   .listToolbarRight { gap: 8px; }
+}
+
+.assignmentDialog {
+  width: min(36rem, calc(100% - 1.5rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+
+.assignmentDialog form label:not(:has(input[type="checkbox"])) {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.assignmentDialog :is(input:not([type="checkbox"]), select, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.assignmentActions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.625rem;
+}
+
+@media (max-width: 640px) {
+  .sectionTitleRow > button {
+    flex-basis: 100%;
+  }
+
+  .projectFooter {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  }
+
+  .projectFooter > span {
+    grid-column: 1 / -1;
+  }
+
+  .sectionTitleRow button,
+  .projectFooter :is(button, a),
+  .assignmentDialog form button,
+  .assignmentActions button {
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .assignmentDialog :is(input:not([type="checkbox"]), select, textarea) {
+    min-height: 44px;
+    font-size: 16px;
+  }
 }

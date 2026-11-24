@@ -31,6 +31,9 @@ import { applicationDurationLabel, internScheduleLabel } from "@/lib/intern/oppo
 import LoadingIndicator from "@olentra/ui/LoadingIndicator";
 import { hasStaffPermission } from "./staffAccess";
 import { downloadAttachment } from "@/lib/intern-attachments.mjs";
+import { useInternQuery } from "../useInternQuery";
+import AssignmentEditor, { AssignExistingProject } from "./AssignmentEditor";
+import QueryStatus from "./QueryStatus";
 import ResumeViewer from "./ResumeViewer";
 import { ApplicantNextAction, ApplicantWorkflow } from "./CompanyWorkflow";
 import StaffAccountControls from "./StaffAccountControls";
@@ -69,7 +72,7 @@ const STATUSES = [
 const PROFILE_TABS = [
   { id: "overview", label: "Overview" },
   { id: "application", label: "Application" },
-  { id: "projects", label: "Projects" },
+  { id: "projects", label: "Projects & tasks" },
   { id: "activity", label: "Activity" },
 ];
 
@@ -112,6 +115,7 @@ export default function ApplicantDetailPage({ applicationId }) {
   // Resumes need the narrower "Download applicant resumes" grant on top of applications.read.
   const canResume = hasStaffPermission(account, "resumes.read");
   const [resumeOpen, setResumeOpen] = useState(false);
+  const canTasks = hasStaffPermission(account, "tasks.read");
   const canProjects = hasStaffPermission(account, "projects.read");
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [recoveryBusy, setRecoveryBusy] = useState(false);
@@ -151,19 +155,16 @@ export default function ApplicantDetailPage({ applicationId }) {
   }, [applicationId]);
 
   const [linkedProjectPage, setLinkedProjectPage] = useState(1);
-  const [projectListing, setProjectListing] = useState({items:[],total:0});
-  const [projectError, setProjectError] = useState("");
-  useEffect(() => { setLinkedProjectPage(1); }, [applicationId]);
+  const [editor, setEditor] = useState(null);
+  const canManageProjects = canProjects && hasStaffPermission(account, "projects.manage");
+  const canManageTasks = canTasks && hasStaffPermission(account, "tasks.manage");
+  const activeIntern = data.interns?.some(intern => intern.applicationId === applicationId && intern.status === "Active");
+  const projectQuery = useInternQuery("project.list", { applicationId, page: linkedProjectPage, pageSize: 10 }, { enabled: tab === "projects" && canProjects });
+  const projectListing = projectQuery.data || { items: [], total: 0 };
+  useEffect(() => { setLinkedProjectPage(1); setEditor(null); }, [applicationId]);
   useEffect(() => {
-    if (tab !== "projects") return;
-    let active = true;
-    commands.listProjects({ applicationId, page: linkedProjectPage, pageSize: 10 }).then(result => {
-      if (!active) return;
-      if (!result.ok) { setProjectError(result.error); return; }
-      setProjectError(""); setProjectListing(result.data);
-    });
-    return () => { active = false; };
-  }, [applicationId, tab, linkedProjectPage, commands, data.projects]);
+    if (projectQuery.data) setLinkedProjectPage(page => Math.min(page, Math.max(1, Math.ceil(projectQuery.data.total / 10))));
+  }, [projectQuery.data]);
   const linkedProjects = projectListing.items;
   const history = useMemo(
     () =>
@@ -549,7 +550,7 @@ export default function ApplicantDetailPage({ applicationId }) {
       </header>
       <div className={styles.profileTabs}>
         <Tabs
-          items={PROFILE_TABS.filter(item => item.id !== "projects" || canProjects)}
+          items={PROFILE_TABS.filter(item => item.id !== "projects" || canProjects || canTasks)}
           value={tab}
           onChange={setTab}
           label="Applicant information"
@@ -780,11 +781,17 @@ export default function ApplicantDetailPage({ applicationId }) {
         </div>
       )}
 
-      {tab === "projects" && (
+      {tab === "projects" && canTasks && <AssignedTasks key={applicationId} applicationId={applicationId} canManage={canManageTasks && activeIntern} onEdit={setEditor} />}
+
+      {tab === "projects" && canProjects && (
         <Panel>
           <div className={styles.sectionTitleRow}>
             <h2 className={styles.panelHeading}>Projects & Contributions</h2>
             <span>{projectListing.total} assigned</span>
+            {canManageProjects && activeIntern && <>
+              <Button onClick={() => setEditor({ action: "assign" })}>Assign existing project</Button>
+              <Button variant="secondary" onClick={() => setEditor({ kind: "project", action: "create" })}>Create project</Button>
+            </>}
           </div>
           {linkedProjects.length ? (
             <div className={styles.linkedProjects}>
@@ -814,6 +821,11 @@ export default function ApplicantDetailPage({ applicationId }) {
                   </div>
                   <div className={styles.projectFooter}>
                     <span>{project.team?.length || 0} team members</span>
+                    {canManageTasks && activeIntern && <Button onClick={() => setEditor({ kind: "task", action: "create", project })}>Assign task</Button>}
+                    {canManageProjects && <>
+                      <Button variant="secondary" onClick={() => setEditor({ kind: "project", action: "edit", record: project })}>Edit project</Button>
+                      <Button variant="ghost" onClick={() => setEditor({ kind: "project", action: "delete", record: project })}>Delete project</Button>
+                    </>}
                     <Link href="/intern/dashboard/projects">
                       View projects
                       <ArrowUpRight size={14} />
@@ -828,10 +840,13 @@ export default function ApplicantDetailPage({ applicationId }) {
               description="Projects will appear here when this applicant joins a project team."
             />
           )}
-          {projectError && <p role="alert">{projectError}</p>}
+          <QueryStatus query={projectQuery} label="assigned projects" />
           <Pagination page={linkedProjectPage} pageSize={10} total={projectListing.total} onChange={setLinkedProjectPage}/>
         </Panel>
       )}
+
+      {editor?.action === "assign" && <AssignExistingProject application={application} onClose={() => setEditor(null)} />}
+      {editor && editor.action !== "assign" && <AssignmentEditor editor={editor} application={application} onClose={() => setEditor(null)} />}
 
       {tab === "activity" && (
         <Panel>
@@ -981,6 +996,48 @@ function IntroVideoPanel({ url, name }) {
       ) : (
         <p className={styles.videoNote}>No intro video shared.</p>
       )}
+    </Panel>
+  );
+}
+
+function AssignedTasks({ applicationId, canManage, onEdit }) {
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const query = useInternQuery("task.list", { applicationId, page, pageSize, sortField: "dueOn", sortDirection: "asc" });
+  const listing = query.data;
+  useEffect(() => {
+    if (listing) setPage(current => Math.min(current, Math.max(1, Math.ceil(listing.total / pageSize))));
+  }, [listing]);
+  return (
+    <Panel>
+      <div className={styles.sectionTitleRow}>
+        <h2 className={styles.panelHeading}>Assigned tasks</h2>
+        {listing && <span>{listing.total} assigned</span>}
+      </div>
+      <QueryStatus query={query} label="assigned tasks" />
+      {listing?.total === 0 && <EmptyState title="No tasks assigned yet" description="Tasks assigned to this intern will appear here." />}
+      {listing?.items.length > 0 && (
+        <div className={styles.linkedProjects}>
+          {listing.items.map(task => (
+            <article className={styles.linkedProject} key={task.id}>
+              <div className={styles.linkedProjectHeading}>
+                <h3>{task.title}</h3>
+                <StatusBadge status={task.status} />
+              </div>
+              {task.description && <p>{task.description}</p>}
+              <div className={styles.projectFooter}>
+                {canManage && <>
+                  <Button variant="secondary" onClick={() => onEdit({ kind: "task", action: "edit", record: task })}>Edit task</Button>
+                  <Button variant="ghost" onClick={() => onEdit({ kind: "task", action: "delete", record: task })}>Delete task</Button>
+                </>}
+                {task.project?.name && <span>{task.project.name}</span>}
+                {task.dueOn && <span>Due {formatDate(task.dueOn)}</span>}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+      {listing && <Pagination page={page} pageSize={pageSize} total={listing.total} onChange={setPage} />}
     </Panel>
   );
 }

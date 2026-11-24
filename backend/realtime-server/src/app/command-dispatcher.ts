@@ -764,6 +764,23 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const hook = row.type === "interviewReminder" ? activeHooks?.sendInterviewReminder : p.status === "Cancelled" ? activeHooks?.sendInterviewCancelled : activeHooks?.sendInterviewScheduled;
         if (!hook) throw new Error("No interview email sender is configured.");
         await hook({ to: str(application.email), name: str(application.name), programName: str(application.program), scheduledAt: p.scheduledAt!, meetingUrl: p.meetingUrl!, interviewId: p.interviewId, sequence: Number(p.sequence || 0), cancelReason: p.cancelReason });
+      } else if (row.type === "taskAssigned") {
+        const task = await collection("tasks").findOne({ _id: row.payload.taskId, applicationId });
+        if (!task) return { suppressed: true };
+        const [project, recipient] = await Promise.all([
+          collection("projects").findOne({ _id: task.projectId, team: applicationId }, { projection: { name: 1 } }),
+          applications.findOne({ _id: applicationId }, { projection: { name: 1, email: 1 } }),
+        ]);
+        if (!project || !recipient) return { suppressed: true };
+        if (!activeHooks?.sendNotice) throw new Error("No task assignment email sender is configured.");
+        await activeHooks.sendNotice({
+          to: recipient.email,
+          subject: `New task assigned: ${String(task.title).replace(/[\r\n]+/g, " ")}`,
+          intro: `Hi ${recipient.name},\n\nYou have a new task on ${project.name}.`,
+          items: [`Task: ${task.title}`, `Instructions: ${task.description}`, `Due date: ${task.dueOn}`, `Required for internship completion: ${task.required ? "Yes" : "No"}`],
+          ctaLabel: "Open project",
+          ctaPath: `/intern/portal/projects/${encodeURIComponent(task.projectId)}`,
+        });
       } else if (row.type === "notice") {
         if (!activeHooks?.sendNotice) throw new Error("No email sender is configured.");
         const p = row.payload;

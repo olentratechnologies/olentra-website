@@ -1,3 +1,4 @@
+import { createInternshipMailer } from "../../src/infrastructure/email/mailer";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { createHash, randomUUID } from "node:crypto";
 import { internshipTestMongoUri } from "./config";
@@ -91,4 +92,63 @@ test("a second application with the same LinkedIn profile is flagged on both rec
   const a = await domain.collection("applications").findOne({ email: first }), b = await domain.collection("applications").findOne({ email: second });
   expect(b?.possibleDuplicates).toEqual([a?._id]);
   expect(a?.possibleDuplicates).toEqual([b?._id]);
+});
+
+test("new task mail uses current assignment details, retries delivery, and suppresses removed assignments", async () => {
+  const applicationId = "mail-intern", projectId = "mail-project";
+  const staff = { id: "task-admin", role: "company", staffRole: "admin", name: "Admin", email: "admin@example.test", applicationId: null, sessionVersion: 1 } as const;
+  await domain.collection("accounts").insertOne({ ...staff, _id: staff.id });
+  const to = "task-intern@example.test";
+  await domain.collection("applications").insertOne({ _id: applicationId, name: "Test Intern", email: to, status: "Joined" });
+  await domain.collection("interns").insertOne({ _id: "mail-internship", applicationId, status: "Active" });
+  await domain.collection("projects").insertOne({ _id: projectId, team: [applicationId], name: "Portal project" });
+  const assignment = { applicationId, projectId, title: "Review navigation", description: "Initial instructions", required: true, dueOn: "2026-12-01" };
+  const assign = (input = assignment, key = randomUUID()) => domain.execute("task.create", input, staff, key);
+  const queue = domain.collection("outbox");
+  const filter = { type: "taskAssigned", "payload.applicationId": applicationId };
+  await expect(assign({ ...assignment, applicationId: "other" })).rejects.toThrow();
+  expect(await queue.countDocuments({ type: "taskAssigned" })).toBe(0);
+  const key = randomUUID();
+  const task = await assign(assignment, key);
+  await assign(assignment, key);
+  expect(await queue.countDocuments(filter)).toBe(1);
+
+  const messages: any[] = [];
+  const transport = Bun.serve({
+    hostname: "127.0.0.1", port: 0,
+    async fetch(request) {
+      messages.push(await request.json());
+      return messages.length === 1 ? new Response(null, { status: 503 }) : Response.json({ success: true, id: "test-mail" });
+    },
+  });
+  try {
+    const mailer = createInternshipMailer("test-token", transport.url.origin);
+    domain.setHooks({ async sendNotice(notice) {
+      const result = await mailer.sendNotice({ ...notice, ctaUrl: "https://example.test" + notice.ctaPath });
+      if (!result.ok) throw new Error(result.error);
+    } });
+    await domain.processOutbox();
+    expect(await queue.findOne(filter)).toMatchObject({ status: "pending", attempts: 1 });
+    await domain.execute("task.update", { id: task.id, patch: { description: "Review <mobile> layouts", dueOn: "2026-12-05", required: false } }, staff, randomUUID());
+    await queue.updateOne(filter, { $set: { nextAttemptAt: new Date(0) } });
+    await domain.processOutbox();
+    expect(await queue.countDocuments(filter)).toBe(1);
+    expect(await queue.findOne(filter)).toMatchObject({ status: "sent", attempts: 2 });
+    const mail = messages[1];
+    expect(mail.to).toEqual([to]);
+    expect(mail.subject).toBe("New task assigned: Review navigation");
+    for (const text of ["Hi Test Intern", "Portal project", "2026-12-05", "Required for internship completion: No", "Open project", "https://example.test/intern/portal/projects/mail-project"]) {
+      expect(mail.text).toContain(text);
+      expect(mail.html).toContain(text);
+    }
+    expect(mail.html).toContain("Review &lt;mobile&gt; layouts");
+    expect(mail.text).toContain("Review <mobile> layouts");
+    const removed = await assign();
+    await domain.execute("task.delete", { id: removed.id }, staff, randomUUID());
+    await domain.processOutbox();
+    expect(await queue.findOne({ ...filter, "payload.taskId": removed.id })).toMatchObject({ status: "superseded" });
+    expect(messages).toHaveLength(2);
+  } finally {
+    transport.stop(true);
+  }
 });

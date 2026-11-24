@@ -724,7 +724,7 @@ export function ApplicantWorkflow({ applicationId }) {
   );
 }
 
-function TaskEditor({ task, onSave, onCancel, busy }) {
+export function TaskEditor({ task, onSave, onCancel, busy }) {
   const [form, setForm] = useState({
     title: task.title,
     description: task.description,
