@@ -12,6 +12,10 @@ const LABELS = {
   "role.create": () => "Created a role",
   "role.update": () => "Updated a role",
   "admin.bootstrap": () => "Created the first admin",
+  "project.link.added": (detail) => `Added project link ${detail?.label || ""}`.trim(),
+  "project.link.updated": (detail) => `Updated project link ${detail?.label || ""}`.trim(),
+  "project.link.deleted": (detail) => `Deleted project link ${detail?.label || ""}`.trim(),
+  "project.link.access": (detail) => detail?.status === "granted" ? "Marked repository access as granted" : "Marked repository access as pending",
 };
 
 export function describeAudit(entry) {

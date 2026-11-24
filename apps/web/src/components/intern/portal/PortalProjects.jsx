@@ -1,6 +1,7 @@
 "use client";
 
 import ProjectPlan from "../ProjectPlan";
+import { InternProjectLinks, TaskLinks } from "../ProjectLinks";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -340,6 +341,14 @@ export function PortalProjectDetail({ projectId }) {
                 <p>Small steps. Meaningful progress.</p>
               </Panel>
             </div>
+            {project.links?.length > 0 && (
+              <Panel className={styles.sectionGap}>
+                <InternProjectLinks
+                  links={project.links}
+                  githubProfile={my.application?.github}
+                />
+              </Panel>
+            )}
             <Panel className={styles.sectionGap}>
               <div className={styles.panelHeader}>
                 <h2>My tasks</h2>
@@ -374,6 +383,7 @@ export function PortalProjectDetail({ projectId }) {
                               )}
                             </h3>
                             <p>{task.description}</p>
+                            <TaskLinks links={task.links} />
                           </div>
                           <Status value={task.status} />
                         </div>

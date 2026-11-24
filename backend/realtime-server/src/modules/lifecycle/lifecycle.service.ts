@@ -39,13 +39,43 @@ function projectMarkdown(value: unknown) {
   return value.trim() ? value : "";
 }
 
+const LINK_KINDS = ["repository", "docs", "design", "board", "environment", "other"];
+const MAX_PROJECT_LINKS = 20, MAX_TASK_LINKS = 10;
+/** One company link. Credentials in the URL are refused so secrets never land in project data. */
+export function validateLink(value: any) {
+  if (!value || typeof value !== "object") throw new DomainError("INVALID_REQUEST", "Add a link.");
+  const kind = text(value.kind) || "other";
+  if (!LINK_KINDS.includes(kind)) throw new DomainError("INVALID_REQUEST", "Choose a link type.");
+  const label = text(value.label);
+  if (!label || label.length > 120) throw new DomainError("INVALID_REQUEST", "Give the link a name of up to 120 characters.");
+  const url = text(value.url);
+  let parsed: URL | null = null; try { parsed = new URL(url); } catch { /* invalid */ }
+  if (!parsed || !["http:", "https:"].includes(parsed.protocol) || url.length > 2000) throw new DomainError("INVALID_REQUEST", "Enter a valid http or https link.");
+  if (parsed.username || parsed.password) throw new DomainError("INVALID_REQUEST", "Remove the username or password from the link. Don't paste passwords or tokens.");
+  const note = text(value.note);
+  if (note.length > 500) throw new DomainError("INVALID_REQUEST", "Keep link notes to 500 characters.");
+  if (value.visibleToInterns !== undefined && typeof value.visibleToInterns !== "boolean") throw new DomainError("INVALID_REQUEST", "Choose whether interns can see the link.");
+  return { kind, label, url, note, visibleToInterns: value.visibleToInterns !== false };
+}
+function validateTaskLinks(value: unknown) {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length > MAX_TASK_LINKS) throw new DomainError("INVALID_REQUEST", `Add up to ${MAX_TASK_LINKS} links to a task.`);
+  return value.map((link: any) => ({ id: typeof link?.id === "string" && /^LNK-[\w-]{1,64}$/.test(link.id) ? link.id : newId("LNK"), ...validateLink(link) }));
+}
+/** What an intern may see of a link list: no staff-only links, and only their own repository access. */
+export function internLinks(links: unknown, applicationId: string) {
+  if (!Array.isArray(links)) return [];
+  return links.filter((link: any) => link?.visibleToInterns !== false).map(({ access, ...link }: any) =>
+    link.kind === "repository" ? { ...link, myAccess: access?.[applicationId]?.status === "granted" ? "granted" : "pending" } : link);
+}
+
 export function createLifecycle({ collection, transact, outbox, onResumeChanged }: { collection: (name: string) => Collection<Row>; transact: Tx; outbox: Pick<Outbox, "enqueue" | "enqueueMany">; onResumeChanged?: (applicationId: string, fileId: string, session: ClientSession) => Promise<void> }) {
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
   const plans = collection("project_plans");
   const schedules = createOfferSchedules(collection);
-  const names = new Set(["offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.remind", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.plan.get", "project.plan.save", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["project.link.save", "project.link.delete", "project.link.access", "offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.remind", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.plan.get", "project.plan.save", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       schedules.initialize(),
@@ -244,9 +274,51 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         const markdown = projectMarkdown(input.plan ?? "");
         project.hasPlan = Boolean(markdown);
         if (input.planVisibleToInterns === false) project.planHidden = true;
+        if (input.links !== undefined) {
+          if (!Array.isArray(input.links) || input.links.length > MAX_PROJECT_LINKS) throw new DomainError("INVALID_REQUEST", `Add up to ${MAX_PROJECT_LINKS} links to a project.`);
+          project.links = input.links.map((link: any) => ({ ...validateLink(link), id: newId("LNK"), access: {}, createdOn: now }));
+        }
         await projects.insertOne(project, opts);
         if (markdown) await plans.insertOne({ _id: project._id, markdown, revision: 1 }, opts);
         return plain(project);
+      }
+      if (method === "project.link.save" || method === "project.link.delete" || method === "project.link.access") {
+        staff(actor);
+        const projectId = required(p.projectId, "project");
+        const project = await projects.findOne({ _id: projectId }, opts);
+        if (!project) throw new DomainError("NOT_FOUND", "Project unavailable.");
+        const links: any[] = project.links || [], team: string[] = project.team || [];
+        const linkId = text(method === "project.link.save" ? p.link?.id : p.linkId);
+        const current = linkId ? links.find(link => link.id === linkId) : null;
+        if (linkId && !current) throw new DomainError("NOT_FOUND", "This link was removed. Reopen the project to see the latest links.");
+        if (method === "project.link.delete") {
+          if (!current) throw new DomainError("INVALID_REQUEST", "Choose a link.");
+          await projects.updateOne({ _id: projectId }, { $pull: { links: { id: linkId } } } as any, opts);
+          await auditDecision(audit, session, actor, "project.link.deleted", projectId, { linkId, kind: current.kind, label: current.label });
+          return { id: projectId, linkId, affectedApplications: team };
+        }
+        if (method === "project.link.access") {
+          if (!current) throw new DomainError("INVALID_REQUEST", "Choose a link.");
+          if (current.kind !== "repository") throw new DomainError("INVALID_REQUEST", "Access is tracked only for repository links.");
+          const applicationId = required(p.applicationId, "intern");
+          if (!/^[\w-]+$/.test(applicationId) || !team.includes(applicationId)) throw new DomainError("CONFLICT", "This intern isn't on the project team.");
+          if (!["pending", "granted"].includes(p.status)) throw new DomainError("INVALID_REQUEST", "Choose pending or granted.");
+          await projects.updateOne({ _id: projectId, "links.id": linkId }, { $set: { [`links.$.access.${applicationId}`]: { status: p.status, updatedOn: now, updatedBy: actor!.id } } }, opts);
+          await auditDecision(audit, session, actor, "project.link.access", projectId, { linkId, applicationId, status: p.status });
+          return { id: projectId, linkId, applicationId, status: p.status, affectedApplications: [applicationId] };
+        }
+        const values = validateLink(p.link);
+        if (current) {
+          const saved = { ...values, id: linkId, access: values.kind === "repository" ? current.access || {} : {}, createdOn: current.createdOn, updatedOn: now };
+          await projects.updateOne({ _id: projectId, "links.id": linkId }, { $set: { "links.$": saved } }, opts);
+          await auditDecision(audit, session, actor, "project.link.updated", projectId, { linkId, kind: saved.kind, label: saved.label, url: saved.url });
+          return { id: projectId, link: saved, affectedApplications: team };
+        }
+        const saved = { ...values, id: newId("LNK"), access: {}, createdOn: now };
+        const added = await projects.updateOne({ _id: projectId, [`links.${MAX_PROJECT_LINKS - 1}`]: { $exists: false } }, { $push: { links: saved } } as any, opts);
+        if (!added.modifiedCount) throw new DomainError("INVALID_REQUEST", `Keep at most ${MAX_PROJECT_LINKS} links on a project.`);
+        await auditDecision(audit, session, actor, "project.link.added", projectId, { linkId: saved.id, kind: saved.kind, label: saved.label, url: saved.url });
+        return { id: projectId, link: saved, affectedApplications: team };
       }
       if (method === "project.plan.save") {
         staff(actor);
@@ -284,6 +356,10 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         if (patch.dueOn && !validDate(patch.dueOn)) throw new DomainError("INVALID_REQUEST", "Choose a valid due date.");
         if (input.progress !== undefined) { const n = Number(input.progress); if (!Number.isFinite(n) || n < 0 || n > 100) throw new DomainError("INVALID_REQUEST", "Progress must be between 0 and 100."); patch.progress = n; }
         if (input.team !== undefined) { patch.team = await validateTeam(input.team, session); for (const removed of (project.team || []).filter((v: string) => !patch.team.includes(v))) if (await tasks.findOne({ projectId: project._id, applicationId: removed, status: { $ne: "Approved" } }, opts)) throw new DomainError("CONFLICT", "Finish this intern's tasks before removing them from the project."); }
+        if (patch.team && Array.isArray(project.links)) {
+          const removed = (project.team || []).filter((id: string) => !patch.team.includes(id));
+          if (removed.length) patch.links = project.links.map((link: any) => ({ ...link, access: Object.fromEntries(Object.entries(link.access || {}).filter(([id]) => !removed.includes(id))) }));
+        }
         const result = await projects.findOneAndUpdate({ _id: project._id }, { $set: patch }, { ...opts, returnDocument: "after" }); return { ...plain(result!), affectedApplications: [...new Set([...(project.team || []), ...(result?.team || [])])] };
       }
       if (method === "project.delete") {
@@ -302,7 +378,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
       if (method === "task.create") {
         staff(actor); const projectId = required(p.projectId, "project"), applicationId = required(p.applicationId, "intern"); const project = await projects.findOne({ _id: projectId, team: applicationId }, opts); if (!project) throw new DomainError("CONFLICT", "Choose an intern on this project team."); const intern = await active(applicationId, session); await touch(intern, session); await projects.updateOne({ _id: projectId, team: applicationId }, { $inc: { revision: 1 } }, opts);
         const title = required(p.title, "task title", 200), description = required(p.description, "task description", 5000); if (!validDate(p.dueOn)) throw new DomainError("INVALID_REQUEST", "Choose a valid task due date.");
-        const task: Row = { _id: newId("TASK"), projectId, applicationId, title, description, dueOn: p.dueOn, required: !!p.required, status: "Todo", createdOn: now, submissionVersion: 0, ...reminderSchedule(p.reminderAfterDays === undefined ? 1 : p.reminderAfterDays, now) };
+        const task: Row = { _id: newId("TASK"), projectId, applicationId, title, description, dueOn: p.dueOn, required: !!p.required, links: validateTaskLinks(p.links) ?? [], status: "Todo", createdOn: now, submissionVersion: 0, ...reminderSchedule(p.reminderAfterDays === undefined ? 1 : p.reminderAfterDays, now) };
         await tasks.insertOne(task, opts);
         await outbox.enqueue("taskAssigned", { taskId: task._id, applicationId }, session);
         return plain(task);
@@ -339,6 +415,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         const input = p.patch || {}, patch: Record<string, any> = {}; if (input.applicationId && input.applicationId !== task.applicationId) throw new DomainError("INVALID_REQUEST", "Create a new task to change the assignee.");
         for (const name of ["title", "description", "dueOn"]) if (input[name] !== undefined) patch[name] = required(input[name], name, 5000);
         if (patch.dueOn && !validDate(patch.dueOn)) throw new DomainError("INVALID_REQUEST", "Choose a valid task due date."); if (input.required !== undefined) patch.required = !!input.required;
+        if (input.links !== undefined) patch.links = validateTaskLinks(input.links);
         if (input.reminderAfterDays !== undefined && input.reminderAfterDays !== (task.reminderAfterDays ?? null)) {
           Object.assign(patch, reminderSchedule(input.reminderAfterDays, task.createdOn));
           if (task.reminderQueued) {
@@ -468,11 +545,11 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);
-      const labels: Record<string, string> = { "offer.revise": "Internship schedule revision awaiting your decision", "offer.revision.accept": "Schedule revision accepted", "offer.revision.decline": "Schedule revision declined", "offer.revision.withdraw": "Schedule revision withdrawn", "offer.enrollDirect": "Welcome! Your internship is confirmed", "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "intern.assignMentor": "Your mentor was updated", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.create": "You joined a project", "project.assign": "You joined a project", "project.update": "Your project was updated", "project.delete": "Your project was deleted", "task.create": "A new task is ready", "task.update": "Your task was updated", "task.delete": "Your task was deleted", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
+      const labels: Record<string, string> = { "offer.revise": "Internship schedule revision awaiting your decision", "offer.revision.accept": "Schedule revision accepted", "offer.revision.decline": "Schedule revision declined", "offer.revision.withdraw": "Schedule revision withdrawn", "offer.enrollDirect": "Welcome! Your internship is confirmed", "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "intern.assignMentor": "Your mentor was updated", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.link.access": "Repository access granted", "project.create": "You joined a project", "project.assign": "You joined a project", "project.update": "Your project was updated", "project.delete": "Your project was deleted", "task.create": "A new task is ready", "task.update": "Your task was updated", "task.delete": "Your task was deleted", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
       const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
-      const label = labels[method];
+      const label = method === "project.link.access" && (result as any)?.status !== "granted" ? undefined : labels[method];
       if (label && actor) {
-        if (applicationIds.length) await notifications.insertMany(applicationIds.map((applicationId: string) => ({ _id: newId("NTF"), recipientRole: actor.role === "company" ? "intern" : "company", applicationId, title: label, body: method === "interview.schedule" ? `Your interview is scheduled for ${interviewScheduledAt}. Open your portal for meeting details.` : label, href: actor.role === "company" ? "/intern/portal" : `/intern/dashboard/applications/${applicationId}`, createdOn: new Date().toISOString() })), { session });
+        if (applicationIds.length) await notifications.insertMany(applicationIds.map((applicationId: string) => ({ _id: newId("NTF"), recipientRole: actor.role === "company" ? "intern" : "company", applicationId, title: label, body: method === "interview.schedule" ? `Your interview is scheduled for ${interviewScheduledAt}. Open your portal for meeting details.` : label, href: actor.role === "company" ? (method === "project.link.access" ? `/intern/portal/projects/${encodeURIComponent(String((result as any).id))}` : "/intern/portal") : `/intern/dashboard/applications/${applicationId}`, createdOn: new Date().toISOString() })), { session });
         const activityApplications = applicationIds.length
           ? await applications.find({ _id: { $in: applicationIds } }, { session }).project({ name: 1, program: 1 }).toArray()
           : [];
@@ -529,13 +606,13 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
     const projectRows: any[] = p.map(row => {
       if (!intern) return plain(row);
       const { planHidden, ...visible } = plain(row) as any;
-      return { ...visible, hasPlan: Boolean(visible.hasPlan) && planHidden !== true, memberCount: (row.team || []).length, team: [actor.applicationId] };
+      return { ...visible, links: internLinks(visible.links, actor.applicationId!), hasPlan: Boolean(visible.hasPlan) && planHidden !== true, memberCount: (row.team || []).length, team: [actor.applicationId] };
     });
     const projectIdsByApplication = new Map<string, string[]>();
     for (const project of projectRows) for (const applicationId of new Set<string>(project.team || [])) {
       const ids = projectIdsByApplication.get(applicationId) || []; ids.push(project.id); projectIdsByApplication.set(applicationId, ids);
     }
-    return { interns: i.map(row => ({ ...plain(row), projectIds: projectIdsByApplication.get(row.applicationId) || [] })), offers: o.map(plain), onboarding: on.map(plain), projects: projectRows, tasks: t.map(plain), submissions: s.map(plain), certificates: c.map(plain), interviews: iv.map(plain), truncated };
+    return { interns: i.map(row => ({ ...plain(row), projectIds: projectIdsByApplication.get(row.applicationId) || [] })), offers: o.map(plain), onboarding: on.map(plain), projects: projectRows, tasks: t.map(row => intern ? { ...plain(row), links: internLinks(row.links, actor.applicationId!) } : plain(row)), submissions: s.map(plain), certificates: c.map(plain), interviews: iv.map(plain), truncated };
   }
   return { initialize, supports: (method: string) => names.has(method), execute, snapshot };
 }

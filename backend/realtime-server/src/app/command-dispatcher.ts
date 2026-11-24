@@ -802,7 +802,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
           to: recipient.email,
           subject: `${reminder ? "Task reminder" : "New task assigned"}: ${String(task.title).replace(/[\r\n]+/g, " ")}`,
           intro: `Hi ${recipient.name},\n\n${reminder ? `Your task on ${project.name} is pending. ${nextStep}` : `You have a new task on ${project.name}.`}`,
-          items: [`Task: ${task.title}`, `Instructions: ${task.description}`, `Due date: ${task.dueOn}`, `Required for internship completion: ${task.required ? "Yes" : "No"}`],
+          items: [`Task: ${task.title}`, `Instructions: ${task.description}`, `Due date: ${task.dueOn}`, `Required for internship completion: ${task.required ? "Yes" : "No"}`,
+            ...(Array.isArray(task.links) ? task.links : []).filter((link: any) => link?.visibleToInterns !== false && /^https?:\/\//.test(str(link?.url))).map((link: any) => `${str(link.label).replace(/[\r\n]+/g, " ")}: ${str(link.url)}`)],
           ctaLabel: "Open project",
           ctaPath: `/intern/portal/projects/${encodeURIComponent(task.projectId)}`,
         });

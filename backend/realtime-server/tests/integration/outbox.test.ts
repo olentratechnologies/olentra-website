@@ -129,7 +129,7 @@ test("new task mail uses current assignment details, retries delivery, and suppr
     } });
     await domain.processOutbox();
     expect(await queue.findOne(filter)).toMatchObject({ status: "pending", attempts: 1 });
-    await domain.execute("task.update", { id: task.id, patch: { description: "Review <mobile> layouts", dueOn: "2026-12-05", required: false } }, staff, randomUUID());
+    await domain.execute("task.update", { id: task.id, patch: { description: "Review <mobile> layouts", dueOn: "2026-12-05", required: false, links: [{ kind: "docs", label: "Layout spec", url: "https://docs.example.test/spec" }, { kind: "board", label: "Staff board", url: "https://board.example.test", visibleToInterns: false }] } }, staff, randomUUID());
     await queue.updateOne(filter, { $set: { nextAttemptAt: new Date(0) } });
     await domain.processOutbox();
     expect(await queue.countDocuments(filter)).toBe(1);
@@ -137,11 +137,12 @@ test("new task mail uses current assignment details, retries delivery, and suppr
     const mail = messages[1];
     expect(mail.to).toEqual([to]);
     expect(mail.subject).toBe("New task assigned: Review navigation");
-    for (const text of ["Hi Test Intern", "Portal project", "2026-12-05", "Required for internship completion: No", "Open project", "https://example.test/intern/portal/projects/mail-project"]) {
+    for (const text of ["Hi Test Intern", "Portal project", "2026-12-05", "Required for internship completion: No", "Layout spec: https://docs.example.test/spec", "Open project", "https://example.test/intern/portal/projects/mail-project"]) {
       expect(mail.text).toContain(text);
       expect(mail.html).toContain(text);
     }
     expect(mail.html).toContain("Review &lt;mobile&gt; layouts");
+    expect(mail.text).not.toContain("Staff board");
     expect(mail.text).toContain("Review <mobile> layouts");
     const removed = await assign();
     await domain.execute("task.delete", { id: removed.id }, staff, randomUUID());

@@ -4,6 +4,7 @@ import LoadingIndicator from "@olentra/ui/LoadingIndicator";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { TaskLinks, TaskLinksField } from "../ProjectLinks";
 import {
   ArrowRight,
   CalendarDays,
@@ -751,6 +752,7 @@ export function TaskEditor({ task, onSave, onCancel, busy }) {
     dueOn: task.dueOn,
     required: task.required,
     reminderAfterDays: task.reminderAfterDays ?? null,
+    links: task.links || [],
   });
   return (
     <form
@@ -791,6 +793,12 @@ export function TaskEditor({ task, onSave, onCancel, busy }) {
         />
       </label>
       <ReminderDelay form={form} setForm={setForm} />
+      <TaskLinksField
+        idPrefix={`task-${task.id || "new"}-link`}
+        value={form.links}
+        disabled={busy}
+        onChange={(links) => setForm({ ...form, links })}
+      />
       <label className={styles.checkbox}>
         <input
           type="checkbox"
@@ -1043,6 +1051,7 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
           dueOn: localDate(7),
           required: true,
           reminderAfterDays: 1,
+          links: [],
         });
       }
     } finally {
@@ -1184,6 +1193,14 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
               />
             </label>
             <ReminderDelay form={form} setForm={setForm} />
+            <div className={styles.fullWidth}>
+              <TaskLinksField
+                idPrefix={`create-${projectId}-link`}
+                value={form.links || []}
+                disabled={busy}
+                onChange={(links) => setForm({ ...form, links })}
+              />
+            </div>
             <label className={styles.checkbox}>
               <input
                 type="checkbox"
@@ -1228,6 +1245,7 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
                     <StatusBadge status={task.status} />
                   </div>
                   <p>{task.description}</p>
+                  <TaskLinks links={task.links} />
                   <div className={styles.taskMeta}>
                     <span>
                       <UserRound size={13} />

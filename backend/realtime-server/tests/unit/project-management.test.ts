@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createLifecycle } from "../../src/modules/lifecycle/lifecycle.service";
+import { createLifecycle, internLinks } from "../../src/modules/lifecycle/lifecycle.service";
 import { authorizeStaff } from "../../src/modules/access/policy";
 import type { Principal } from "../../src/shared/principal";
 
@@ -16,8 +16,23 @@ function fixture() {
     updateOne: async (filter: any, update: any) => { plans.set(filter._id, { _id: filter._id, ...plans.get(filter._id), ...update.$set }); },
     deleteOne: async (filter: any, options: any) => { expect(options.session).toBe(session); plans.delete(filter._id); writes.push({ name, filter }); },
   } : ({
-    findOne: async (filter: any) => name === "programs" ? (["Software Engineer Intern"].includes(filter.name) ? { name: filter.name } : null) : project,
-    updateOne: async (_filter: any, update: any) => { project = { ...project, ...update.$set }; },
+    findOne: async (filter: any) => name === "programs" ? (["Software Engineer Intern"].includes(filter.name) ? { name: filter.name } : null) : name === "tasks" ? null : project,
+    countDocuments: async (filter: any) => filter.applicationId.$in.length,
+    updateMany: async () => {},
+    updateOne: async (filter: any, update: any) => {
+      const links = [...(project.links || [])];
+      if (filter["links.19"] && links.length >= 20) return { modifiedCount: 0 };
+      if (update.$push) { project = { ...project, links: [...links, update.$push.links] }; return { modifiedCount: 1 }; }
+      if (update.$pull) { project = { ...project, links: links.filter((l: any) => l.id !== update.$pull.links.id) }; return { modifiedCount: 1 }; }
+      const index = links.findIndex((l: any) => l.id === filter["links.id"]);
+      for (const [key, value] of Object.entries(update.$set || {})) {
+        if (key === "links.$") links[index] = value;
+        else if (key.startsWith("links.$.access.")) links[index] = { ...links[index], access: { ...links[index].access, [key.slice(15)]: value } };
+        else project = { ...project, [key]: value };
+      }
+      if (filter["links.id"]) project = { ...project, links };
+      return { modifiedCount: 1 };
+    },
     aggregate: (pipeline: any[]) => ({ toArray: async () => {
       const match = pipeline[0].$match;
       if (!project || match._id !== project._id || (match.team && !project.team.includes(match.team)) || (match.planHidden && project.planHidden === true)) return [];
@@ -120,4 +135,81 @@ test("managers can hide a plan from interns without hiding it from staff", async
   expect(read.markdown).toBe("# Plan");
   expect(read.visibleToInterns).toBeUndefined();
   await expect(lifecycle.execute("project.plan.save", { projectId: "p1", markdown: "# Plan", revision: 4, visibleToInterns: "no" }, admin, "bad")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+});
+
+const repo = { kind: "repository", label: "API repository", url: "https://github.com/olentra/api", note: "main branch" };
+
+test("managers add, edit and delete project links", async () => {
+  const { lifecycle, project, writes } = fixture();
+  const added: any = await lifecycle.execute("project.link.save", { projectId: "p1", link: repo }, admin, "add");
+  expect(added.link).toMatchObject({ ...repo, visibleToInterns: true, access: {} });
+  expect(added.link.id).toMatch(/^LNK-/);
+  expect(added.affectedApplications).toEqual(["intern1"]);
+  await lifecycle.execute("project.link.access", { projectId: "p1", linkId: added.link.id, applicationId: "intern1", status: "granted" }, admin, "grant");
+  const edited: any = await lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, id: added.link.id, label: "Backend repo" } }, admin, "edit");
+  expect(edited.link.label).toBe("Backend repo");
+  expect(edited.link.access.intern1.status).toBe("granted");
+  expect(project().links).toHaveLength(1);
+  await lifecycle.execute("project.link.delete", { projectId: "p1", linkId: added.link.id }, admin, "delete");
+  expect(project().links).toEqual([]);
+  expect(writes.filter(w => w.name === "staff_audit").map(w => w.row.action)).toEqual(["project.link.added", "project.link.access", "project.link.updated", "project.link.deleted"]);
+  await expect(lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, id: added.link.id } }, admin, "stale")).rejects.toMatchObject({ code: "NOT_FOUND" });
+});
+
+test("project links reject bad URLs, credentials and overflow", async () => {
+  const { lifecycle } = fixture();
+  for (const link of [{ ...repo, url: "javascript:alert(1)" }, { ...repo, url: "not a url" }, { ...repo, url: "https://user:token@github.com/x" }, { ...repo, label: "" }, { ...repo, kind: "secret" }, { ...repo, note: "x".repeat(501) }, { ...repo, visibleToInterns: "yes" }]) {
+    await expect(lifecycle.execute("project.link.save", { projectId: "p1", link }, admin, "bad")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  }
+  for (let i = 0; i < 20; i++) await lifecycle.execute("project.link.save", { projectId: "p1", link: { ...repo, label: `Link ${i}` } }, admin, `add${i}`);
+  await expect(lifecycle.execute("project.link.save", { projectId: "p1", link: repo }, admin, "21")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+});
+
+test("repository access is tracked per team member and only for repositories", async () => {
+  const { lifecycle, project } = fixture();
+  const { link }: any = await lifecycle.execute("project.link.save", { projectId: "p1", link: repo }, admin, "add");
+  const { link: docs }: any = await lifecycle.execute("project.link.save", { projectId: "p1", link: { kind: "docs", label: "Docs", url: "https://docs.example.test" } }, admin, "docs");
+  await expect(lifecycle.execute("project.link.access", { projectId: "p1", linkId: link.id, applicationId: "intern2", status: "granted" }, admin, "x")).rejects.toMatchObject({ code: "CONFLICT" });
+  await expect(lifecycle.execute("project.link.access", { projectId: "p1", linkId: docs.id, applicationId: "intern1", status: "granted" }, admin, "x")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(lifecycle.execute("project.link.access", { projectId: "p1", linkId: link.id, applicationId: "intern1", status: "done" }, admin, "x")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  const result: any = await lifecycle.execute("project.link.access", { projectId: "p1", linkId: link.id, applicationId: "intern1", status: "granted" }, admin, "grant");
+  expect(result).toMatchObject({ status: "granted", affectedApplications: ["intern1"] });
+  expect(project().links[0].access.intern1).toMatchObject({ status: "granted", updatedBy: "admin" });
+});
+
+test("interns see only visible links and their own repository access", () => {
+  const links = [
+    { id: "LNK-1", kind: "repository", label: "Repo", url: "https://github.com/x", visibleToInterns: true, access: { intern1: { status: "granted" }, intern2: { status: "pending" } } },
+    { id: "LNK-2", kind: "board", label: "Admin board", url: "https://board.test", visibleToInterns: false },
+    { id: "LNK-3", kind: "docs", label: "Docs", url: "https://docs.test", visibleToInterns: true },
+  ];
+  expect(internLinks(links, "intern1")).toEqual([
+    { id: "LNK-1", kind: "repository", label: "Repo", url: "https://github.com/x", visibleToInterns: true, myAccess: "granted" },
+    { id: "LNK-3", kind: "docs", label: "Docs", url: "https://docs.test", visibleToInterns: true },
+  ]);
+  expect(internLinks(links, "intern2")[0]).toMatchObject({ myAccess: "pending" });
+  expect(internLinks(links, "intern3")[0]).toMatchObject({ myAccess: "pending" });
+  expect(JSON.stringify(internLinks(links, "intern1"))).not.toContain("intern2");
+  expect(internLinks(undefined, "intern1")).toEqual([]);
+});
+
+test("only project managers can change links, and interns cannot", async () => {
+  const reader = { ...admin, staffRole: "mentor", permissions: ["projects.summary", "projects.read", "interns.read"] };
+  const summaryOnly = { ...admin, staffRole: "viewer", permissions: ["projects.summary"] };
+  for (const method of ["project.link.save", "project.link.delete", "project.link.access"]) {
+    expect(() => authorizeStaff(method, {}, reader)).toThrow();
+    expect(() => authorizeStaff(method, {}, summaryOnly)).toThrow();
+    expect(() => authorizeStaff(method, {}, { ...admin, staffRole: "manager", permissions: ["projects.read", "projects.manage"] })).not.toThrow();
+    await expect(fixture().lifecycle.execute(method, { projectId: "p1", link: repo, linkId: "LNK-x" }, intern("intern1"), "x")).rejects.toMatchObject({ code: "FORBIDDEN" });
+  }
+});
+
+test("removing an intern from the team clears their repository access", async () => {
+  const { lifecycle, project } = fixture();
+  const { link }: any = await lifecycle.execute("project.link.save", { projectId: "p1", link: repo }, admin, "add");
+  await lifecycle.execute("project.link.access", { projectId: "p1", linkId: link.id, applicationId: "intern1", status: "granted" }, admin, "grant");
+  await lifecycle.execute("project.update", { id: "p1", patch: { team: [] } }, admin, "remove");
+  expect(project().team).toEqual([]);
+  expect(project().links[0].access).toEqual({});
+  expect(project().links[0].label).toBe(repo.label);
 });

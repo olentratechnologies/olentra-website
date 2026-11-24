@@ -1,6 +1,7 @@
 "use client";
 
 import ProjectPlan from "../ProjectPlan";
+import { TaskLinks } from "../ProjectLinks";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -1046,6 +1047,7 @@ function AssignedTasks({ applicationId, canManage, onEdit }) {
                 <StatusBadge status={task.status} />
               </div>
               {task.description && <p>{task.description}</p>}
+              <TaskLinks links={task.links} />
               <div className={styles.projectFooter}>
                 {canManage && <>
                   {["Todo", "In progress", "Changes requested"].includes(task.status) && <TaskReminderButton taskId={task.id} />}

@@ -82,7 +82,7 @@ export function createInternshipQueries(collection: CollectionOf) {
       if (str(params.availableFor)) initialFilters.push({ team: { $ne: str(params.availableFor) }, "team.99": { $exists: false } });
       if (str(params.applicationId)) initialFilters.push({ team: str(params.applicationId) });
       if (initialFilters.length) pipeline.push({ $match: { $and: initialFilters } });
-      pipeline.push({ $lookup: { from: name("applications"), localField: "team", foreignField: "_id", pipeline: [{ $project: personProjection }], as: "members" } }, { $lookup: { from: name("interns"), localField: "team", foreignField: "applicationId", pipeline: [{ $project: { _id: 1, applicationId: 1, status: 1, batch: 1 } }], as: "teamInterns" } });
+      pipeline.push({ $lookup: { from: name("applications"), localField: "team", foreignField: "_id", pipeline: [{ $project: { ...personProjection, github: 1 } }], as: "members" } }, { $lookup: { from: name("interns"), localField: "team", foreignField: "applicationId", pipeline: [{ $project: { _id: 1, applicationId: 1, status: 1, batch: 1 } }], as: "teamInterns" } });
       searchFields = ["name", "description", "program", "status", "members.name", "members.email"];
       sortFields = { name: "name", status: "status", program: "program", dueOn: "dueOn", createdOn: "createdOn", progress: "progress" };
       programField = "program";

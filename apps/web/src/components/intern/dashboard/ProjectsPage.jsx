@@ -1,6 +1,7 @@
 "use client";
 
 import ProjectPlan from "../ProjectPlan";
+import { StaffProjectLinks } from "../ProjectLinks";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import {
@@ -726,6 +727,12 @@ export function ProjectsPage() {
         {selectedProject && detail && (
           <>
             <ProjectPlan project={selectedProject} canEdit={canManage} />
+            <StaffProjectLinks
+              project={selectedProject}
+              members={selectedProject.team.map((id) => people.get(id)).filter(Boolean)}
+              canEdit={canManage}
+              onNotify={notify}
+            />
             <form onSubmit={saveProject}>
               <div className={styles.detailOverview}>
                 <TrackBadge
