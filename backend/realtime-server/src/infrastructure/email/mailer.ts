@@ -233,8 +233,13 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
         attachments.push({ filename: "interview.ics", contentType: `text/calendar; charset=utf-8; method=${method}`, content: interviewIcs({ uid: options.interviewId, sequence: options.sequence ?? 0, startsAt: options.scheduledAt, summary: `Olentra interview · ${options.programName}`, description: method === "CANCEL" ? "This interview was cancelled." : `Join: ${options.meetingUrl}`, url: options.meetingUrl, method }) });
       }
     }
-    if (id === "selected" || id === "direct-enrolled" || id === "instant-offer") {
+    if (id === "selected" || id === "direct-enrolled") {
       buttons.push({ label: "Activate your internship portal", url: options.portalUrl });
+      details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
+    }
+    // An instant offer reads like a formal offer; its button is a one-time sign-in link, since the candidate has no portal access yet.
+    if (id === "instant-offer") {
+      buttons.push({ label: "Open candidate portal", url: options.portalUrl });
       details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
     }
     if (["offer", "offer-reminder", "offer-accepted", "onboarding", "certificate", "offer-revised", "offer-revision-accepted", "offer-revision-declined", "offer-revision-withdrawn"].includes(id)) buttons.push({ label: "Open candidate portal", url: options.portalUrl });
@@ -253,7 +258,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
       buttons.push({ label: "Open candidate portal", url: options.magicLinkUrl });
       details.push("Single-use link · Expires in 24 hours", "This single-use link expires in 24 hours. If you didn’t request this link, you can safely ignore this email.");
     }
-    if (id === "signin" || id === "selected" || id === "direct-enrolled" || id === "instant-offer") details.push(ACCOUNT_SECURITY_NOTICE);
+    if (id === "signin" || id === "selected" || id === "direct-enrolled") details.push(ACCOUNT_SECURITY_NOTICE);
     const panelContent = customPanelHtml || (details.length
       ? emailPanel(details.map(item => `<p style="margin:4px 0;font-size:14px;line-height:22px;overflow-wrap:break-word;word-wrap:break-word;">${escapeHtml(item)}</p>`).join(""))
       : "");
