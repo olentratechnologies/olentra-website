@@ -1,5 +1,7 @@
 "use client";
 
+import ProjectPlan from "../ProjectPlan";
+
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -304,6 +306,7 @@ export function PortalProjectDetail({ projectId }) {
                 <p className={styles.projectDescription}>
                   {project.description}
                 </p>
+                <ProjectPlan project={project} />
                 <Skills values={project.skills || []} />
                 <div className={styles.projectFacts}>
                   <div>

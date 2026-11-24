@@ -457,8 +457,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
     websocket: {
       idleTimeout: 30,
       sendPings: true,
-      maxPayloadLength: 65536,
-      backpressureLimit: 262144,
+      maxPayloadLength: 768 * 1024,
+      backpressureLimit: 1024 * 1024,
       closeOnBackpressureLimit: true,
       open(socket) {
         if (socket.data.kind === "presence") {
@@ -470,6 +470,8 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         socket.send(JSON.stringify(readyMessage()));
       },
       async message(socket, frame) {
+        const largeFrame = Buffer.byteLength(frame) > 65536;
+        if (largeFrame && (socket.data.kind === "presence" || !socket.data.token)) { socket.close(1009, "Message too large"); return; }
         if (socket.data.kind === "presence") {
           presenceHandlers.message(socket as ServerWebSocket<PresenceSocketData>, frame);
           return;
@@ -478,6 +480,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         const request = parseInternRpcFrame(frame);
         if (!request || request.type !== "request" || typeof request.id !== "string" || typeof request.method !== "string") return;
         try {
+          if (largeFrame && !["project.plan.save", "project.create"].includes(request.method)) throw new DomainError("INVALID_REQUEST", "Message too large.");
           let result: unknown;
           if (request.method === "files.subscribe") {
             if (!runtime.directUploads) throw new DomainError("NOT_FOUND", "Uploads unavailable.");

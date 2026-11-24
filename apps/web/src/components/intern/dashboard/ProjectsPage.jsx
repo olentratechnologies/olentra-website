@@ -1,5 +1,7 @@
 "use client";
 
+import ProjectPlan from "../ProjectPlan";
+
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import {
   ArrowRight,
@@ -496,6 +498,7 @@ export function ProjectsPage() {
                 <p className={styles.projectDescription}>
                   {project.description}
                 </p>
+                <ProjectPlan project={project} canEdit={canManage} />
                 <div className={styles.projectMeta}>
                   <TrackBadge
                     programId="software-engineer"
@@ -647,6 +650,12 @@ export function ProjectsPage() {
                 minLength={12}
               />
             </label>
+            <label className={`${common.field} ${common.fullWidth}`}>Project plan (Markdown, optional)
+              <textarea rows={6} maxLength={100000} value={form.plan || ""} onChange={event => setForm({ ...form, plan: event.target.value })} />
+            </label>
+            <label className={`${common.field} ${common.fullWidth}`}>
+              <span><input type="checkbox" checked={form.planVisibleToInterns !== false} onChange={event => setForm({ ...form, planVisibleToInterns: event.target.checked })} /> Plan visible to interns</span>
+            </label>
             <label className={common.field}>
               Internship program
               <select
@@ -716,6 +725,7 @@ export function ProjectsPage() {
       >
         {selectedProject && detail && (
           <>
+            <ProjectPlan project={selectedProject} canEdit={canManage} />
             <form onSubmit={saveProject}>
               <div className={styles.detailOverview}>
                 <TrackBadge

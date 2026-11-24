@@ -1,5 +1,7 @@
 "use client";
 
+import ProjectPlan from "../ProjectPlan";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -805,6 +807,7 @@ export default function ApplicantDetailPage({ applicationId }) {
                     <StatusBadge status={project.status} />
                   </div>
                   <p>{project.description}</p>
+                  <ProjectPlan project={project} canEdit={canManageProjects} />
                   <div className={styles.projectProgressLabel}>
                     <span>Project progress</span>
                     <strong>{project.progress}%</strong>

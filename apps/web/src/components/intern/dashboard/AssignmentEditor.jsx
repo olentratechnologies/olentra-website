@@ -65,11 +65,14 @@ export default function AssignmentEditor({ editor, application, onClose }) {
           event.preventDefault();
           const values = Object.fromEntries(new FormData(event.currentTarget));
           if (values.status === "Completed") values.progress = 100;
+          if (creating) values.planVisibleToInterns = values.planVisibleToInterns === "on";
           void save(values);
         }}>
           <label className={styles.field}>Project name<input name="name" defaultValue={record?.name} required maxLength={200} /></label>
           <label className={styles.field}>Due date<input name="dueOn" type="date" defaultValue={record?.dueOn} required /></label>
           <label className={`${styles.field} ${styles.fullWidth}`}>Description<textarea name="description" defaultValue={record?.description} required maxLength={5000} /></label>
+          {creating && <label className={`${styles.field} ${styles.fullWidth}`}>Project plan (Markdown, optional)<textarea name="plan" rows={6} maxLength={100000} /></label>}
+          {creating && <label className={`${styles.field} ${styles.fullWidth}`}><span><input type="checkbox" name="planVisibleToInterns" defaultChecked /> Plan visible to interns</span></label>}
           {!creating && <>
             <label className={styles.field}>Status<select name="status" defaultValue={record.status}>
               {["Planning", "In progress", "In review", "Completed"].map(status => <option key={status}>{status}</option>)}

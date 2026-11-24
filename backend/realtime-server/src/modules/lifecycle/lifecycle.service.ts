@@ -34,12 +34,18 @@ function reminderSchedule(days: unknown, assignedOn: string) {
   return { reminderAfterDays: days, reminderDueAt: days === null ? null : new Date(Date.parse(assignedOn) + days * 86_400_000).toISOString(), reminderVersion: randomUUID() };
 }
 
+function projectMarkdown(value: unknown) {
+  if (typeof value !== "string" || value.length > 100_000) throw new DomainError("INVALID_REQUEST", "Project plans can contain up to 100,000 characters.");
+  return value.trim() ? value : "";
+}
+
 export function createLifecycle({ collection, transact, outbox, onResumeChanged }: { collection: (name: string) => Collection<Row>; transact: Tx; outbox: Pick<Outbox, "enqueue" | "enqueueMany">; onResumeChanged?: (applicationId: string, fileId: string, session: ClientSession) => Promise<void> }) {
   const applications = collection("applications"), accounts = collection("accounts"), programs = collection("programs"), settings = collection("settings"), files = collection("files");
   const audit = collection("staff_audit");
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
+  const plans = collection("project_plans");
   const schedules = createOfferSchedules(collection);
-  const names = new Set(["offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.remind", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.remind", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.plan.get", "project.plan.save", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       schedules.initialize(),
@@ -77,6 +83,16 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
     return ids;
   }
   async function execute(method: string, p: Record<string, any>, actor: Principal | null, key: string) {
+    if (method === "project.plan.get") {
+      if (!actor || (actor.role === "company" ? !can(actor, "projects.read") : actor.role !== "intern" || !actor.applicationId)) throw new DomainError("FORBIDDEN", "Project access is required.");
+      const [project] = await projects.aggregate([
+        { $match: { _id: required(p.projectId, "project"), ...(actor.role === "intern" ? { team: actor.applicationId, planHidden: { $ne: true } } : {}) } },
+        { $lookup: { from: plans.collectionName, localField: "_id", foreignField: "_id", as: "plan" } },
+        { $project: { planHidden: 1, plan: { $arrayElemAt: ["$plan", 0] } } },
+      ]).toArray();
+      if (!project) throw new DomainError("NOT_FOUND", "Project unavailable.");
+      return { markdown: project.plan?.markdown ?? "", revision: project.plan?.revision ?? 0, ...(actor.role === "intern" ? {} : { visibleToInterns: project.planHidden !== true }) };
+    }
     if (["offer.preview", "offer.versions"].includes(method)) return schedules.execute(method, p, actor);
     return transact(key, actor, { method, params: p }, async session => {
       const result = await (async () => {
@@ -225,7 +241,26 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         if (input.dueOn && !validDate(input.dueOn)) throw new DomainError("INVALID_REQUEST", "Choose a valid due date.");
         if (!await programs.findOne({ name: text(input.program) }, opts)) throw new DomainError("INVALID_REQUEST", "Choose a valid internship track.");
         const project: Row = { _id: newId("PRJ"), name, description, team, dueOn: input.dueOn || day(), createdOn: day(), art: "planet", progress: 0, status: "In progress", program: text(input.program) };
-        await projects.insertOne(project, opts); return plain(project);
+        const markdown = projectMarkdown(input.plan ?? "");
+        project.hasPlan = Boolean(markdown);
+        if (input.planVisibleToInterns === false) project.planHidden = true;
+        await projects.insertOne(project, opts);
+        if (markdown) await plans.insertOne({ _id: project._id, markdown, revision: 1 }, opts);
+        return plain(project);
+      }
+      if (method === "project.plan.save") {
+        staff(actor);
+        const projectId = required(p.projectId, "project"), markdown = projectMarkdown(p.markdown);
+        const project = await projects.findOne({ _id: projectId }, opts);
+        if (!project) throw new DomainError("NOT_FOUND", "Project unavailable.");
+        const current = await plans.findOne({ _id: projectId }, opts);
+        if (p.revision !== (current?.revision ?? 0)) throw new DomainError("CONFLICT", "Another manager changed the plan. Copy your edits and reopen the latest version.");
+        if (p.visibleToInterns !== undefined && typeof p.visibleToInterns !== "boolean") throw new DomainError("INVALID_REQUEST", "Choose whether interns can see the plan.");
+        const revision = p.revision + 1;
+        const visibility = p.visibleToInterns === undefined ? {} : { planHidden: !p.visibleToInterns };
+        await projects.updateOne({ _id: projectId }, { $set: { hasPlan: Boolean(markdown), ...visibility } }, opts);
+        await plans.updateOne({ _id: projectId }, { $set: { markdown, revision } }, { ...opts, upsert: true });
+        return { id: projectId, revision, affectedApplications: project.team || [] };
       }
       if (method === "project.assign") {
         staff(actor);
@@ -257,6 +292,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         // Lock the project before removing work so concurrent task writes conflict.
         const project = await projects.findOneAndDelete({ _id: projectId }, opts);
         if (!project) throw new DomainError("NOT_FOUND", "Project not found.");
+        await plans.deleteOne({ _id: projectId }, opts);
         const projectTasks = await tasks.find({ projectId }, opts).project({ _id: 1, applicationId: 1 }).toArray();
         await submissions.deleteMany({ taskId: { $in: projectTasks.map(task => task._id) } }, opts);
         await tasks.deleteMany({ projectId }, opts);
@@ -489,7 +525,12 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
     const cap = <T,>(name: string, rows: T[], max: number) => { if (rows.length > max) { truncated[name] = true; return rows.slice(0, max); } return rows; };
     const i = cap("interns", i0, 500), o = cap("offers", o0, 500), on = cap("onboarding", on0, 500), p = cap("projects", p0, 500);
     const t = cap("tasks", t0, 1000), s = cap("submissions", s0, 1000), c = cap("certificates", c0, 500), iv = cap("interviews", iv0, 1000);
-    const projectRows: any[] = p.map(row => intern ? { ...plain(row), memberCount: (row.team || []).length, team: [actor.applicationId] } : plain(row));
+    // A plan hidden from interns is not even announced to them.
+    const projectRows: any[] = p.map(row => {
+      if (!intern) return plain(row);
+      const { planHidden, ...visible } = plain(row) as any;
+      return { ...visible, hasPlan: Boolean(visible.hasPlan) && planHidden !== true, memberCount: (row.team || []).length, team: [actor.applicationId] };
+    });
     const projectIdsByApplication = new Map<string, string[]>();
     for (const project of projectRows) for (const applicationId of new Set<string>(project.team || [])) {
       const ids = projectIdsByApplication.get(applicationId) || []; ids.push(project.id); projectIdsByApplication.set(applicationId, ids);
