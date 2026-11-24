@@ -77,6 +77,8 @@ function applicationMetric(data, id, label, value, tone, icon) {
   return { ...source, id, label, value, tone, icon };
 }
 
+const EMPTY_AI_FILTERS = { aiReviewStatus: "", aiScoreMin: "", aiScoreMax: "", aiReviewedFrom: "", aiReviewedTo: "", aiResume: "" };
+
 const VIDEOS_FIRST_KEY = "olentra_applications_videos_first_v1";
 const LAYOUT_KEY = "olentra_applications_layout_v1";
 
@@ -141,6 +143,10 @@ export default function ApplicationsPage() {
   // Team bookmarks: show only the candidates someone starred.
   const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
   // AI resume review: one recommendation, "pending" (still reviewing) or "all".
+  const [aiFilters, setAiFilters] = useState(EMPTY_AI_FILTERS);
+  function changeAiFilter(key, value) {
+    setAiFilters(previous => ({ ...previous, [key]: value }));
+  }
   const [aiRecommendation, setAiRecommendation] = useState("all");
   // "Videos first" is a per-reviewer preference, remembered in this browser only.
   const [videosFirst, setVideosFirst] = useState(false);
@@ -170,15 +176,18 @@ export default function ApplicationsPage() {
     const view = savedViews.find((item) => item.id === viewId);
     if (!view) return;
     const f = view.filters || {};
+    const restored = Object.fromEntries(Object.keys(EMPTY_AI_FILTERS).map(key => [key, f[key] || ""]));
+    if (f.aiRecommendation === "pending") restored.aiReviewStatus = "pending";
+    setAiFilters(restored);
     setSearch(f.search || ""); setStatus(f.status || "all"); setTrack(f.programId || "all"); setBatch(f.batch || "all"); setVideo(f.video || "all");
-    setSkill(f.skill || "all"); setDateFrom(f.dateFrom || ""); setDateTo(f.dateTo || ""); setAssignee(f.assignee || "all"); setBookmarkedOnly(f.bookmarked === "true"); setAiRecommendation(f.aiRecommendation || "all");
+    setSkill(f.skill || "all"); setDateFrom(f.dateFrom || ""); setDateTo(f.dateTo || ""); setAssignee(f.assignee || "all"); setBookmarkedOnly(f.bookmarked === "true"); setAiRecommendation(f.aiRecommendation === "pending" ? "all" : f.aiRecommendation || "all");
     if (f.sortKey) setSort({ key: f.sortKey, direction: f.sortDirection === "asc" ? "asc" : "desc" });
     setPage(1);
   }
   async function saveView() {
     const name = window.prompt("Name this view", savedViews.find((item) => item.id === activeView)?.name || "")?.trim();
     if (!name) return;
-    const result = await commands.saveView(name, { search, status, programId: track, batch, video, skill, dateFrom, dateTo, assignee, bookmarked: bookmarkedOnly, aiRecommendation, sortKey: sort.key, sortDirection: sort.direction });
+    const result = await commands.saveView(name, { search, status, programId: track, batch, video, skill, dateFrom, dateTo, assignee, bookmarked: bookmarkedOnly, aiRecommendation, ...aiFilters, sortKey: sort.key, sortDirection: sort.direction });
     if (!result.ok) { notify(typeof result.error === "string" ? result.error : result.error?.message || "Could not save the view."); return; }
     notify(`Saved “${name}”.`);
     setActiveView(result.data.id);
@@ -230,21 +239,22 @@ export default function ApplicationsPage() {
     Number(bookmarkedOnly) +
     Number(skill !== "all") +
     Number(aiRecommendation !== "all") +
+    Object.values(aiFilters).filter(Boolean).length +
     Number(Boolean(dateFrom)) +
     Number(Boolean(dateTo));
   const invalidDateRange = Boolean(dateFrom && dateTo && dateFrom > dateTo);
 
   useEffect(() => {
     setPage(1);
-  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, bookmarkedOnly, aiRecommendation]);
+  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, bookmarkedOnly, aiRecommendation, aiFilters]);
   // Selection is scoped to the rows on screen; any change of view clears it.
   useEffect(() => {
     setSelected(new Set());
-  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, page, sort.key, sort.direction, videosFirst, bookmarkedOnly, aiRecommendation]);
+  }, [query, search, track, status, batch, video, skill, dateFrom, dateTo, pageSize, page, sort.key, sort.direction, videosFirst, bookmarkedOnly, aiRecommendation, aiFilters]);
 
   const debouncedSearch = useInternSearch(search);
   const debouncedQuery = useInternSearch(query);
-  const queryParams = { search: debouncedSearch, query: debouncedQuery, status, programId: track, batch, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }), ...(bookmarkedOnly ? { bookmarked: true } : {}), ...(aiRecommendation === "all" ? {} : { aiRecommendation }) };
+  const queryParams = { ...aiFilters, search: debouncedSearch, query: debouncedQuery, status, programId: track, batch, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }), ...(bookmarkedOnly ? { bookmarked: true } : {}), ...(aiRecommendation === "all" ? {} : { aiRecommendation }) };
   const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction, videosFirst }, { enabled: !invalidDateRange });
   // Tab-count summary must NOT include programId — otherwise switching tracks
   // causes the facet response to be scoped to a single program and the other
@@ -292,6 +302,7 @@ export default function ApplicationsPage() {
     setVideo("all");
     setAssignee("all");
     setBookmarkedOnly(false);
+    setAiFilters(EMPTY_AI_FILTERS);
     setAiRecommendation("all");
     setSkill("all");
     setDateFrom("");
@@ -680,9 +691,38 @@ export default function ApplicationsPage() {
                 {AI_RECOMMENDATIONS.map((value) => (
                   <option key={value} value={value}>{value}{summary?.counts?.aiRecommendations ? ` (${summary.counts.aiRecommendations[value] || 0})` : ""}</option>
                 ))}
-                <option value="pending">Still reviewing{summary?.counts?.aiPending != null ? ` (${summary.counts.aiPending})` : ""}</option>
               </select>
             </label>
+            <label>
+              AI review status
+              <select value={aiFilters.aiReviewStatus} onChange={event => changeAiFilter("aiReviewStatus", event.target.value)}>
+                <option value="">Any</option>
+                <option value="unreviewed">Not queued</option>
+                <option value="pending">Pending</option>
+                <option value="done">Completed with score</option>
+                <option value="manual">Needs manual review</option>
+              </select>
+            </label>
+            <label>
+              Résumé attachment
+              <select value={aiFilters.aiResume} onChange={event => changeAiFilter("aiResume", event.target.value)}>
+                <option value="">Any</option>
+                <option value="with">Attached</option>
+                <option value="without">Missing</option>
+              </select>
+            </label>
+            {[
+              ["aiScoreMin", "Minimum AI score", "number"],
+              ["aiScoreMax", "Maximum AI score", "number"],
+              ["aiReviewedFrom", "AI reviewed from (UTC)", "date"],
+              ["aiReviewedTo", "AI reviewed through (UTC)", "date"],
+            ].map(([key, label, type]) => (
+              <label key={key}>
+                {label}
+                <input type={type} {...(type === "number" ? { min: 0, max: 10, step: 0.1 } : {})}
+                  value={aiFilters[key]} onChange={event => changeAiFilter(key, event.target.value)} />
+              </label>
+            ))}
             <label>
               Intro video
               <select

@@ -314,6 +314,21 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       if (params.bookmarked === true || params.bookmarked === "true") filter.bookmarked = true;
       if (isRecommendation(params.aiRecommendation)) filter.aiRecommendation = params.aiRecommendation;
       else if (params.aiRecommendation === "pending") filter.aiReviewStatus = "pending";
+      if (params.aiReviewStatus === "unreviewed") filter.aiReviewStatus = null;
+      else if (["pending", "done", "manual"].includes(params.aiReviewStatus)) filter.aiReviewStatus = params.aiReviewStatus;
+      if (params.aiResume === "with") filter.resumeAttachmentId = { $type: "string", $ne: "" };
+      if (params.aiResume === "without") filter.resumeAttachmentId = { $in: [null, ""] };
+      for (const [key, operator] of [["aiScoreMin", "$gte"], ["aiScoreMax", "$lte"]]) {
+        const raw = params[key];
+        if (raw === "" || raw == null) continue;
+        const value = Number(raw);
+        if (!Number.isFinite(value) || value < 0 || value > 10) throw new DomainError("INVALID_REQUEST", "AI scores must be between 0 and 10.");
+        filter.aiScore = { ...filter.aiScore, [operator]: value };
+      }
+      if (filter.aiScore?.$gte > filter.aiScore?.$lte) throw new DomainError("INVALID_REQUEST", "Minimum AI score exceeds the maximum.");
+      const reviewedFrom = str(params.aiReviewedFrom), reviewedTo = str(params.aiReviewedTo);
+      if ([reviewedFrom, reviewedTo].some(day => day && !/^\d{4}-\d{2}-\d{2}$/.test(day)) || (reviewedFrom && reviewedTo && reviewedFrom > reviewedTo)) throw new DomainError("INVALID_REQUEST", "Choose a valid AI review date range.");
+      if (reviewedFrom || reviewedTo) filter.aiReviewedOn = { ...(reviewedFrom ? { $gte: reviewedFrom } : {}), ...(reviewedTo ? { $lte: reviewedTo + "T23:59:59.999Z" } : {}) };
       const queries = [str(params.search), str(params.query)].filter(Boolean);
       if (queries.length) filter.$and = queries.map(value => { const q = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").slice(0, 120); return { $or: ["name", "email", "college", "program", "status", "_id", "skills"].map(field => ({ [field]: { $regex: q, $options: "i" } })) }; });
       if (params.skill && params.skill !== "all") {
