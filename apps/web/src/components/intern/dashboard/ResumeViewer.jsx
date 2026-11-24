@@ -41,11 +41,32 @@ export default function ResumeViewer({ application, open, onOpenChange }) {
       const resume = described.data?.resume;
       if (!resume) { setState({ phase: "missing" }); return; }
       if (resume.status !== "ready") { setState({ phase: resume.status, resume }); return; }
-      if (!resume.previewable) { setState({ phase: "download-only", resume }); return; }
+      const isDocx = resume.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || /\.docx$/i.test(resume.name);
+      if (!isDocx && !resume.previewable) { setState({ phase: "download-only", resume }); return; }
       try {
         const file = await fetchAttachment(resume.id, { signal: abort.signal });
         if (abort.signal.aborted) return;
         fileRef.current = file;
+        if (isDocx) {
+          try {
+            const [{ default: mammoth }, { default: DOMPurify }, arrayBuffer] = await Promise.all([
+              import("mammoth/mammoth.browser"), import("dompurify"), file.blob.arrayBuffer(),
+            ]);
+            if (abort.signal.aborted) return;
+            const { value } = await mammoth.convertToHtml({ arrayBuffer });
+            if (abort.signal.aborted) return;
+            const body = DOMPurify.sanitize(value, {
+              ALLOWED_TAGS: ["p", "br", "h1", "h2", "h3", "h4", "h5", "h6", "strong", "em", "s", "u", "sup", "sub", "ul", "ol", "li", "table", "tr", "td", "th", "thead", "tbody", "img"],
+              ALLOWED_ATTR: ["src", "alt", "colspan", "rowspan"],
+            });
+            const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
+              <style>body{max-width:48rem;margin:auto;padding:1.5rem;font:16px/1.5 system-ui;color:#222;background:white;overflow-wrap:anywhere}img,table{max-width:100%}td,th{vertical-align:top;padding:.25rem}</style>${body}`;
+            setState({ phase: "word-preview", resume, html });
+          } catch {
+            if (!abort.signal.aborted) setState({ phase: "download-only", resume });
+          }
+          return;
+        }
         url = URL.createObjectURL(new Blob([file.blob], { type: "application/pdf" }));
         setState({ phase: "preview", resume, url });
       } catch (error) {
@@ -93,7 +114,7 @@ export default function ResumeViewer({ application, open, onOpenChange }) {
               Open in new tab
             </Button>
           )}
-          {["preview", "download-only", "error"].includes(state.phase) && (
+          {["preview", "word-preview", "download-only", "error"].includes(state.phase) && (
             <Button variant="secondary" onClick={download} disabled={busy}>
               <ArrowDownToLine size={15} />
               {busy ? "Downloading…" : "Download"}
@@ -104,7 +125,8 @@ export default function ResumeViewer({ application, open, onOpenChange }) {
       <div className={styles.resumeStage} aria-live="polite">
         {state.phase === "loading" && <LoadingIndicator label="Loading resume" />}
         {state.phase === "preview" && <iframe className={styles.resumeFrame} src={state.url} title={`${application.name}’s resume`} />}
-        {state.phase === "download-only" && <p>Word documents can’t be previewed in the browser. Download the file to open it.</p>}
+        {state.phase === "word-preview" && <iframe sandbox="" className={styles.resumeFrame} srcDoc={state.html} title={`${application.name}’s resume`} />}
+        {state.phase === "download-only" && <p>A preview is unavailable for this file. Download it to open the original.</p>}
         {state.phase === "processing" && <p>This resume is still being checked for safety. Try again in a minute.</p>}
         {state.phase === "rejected" && <p>This resume failed the safety check and can’t be opened. Ask the applicant to upload it again.</p>}
         {state.phase === "missing" && <p>No resume is on file for this application.</p>}
