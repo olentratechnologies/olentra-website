@@ -82,6 +82,7 @@ backend/
 /intern/portal/profile           Candidate profile
 /intern/portal/projects          Assigned projects
 /intern/portal/projects/[projectId]  Project detail & task list
+/intern/portal/github/callback   Return page after "Connect GitHub" sign-in
 /intern/portal/submissions       Work submission history
 /intern/portal/certificates      Earned certificates
 
@@ -91,6 +92,7 @@ backend/
 /intern/dashboard/applications/[applicationId]  Application detail & review
 /intern/dashboard/interns        Active intern management
 /intern/dashboard/projects       Project & task management
+/intern/dashboard/projects/[projectId]  Project page: overview, resources, team, tasks
 /intern/dashboard/certificates   Certificate issuance
 /intern/dashboard/settings       Program configuration, track settings
 /intern/dashboard/staff          Staff accounts & RBAC roles
