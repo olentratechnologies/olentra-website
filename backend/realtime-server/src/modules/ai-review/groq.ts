@@ -100,7 +100,9 @@ export function createGroq({ apiKey, reviewModel = DEFAULT_REVIEW_MODEL, fallbac
         soonest = Math.min(soonest, lifts);
       }
     }
-    throw new TransientAiError("Every review model is rate-limited by Groq.", Math.max(1_000, soonest - now()), true);
+    // Rounded up to whole seconds, the unit of Groq's retry-after: the clock moves on while models are
+    // tried, so a raw difference can be a few milliseconds short and would retry just before the limit lifts.
+    throw new TransientAiError("Every review model is rate-limited by Groq.", Math.max(1_000, Math.ceil((soonest - now()) / 1000) * 1000), true);
   }
 
   async function reviewWith(model: string, messages: ChatMessage[], schema: Record<string, unknown>) {

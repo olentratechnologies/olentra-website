@@ -167,6 +167,14 @@ describe("Groq client", () => {
     expect(await createGroq({ apiKey: "k", fetchImpl: (async () => { throw new TypeError("fetch failed"); }) as any }).review([], REVIEW_SCHEMA).catch(e => e)).toBeInstanceOf(TransientAiError);
   });
 
+  test("the wait after a rate limit is whole seconds, even when the clock moves on meanwhile", async () => {
+    let clock = 1_000_000;
+    const groq = createGroq({ apiKey: "k", reviewModel: "a", fallbackModels: ["b"], now: () => (clock += 7), fetchImpl: reply({}, 429, { "retry-after": "15" }) as any });
+    const error = await groq.review([], REVIEW_SCHEMA).catch(e => e);
+    expect(error).toBeInstanceOf(TransientAiError);
+    expect(error.retryAfterMs).toBe(15_000);
+  });
+
   test("sends the key, model and strict schema, and parses the JSON reply", async () => {
     let sent: any;
     const groq = createGroq({ apiKey: "secret", reviewModel: "review-model", fetchImpl: (async (_url: string, init: RequestInit) => { sent = { headers: init.headers, body: JSON.parse(String(init.body)) }; return new Response(JSON.stringify({ model: "review-model", choices: [{ message: { content: "{\"ok\":true}" } }] })); }) as any });
