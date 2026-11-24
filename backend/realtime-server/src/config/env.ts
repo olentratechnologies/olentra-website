@@ -104,3 +104,24 @@ export function internshipMongoUri(): string | undefined {
 export function internshipTestMongoUri(): string | undefined {
   return internshipEnv("INTERNSHIP_TEST_MONGODB_URI", "INTERN_TEST_MONGODB_URI");
 }
+
+/**
+ * Background jobs (sending queued emails, reminders, clean-up, GitHub invites, AI review) run only on
+ * production servers unless REALTIME_BACKGROUND_JOBS says otherwise. A developer machine connected to
+ * the shared database would otherwise compete for the email queue and send links to its own origin,
+ * such as http://localhost:3000.
+ */
+export function backgroundJobsEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  const setting = (env.REALTIME_BACKGROUND_JOBS || "").trim().toLowerCase();
+  if (/^(1|true|yes|on)$/.test(setting)) return true;
+  if (/^(0|false|no|off)$/.test(setting)) return false;
+  return env.NODE_ENV === "production";
+}
+
+/** A production server must never put localhost links into emails. */
+export function siteOriginProblem(siteOrigin: string, env: NodeJS.ProcessEnv = process.env): string | null {
+  if (env.NODE_ENV !== "production") return null;
+  let host = "";
+  try { host = new URL(siteOrigin).hostname; } catch { return `INTERNSHIP_SITE_ORIGIN is not a valid URL: ${siteOrigin}`; }
+  return /^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(host) ? `INTERNSHIP_SITE_ORIGIN points to ${siteOrigin}; emails would contain links that only work on this machine.` : null;
+}

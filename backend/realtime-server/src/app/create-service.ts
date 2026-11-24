@@ -2,7 +2,7 @@ import { APPLICATIONS_PATH, createApplicationRoutes } from "../interfaces/http/a
 import type { Server, ServerWebSocket } from "bun";
 import { DomainError } from "../shared/errors";
 import type { createInternshipDomain } from "./command-dispatcher";
-import { internshipEnv } from "../config/env";
+import { backgroundJobsEnabled, internshipEnv, siteOriginProblem } from "../config/env";
 import { createInternshipMailer } from "../infrastructure/email/mailer";
 import { can, isAdmin } from "../modules/access/policy";
 import { logger } from "../infrastructure/observability/logger";
@@ -15,7 +15,7 @@ import { createCorsHeaders, errorResult, sendJson as sendJsonResponse, statusFor
 import { CORS_HEADERS, CORS_METHODS, createOriginGuard, requestId } from "../interfaces/http/middleware";
 import { createAuthRoutes, AUTH_PATHS } from "../interfaces/http/auth.routes";
 import { clientAddress, mongoAttemptStore } from "../modules/auth/login-throttle";
-import { PermanentOutboxError, runLeasedJob } from "../modules/outbox/outbox";
+import { PermanentOutboxError, runLeasedJob as runLeasedJobAlways } from "../modules/outbox/outbox";
 import { SITE_FEATURES_PATH, canControlWebsite, createSiteFeatureStore } from "../modules/site-features/site-features";
 import { createSigninEmailTemplateSettings } from "../modules/email-templates/signin-template-settings";
 import { bearerToken } from "../interfaces/http/middleware";
@@ -330,6 +330,12 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
 
     const workspaceOrigin = (process.env.INTERNSHIP_WORKSPACE_ORIGIN || "http://localhost:3002").replace(/\/$/, "");
     const jobLeases = domain.collection("job_leases") as any;
+    const originProblem = siteOriginProblem(siteOrigin);
+    if (originProblem) logger.error(originProblem);
+    // Development machines can share the production database; they must not run its background work.
+    const runJobs = backgroundJobsEnabled();
+    if (!runJobs) logger.warn("Background jobs are off on this machine (not production). Queued emails, reminders and GitHub invites are handled by the production server. Set REALTIME_BACKGROUND_JOBS=on to run them here.");
+    const runLeasedJob: typeof runLeasedJobAlways = (...args) => runJobs ? runLeasedJobAlways(...args) : () => {};
     const stopDirectWorker = directUploads ? runLeasedJob(jobLeases, "oci-upload-worker", 2000, () => directUploads.process(), error => logger.error("Upload worker failed", { error })) : () => {};
     const stopDirectCleanup = directUploads ? runLeasedJob(jobLeases, "oci-upload-cleanup", 60_000, () => directUploads.cleanup(), error => logger.error("Upload cleanup failed", { error })) : () => {};
     const stopUploadCleanup = runLeasedJob(jobLeases, "orphaned-upload-cleanup", 60 * 60_000, () => removeOrphanedUploads(files as any, bucket), error => logger.error("Orphaned upload cleanup failed", { error }));
