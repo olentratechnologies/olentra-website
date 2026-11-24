@@ -88,7 +88,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
   const plans = collection("project_plans");
   const schedules = createOfferSchedules(collection);
-  const names = new Set(["project.link.save", "project.link.delete", "project.link.access", "offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.remind", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.plan.get", "project.plan.save", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["task.createMany", "project.link.save", "project.link.delete", "project.link.access", "offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.remind", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.plan.get", "project.plan.save", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       schedules.initialize(),
@@ -408,6 +408,32 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
         await outbox.enqueue("taskAssigned", { taskId: task._id, applicationId }, session);
         return plain(task);
       }
+      if (method === "task.createMany") {
+        // One task per intern, created together and grouped by teamTaskId; each intern still submits and is reviewed on their own.
+        staff(actor);
+        const projectId = required(p.projectId, "project");
+        if (!Array.isArray(p.applicationIds) || !p.applicationIds.length || p.applicationIds.length > 100 || p.applicationIds.some((value: unknown) => typeof value !== "string" || !/^[\w-]{1,80}$/.test(value))) throw new DomainError("INVALID_REQUEST", "Choose the interns for this task.");
+        const applicationIds = [...new Set(p.applicationIds as string[])];
+        const project = await projects.findOne({ _id: projectId }, opts);
+        if (!project) throw new DomainError("NOT_FOUND", "This project no longer exists.");
+        if (applicationIds.some(id => !(project.team || []).includes(id))) throw new DomainError("CONFLICT", "Every chosen intern must be on this project team.");
+        let teamId: string | null = null;
+        if (p.teamId !== undefined && p.teamId !== null) {
+          const team = await collection("teams").findOne({ _id: required(p.teamId, "team"), status: "Active" }, opts);
+          if (!team || applicationIds.some(id => !(team.members || []).includes(id))) throw new DomainError("CONFLICT", "Every chosen intern must be in this team.");
+          teamId = team._id;
+        }
+        const title = required(p.title, "task title", 200), description = required(p.description, "task description", 5000);
+        if (!validDate(p.dueOn)) throw new DomainError("INVALID_REQUEST", "Choose a valid task due date.");
+        const links = validateTaskLinks(p.links) ?? [], schedule = reminderSchedule(p.reminderAfterDays === undefined ? 1 : p.reminderAfterDays, now);
+        for (const applicationId of applicationIds) await touch(await active(applicationId, session), session);
+        await projects.updateOne({ _id: projectId }, { $inc: { revision: 1 } }, opts);
+        const teamTaskId = newId("TEAMTASK");
+        const created: Row[] = applicationIds.map(applicationId => ({ _id: newId("TASK"), projectId, applicationId, title, description, dueOn: p.dueOn, required: !!p.required, links, status: "Todo", createdOn: now, submissionVersion: 0, teamTaskId, ...(teamId ? { teamId } : {}), ...schedule }));
+        await tasks.insertMany(created, opts);
+        await outbox.enqueueMany(created.map(task => ({ type: "taskAssigned" as const, payload: { taskId: task._id, applicationId: String(task.applicationId) } })), session);
+        return created.map(plain);
+      }
       if (method === "task.remind") {
         staff(actor);
         const task = await tasks.findOne({ _id: required(p.taskId, "task") }, opts);
@@ -570,7 +596,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
       const rows = Array.isArray(result) ? result : [result];
       const applicationIds = [...new Set(rows.flatMap((row: any) => [row.applicationId, ...(row.team || []), ...(row.affectedApplications || [])]).filter(Boolean))];
       if (actor?.applicationId && !applicationIds.includes(actor.applicationId)) applicationIds.push(actor.applicationId);
-      const labels: Record<string, string> = { "offer.revise": "Internship schedule revision awaiting your decision", "offer.revision.accept": "Schedule revision accepted", "offer.revision.decline": "Schedule revision declined", "offer.revision.withdraw": "Schedule revision withdrawn", "offer.enrollDirect": "Welcome! Your internship is confirmed", "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "intern.assignMentor": "Your mentor was updated", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.link.access": "Repository access granted", "project.create": "You joined a project", "project.assign": "You joined a project", "project.update": "Your project was updated", "project.delete": "Your project was deleted", "task.create": "A new task is ready", "task.update": "Your task was updated", "task.delete": "Your task was deleted", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
+      const labels: Record<string, string> = { "offer.revise": "Internship schedule revision awaiting your decision", "offer.revision.accept": "Schedule revision accepted", "offer.revision.decline": "Schedule revision declined", "offer.revision.withdraw": "Schedule revision withdrawn", "offer.enrollDirect": "Welcome! Your internship is confirmed", "offer.send": "Your internship offer is ready", "application.withdraw": "Application withdrawn", "interview.cancel": "Interview cancelled", "offer.extend": "Your offer deadline was extended", "onboarding.document": "Onboarding document uploaded", "intern.assignMentor": "Your mentor was updated", "onboarding.reviewDocument": "Onboarding document reviewed", "offer.accept": "Internship offer accepted", "offer.decline": "Internship offer declined", "onboarding.submit": "Onboarding ready for approval", "onboarding.approve": "Your onboarding was approved", "project.link.access": "Repository access granted", "project.create": "You joined a project", "project.assign": "You joined a project", "project.update": "Your project was updated", "project.delete": "Your project was deleted", "task.create": "A new task is ready", "task.createMany": "A new task is ready", "task.update": "Your task was updated", "task.delete": "Your task was deleted", "submission.create": "Work ready to review", "submission.review": "Your work was reviewed", "intern.update": "Internship status updated", "certificate.generate": "Your certificate is ready", "interview.schedule": "Interview scheduled" };
       const interviewScheduledAt = method === "interview.schedule" && !Array.isArray(result) && "scheduledAt" in result ? text(result.scheduledAt) : "";
       const label = method === "project.link.access" && (result as any)?.status !== "granted" ? undefined : labels[method];
       if (label && actor) {

@@ -45,6 +45,7 @@ export function createTeams({ collection, transact }: { collection: (name: strin
   const teams = collection("teams"), memberships = collection("team_memberships"), interns = collection("interns");
   const applications = collection("applications"), projects = collection("projects"), tasks = collection("tasks");
   const settings = collection("settings"), events = collection("events"), audit = collection("staff_audit");
+  const notifications = collection("notifications"), accounts = collection("accounts");
 
   async function initialize() {
     await Promise.all([
@@ -161,6 +162,34 @@ export function createTeams({ collection, transact }: { collection: (name: strin
     await events.insertOne({ _id: id("EVT"), type, applicationIds: [...new Set(applicationIds)], createdAt: new Date() }, { session });
   }
 
+  /** In-app notices to interns about their team. */
+  async function tell(applicationIds: string[], title: string, body: string, href: string, session: ClientSession) {
+    const ids = [...new Set(applicationIds)];
+    if (!ids.length) return;
+    const createdOn = new Date().toISOString();
+    await notifications.insertMany(ids.map(applicationId => ({ _id: id("NTF"), recipientRole: "intern", applicationId, title, body, href, createdOn })), { session });
+  }
+
+  /** A team's mentor becomes every member's mentor, through the same fields as assigning one intern. */
+  async function applyMentor(team: Row, members: string[], session: ClientSession) {
+    if (!team.mentorId || !members.length) return;
+    await interns.updateMany({ applicationId: { $in: members } }, { $set: { mentorId: team.mentorId, mentorName: team.mentorName || "" }, $inc: { revision: 1 } }, { session });
+  }
+
+  /** Approved and total tasks per team, counting team members' tasks on the team's projects. */
+  async function progressFor(rows: Row[]) {
+    const memberIds = [...new Set(rows.flatMap(row => row.members || []))], projectIds = [...new Set(rows.flatMap(row => row.projectIds || []))];
+    const result = new Map<string, { approved: number; total: number }>();
+    if (!memberIds.length || !projectIds.length) return result;
+    const all = await tasks.find({ projectId: { $in: projectIds }, applicationId: { $in: memberIds } }, { projection: { projectId: 1, applicationId: 1, status: 1 } }).limit(20000).toArray();
+    for (const row of rows) {
+      const members = new Set(row.members || []), projectSet = new Set(row.projectIds || []);
+      const mine = all.filter(task => members.has(task.applicationId) && projectSet.has(task.projectId));
+      result.set(row._id, { approved: mine.filter(task => task.status === "Approved").length, total: mine.length });
+    }
+    return result;
+  }
+
   /** Active interns who aren't in any active team. */
   async function unassigned(filters: { batch?: string; program?: string; search?: string }) {
     const rows = await interns.find({ status: "Active", ...(filters.batch ? { batch: filters.batch } : {}) }, { projection: { applicationId: 1, batch: 1 } }).limit(5000).toArray();
@@ -180,14 +209,16 @@ export function createTeams({ collection, transact }: { collection: (name: strin
   async function summaries(rows: Row[]) {
     const memberIds = [...new Set(rows.flatMap(row => row.members || []))];
     const projectIds = [...new Set(rows.flatMap(row => row.projectIds || []))];
-    const [names, projectRows] = await Promise.all([
+    const [names, projectRows, progress] = await Promise.all([
       people(memberIds),
       projectIds.length ? projects.find({ _id: { $in: projectIds } }, { projection: { name: 1, status: 1 } }).toArray() : Promise.resolve([]),
+      progressFor(rows),
     ]);
     const projectNames = new Map(projectRows.map(row => [row._id, { id: row._id, name: row.name, status: row.status }]));
     return rows.map(row => ({
       id: row._id, name: row.name, batch: row.batch || "", program: row.program || "", status: row.status, leadId: row.leadId || null,
       memberCount: (row.members || []).length, createdOn: row.createdOn, archivedOn: row.archivedOn || null,
+      mentorId: row.mentorId || null, mentorName: row.mentorName || null, progress: progress.get(row._id) || { approved: 0, total: 0 },
       members: (row.members || []).map((memberId: string) => { const person = names.get(memberId); return { id: memberId, name: person?.name || "Intern", initials: person?.initials, avatarColor: person?.avatarColor }; }),
       projects: (row.projectIds || []).map((projectId: string) => projectNames.get(projectId)).filter(Boolean),
     }));
@@ -202,6 +233,7 @@ export function createTeams({ collection, transact }: { collection: (name: strin
       if (text(p.batch) && p.batch !== "all") filter.batch = text(p.batch);
       if (text(p.program) && p.program !== "all") filter.program = text(p.program);
       if (p.noProject === true) filter["projectIds.0"] = { $exists: false };
+      if (text(p.projectId)) filter.projectIds = text(p.projectId);
       if (scope) filter.members = { $in: scope };
       const search = text(p.search);
       if (search) {
@@ -234,6 +266,48 @@ export function createTeams({ collection, transact }: { collection: (name: strin
         members: members.map(memberId => ({ ...(details.get(memberId) || { id: memberId, name: "Intern" }), internStatus: internBy.get(memberId)?.status || null, mentorName: internBy.get(memberId)?.mentorName || null, openTasks: openBy.get(memberId) || 0 })),
         projects: projectRows.map(row => ({ id: row._id, name: row.name, status: row.status, dueOn: row.dueOn, missing: members.filter(member => !(row.team || []).includes(member)) })),
       };
+    }
+    if (method === "team.tasks") {
+      const team = await teams.findOne({ _id: text(p.id) }, { projection: { members: 1 } });
+      if (!team || (scope && !(team.members || []).some((member: string) => scope.includes(member)))) throw new DomainError("NOT_FOUND", "This team no longer exists.");
+      const rows = await tasks.find({ teamId: team._id }, { projection: { title: 1, projectId: 1, applicationId: 1, status: 1, dueOn: 1, required: 1, createdOn: 1, teamTaskId: 1 } }).limit(5000).toArray();
+      const [names, projectRows] = await Promise.all([
+        people([...new Set(rows.map(row => String(row.applicationId)))], undefined, false),
+        projects.find({ _id: { $in: [...new Set(rows.map(row => String(row.projectId)))] } }, { projection: { name: 1 } }).toArray(),
+      ]);
+      const projectNames = new Map(projectRows.map(row => [row._id, row.name]));
+      const groups = new Map<string, any>();
+      for (const row of rows) {
+        const key = String(row.teamTaskId || row._id);
+        const group = groups.get(key) || { teamTaskId: key, title: row.title, projectId: row.projectId, projectName: projectNames.get(row.projectId) || "Project", dueOn: row.dueOn, required: !!row.required, createdOn: row.createdOn, members: [] };
+        group.members.push({ taskId: row._id, applicationId: row.applicationId, name: names.get(row.applicationId)?.name || "Intern", status: row.status });
+        groups.set(key, group);
+      }
+      const items = [...groups.values()].map(group => ({ ...group, approved: group.members.filter((m: any) => m.status === "Approved").length, underReview: group.members.filter((m: any) => m.status === "Under review").length, total: group.members.length }));
+      return { items: items.sort((a, b) => String(b.createdOn).localeCompare(String(a.createdOn))) };
+    }
+    if (method === "team.export") {
+      const filter: Record<string, any> = {};
+      if (p.status === "Active" || p.status === "Archived") filter.status = p.status;
+      if (text(p.batch) && p.batch !== "all") filter.batch = text(p.batch);
+      if (scope) filter.members = { $in: scope };
+      const rows = await teams.find(filter).sort({ batch: 1, nameKey: 1 }).limit(2000).toArray();
+      const [names, projectRows] = await Promise.all([
+        people([...new Set(rows.flatMap(row => row.members || []))]),
+        projects.find({ _id: { $in: [...new Set(rows.flatMap(row => row.projectIds || []))] } }, { projection: { name: 1 } }).toArray(),
+      ]);
+      const projectNames = new Map(projectRows.map(row => [row._id, row.name]));
+      const lines: Record<string, string>[] = [];
+      for (const row of rows) {
+        const base = { team: row.name, batch: row.batch || "", program: row.program || "", status: row.status, mentor: row.mentorName || "", projects: (row.projectIds || []).map((projectId: string) => projectNames.get(projectId)).filter(Boolean).join("; ") };
+        const members: string[] = row.members || [];
+        if (!members.length) lines.push({ ...base, member: "", email: "", college: "", github: "", lead: "" });
+        for (const member of members) {
+          const person = names.get(member);
+          lines.push({ ...base, member: person?.name || "Intern", email: person?.email || "", college: person?.college || "", github: person?.githubLogin || "", lead: member === row.leadId ? "Yes" : "" });
+        }
+      }
+      return { rows: lines };
     }
     if (method === "team.unassigned") {
       const all = await unassigned({ batch: text(p.batch) && p.batch !== "all" ? text(p.batch) : undefined, program: text(p.program) && p.program !== "all" ? text(p.program) : undefined, search: text(p.search) || undefined });
@@ -294,6 +368,7 @@ export function createTeams({ collection, transact }: { collection: (name: strin
         await teams.insertMany(created, opts);
         await auditDecision(audit, session, actor, created.length === 1 ? "team.created" : "team.createdMany", created.length === 1 ? created[0]!._id : batch || "teams", { count: created.length, names: created.slice(0, 20).map(team => team.name), members: everyone.size });
         await record("team.create", [...everyone], session);
+        for (const team of created) await tell(team.members, `You joined team ${team.name}`, team.members.length > 1 ? `You're in ${team.name} with ${team.members.length - 1} ${team.members.length === 2 ? "teammate" : "teammates"}. Meet them on your dashboard.` : `You're in ${team.name}. Your team appears on your dashboard.`, "/intern/portal", session);
         return { created: created.length, ids: created.map(team => team._id) };
       }
       const team = method === "team.restore" ? await teams.findOne({ _id: text(p.id) }, opts) : await activeTeam(p.id, session);
@@ -318,6 +393,8 @@ export function createTeams({ collection, transact }: { collection: (name: strin
         await claim(added, team._id, session);
         await teams.updateOne({ _id: team._id }, { $addToSet: { members: { $each: added } }, $set: { updatedOn: now }, $inc: { revision: 1 } } as any, opts);
         await addToProjects(team._id, projectIds, added, session);
+        await applyMentor(team, added, session);
+        await tell(added, `You joined team ${team.name}`, `You're now in ${team.name}. Meet your teammates on your dashboard.`, "/intern/portal", session);
         await auditDecision(audit, session, actor, "team.membersAdded", team._id, { added });
         await record("team.addMembers", [...members, ...added], session);
         return { id: team._id, added: added.length };
@@ -335,6 +412,10 @@ export function createTeams({ collection, transact }: { collection: (name: strin
           await claim([member], target._id, session);
           await teams.updateOne({ _id: target._id }, { $addToSet: { members: member }, $set: { updatedOn: now }, $inc: { revision: 1 } } as any, opts);
           await addToProjects(target._id, target.projectIds || [], [member], session);
+          await applyMentor(target, [member], session);
+          await tell([member], `You moved to team ${target.name}`, `You're now in ${target.name}. Your team and projects are on your dashboard.`, "/intern/portal", session);
+        } else {
+          await tell([member], `You're no longer in team ${team.name}`, "You can still see your projects on your dashboard.", "/intern/portal", session);
         }
         await auditDecision(audit, session, actor, target ? "team.memberMoved" : "team.memberRemoved", team._id, { applicationId: member, ...(target ? { toTeamId: target._id } : {}) });
         await record(method, [...members, ...(target?.members || [])], session);
@@ -350,6 +431,7 @@ export function createTeams({ collection, transact }: { collection: (name: strin
           await addToProjects(team._id, [projectId], activeRows.map(row => String(row.applicationId)), session);
           await teams.updateOne({ _id: team._id }, { $addToSet: { projectIds: projectId }, $set: { updatedOn: now }, $inc: { revision: 1 } } as any, opts);
           await projects.updateOne({ _id: projectId }, { $addToSet: { teamIds: team._id } } as any, opts);
+          await tell(activeRows.map(row => String(row.applicationId)), "Your team has a new project", `${team.name} is now working on ${project.name}.`, `/intern/portal/projects/${encodeURIComponent(projectId)}`, session);
         } else {
           if (!projectIds.includes(projectId)) throw new DomainError("NOT_FOUND", `${team.name} isn't on ${project.name}.`);
           await removeFromProjects(team._id, [projectId], members, session);
@@ -359,6 +441,24 @@ export function createTeams({ collection, transact }: { collection: (name: strin
         await auditDecision(audit, session, actor, method === "team.assignProject" ? "team.projectAssigned" : "team.projectRemoved", team._id, { projectId, name: project.name });
         await record(method, members, session);
         return { id: team._id, projectId };
+      }
+      if (method === "team.setMentor") {
+        if (actor.staffRole !== "admin") throw new DomainError("FORBIDDEN", "Only an admin can assign mentors.");
+        const mentorId = p.mentorId === null || p.mentorId === "" ? null : text(p.mentorId);
+        let mentorName = "";
+        if (mentorId) {
+          const mentor = await accounts.findOne({ _id: mentorId, role: "company", staffRole: "mentor", disabled: { $ne: true } }, { session, projection: { name: 1 } });
+          if (!mentor) throw new DomainError("INVALID_REQUEST", "Choose an active staff member with the Mentor role.");
+          mentorName = String(mentor.name || "");
+          await teams.updateOne({ _id: team._id }, { $set: { mentorId, mentorName, updatedOn: now }, $inc: { revision: 1 } }, opts);
+          await applyMentor({ ...team, mentorId, mentorName }, members, session);
+        } else {
+          // Clearing the team mentor leaves each member's own mentor as it is.
+          await teams.updateOne({ _id: team._id }, { $unset: { mentorId: "", mentorName: "" }, $set: { updatedOn: now }, $inc: { revision: 1 } }, opts);
+        }
+        await auditDecision(audit, session, actor, "team.mentorSet", team._id, { mentorId, mentorName });
+        await record(method, members, session);
+        return { id: team._id, mentorId, mentorName };
       }
       if (method === "team.archive") {
         // Archiving keeps the team and its projects for the record and frees its members to join another team.
@@ -398,7 +498,7 @@ export function createTeams({ collection, transact }: { collection: (name: strin
       (team.projectIds || []).length ? projects.find({ _id: { $in: team.projectIds }, team: applicationId }, { projection: { name: 1 } }).toArray() : Promise.resolve([]),
     ]);
     return {
-      id: team._id, name: team.name, batch: team.batch || "", leadId: team.leadId || null,
+      id: team._id, name: team.name, batch: team.batch || "", leadId: team.leadId || null, mentorName: team.mentorName || null,
       members: (team.members || []).map((member: string) => ({ ...(names.get(member) || { id: member, name: "Intern" }), isYou: member === applicationId, isLead: member === team.leadId })),
       projects: projectRows.map(row => ({ id: row._id, name: row.name })),
     };

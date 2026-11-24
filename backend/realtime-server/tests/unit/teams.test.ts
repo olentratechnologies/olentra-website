@@ -223,3 +223,79 @@ test("an intern sees their own team with names and GitHub usernames, never email
   expect(JSON.stringify(mine)).not.toContain("@example.test");
   expect(await teams.myTeam("A005")).toBeNull();
 });
+
+// ---- Part 2: team tasks, mentors, notifications, progress and export ----
+import { createLifecycle } from "../../src/modules/lifecycle/lifecycle.service";
+
+function withLifecycle(count = 6) {
+  const base = setup(count);
+  const queued: any[] = [];
+  const lifecycle = createLifecycle({ collection: base.db.collection, transact: async (_k, _a, _i, fn) => fn({} as any), outbox: { enqueue: async (type: string, payload: any) => { queued.push({ type, payload }); }, enqueueMany: async (items: any[]) => { queued.push(...items); } } as any });
+  return { ...base, lifecycle, queued };
+}
+
+test("a task for the whole team creates one task per member, grouped, each reviewed on its own", async () => {
+  const { run, db, lifecycle, queued } = withLifecycle();
+  const { ids: [teamId] }: any = await run("team.create", { name: "Orion", batch: "Batch 1", members: ["A001", "A002", "A003"] });
+  await run("team.assignProject", { id: teamId, projectId: "P1" });
+  const created: any = await lifecycle.execute("task.createMany", { projectId: "P1", teamId, applicationIds: ["A001", "A002", "A003"], title: "API design", description: "Design the API", dueOn: "2030-01-10", required: true }, admin, "tc1");
+  expect(created).toHaveLength(3);
+  expect(new Set(created.map((task: any) => task.teamTaskId)).size).toBe(1);
+  expect(created.every((task: any) => task.teamId === teamId && task.status === "Todo")).toBe(true);
+  expect(queued.filter(item => item.type === "taskAssigned")).toHaveLength(3);
+  await db.collection("tasks").updateOne({ _id: created[0].id }, { $set: { status: "Approved" } });
+  await db.collection("tasks").updateOne({ _id: created[1].id }, { $set: { status: "Under review" } });
+  const grouped: any = await run("team.tasks", { id: teamId });
+  expect(grouped.items).toHaveLength(1);
+  expect(grouped.items[0]).toMatchObject({ title: "API design", projectName: "Orchestrator", approved: 1, underReview: 1, total: 3 });
+  const list: any = await run("team.list", {});
+  expect(list.items[0].progress).toEqual({ approved: 1, total: 3 });
+  // Interns outside the team or the project are refused.
+  await expect(lifecycle.execute("task.createMany", { projectId: "P1", teamId, applicationIds: ["A001", "A004"], title: "X", description: "Y", dueOn: "2030-01-10" }, admin, "tc2")).rejects.toMatchObject({ code: "CONFLICT" });
+  await expect(lifecycle.execute("task.createMany", { projectId: "P1", applicationIds: [], title: "X", description: "Y", dueOn: "2030-01-10" }, admin, "tc3")).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  expect(() => authorizeStaff("task.createMany", {}, viewer as any)).toThrow();
+});
+
+test("a team mentor becomes every member's mentor, including people who join later; only admins set it", async () => {
+  const { run, db } = setup(6);
+  await db.collection("accounts").insertOne({ _id: "M1", role: "company", staffRole: "mentor", name: "Meera Mentor" });
+  await db.collection("accounts").insertOne({ _id: "R1", role: "company", staffRole: "recruiter", name: "Not a mentor" });
+  const { ids: [teamId] }: any = await run("team.create", { name: "Orion", batch: "Batch 1", members: ["A001", "A002"] });
+  await expect(run("team.setMentor", { id: teamId, mentorId: "M1" }, manager)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  expect(() => authorizeStaff("team.setMentor", {}, manager as any)).toThrow();
+  await expect(run("team.setMentor", { id: teamId, mentorId: "R1" })).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await run("team.setMentor", { id: teamId, mentorId: "M1" });
+  expect(db.rows("interns").get("INT-A001")).toMatchObject({ mentorId: "M1", mentorName: "Meera Mentor" });
+  await run("team.addMembers", { id: teamId, members: ["A003"] });
+  expect(db.rows("interns").get("INT-A003").mentorId).toBe("M1");
+  await run("team.setMentor", { id: teamId, mentorId: null });
+  expect(db.rows("teams").get(teamId).mentorId).toBeUndefined();
+  expect(db.rows("interns").get("INT-A001").mentorId).toBe("M1");
+});
+
+test("interns are notified when they join, move, leave or get a team project", async () => {
+  const { run, db } = setup(6);
+  const { ids: [a] }: any = await run("team.create", { name: "Orion", batch: "Batch 1", members: ["A001", "A002"] });
+  const { ids: [b] }: any = await run("team.create", { name: "Vega", batch: "Batch 1", members: ["A003"] });
+  await run("team.assignProject", { id: a, projectId: "P1" });
+  await run("team.moveMember", { id: a, toId: b, applicationId: "A002" });
+  await run("team.removeMember", { id: b, applicationId: "A003" });
+  const titles = (appId: string) => [...db.rows("notifications").values()].filter((row: any) => row.applicationId === appId).map((row: any) => row.title);
+  expect(titles("A001")).toEqual(["You joined team Orion", "Your team has a new project"]);
+  expect(titles("A002")).toEqual(["You joined team Orion", "Your team has a new project", "You moved to team Vega"]);
+  expect(titles("A003")).toEqual(["You joined team Vega", "You're no longer in team Vega"]);
+  expect([...db.rows("notifications").values()].every((row: any) => row.recipientRole === "intern")).toBe(true);
+});
+
+test("the export lists one row per member, including empty teams", async () => {
+  const { run } = setup(6);
+  const { ids: [a] }: any = await run("team.create", { name: "Orion", batch: "Batch 1", members: ["A001", "A002"] });
+  await run("team.update", { id: a, patch: { leadId: "A001" } });
+  await run("team.assignProject", { id: a, projectId: "P1" });
+  await run("team.create", { name: "Empty", batch: "Batch 1", members: [] });
+  const { rows }: any = await run("team.export", { status: "Active" });
+  expect(rows).toHaveLength(3);
+  expect(rows.find((row: any) => row.member === "Intern 001")).toMatchObject({ team: "Orion", lead: "Yes", projects: "Orchestrator", email: "A001@example.test", github: "first-dev" });
+  expect(rows.find((row: any) => row.team === "Empty")).toMatchObject({ member: "" });
+  expect((await run("team.list", { projectId: "P1" }) as any).items.map((team: any) => team.name)).toEqual(["Orion"]);
+});

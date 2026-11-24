@@ -22,7 +22,7 @@ export function authorizeStaff(method: string, params: Record<string, any>, acto
     "analytics.get": ["overview.read"], "notification.list": ["notifications.read"], "notification.markRead": ["notifications.read"],
     "project.plan.get": ["projects.read"], "project.link.save": ["projects.read", "projects.manage"], "project.link.delete": ["projects.read", "projects.manage"], "project.link.access": ["projects.read", "projects.manage"], "github.resend": ["projects.read", "projects.manage"], "github.repositories": ["projects.read", "projects.manage"], "project.plan.save": ["projects.read", "projects.manage"],
     "project.assign": ["projects.read", "projects.manage"], "project.create": ["projects.read", "projects.manage"], "project.update": ["projects.read", "projects.manage"], "project.delete": ["projects.read", "projects.manage"],
-    "task.remind": ["tasks.read", "tasks.manage"], "task.create": ["tasks.read", "tasks.manage"], "task.update": ["tasks.read", "tasks.manage"], "task.delete": ["tasks.read", "tasks.manage"],
+    "task.remind": ["tasks.read", "tasks.manage"], "task.createMany": ["tasks.read", "tasks.manage"], "task.create": ["tasks.read", "tasks.manage"], "task.update": ["tasks.read", "tasks.manage"], "task.delete": ["tasks.read", "tasks.manage"],
     "application.update": ["applications.read", "applications.review"], "application.bulkUpdate": ["applications.read", "applications.review"], "review.list": ["applications.read"], "staff.reviewers": ["applications.read"], "template.list": [], "view.list": [], "resource.list": [], "checkin.list": [], "feedback.summary": ["overview.read"], "checkin.reply": [], "view.save": [], "view.delete": [], "application.assign": ["applications.read", "applications.review"], "application.bookmark": ["applications.read", "applications.review"], "application.aiReview": ["applications.read"], "application.aiQueue": ["applications.read"], "application.aiReviewRerun": ["applications.read", "applications.review"], "review.save": ["applications.read", "applications.review"], "interview.schedule": ["applications.read", "applications.review"], "interview.cancel": ["applications.read", "applications.review"], "submission.review": ["submissions.read", "submissions.feedback"],
     "message.list": [], "message.send": [],
   };
@@ -33,6 +33,8 @@ export function authorizeStaff(method: string, params: Record<string, any>, acto
   // Teams: staff who can see projects can see teams, and project managers can manage them,
   // so roles created before teams existed keep working.
   if (isTeamMethod(method)) {
+    // Mentors are assigned by admins only, as for single interns.
+    if (method === "team.setMentor") return requireAdmin(actor);
     const write = TEAM_WRITE_METHODS.has(method);
     if (!(can(actor, write ? "teams.manage" : "teams.read") || can(actor, write ? "projects.manage" : "projects.read"))) throw new DomainError("FORBIDDEN", "Your internship staff role does not allow this action.");
     return;

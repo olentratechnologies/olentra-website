@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Plus, Settings2, Shuffle, Sparkles, UsersRound } from "lucide-react";
+import { ArrowRight, Download, Plus, Settings2, Shuffle, Sparkles, UsersRound } from "lucide-react";
 import { useInternship } from "../InternshipProvider";
 import { useInternQuery, useInternSearch } from "../useInternQuery";
 import { canManageTeams } from "./staffAccess";
 import QueryStatus from "./QueryStatus";
-import { Avatar, Button, EmptyState, Modal, PageHeader, Pagination, Panel, SearchBox, Tabs } from "./DashboardUI";
+import { Avatar, Button, EmptyState, Modal, PageHeader, Pagination, Panel, SearchBox, Tabs, exportCsv } from "./DashboardUI";
 import common from "./pages.module.css";
 import styles from "./teams.module.css";
 
@@ -287,12 +287,24 @@ export function TeamCard({ team, usualSize }) {
     <div className={styles.projects}>
       {team.projects.length ? team.projects.map(project => <span key={project.id} className={styles.projectChip}>{project.name}</span>) : <span className={styles.noProject}>No project yet</span>}
     </div>
+    {(team.mentorName || team.progress?.total > 0) && <p className={styles.meta}>{[team.mentorName && `Mentor: ${team.mentorName}`, team.progress?.total > 0 && `${team.progress.approved} of ${team.progress.total} tasks approved`].filter(Boolean).join(" · ")}</p>}
+    {team.progress?.total > 0 && <span className={styles.progressTrack} role="progressbar" aria-label={`${team.name} tasks approved`} aria-valuenow={Math.round(team.progress.approved / team.progress.total * 100)} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${Math.round(team.progress.approved / team.progress.total * 100)}%` }} /></span>}
     <Link className={styles.cardLink} href={teamHref(team.id)}>Open team <ArrowRight size={13} /></Link>
   </article>;
 }
 
 export default function TeamsPage() {
-  const { data, account } = useInternship();
+  const { data, account, commands, notify } = useInternship();
+  const [exporting, setExporting] = useState(false);
+  async function download() {
+    setExporting(true);
+    const result = await commands.teamRead("team.export", { status: tab, batch });
+    setExporting(false);
+    if (!result.ok) { notify(result.error); return; }
+    const rows = result.data.rows;
+    if (!rows.length) { notify("There are no teams to download."); return; }
+    exportCsv(`olentra-teams-${new Date().toISOString().slice(0, 10)}.csv`, ["Team", "Batch", "Program", "Status", "Member", "Email", "College", "GitHub", "Team lead", "Mentor", "Projects"], rows.map(row => [row.team, row.batch, row.program, row.status, row.member, row.email, row.college, row.github, row.lead, row.mentor, row.projects]));
+  }
   const canManage = canManageTeams(account);
   const [tab, setTab] = useState("Active");
   const [batch, setBatch] = useState("all");
@@ -310,6 +322,7 @@ export default function TeamsPage() {
 
   return <div className={common.page}>
     <PageHeader title="Teams" description="Group interns into teams and give each team a project.">
+      <Button variant="ghost" onClick={download} disabled={exporting}><Download size={15} /> {exporting ? "Preparing…" : "Download CSV"}</Button>
       {canManage && <>
         <Button variant="ghost" onClick={() => setDialog("settings")} disabled={!settingsQuery.data}><Settings2 size={15} /> Team settings</Button>
         <Button variant="secondary" onClick={() => setDialog("new")} disabled={!batchesQuery.data}><Plus size={15} /> New team</Button>

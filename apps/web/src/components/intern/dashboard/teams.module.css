@@ -114,3 +114,21 @@
   /* iOS zooms into fields under 16px. */
   .inlineSelect select, .previewName input, .moveSelect select { font-size: 16px; }
 }
+
+/* Part 2: progress, mentor, team tasks */
+.progressTrack { position: relative; display: block; height: 6px; overflow: hidden; border-radius: 999px; background: var(--ad-panel-soft, #e3edff); }
+.progressTrack > span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--ad-primary-gradient, linear-gradient(90deg, #268cff, #3866f5)); }
+.divider { height: 1px; margin: 16px 0; background: var(--ad-border, #d4e0ff); }
+.taskForm { display: grid; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--ad-border, #d4e0ff); }
+.taskGroup { display: grid; gap: 10px; }
+.progressLine { display: grid; grid-template-columns: minmax(80px, 220px) auto; align-items: center; gap: 12px; color: var(--ad-muted, #344f87); font-size: 12px; }
+.statusChips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.statusChips li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--ad-border, #d4e0ff); font-size: 11px; color: var(--ad-text, #071443); }
+.statusChips li span { font-weight: 650; }
+.statusChips li[data-tone="green"] span { color: var(--ad-success, #1f7a4d); }
+.statusChips li[data-tone="blue"] span { color: var(--ad-link, #2465d4); }
+.statusChips li[data-tone="amber"] span { color: var(--ad-warning, #855000); }
+.statusChips li[data-tone="muted"] span { color: var(--ad-subtle, #5a709b); }
+@media (max-width: 560px) {
+  .progressLine { grid-template-columns: minmax(0, 1fr); }
+}

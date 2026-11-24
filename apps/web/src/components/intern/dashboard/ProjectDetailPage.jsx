@@ -207,6 +207,9 @@ function Team({ project, people, activeIds, canManage, rememberPeople, updatePro
   const teamKey = project.team.join(",");
   useEffect(() => { if (!saving) setTeam(project.team); }, [teamKey]);
   const dirty = team.join(",") !== teamKey;
+  // Teams assigned to this project; members they added are labelled with the team.
+  const teamsQuery = useInternQuery("team.list", { projectId: project.id, status: "all", page: 1, pageSize: 50 }, { enabled: (project.teamIds || []).length > 0 });
+  const teamNames = new Map((teamsQuery.data?.items || []).map(item => [item.id, item.name]));
 
   async function save() {
     if (saving) return;
@@ -221,6 +224,11 @@ function Team({ project, people, activeIds, canManage, rememberPeople, updatePro
 
   return <div className={styles.teamLayout}>
     <Panel>
+      {teamsQuery.data?.items.length > 0 && <div className={styles.teamsOnProject}>
+        <h2>Teams on this project</h2>
+        <ul>{teamsQuery.data.items.map(item => <li key={item.id}><Link href={`/intern/dashboard/teams/${encodeURIComponent(item.id)}`}>{item.name}</Link><span>{item.memberCount} {item.memberCount === 1 ? "member" : "members"}{item.status === "Archived" ? " · archived" : ""}</span></li>)}</ul>
+        <p>Add or remove these members from the team’s page. People you add here directly aren’t part of a team.</p>
+      </div>}
       <div className={styles.panelHeading}><h2>Assigned team</h2><span>{team.length}</span></div>
       {team.length ? <ul className={styles.memberList}>
         {team.map(id => {
@@ -230,7 +238,7 @@ function Team({ project, people, activeIds, canManage, rememberPeople, updatePro
           return <li key={id}>
             <Avatar person={person} size={34} />
             <div className={styles.memberText}>
-              <strong>{person.name}</strong>
+              <strong>{person.name}{project.teamSources?.[id] && teamNames.get(project.teamSources[id]) && <span className={styles.teamTag}>{teamNames.get(project.teamSources[id])}</span>}</strong>
               <span>{login ? <><Github size={12} aria-hidden="true" /> @{login}</> : person.email || person.program}</span>
             </div>
             {!project.team.includes(id) && <span className={styles.newBadge}>New</span>}

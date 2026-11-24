@@ -157,3 +157,13 @@
   /* iOS zooms into fields under 16px. */
   .form :is(input, select, textarea) { font-size: 16px; }
 }
+
+/* Teams on a project */
+.teamsOnProject { display: grid; gap: 8px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--ad-border, #d4e0ff); }
+.teamsOnProject h2 { margin: 0; font-size: 15px; }
+.teamsOnProject ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.teamsOnProject li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--ad-border, #d4e0ff); border-radius: 999px; font-size: 12px; }
+.teamsOnProject li a { color: var(--ad-link, #2465d4); font-weight: 650; }
+.teamsOnProject li span { color: var(--ad-subtle, #5a709b); }
+.teamsOnProject p { margin: 0; color: var(--ad-subtle, #5a709b); font-size: 11px; }
+.teamTag { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--ad-blue-soft, #e3edff); color: var(--ad-link, #2465d4); font-size: 10px; font-weight: 650; }

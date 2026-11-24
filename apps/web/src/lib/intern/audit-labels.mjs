@@ -24,6 +24,7 @@ const LABELS = {
   "team.projectRemoved": (detail) => `Took a team off ${detail?.name || "a project"}`,
   "team.archived": (detail) => `Archived team ${detail?.name || ""}`.trim(),
   "team.restored": (detail) => `Restored team ${detail?.name || ""}`.trim(),
+  "team.mentorSet": (detail) => detail?.mentorName ? `Made ${detail.mentorName} a team's mentor` : "Cleared a team's mentor",
   "team.settings": (detail) => `Set the usual team size to ${detail?.size ?? "?"}`,
   "project.link.access": (detail) => detail?.status === "granted" ? "Marked repository access as granted" : "Marked repository access as pending",
 };
