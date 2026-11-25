@@ -20,8 +20,10 @@ Install everything from the repository root with `npm install`; the root
 Copy `.env.example` to `.env.local` for local configuration. Keep deployment
 secrets in the hosting provider's environment settings.
 
-The website only reads feature switches (`GET /api/site-features` and the
-`/api/site-features/stream` SSE endpoint); the company workspace changes them.
+The website only reads feature switches (`GET /api/site-features`, re-checked
+once a minute while the tab is visible and whenever it regains focus); the
+company workspace changes them. The `/api/site-features/stream` SSE endpoint
+remains for smoke tests but browsers no longer hold it open.
 Links to `/dashboard` redirect to the workspace origin (`OLENTRA_ADMIN_URL`,
 default `http://localhost:3002`).
 
