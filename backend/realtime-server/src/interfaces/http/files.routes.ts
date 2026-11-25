@@ -76,7 +76,9 @@ export function createFilesRoutes({ auth, bucket, files, withCors, sendJson, lim
       if (!type) throw new DomainError("UNSUPPORTED_MEDIA_TYPE", kind === "resume" ? "Upload your resume as a PDF or Word document." : "This file type isn't supported. Use a document, spreadsheet, slides, image, text or zip file.");
       const account = await authenticate(request);
       if (kind === "work" && !account) throw new DomainError("UNAUTHENTICATED", "Sign in to upload work.");
-      if (account?.role === "company") throw new DomainError("FORBIDDEN", "Staff accounts cannot upload intern attachments.");
+      // Admins may upload a resume only for a test application they submit from the dashboard.
+      const testResume = kind === "resume" && account?.role === "company" && account.staffRole === "admin" && request.headers.get("x-test-application") === "1";
+      if (account?.role === "company" && !testResume) throw new DomainError("FORBIDDEN", "Staff accounts cannot upload intern attachments.");
       const maximum = (kind === "resume" ? 5 : 10) * 1024 * 1024;
       const directRequest = new URL(request.url).pathname.endsWith("/uploads");
       if (directRequest && (!direct || !directEnabled)) throw new DomainError("NOT_FOUND", "Direct uploads are unavailable.");

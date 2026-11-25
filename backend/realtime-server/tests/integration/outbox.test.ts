@@ -338,3 +338,30 @@ test("sent emails land on the applicant's email timeline; unsent ones don't", as
   const after = await domain.execute("application.emails", { applicationId }, admin, "") as any;
   expect(after.items.map((row: any) => row.label)).toEqual(["Sign-in link (requested by applicant)", "Application received"]);
 });
+
+test("admins can submit a test application while applications are closed", async () => {
+  domain.setHooks({
+    async sendApplicationConfirmation(to) { sent.push({ type: "confirmation", to }); },
+    async sendMagicLink(to) { sent.push({ type: "magic-link", to }); },
+  });
+  await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: false } });
+  try {
+    const email = `test-apply-${randomUUID()}@example.test`;
+    await expect(apply(email, `closed-${randomUUID().slice(0, 8)}`)).rejects.toMatchObject({ code: "CLOSED" });
+    const fileId = `FILE-${randomUUID()}`, fileToken = randomUUID();
+    await domain.collection("files").insertOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken) });
+    const input = { name: "Test Candidate", email, linkedin: "https://www.linkedin.com/in/test-candidate", programId: "software-engineer", schedule: "part_time", resumeAttachmentId: fileId, resumeAccessToken: fileToken };
+    const recruiter = { id: "test-recruiter", role: "company", staffRole: "recruiter", name: "Recruiter", email: "test-recruiter@example.test", applicationId: null, sessionVersion: 1, permissions: ["applications.read", "applications.review"] } as any;
+    await expect(domain.execute("application.submitTest", input, recruiter, `test-${randomUUID().slice(0, 8)}`)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const admin = { id: "test-admin", role: "company", staffRole: "admin", name: "Admin", email: "test-admin@example.test", applicationId: null, sessionVersion: 1 } as any;
+    const result = await domain.execute("application.submitTest", input, admin, `test-${randomUUID().slice(0, 8)}`) as any;
+    expect(result).toMatchObject({ received: true });
+    const saved = await domain.collection("applications").findOne({ _id: result.applicationId });
+    expect(saved).toMatchObject({ email, status: "Applied", test: true, testSubmittedBy: "test-admin", aiReviewStatus: "pending" });
+    // Same flow as a real application: the confirmation email is queued and sent.
+    await domain.processOutbox(100);
+    expect(sent.filter(e => e.to === email)).toEqual([{ type: "confirmation", to: email }]);
+  } finally {
+    await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: true } });
+  }
+});

@@ -1555,3 +1555,29 @@
 .failedFlow strong {
   color: var(--ad-danger, #cd5570);
 }
+/* Marks applications an admin submitted from "Test application". */
+.testBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px dashed var(--ad-warning, #c98a12);
+  color: var(--ad-warning, #c98a12);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.testApplyLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--ad-border, #c9d9fa);
+  color: var(--ad-muted, #254577);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}

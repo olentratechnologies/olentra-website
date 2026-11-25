@@ -1,0 +1,87 @@
+.form {
+  margin-top: 0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+.grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ad-subtle, #526b96);
+}
+.radios {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 12px;
+  color: var(--ad-muted, #254577);
+}
+.radios legend {
+  width: 100%;
+  margin-bottom: 8px;
+  color: var(--ad-subtle, #526b96);
+}
+.radios label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.form .radios input {
+  width: 16px;
+  min-height: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ad-blue, #1768ed);
+}
+.form input[type="file"] {
+  padding: 7px 10px;
+}
+.note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ad-subtle, #526b96);
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ad-muted, #254577);
+  text-decoration: none;
+}
+.success {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  color: var(--ad-success, #0bb68c);
+}
+.success strong {
+  display: block;
+  color: var(--ad-text, #17385f);
+  font-size: 14px;
+}
+.success p {
+  margin: 4px 0 6px;
+  font-size: 12px;
+  color: var(--ad-subtle, #526b96);
+}
+.success a {
+  font-size: 12px;
+  color: var(--ad-blue, #1768ed);
+}

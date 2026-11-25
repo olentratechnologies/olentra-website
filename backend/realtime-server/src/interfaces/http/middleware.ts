@@ -12,4 +12,4 @@ export function requestId(request: Request): string {
 }
 
 export const CORS_METHODS = "GET, POST, OPTIONS";
-export const CORS_HEADERS = "Authorization, Content-Type, X-Intern-Context, X-Intern-Refresh-Request, X-File-Size, X-File-Name, X-File-Kind, X-File-Token, X-Resume-Grant, X-Resume-Challenge, Idempotency-Key";
+export const CORS_HEADERS = "Authorization, Content-Type, X-Intern-Context, X-Intern-Refresh-Request, X-File-Size, X-File-Name, X-File-Kind, X-File-Token, X-Resume-Grant, X-Resume-Challenge, X-Test-Application, Idempotency-Key";

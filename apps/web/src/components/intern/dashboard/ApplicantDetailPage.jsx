@@ -576,6 +576,7 @@ export default function ApplicantDetailPage({ applicationId }) {
           <div className={styles.profileMeta}>
             <TrackBadge programId={application.programId} />
             <StatusBadge status={application.status} />
+            {application.test && <span className={styles.testBadge} title="Submitted by an admin as a test">Test application</span>}
             {application.bookmarked && bookmarks.isBookmarked(application) && (
               <span className={styles.bookmarkMeta}>
                 Bookmarked{application.bookmarkedByName ? ` by ${application.bookmarkedByName}` : ""}

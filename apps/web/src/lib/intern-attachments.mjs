@@ -18,7 +18,8 @@ export async function authorizeResumeUpload(challenge) {
     headers: { "X-Resume-Challenge": challenge },
   }));
 }
-export async function saveAttachment(file, kind="resume", { publicUpload = false, resumeGrant } = {}) {
+/** `testApplication`: an admin uploading a resume for a test application from the dashboard. */
+export async function saveAttachment(file, kind="resume", { publicUpload = false, resumeGrant, testApplication = false } = {}) {
   if (!file || typeof file.name !== "string" || typeof file.size !== "number") throw new Error("Choose a file to upload.");
   const name=fileName(file.name), resume=kind==="resume", maximum=(resume?5:10)*MEBIBYTE;
   if (!name || !file.size || file.size>maximum || (resume && !/\.(pdf|doc|docx)$/i.test(name))) throw new Error(resume ? "Choose a PDF, DOC, or DOCX resume up to 5 MB." : "Choose a non-empty work attachment up to 10 MB.");
@@ -30,6 +31,7 @@ export async function saveAttachment(file, kind="resume", { publicUpload = false
     const headers = {
       "X-File-Name": headerName, "X-File-Kind": resume ? "resume" : "work", "X-File-Size": String(file.size),
       ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(resumeGrant ? { "X-Resume-Grant": resumeGrant } : {}),
+      ...(testApplication ? { "X-Test-Application": "1" } : {}),
     };
     const intent = await result(await fetch(`${internEndpoint()}/intern/files/uploads`, { method: "POST", credentials: "omit", headers }));
     return transferDirectUpload({ file, intent, endpoint: internEndpoint(), headers: token ? { Authorization: `Bearer ${token}` } : {}, readResult: result, client: new InternClient({ publicOnly: true }) });
@@ -42,6 +44,7 @@ export async function saveAttachment(file, kind="resume", { publicUpload = false
       "X-File-Kind": resume ? "resume" : "work",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(resumeGrant ? { "X-Resume-Grant": resumeGrant } : {}),
+      ...(testApplication ? { "X-Test-Application": "1" } : {}),
     },
     credentials: publicUpload ? "omit" : "same-origin",
     body: file,

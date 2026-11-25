@@ -53,7 +53,7 @@ const alreadyApplied = () => new DomainError("ALREADY_APPLIED", "An application 
 const publicAccount = (row: Row): Principal => ({ id: row._id, role: row.role, name: row.name, email: row.email, applicationId: row.applicationId ?? null, sessionVersion: row.sessionVersion ?? 1 });
 const publicApplication = (row: Row, staff: boolean) => {
   const { _id, claimHash, claimExpiresAt, communicationFence, ...record } = row;
-  if (!staff) { delete record.notes; delete record.internalNotes; delete record.batch; for (const field of [...BOOKMARK_FIELDS, ...AI_APPLICATION_FIELDS]) delete record[field]; }
+  if (!staff) { delete record.notes; delete record.internalNotes; delete record.batch; delete record.test; delete record.testSubmittedBy; for (const field of [...BOOKMARK_FIELDS, ...AI_APPLICATION_FIELDS]) delete record[field]; }
   return { ...record, id: _id };
 };
 /** Team bookmark on an application; staff-only and never shown to the applicant. */
@@ -455,8 +455,15 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       data.githubIntegration = { enabled: githubAccess.enabled, ...(actor?.role === "company" ? { installUrl: githubAccess.installUrl } : {}) };
       return { data, my: { application: actor?.role === "intern" ? data.applications[0] || null : null, intern: data.interns[0] || null, offer: data.offers[0] || null, interview: actor?.role === "intern" ? data.interviews[0] || null : null, onboarding: data.onboarding[0] || { applicationId: actor?.applicationId, status: "Not started", acknowledged: false }, projects: data.projects, tasks: data.tasks, submissions: data.submissions, certificates: data.certificates, messages: data.messages, notifications: data.notifications, resources: actor?.role === "intern" ? learning : [], hasPassword: await hasPasswordPromise, documentChecklist: actor?.role === "intern" ? (await publicData()).settings.onboardingDocuments : [] }, account: actor };
     }
-    if (method === "application.submit") {
-      if (actor) throw new DomainError("FORBIDDEN", "Sign out before submitting an application.");
+    if (method === "application.submit" || method === "application.submitTest") {
+      // A test application is the same submission, made by an admin from the
+      // dashboard: it skips only the "applications are open" checks and is
+      // marked as a test. Everything else (emails, AI review, timeline) is identical.
+      const test = method === "application.submitTest";
+      if (test) {
+        company(actor);
+        if (!isAdmin(actor)) throw new DomainError("FORBIDDEN", "Only an admin can submit a test application.");
+      } else if (actor) throw new DomainError("FORBIDDEN", "Sign out before submitting an application.");
       // Accept stale clients that still send roleId, but do not validate or
       // persist that legacy preference. The program now has one unified scope.
       const schedule = str(params.schedule);
@@ -478,17 +485,18 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       });
       // Checked before the transaction so no transaction waits on the network; a replay of an
       // already-saved submission still returns its stored result inside `transact`.
-      const open = await intakeOpen();
-      return transact(key, null, { method, params }, async session => {
+      const open = test || await intakeOpen();
+      return transact(key, test ? actor : null, { method, params }, async session => {
         if (!open) throw new DomainError("CLOSED", "Internship applications are currently closed.");
         const existing = await applications.findOne({ email }, { session });
         if (existing) throw alreadyApplied();
         const program = await programs.findOne({ _id: programId }, { session });
         const config = await settings.findOne({ _id: "program" }, { session });
         const file = await files.findOne({ _id: fileId, kind: "resume", status: "ready", accessTokenHash: digest(fileToken), applicationId: { $exists: false } }, { session });
-        if (!program?.enabled || !config?.programEnabled || program.fee == null || !acceptsCompensationMode(program.stipend, config.compensationMode)) throw new DomainError("CLOSED", "This internship track is not accepting applications.");
+        if (!program) throw test ? new DomainError("INVALID_REQUEST", "Choose an internship track.") : new DomainError("CLOSED", "This internship track is not accepting applications.");
+        if (!test && (!program.enabled || !config?.programEnabled || program.fee == null || !acceptsCompensationMode(program.stipend, config.compensationMode))) throw new DomainError("CLOSED", "This internship track is not accepting applications.");
         const deadline = normalizeDeadline(config?.applicationDeadline);
-        if (deadline && Date.parse(deadline) <= Date.now()) throw new DomainError("CLOSED", "The application deadline for this internship cycle has passed.");
+        if (!test && deadline && Date.parse(deadline) <= Date.now()) throw new DomainError("CLOSED", "The application deadline for this internship cycle has passed.");
         if (!file) throw new DomainError("INVALID_REQUEST", "Upload your resume before applying.");
         const applicationId = id("OL"), now = new Date();
         const row: Row = { _id: applicationId, name, email, programId, schedule, workMode: INTERNSHIP_OPPORTUNITIES.workMode, duration: normalizeInternshipDuration(config?.duration), program: program.name, appliedOn: now.toISOString().slice(0, 10), status: "Applied", batch: config?.defaultBatch || INITIAL_BATCH, initials: name.split(/\s+/).slice(0, 2).map(x => x[0]).join(""), avatarColor: "#d9e5fb", college: "", phone: "", location: "", skills: normalizeSkills(params.skills), linkedin, videoUrl, hasVideo: hasVideoLink(videoUrl), github, bio: "", resumeAttachmentId: fileId, history: [{ id: id("HST"), title: "Application received", date: now.toISOString(), detail: `Applied to ${program.name}.` }], notes: [], projectIds: [], source: "Website", version: 1 };
@@ -503,6 +511,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
             await applications.updateMany({ _id: { $in: matches } }, { $addToSet: { possibleDuplicates: applicationId } } as any, { session });
           }
         }
+        if (test) { row.test = true; row.testSubmittedBy = actor!.id; }
         row.aiReviewStatus = "pending";
         await applications.insertOne(row, { session });
         await files.updateOne({ _id: fileId, applicationId: { $exists: false } }, { $set: { applicationId } }, { session });
