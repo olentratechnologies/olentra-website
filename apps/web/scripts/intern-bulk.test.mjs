@@ -55,3 +55,34 @@ test("a failed bulk request marks its whole chunk as failed", async () => {
   const result = await runBulkRequests(items, async () => ({ ok: false, error: { message: "Offline" } }));
   assert.deepEqual(result.failed.map((row) => [row.item.id, row.error]), [["A", "Offline"], ["B", "Offline"]]);
 });
+
+test("select is admin-only and walks review, shortlist, then selected", async () => {
+  const { SELECT_PATH } = await import("../src/lib/intern/bulk.mjs");
+  assert.ok(!bulkActionsFor({ isAdmin: false }).some((a) => a.status === "Selected"));
+  const select = bulkActionsFor({ isAdmin: true }).find((a) => a.status === "Selected");
+  assert.deepEqual(select.path, ["Under Review", "Shortlisted", "Selected"]);
+  assert.equal(select.path, SELECT_PATH);
+  assert.equal(select.confirm, true);
+  assert.equal(bulkActionsFor({ isAdmin: true }).find((a) => a.status === "Rejected").confirm, true);
+});
+
+test("only scored applications still in review can be selected by score", async () => {
+  const { eligibleForSelection } = await import("../src/lib/intern/bulk.mjs");
+  assert.equal(eligibleForSelection({ status: "Applied", aiScore: 9.1 }), true);
+  assert.equal(eligibleForSelection({ status: "Shortlisted", aiScore: 0 }), true);
+  assert.equal(eligibleForSelection({ status: "Applied", aiScore: null }), false);
+  assert.equal(eligibleForSelection({ status: "Applied" }), false);
+  for (const status of ["Selected", "Joined", "Rejected", "Declined", "Withdrawn"]) assert.equal(eligibleForSelection({ status, aiScore: 9.5 }), false);
+  assert.equal(eligibleForSelection(null), false);
+});
+
+test("the minimum score accepts 0 to 10 only", async () => {
+  const { parseMinScore } = await import("../src/lib/intern/bulk.mjs");
+  assert.equal(parseMinScore("9"), 9);
+  assert.equal(parseMinScore("8.5"), 8.5);
+  assert.equal(parseMinScore("0"), 0);
+  assert.equal(parseMinScore(""), null);
+  assert.equal(parseMinScore("11"), null);
+  assert.equal(parseMinScore("-1"), null);
+  assert.equal(parseMinScore("abc"), null);
+});

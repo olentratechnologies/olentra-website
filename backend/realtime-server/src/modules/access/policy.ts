@@ -44,7 +44,8 @@ export function authorizeStaff(method: string, params: Record<string, any>, acto
   if (method === "application.update" || method === "application.bulkUpdate") {
     const patch = params.patch || {};
     const status = typeof (params.status || patch.status) === "string" ? String(params.status || patch.status).trim() : "";
-    if (status && !["Applied", "Under Review", "Shortlisted"].includes(status)) throw new DomainError("FORBIDDEN", "Only an admin can make final application decisions.");
+    const steps = Array.isArray(params.path) ? params.path.map((step: unknown) => typeof step === "string" ? step.trim() : "") : [];
+    if ([status, ...steps].some(step => step && !["Applied", "Under Review", "Shortlisted"].includes(step))) throw new DomainError("FORBIDDEN", "Only an admin can make final application decisions.");
   }
   if (method === "submission.review" && params.decision !== "Changes requested") throw new DomainError("FORBIDDEN", "Only an admin can approve submitted work.");
 }

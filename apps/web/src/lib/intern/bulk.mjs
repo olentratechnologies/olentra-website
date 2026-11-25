@@ -24,13 +24,37 @@ export async function runBulk(items, task, concurrency = 4) {
   };
 }
 
-/** Statuses a reviewer may set in bulk; final decisions (reject) stay admin-only, mirroring the server. */
+/**
+ * Selecting walks an application through review and shortlisting first, so
+ * the timeline shows every step; the applicant gets one "selected" email.
+ */
+export const SELECT_PATH = ["Under Review", "Shortlisted", "Selected"];
+
+/** Statuses an application can be selected from in bulk. */
+export const SELECTABLE_FROM = ["Applied", "Under Review", "Shortlisted"];
+
+/** Statuses a reviewer may set in bulk; final decisions (select, reject) stay admin-only, mirroring the server. */
 export function bulkActionsFor({ isAdmin }) {
   return [
     { status: "Under Review", label: "Move to under review" },
     { status: "Shortlisted", label: "Shortlist" },
-    ...(isAdmin ? [{ status: "Rejected", label: "Reject", danger: true }] : []),
+    ...(isAdmin ? [
+      { status: "Selected", label: "Select", path: SELECT_PATH, confirm: true },
+      { status: "Rejected", label: "Reject", danger: true, confirm: true },
+    ] : []),
   ];
+}
+
+/** Whether an application can be bulk-selected by AI score: still in review and already scored. */
+export function eligibleForSelection(application) {
+  return Boolean(application) && SELECTABLE_FROM.includes(application.status) && typeof application.aiScore === "number" && Number.isFinite(application.aiScore);
+}
+
+/** Parses the minimum AI score typed into a form: a number from 0 to 10, or null. */
+export function parseMinScore(value) {
+  if (value === "" || value == null) return null;
+  const score = Number(value);
+  return Number.isFinite(score) && score >= 0 && score <= 10 ? score : null;
 }
 
 /** Whether a reviewer may change this application's status at all (server rule mirror). */

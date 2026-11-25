@@ -1,0 +1,109 @@
+.statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.statuses legend {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--ad-subtle, #526b96);
+}
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ad-muted, #254577);
+  cursor: pointer;
+}
+.modal .check input,
+.modal .list input {
+  width: 16px;
+  min-height: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--ad-blue, #1768ed);
+}
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ad-text, #17385f);
+}
+.summary small {
+  font-size: 11px;
+  color: var(--ad-subtle, #526b96);
+}
+.list {
+  max-height: 240px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--ad-border, #c9d9fa);
+  border-radius: 8px;
+}
+.list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ad-border, #c9d9fa);
+  font-size: 12px;
+  color: var(--ad-muted, #254577);
+}
+.list li:last-child {
+  border-bottom: 0;
+}
+.list li[data-off="true"] {
+  opacity: 0.5;
+}
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.name small {
+  margin-left: 6px;
+  color: var(--ad-subtle, #526b96);
+}
+.score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ad-text, #17385f);
+}
+.note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--ad-subtle, #526b96);
+}
+.failures {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--ad-danger, #cd5570) 40%, transparent);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ad-text, #17385f);
+}
+.failures ul {
+  max-height: 140px;
+  margin: 6px 0 0;
+  padding-left: 18px;
+  overflow-y: auto;
+}
+.progress {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ad-blue, #1768ed);
+}

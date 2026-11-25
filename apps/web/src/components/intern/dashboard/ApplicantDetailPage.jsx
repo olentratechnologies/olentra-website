@@ -688,7 +688,7 @@ export default function ApplicantDetailPage({ applicationId }) {
                 </div>
               </div>
               <p className={styles.reviewDescription}>
-                Review candidate background and choose an admissions decision. Approving immediately triggers an Official Selection & Welcome Email with portal credentials and a LinkedIn announcement share card.
+                Review candidate background and choose an admissions decision. Approving marks the applicant Selected and emails them a “You’re selected” message with a link to sign in to their portal. Send the offer afterwards.
               </p>
               {["Applied", "Under Review", "Shortlisted"].includes(application.status) && (
                 <div style={{ display: "flex", gap: "8px", margin: "16px 0", flexWrap: "wrap" }}>

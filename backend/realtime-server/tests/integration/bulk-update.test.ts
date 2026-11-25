@@ -193,3 +193,44 @@ test("an interview can be cancelled with a reason and scheduled again", async ()
   const history = (await domain.collection("applications").findOne({ _id: item!.id }))?.history.map((entry: any) => entry.title);
   expect(history).toEqual(expect.arrayContaining(["Interview scheduled", "Interview cancelled", "Interview rescheduled"]));
 });
+
+test("a status path records every step but emails only the final status", async () => {
+  const items = await seed(3, "path");
+  const path = ["Under Review", "Shortlisted", "Selected"];
+  await domain.collection("applications").updateOne({ _id: items[1]!.id }, { $set: { status: "Shortlisted" } });
+  await domain.collection("applications").updateOne({ _id: items[2]!.id }, { $set: { status: "Joined" } });
+  const key = `path-${randomUUID()}`;
+  const results = await domain.execute("application.bulkUpdate", { items, status: "Selected", path }, admin, key) as any[];
+  expect(results.map(row => row.ok)).toEqual([true, true, false]);
+
+  const fresh = await domain.collection("applications").findOne({ _id: items[0]!.id });
+  expect(fresh).toMatchObject({ status: "Selected", version: 2 });
+  expect(fresh?.history.map((entry: any) => entry.title)).toEqual(path);
+  const shortlisted = await domain.collection("applications").findOne({ _id: items[1]!.id });
+  expect(shortlisted?.history.map((entry: any) => entry.title)).toEqual(["Selected"]);
+  expect((await domain.collection("applications").findOne({ _id: items[2]!.id }))?.status).toBe("Joined");
+
+  const audits = await domain.collection("staff_audit").find({ targetId: items[0]!.id }).toArray();
+  expect(audits.map((row: any) => [row.detail.from, row.detail.to])).toEqual([["Applied", "Under Review"], ["Under Review", "Shortlisted"], ["Shortlisted", "Selected"]]);
+  for (const item of items.slice(0, 2)) {
+    const mail = await domain.collection("outbox").find({ "payload.applicationId": item.id }).toArray();
+    expect(mail.map((row: any) => row.payload.status)).toEqual(["selected"]);
+  }
+
+  // Retrying the same request changes nothing and sends nothing more.
+  expect(await domain.execute("application.bulkUpdate", { items, status: "Selected", path }, admin, key)).toEqual(results);
+  expect(await domain.collection("outbox").countDocuments({ "payload.applicationId": items[0]!.id })).toBe(1);
+  // Running it again later on an already-selected row is a harmless no-op.
+  const later = await domain.execute("application.update", { id: items[0]!.id, path, expectedVersion: 2 }, admin, `path-${randomUUID()}`) as any;
+  expect(later.status).toBe("Selected");
+  expect((await domain.collection("applications").findOne({ _id: items[0]!.id }))?.version).toBe(2);
+});
+
+test("a status path is validated and final steps stay admin-only", async () => {
+  const items = await seed(1, "path-rules");
+  await expect(domain.execute("application.bulkUpdate", { items, status: "Selected", path: ["Under Review", "Selected"] }, recruiter, `path-${randomUUID()}`)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  await expect(domain.execute("application.bulkUpdate", { items, status: "Shortlisted", path: ["Under Review", "Selected"] }, admin, `path-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(domain.execute("application.update", { id: items[0]!.id, path: ["Joined"], expectedVersion: 1 }, admin, `path-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(domain.execute("application.update", { id: items[0]!.id, path: ["Shortlisted", "Shortlisted"], expectedVersion: 1 }, admin, `path-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  expect((await domain.collection("applications").findOne({ _id: items[0]!.id }))?.status).toBe("Applied");
+});

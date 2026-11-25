@@ -38,6 +38,7 @@ import { createOutbox, OUTBOX_MAX_ATTEMPTS, PermanentOutboxError, type OutboxRow
 import { normalizeSkills } from "../modules/applications/skills";
 import { linkedinKey } from "../modules/applications/duplicates";
 import { auditDecision } from "../modules/audit/decision-audit";
+import { statusPath } from "../modules/applications/status-path";
 import { mentorScope } from "../modules/access/mentor-scope";
 import { migrateLegacyPrograms, PROGRAM_ID, PROGRAM_NAME } from "../modules/programs/legacy-program-migration";
 import { DEFAULT_ONBOARDING_LEAD_DAYS, normalizeLeadDays } from "../modules/programs/offer-policy.mjs";
@@ -578,7 +579,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       // so permissions, history, emails and version checks are identical;
       // rows succeed or fail independently and report back individually.
       company(actor);
-      const status = str(params.status), items = Array.isArray(params.items) ? params.items : [];
+      const status = str(params.status), items = Array.isArray(params.items) ? params.items : [], path = params.path === undefined ? undefined : statusPath(params.path, status);
       if (!status || !items.length || items.length > 100 || key.length > 120) throw new DomainError("INVALID_REQUEST", "Choose up to 100 applications and a status.");
       const results: { id: string; ok: boolean; version?: number; error?: string }[] = new Array(items.length);
       let next = 0;
@@ -586,7 +587,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         while (next < items.length) {
           const index = next++, item = items[index], applicationId = str(item?.id);
           try {
-            const updated = await execute("application.update", { id: applicationId, status, expectedVersion: item?.expectedVersion }, actor, `${key}-${index}`) as { version?: number };
+            const updated = await execute("application.update", { id: applicationId, status, ...(path ? { path } : {}), expectedVersion: item?.expectedVersion }, actor, `${key}-${index}`) as { version?: number };
             results[index] = { id: applicationId, ok: true, version: updated?.version };
           } catch (error) {
             if (!(error instanceof DomainError)) throw error;
@@ -599,7 +600,12 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       return results;
     }
     if (method === "application.update") {
-      company(actor); const applicationId = str(params.id), patch = params.patch || {}, status = str(params.status || patch.status), expectedVersion = Number(params.expectedVersion);
+      company(actor); const applicationId = str(params.id), patch = params.patch || {}, expectedVersion = Number(params.expectedVersion);
+      // `path` walks the application through several statuses in one save
+      // (e.g. Under Review → Shortlisted → Selected): every step is recorded in
+      // the timeline and audit log, but only the final status sends an email.
+      const path = params.path === undefined ? undefined : statusPath(params.path, str(params.status || patch.status));
+      const status = path ? path[path.length - 1]! : str(params.status || patch.status);
       if ((!status && !Array.isArray(patch.notes)) || (status && !["Applied", "Under Review", "Shortlisted", "Selected", "Rejected", "Declined"].includes(status)) || !Number.isSafeInteger(expectedVersion)) throw new DomainError("INVALID_REQUEST", "Choose a valid change and the current application version.");
       const updated = await transact(key, actor, { method, params }, async session => {
         const now = new Date();
@@ -607,8 +613,18 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         if (!existing || (status && existing.status === "Joined")) throw new DomainError("CONFLICT", "The application changed or is unavailable. Refresh and try again.");
         if (!isAdmin(actor) && status && !["Applied", "Under Review", "Shortlisted"].includes(existing.status)) throw new DomainError("FORBIDDEN", "Only an admin can change a final application decision.");
         if (status === "Selected" && await users.findOne({ email: emailOf(existing.email), role: "company" }, { session })) throw new DomainError("CONFLICT", "This applicant email belongs to a staff account. Use a separate applicant email before selecting this application.");
+        // With a path, skip the steps the application has already reached; if
+        // it is already at the end, nothing changes and the call still succeeds.
+        const steps = path ? path.slice(path.indexOf(existing.status) + 1) : status ? [status] : [];
+        if (path && !steps.length) return publicApplication(existing, true);
         const update: Document = { $inc: { version: 1 } }, values: Document = {};
-        if (status) { values.status = status; if (existing.status !== status) values.statusChangedOn = now.toISOString(); update.$push = { history: { id: id("HST"), title: status, detail: `Application moved to ${status.toLowerCase()}.`, date: now.toISOString() } }; }
+        if (status) {
+          values.status = status;
+          if (existing.status !== status) values.statusChangedOn = now.toISOString();
+          // One timeline entry per step, a millisecond apart so they sort in order.
+          const history = steps.map((step, index) => ({ id: id("HST"), title: step, detail: `Application moved to ${step.toLowerCase()}.`, date: new Date(now.getTime() + index).toISOString() }));
+          update.$push = { history: history.length === 1 ? history[0] : { $each: history } };
+        }
         if (Array.isArray(patch.notes)) {
           const old = Array.isArray(existing.notes) ? existing.notes : [], proposed = patch.notes;
           if (proposed.length > 200 || proposed.length < old.length || old.some((note: any, i: number) => JSON.stringify(note) !== JSON.stringify(proposed[i]))) throw new DomainError("CONFLICT", "Notes changed. Refresh and try again.");
@@ -619,7 +635,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const changed = await applications.findOneAndUpdate({ _id: applicationId, version: expectedVersion }, update, { session, returnDocument: "after" });
         if (!changed) throw new DomainError("CONFLICT", "The application changed or is unavailable. Refresh and try again.");
         if (status && existing.status !== status) {
-          await auditDecision(collection("staff_audit"), session, actor, "application.status", applicationId, { from: existing.status, to: status });
+          let from = existing.status;
+          for (const step of steps) { if (step === from) continue; await auditDecision(collection("staff_audit"), session, actor, "application.status", applicationId, { from, to: step }); from = step; }
           const emailStatus = ({ Shortlisted: "shortlisted", Selected: "selected", Rejected: "rejected" } as const)[status as "Shortlisted" | "Selected" | "Rejected"];
           if (emailStatus) await outbox.enqueue("applicantStatus", { applicationId, status: emailStatus }, session);
         }

@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { useInternship } from "@/components/intern/InternshipProvider";
-import { bulkActionsFor, canBulkUpdate, runBulk, runBulkRequests } from "@/lib/intern/bulk.mjs";
+import { SELECTABLE_FROM, bulkActionsFor, canBulkUpdate, runBulk, runBulkRequests } from "@/lib/intern/bulk.mjs";
+import SelectByScoreDialog from "./SelectByScoreDialog";
 import { burstFrom } from "@/lib/confetti.mjs";
 import {
   APPLICATION_EXPORT_COLUMNS,
@@ -388,15 +389,15 @@ export default function ApplicationsPage() {
   }
   async function applyBulk(action, trigger) {
     if (bulkBusy || !selectedRows.length) return;
-    const rows = selectedRows.filter((application) => canBulkUpdate(application, { isAdmin }) && application.status !== action.status);
+    const rows = selectedRows.filter((application) => canBulkUpdate(application, { isAdmin }) && application.status !== action.status && (!action.path || SELECTABLE_FROM.includes(application.status)));
     const unchanged = selectedRows.length - rows.length;
     setBulkBusy(true);
     try {
       // One request per 25 rows; the server applies each row with the normal single-update rules.
-      const { succeeded, failed } = await runBulkRequests(rows, (chunk) => commands.bulkSetApplicationStatus(chunk.map((application) => ({ id: application.id, expectedVersion: application.version })), action.status));
-      const verb = { "Under Review": "moved to under review", Shortlisted: "shortlisted", Rejected: "rejected" }[action.status];
+      const { succeeded, failed } = await runBulkRequests(rows, (chunk) => commands.bulkSetApplicationStatus(chunk.map((application) => ({ id: application.id, expectedVersion: application.version })), action.status, { path: action.path }));
+      const verb = { "Under Review": "moved to under review", Shortlisted: "shortlisted", Selected: "selected", Rejected: "rejected" }[action.status];
       const parts = [`${succeeded.length} ${succeeded.length === 1 ? "applicant" : "applicants"} ${verb}`];
-      if (unchanged) parts.push(`${unchanged} already ${action.status.toLowerCase()}`);
+      if (unchanged) parts.push(action.path ? `${unchanged} skipped — already decided` : `${unchanged} already ${action.status.toLowerCase()}`);
       if (failed.length) parts.push(`${failed.length} skipped — changed by someone else or not allowed`);
       notify(parts.join(" · ") + ".");
       if (succeeded.length && action.status !== "Rejected") burstFrom(trigger, { count: 60 });
@@ -493,6 +494,7 @@ export default function ApplicationsPage() {
   const [scoringAll, setScoringAll] = useState(false);
   // An in-page dialog, not window.confirm: some embedded browsers silently answer "cancel".
   const [confirmScoreAll, setConfirmScoreAll] = useState(false);
+  const [selectByScoreOpen, setSelectByScoreOpen] = useState(false);
   async function scoreAllUnscored() {
     if (scoringAll) return;
     setScoringAll(true);
@@ -838,6 +840,12 @@ export default function ApplicationsPage() {
                 {scoringAll ? "Queuing…" : "Score all unscored"}
               </Button>
             )}
+            {isAdmin && (
+              <Button variant="ghost" onClick={() => setSelectByScoreOpen(true)} title="Select every applicant at or above an AI score, across all pages">
+                <Check size={14} />
+                Select by AI score
+              </Button>
+            )}
             <div className={styles.layoutToggle} role="group" aria-label="Layout">
               <button type="button" aria-pressed={layout === "table"} onClick={() => chooseLayout("table")}>Table</button>
               <button type="button" aria-pressed={layout === "board"} onClick={() => chooseLayout("board")}>Board</button>
@@ -889,7 +897,7 @@ export default function ApplicationsPage() {
                   type="button"
                   className={`${styles.bulkButton} ${action.danger ? styles.bulkDanger : ""}`}
                   disabled={bulkBusy}
-                  onClick={(event) => (action.danger ? setConfirmReject({ action, trigger: event.currentTarget }) : applyBulk(action, event.currentTarget))}
+                  onClick={(event) => (action.confirm ? setConfirmReject({ action, trigger: event.currentTarget }) : applyBulk(action, event.currentTarget))}
                 >
                   {action.label}
                 </button>
@@ -1145,18 +1153,31 @@ export default function ApplicationsPage() {
       <Modal
         open={Boolean(confirmReject)}
         onOpenChange={(open) => !open && !bulkBusy && setConfirmReject(null)}
-        title={`Reject ${selectedRows.length} ${selectedRows.length === 1 ? "applicant" : "applicants"}?`}
-        description="Each applicant is notified in their portal that their application was not selected. You can change a decision later from the applicant’s page."
+        title={`${confirmReject?.action.status === "Selected" ? "Select" : "Reject"} ${selectedRows.length} ${selectedRows.length === 1 ? "applicant" : "applicants"}?`}
+        description={confirmReject?.action.status === "Selected"
+          ? "Each applicant moves through Under review and Shortlisted to Selected, and gets one “You’re selected” email with a link to sign in to their portal. Applicants who already have a final decision are skipped. Send offers afterwards from each applicant’s page."
+          : "Each applicant is notified in their portal that their application was not selected. You can change a decision later from the applicant’s page."}
       >
         <div className={styles.modalActions}>
           <Button variant="secondary" type="button" disabled={bulkBusy} onClick={() => setConfirmReject(null)}>
             Cancel
           </Button>
           <Button type="button" disabled={bulkBusy} onClick={() => applyBulk(confirmReject.action, confirmReject.trigger)}>
-            {bulkBusy ? "Rejecting…" : "Reject applicants"}
+            {confirmReject?.action.status === "Selected" ? (bulkBusy ? "Selecting…" : "Select and email") : (bulkBusy ? "Rejecting…" : "Reject applicants")}
           </Button>
         </div>
       </Modal>
+      {isAdmin && (
+        <SelectByScoreDialog
+          open={selectByScoreOpen}
+          onOpenChange={setSelectByScoreOpen}
+          commands={commands}
+          programId={track}
+          trackLabel={track !== "all" ? trackTabs.find((tab) => tab.id === track)?.label || "" : ""}
+          notify={notify}
+          onDone={() => { setSelected(new Set()); setBoardVersion((value) => value + 1); refreshListsRef.current?.(); }}
+        />
+      )}
       {canResume && <ResumeViewer application={resumeApplication} open={Boolean(resumeApplication)} onOpenChange={(open) => !open && setResumeApplication(null)} />}
     </div>
   );
