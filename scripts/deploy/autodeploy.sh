@@ -65,6 +65,11 @@ else: print("failed:" + ",".join(r["name"] for r in runs if r["conclusion"] not 
 fi
 
 log "Deploying $short (was ${current:0:7})."
+# The AI resume review reads PDFs with poppler and old .doc files with antiword.
+if ! command -v pdftotext >/dev/null || ! command -v pdftoppm >/dev/null || ! command -v antiword >/dev/null; then
+  log "Installing resume readers (poppler-utils, antiword)."
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends poppler-utils antiword >/dev/null || log "Couldn't install resume readers; AI review will send resumes to manual review."
+fi
 changed="$(git diff --name-only "$current" "$target" 2>/dev/null || echo '*')"
 touched() { [ "$changed" = '*' ] || printf '%s\n' "$changed" | grep -qE "$1"; }
 git reset --quiet --hard "$target"

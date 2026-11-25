@@ -23,6 +23,9 @@ deploys itself:
    fails.
 
 A commit whose checks fail is not deployed; fix it with a new commit.
+Each deploy also makes sure the AI resume review's file readers are installed
+(`poppler-utils` for PDFs, `antiword` for old .doc files); without them every
+resume goes to "Needs manual review".
 Runtime secrets stay in the untracked `.env` files on the server.
 
 ## Day to day
