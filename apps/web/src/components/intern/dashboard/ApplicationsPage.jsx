@@ -694,7 +694,8 @@ function ApplicationsWorkspace({ view, chooseView }) {
         </Button>
         {isAdmin && <Link href="/intern/dashboard/offers" className={styles.testApplyLink} title="Every offer generated: formal, instant and direct enrolments">View offers</Link>}
         {isAdmin && <Link href="/intern/dashboard/applications/test-application" className={styles.testApplyLink} title="Apply as a test candidate, even while applications are closed">Test application</Link>}
-        {isAdmin && <Button variant="danger" disabled={bulkBusy || loadingDeletion} onClick={() => void prepareDeletion(true)}>{loadingDeletion ? "Loading applications…" : "Delete all"}</Button>}
+        {/* "Delete all" removes every application, so it's only offered in the All view, never inside Full-time or Part-time. */}
+        {isAdmin && view === "all" && <Button variant="danger" disabled={bulkBusy || loadingDeletion} onClick={() => void prepareDeletion(true)}>{loadingDeletion ? "Loading applications…" : "Delete all"}</Button>}
         <FilterMenu>
           <div className={styles.filterFields}>
             <div className={styles.filterHeading}>
