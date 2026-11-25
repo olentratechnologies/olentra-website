@@ -39,6 +39,7 @@ import { normalizeSkills } from "../modules/applications/skills";
 import { linkedinKey } from "../modules/applications/duplicates";
 import { auditDecision } from "../modules/audit/decision-audit";
 import { statusPath } from "../modules/applications/status-path";
+import { createEmailLog } from "../modules/email-log/email-log";
 import { mentorScope } from "../modules/access/mentor-scope";
 import { migrateLegacyPrograms, PROGRAM_ID, PROGRAM_NAME } from "../modules/programs/legacy-program-migration";
 import { DEFAULT_ONBOARDING_LEAD_DAYS, normalizeLeadDays } from "../modules/programs/offer-policy.mjs";
@@ -69,6 +70,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
   const users = collection("accounts"), credentials = collection("test_credentials"), applications = collection("applications"), programs = collection("programs"), files = collection("files"), commands = collection("commands");
   const settings = collection("settings"), events = collection("events");
   const outbox = createOutbox(db.collection<OutboxRow>(prefix + "outbox"));
+  const emailLog = createEmailLog({ collection });
   const githubConfig = github === undefined ? readGithubConfig() : null;
   const githubAccess = createGithubAccess({ collection, github: github === undefined ? (githubConfig ? createGithubApp(githubConfig) : null) : github });
   async function initialize() {
@@ -86,6 +88,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       checkins.initialize(),
       feedback.initialize(),
       outbox.initialize(),
+      emailLog.initialize(),
       communications.initialize(),
       staffManagement.initialize(),
       users.createIndex({ email: 1 }, { unique: true }),
@@ -107,6 +110,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       applications.updateMany(HAS_VIDEO_BACKFILL.filter, HAS_VIDEO_BACKFILL.update),
       applications.createIndex({ hasVideo: -1, appliedOn: -1 }),
       backfillDuplicates().catch(error => logger.warn("Duplicate backfill failed", { error })),
+      // The outbox keeps sent emails for a week; copy those into applicants' email timelines once.
+      emailLog.backfill(db.collection<OutboxRow>(prefix + "outbox")).catch(error => logger.warn("Email log backfill failed", { error })),
       applications.createIndex({ assignedTo: 1, appliedOn: -1 }),
       applications.createIndex({ linkedinKey: 1 }, { partialFilterExpression: { linkedinKey: { $type: "string" } } }),
       applications.createIndex({ batch: 1, appliedOn: -1 }),
@@ -253,7 +258,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const schedule = pinned || currentOffer;
       if (status === "rejected") {
         const preferences = await settings.findOne({ _id: "program" }, { projection: { rejectionEmails: 1 } });
-        if (preferences?.rejectionEmails !== true) return;
+        if (preferences?.rejectionEmails !== true) return { suppressed: true };
       }
       let pdfAttachment: { filename: string; content: Buffer; contentType: string } | undefined;
       if (["offer-accepted","offer-revision-accepted","direct-enrolled"].includes(status)) {
@@ -278,7 +283,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
           contentType: "application/pdf",
         };
       }
-      await activeHooks.sendApplicantStatus({
+      const delivered = await activeHooks.sendApplicantStatus({
         to: str(schedule?.email||application.email),
         name: str(schedule?.name||application.name),
         programName: str(schedule?.program||application.program),
@@ -287,6 +292,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         ...(certificateNumber ? { certificateNumber } : {}),
         ...(pdfAttachment ? { pdfAttachment } : {}),
       });
+      // The sender skips some emails on purpose (e.g. a selection that was undone); say so, so it isn't logged as sent.
+      if ((delivered as { suppressed?: boolean } | undefined)?.suppressed) return { suppressed: true };
     }
   }
   const aiReviews = createAiReviews({ collection, transact });
@@ -574,6 +581,13 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       await events.insertOne({ _id: id("EVT"), type: "application.updated", applicationIds: [], createdAt: new Date() });
       return { erased: true, removed };
     }
+    if (method === "application.emails") {
+      // Staff-only: every email sent to this applicant, newest first.
+      company(actor);
+      const applicationId = str(params.applicationId);
+      if (!applicationId) throw new DomainError("INVALID_REQUEST", "Choose an application.");
+      return { items: await emailLog.list(applicationId) };
+    }
     if (method === "application.bulkUpdate") {
       // One request for many rows. Each row goes through application.update,
       // so permissions, history, emails and version checks are identical;
@@ -797,14 +811,15 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       } else if (row.type === "magicLink") {
         if (!activeHooks?.sendMagicLink) throw new Error("No email sender is configured.");
         const application = await applications.findOne({ _id: applicationId });
-        if (application && ["Selected", "Joined"].includes(String(application.status))) await activeHooks.sendMagicLink(to, name, applicationId);
+        if (!application || !["Selected", "Joined"].includes(String(application.status))) return { suppressed: true };
+        await activeHooks.sendMagicLink(to, name, applicationId);
       } else if (row.type === "interview" || row.type === "interviewReminder") {
         const p = row.payload;
         const current = await collection("interviews").findOne({ _id: p.interviewId });
         // A newer schedule/cancellation supersedes pending deliveries, including retries.
-        if (!isCurrentInterviewEmail(current, p, row.type === "interviewReminder")) return;
+        if (!isCurrentInterviewEmail(current, p, row.type === "interviewReminder")) return { suppressed: true };
         const application = await applications.findOne({ _id: p.applicationId });
-        if (!application) return;
+        if (!application) return { suppressed: true };
         const hook = row.type === "interviewReminder" ? activeHooks?.sendInterviewReminder : p.status === "Cancelled" ? activeHooks?.sendInterviewCancelled : activeHooks?.sendInterviewScheduled;
         if (!hook) throw new Error("No interview email sender is configured.");
         await hook({ to: str(application.email), name: str(application.name), programName: str(application.program), scheduledAt: p.scheduledAt!, meetingUrl: p.meetingUrl!, interviewId: p.interviewId, sequence: Number(p.sequence || 0), cancelReason: p.cancelReason });
@@ -846,7 +861,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         const campaignId = str(row.payload.campaignId), to = emailOf(row.payload.to);
         const campaigns = collection("custom_email_campaigns");
         const campaign = await campaigns.findOne({ _id: campaignId });
-        if (!campaign) return;
+        if (!campaign) return { suppressed: true };
         const markRecipient = async (status: "sent" | "failed") => {
           await campaigns.updateOne(
             { _id: campaignId },
@@ -880,7 +895,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       } else if (row.type === "applicantStatus") {
         return deliverApplicantStatus(String(row.payload.applicationId), row.payload.status as ApplicantStatusNotice["status"], row.payload.certificateNumber || undefined, row.payload.offerSnapshot);
       } else throw new Error(`Unknown outbox type ${String(row.type)}`);
-    }, limit);
+    }, limit, (row, outcome, error) => emailLog.recordOutbox(row, outcome, error));
   }
   async function findApplicationByEmail(email: string): Promise<Row | null> {
     return applications.findOne({ email: emailOf(email) });
@@ -943,5 +958,5 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
     const passwordHash = await Bun.password.hash(nextPassword, { algorithm: "argon2id" });
     return savePassword(user, passwordHash, user.sessionVersion ?? 1, "account.passwordChanged");
   }
-  return { readAutomatedEmailTemplate: templates.readAutomated, aiReviews, db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runGithubAccess: githubAccess.reconcile, githubAccessEnabled: githubAccess.enabled, runRetention, runReminders: remind, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
+  return { recordEmail: (entry: Parameters<typeof emailLog.recordDirect>[0]) => emailLog.recordDirect(entry), readAutomatedEmailTemplate: templates.readAutomated, aiReviews, db, client, prefix, initialize, login, account, createTestStaff, bootstrapFirstAdmin: staffManagement.bootstrapFirstAdmin, execute, publicData, anonymousData, collection, invalidateAnalytics: communications.invalidateAnalytics, invalidatePublicData, resolveRole: staffManagement.resolveRole, resolveRoleSync: staffManagement.resolveRoleSync, setHooks, processOutbox, runGithubAccess: githubAccess.reconcile, githubAccessEnabled: githubAccess.enabled, runRetention, runReminders: remind, autoProvisionAccount, findApplicationByEmail, findUserByEmail, selfResetPassword, changePassword };
 }

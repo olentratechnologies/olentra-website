@@ -52,6 +52,8 @@ export function createAuthRoutes({ auth, domain, mailer, siteOrigin, workspaceOr
     const templateVariant = (await signinEmailTemplates?.read())?.variantId || "professional";
     const delivery = await mailer.sendMagicLink({ to: email, name, magicLinkUrl: `${siteOrigin}/intern/verify?token=${token}`, templateVariant });
     if (!delivery?.ok) throw new DomainError("SERVICE_UNAVAILABLE", "Email delivery is temporarily unavailable. Please try again.");
+    // Shows on the applicant's email timeline; a logging problem never blocks sign-in.
+    await domain.recordEmail?.({ applicationId, to: email, label: "Sign-in link (requested by applicant)", status: "sent" }).catch(() => undefined);
   };
   const refresh = async (request: Request, origin: string | null) => {
     const context = safeContext(request.headers.get("x-intern-context"));

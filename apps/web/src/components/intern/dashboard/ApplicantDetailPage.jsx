@@ -176,6 +176,34 @@ export default function ApplicantDetailPage({ applicationId }) {
       ),
     [application?.history],
   );
+  // Emails sent to this applicant (staff-only log). Refetched when the application
+  // changes, and again shortly after, because emails go out a few seconds later.
+  const emailQuery = useInternQuery("application.emails", { applicationId, version: application?.version }, { enabled: Boolean(application) });
+  const refreshEmails = emailQuery.refresh;
+  useEffect(() => {
+    if (!application) return undefined;
+    const timers = [5000, 20000].map((delay) => setTimeout(() => { void refreshEmails(); }, delay));
+    return () => timers.forEach(clearTimeout);
+  }, [application?.version, refreshEmails]);
+  const emails = useMemo(
+    () => (emailQuery.data?.items || []).map((email) => ({
+      id: email.id,
+      title: email.status === "failed" ? `Email failed: ${email.label}` : `Email sent: ${email.label}`,
+      detail: email.status === "failed" ? `To ${email.to}. Not delivered after several attempts${email.error ? ` (${email.error})` : ""}.` : `To ${email.to}`,
+      date: email.at,
+      failed: email.status === "failed",
+      kind: "email",
+    })),
+    [emailQuery.data],
+  );
+  // Status changes and emails on one timeline, oldest first. The "current" marker
+  // stays on the latest status change, not on an email.
+  const flow = useMemo(
+    () => [...history.map((event) => ({ ...event, kind: "status" })), ...emails]
+      .sort((first, second) => new Date(first.date) - new Date(second.date)),
+    [history, emails],
+  );
+  const currentFlowIndex = flow.map((event) => event.kind).lastIndexOf("status");
   const activities = useMemo(
     () =>
       (data.activity || []).filter((activity) => activity.applicationId === applicationId),
@@ -468,15 +496,21 @@ export default function ApplicantDetailPage({ applicationId }) {
   const applicationFlow = (
     <Panel className={styles.flowPanel}>
       <h2 className={styles.panelHeading}>Application Flow</h2>
-      {history.length ? (
+      {flow.length ? (
         <ol className={styles.flowList}>
-          {history.map((event, index) => (
+          {flow.map((event, index) => (
             <li
               key={event.id || `${event.title}-${index}`}
-              className={index === history.length - 1 ? styles.currentFlow : ""}
+              className={[
+                index === currentFlowIndex ? styles.currentFlow : "",
+                event.kind === "email" ? styles.emailFlow : "",
+                event.failed ? styles.failedFlow : "",
+              ].filter(Boolean).join(" ")}
             >
               <span className={styles.flowDot}>
-                {index === history.length - 1 ? (
+                {event.kind === "email" ? (
+                  event.failed ? <X size={10} strokeWidth={3} /> : <Mail size={10} strokeWidth={2.5} />
+                ) : index === currentFlowIndex ? (
                   <span />
                 ) : (
                   <Check size={11} strokeWidth={3} />
@@ -855,7 +889,7 @@ export default function ApplicantDetailPage({ applicationId }) {
       {tab === "activity" && (
         <Panel>
           <h2 className={styles.panelHeading}>Applicant Activity</h2>
-          {activities.length || history.length ? (
+          {activities.length || flow.length ? (
             <ol className={styles.activityTimeline}>
               {[
                 ...activities.map((activity) => ({
@@ -870,12 +904,12 @@ export default function ApplicantDetailPage({ applicationId }) {
                   _time: activity.time,
                   _source: "activity",
                 })),
-                ...history.map((event) => ({
+                ...flow.map((event) => ({
                   ...event,
                   _title: event.title,
                   _detail: event.detail,
                   _date: event.date,
-                  _source: "history",
+                  _source: event.kind === "email" ? "email" : "history",
                 })),
               ]
                 .sort(
@@ -887,6 +921,8 @@ export default function ApplicantDetailPage({ applicationId }) {
                     <span className={styles.activityDot}>
                       {event._source === "history" ? (
                         <CircleCheck size={15} />
+                      ) : event._source === "email" ? (
+                        <Mail size={15} />
                       ) : (
                         <MessageSquare size={15} />
                       )}

@@ -56,7 +56,13 @@ export function createOutbox(rows: Collection<OutboxRow>, now: () => number = Da
       await rows.insertMany(items.map(({ type, payload }) => ({ _id: `MAIL-${randomUUID()}`, type, payload, status: "pending" as const, attempts: 0, nextAttemptAt: at, leaseUntil: null, createdAt: at })), session ? { session } : undefined);
     },
     /** Sends up to `limit` due rows through `send`, which must throw when delivery fails. */
-    async process(send: (row: OutboxRow) => Promise<void | {suppressed:boolean}>, limit = 20) {
+    /**
+     * `onSettled` hears each row's final outcome once: sent, superseded (the
+     * sender chose not to send it) or failed (no more retries). It never
+     * affects delivery; its own errors are swallowed.
+     */
+    async process(send: (row: OutboxRow) => Promise<void | {suppressed:boolean}>, limit = 20, onSettled?: (row: OutboxRow, outcome: "sent" | "superseded" | "failed", error?: string) => Promise<unknown>) {
+      const settle = async (row: OutboxRow, outcome: "sent" | "superseded" | "failed", error?: string) => { try { await onSettled?.(row, outcome, error); } catch { /* logging must not affect delivery */ } };
       let handled = 0;
       while (handled < limit) {
         const at = new Date(now());
@@ -70,6 +76,7 @@ export function createOutbox(rows: Collection<OutboxRow>, now: () => number = Da
         try {
           const delivery=await send(row);
           await rows.updateOne({ _id: row._id, leaseUntil: row.leaseUntil }, { $set: { status: delivery?.suppressed ? "superseded" : "sent", sentAt: new Date(now()), leaseUntil: null, expiresAt: new Date(now() + WEEK_MS) } });
+          await settle(row, delivery?.suppressed ? "superseded" : "sent");
         } catch (error) {
           const lastError = String((error as Error)?.message || error).slice(0, 300);
           const failed = error instanceof PermanentOutboxError || row.attempts >= OUTBOX_MAX_ATTEMPTS;
@@ -78,6 +85,7 @@ export function createOutbox(rows: Collection<OutboxRow>, now: () => number = Da
               ? { status: "failed", leaseUntil: null, lastError, expiresAt: new Date(now() + WEEK_MS) }
               : { leaseUntil: null, lastError, nextAttemptAt: new Date(now() + outboxBackoff(row.attempts)) },
           });
+          if (failed) await settle(row, "failed", lastError);
         }
       }
       return handled;

@@ -36,7 +36,7 @@ export async function eraseApplicant({ db, client, prefix, applicationId, before
       await wipe("test_credentials", { userId: { $in: accountIds } });
       await wipe("sessions", { userId: { $in: accountIds } });
       await wipe("notification_reads", { accountId: { $in: accountIds } });
-      for (const name of ["offers", "offer_versions", "onboarding", "interns", "tasks", "submissions", "messages", "notifications", "stories", "interviews", "activity", "reviews", "checkins", "feedback", "resource_progress"]) await wipe(name, { applicationId });
+      for (const name of ["offers", "offer_versions", "onboarding", "interns", "tasks", "submissions", "messages", "notifications", "stories", "interviews", "activity", "reviews", "checkins", "feedback", "resource_progress", "email_log"]) await wipe(name, { applicationId });
       await wipe("certificates", { $or: [{ applicationId }, { internId: { $in: internIds } }] });
       // OCI bytes are deleted by the durable cleanup worker after commit.
       await c("files").updateMany({ _id: { $in: uploads.filter(row => row.storage === "oci").map(row => row._id) } }, { $set: { status: "deleting" }, $unset: { applicationId: "", ownerApplicationId: "", accessTokenHash: "", name: "", type: "", size: "" } }, opts);

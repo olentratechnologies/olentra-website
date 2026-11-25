@@ -1540,3 +1540,18 @@
     font-size: 16px;
   }
 }
+/* Emails on the Application Flow: a smaller blue mail dot, so they read as
+   messages sent rather than stages reached. Failed emails are red. */
+.emailFlow .flowDot {
+  background: var(--ad-blue, #287dff);
+  border-color: var(--ad-panel-soft, #dce9ff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ad-blue, #287dff) 18%, transparent);
+}
+.failedFlow .flowDot {
+  background: var(--ad-danger, #cd5570);
+  border-color: color-mix(in srgb, var(--ad-danger, #cd5570) 25%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ad-danger, #cd5570) 18%, transparent);
+}
+.failedFlow strong {
+  color: var(--ad-danger, #cd5570);
+}

@@ -17,7 +17,7 @@ export function authorizeStaff(method: string, params: Record<string, any>, acto
   if (isAdmin(actor)) return;
   const basic: Record<string, string[]> = {
     "intern.public": [], "intern.snapshot": [],
-    "application.list": ["applications.read"], "application.get": ["applications.read"], "application.workflow": ["applications.read"], "application.resume": ["applications.read", "resumes.read"],
+    "application.list": ["applications.read"], "application.get": ["applications.read"], "application.emails": ["applications.read"], "application.workflow": ["applications.read"], "application.resume": ["applications.read", "resumes.read"],
     "intern.list": ["interns.read"], "task.list": ["tasks.read"], "submission.list": ["submissions.read"], "certificate.list": ["certificates.read"], "story.list": ["certificates.read"], "certificate.verify": [], "story.public": [],
     "analytics.get": ["overview.read"], "notification.list": ["notifications.read"], "notification.markRead": ["notifications.read"],
     "project.plan.get": ["projects.read"], "project.link.save": ["projects.read", "projects.manage"], "project.link.delete": ["projects.read", "projects.manage"], "project.link.access": ["projects.read", "projects.manage"], "github.resend": ["projects.read", "projects.manage"], "github.repositories": ["projects.read", "projects.manage"], "project.plan.save": ["projects.read", "projects.manage"],

@@ -312,3 +312,24 @@ test("manual offer reminders share deadline coverage with the scheduler and supp
     expect(received.some(row => row.to.includes("manual@example.test"))).toBe(false);
   } finally { receiver.stop(true); }
 });
+
+test("sent emails land on the applicant's email timeline; unsent ones don't", async () => {
+  const email = `outbox-log-${randomUUID()}@example.test`;
+  await apply(email, `outbox-log-${randomUUID().slice(0, 8)}`);
+  const application = await domain.collection("applications").findOne({ email });
+  const applicationId = String(application!._id);
+  await domain.processOutbox();
+  // A magic link for someone who isn't selected is skipped on purpose and must not be logged as sent.
+  await domain.collection("outbox").insertOne({ _id: `MAIL-${randomUUID()}`, type: "magicLink", payload: { to: email, name: "Outbox Candidate", applicationId }, status: "pending", attempts: 0, nextAttemptAt: new Date(0), leaseUntil: null, createdAt: new Date() } as any);
+  await domain.processOutbox();
+  const admin = { id: "log-admin", role: "company", staffRole: "admin", name: "Admin", email: "log-admin@example.test", applicationId: null, sessionVersion: 1 } as any;
+  const { items } = await domain.execute("application.emails", { applicationId }, admin, "") as any;
+  expect(items).toEqual([expect.objectContaining({ label: "Application received", to: email, status: "sent" })]);
+  // The applicant can't read the staff email log.
+  const applicant = { id: "log-applicant", role: "intern", name: "Outbox Candidate", email, applicationId, sessionVersion: 1 } as any;
+  await expect(domain.execute("application.emails", { applicationId }, applicant, "")).rejects.toMatchObject({ code: "FORBIDDEN" });
+  // A sign-in link sent directly is logged too.
+  await domain.recordEmail({ applicationId, to: email, label: "Sign-in link (requested by applicant)", status: "sent" });
+  const after = await domain.execute("application.emails", { applicationId }, admin, "") as any;
+  expect(after.items.map((row: any) => row.label)).toEqual(["Sign-in link (requested by applicant)", "Application received"]);
+});

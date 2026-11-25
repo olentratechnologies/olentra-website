@@ -161,7 +161,7 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (["selected", "direct-enrolled", "instant-offer"].includes(notice.status)) {
           const app = await domain.findApplicationByEmail(notice.to);
           const appId = app ? String(app._id) : "";
-          if (!app || !["Selected", "Joined"].includes(String(app.status))) return;
+          if (!app || !["Selected", "Joined"].includes(String(app.status))) return { suppressed: true };
           const token = appId ? await auth.generateMagicLinkToken(notice.to, appId) : "";
           portalUrl = token ? `${siteOrigin}/intern/verify?token=${token}` : `${siteOrigin}/intern/login?role=intern`;
         }
