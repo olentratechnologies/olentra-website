@@ -17,7 +17,7 @@ test("an open window gets the time added to its deadline", () => {
 });
 
 test("extensions need a deadline, a known unit and a sensible amount", () => {
-  assert.match(previewExtension(null, 1, "days", now).error, /Set an application deadline/);
+  assert.match(previewExtension(null, 1, "days", now).error, /no end date/);
   assert.match(previewExtension(new Date(now).toISOString(), 1, "weeks", now).error, /hours or days/);
   assert.match(previewExtension(new Date(now).toISOString(), 0, "days", now).error, /1 to 60 days/);
   assert.match(previewExtension(new Date(now).toISOString(), 721, "hours", now).error, /1 to 720 hours/);
@@ -27,4 +27,9 @@ test("extensions need a deadline, a known unit and a sensible amount", () => {
 test("extension labels read naturally", () => {
   assert.equal(extensionLabel({ amount: 1, unit: "days" }), "1 day");
   assert.equal(extensionLabel({ amount: 12, unit: "hours" }), "12 hours");
+});
+
+test("a switched-off program reopens from now, whatever its old deadline", () => {
+  assert.deepEqual(previewExtension(null, 3, "days", now, false), { deadline: now + 72 * hour, reopened: true, error: "" });
+  assert.deepEqual(previewExtension(new Date(now + 10 * hour).toISOString(), 1, "days", now, false), { deadline: now + 24 * hour, reopened: true, error: "" });
 });

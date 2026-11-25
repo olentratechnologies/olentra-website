@@ -258,6 +258,15 @@ test("admins extend the application window by hours or days and visitors see it"
   await expect(domain.execute("program.extendDeadline", { amount: 1, unit: "days" }, recruiter, `extend-${randomUUID()}`)).rejects.toMatchObject({ code: "FORBIDDEN" });
   await expect(domain.execute("program.extendDeadline", { amount: 0, unit: "days" }, admin, `extend-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   await expect(domain.execute("program.extendDeadline", { amount: 3, unit: "weeks" }, admin, `extend-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  // Program switched off with no deadline (closed by the switch): reopens from now and switches it on.
+  await domain.collection("settings").updateOne({ _id: "program" }, { $set: { programEnabled: false, applicationDeadline: null } });
+  const switchedOn = await domain.execute("program.extendDeadline", { amount: 3, unit: "days" }, admin, `extend-${randomUUID()}`) as any;
+  expect(switchedOn.deadlineExtension).toMatchObject({ reopened: true, previousDeadline: null });
+  expect(Math.abs(Date.parse(switchedOn.applicationDeadline) - (Date.now() + 72 * hour))).toBeLessThan(60_000);
+  expect((await domain.collection("settings").findOne({ _id: "program" }))?.programEnabled).toBe(true);
+  // Open with no end date: nothing to extend.
+  await domain.collection("settings").updateOne({ _id: "program" }, { $set: { applicationDeadline: null } });
+  await expect(domain.execute("program.extendDeadline", { amount: 1, unit: "days" }, admin, `extend-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   // A deadline set by hand is a new window, so the "extended" banner goes away.
   await domain.execute("settings.update", { patch: { applicationDeadline: new Date(Date.now() + 5 * 24 * hour).toISOString() } }, admin, `extend-${randomUUID()}`);
   expect(((await domain.execute("intern.public", {}, null, "")) as any).settings.deadlineExtension).toBeNull();

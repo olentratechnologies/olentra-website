@@ -66,15 +66,16 @@ const EXTENSION_UNIT_MS = { hours: 3_600_000, days: 86_400_000 };
 
 /**
  * Previews an extension the way the server applies it: an open window gets
- * the time added to its deadline; a closed one reopens, counted from now.
+ * the time added to its deadline; a closed one (deadline passed, or the
+ * program switched off) reopens, counted from now.
  */
-export function previewExtension(currentDeadline, amount, unit, now = Date.now()) {
+export function previewExtension(currentDeadline, amount, unit, now = Date.now(), programEnabled = true) {
   const current = deadlineTime(currentDeadline);
-  if (current === null) return { error: "Set an application deadline first; without one, applications have no end date to extend." };
   if (!(unit in EXTENSION_UNIT_MS)) return { error: "Extend by hours or days." };
   const count = Number(amount);
   if (!Number.isInteger(count) || count < 1 || count > EXTENSION_LIMITS[unit]) return { error: `Extend by 1 to ${EXTENSION_LIMITS[unit]} ${unit}.` };
-  const reopened = current <= now;
+  if (programEnabled && current === null) return { error: "Applications are open with no end date, so there’s nothing to extend. Set a deadline above instead." };
+  const reopened = !programEnabled || current <= now;
   const deadline = (reopened ? now : current) + count * EXTENSION_UNIT_MS[unit];
   return { deadline, reopened, error: "" };
 }

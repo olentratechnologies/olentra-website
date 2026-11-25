@@ -5,6 +5,7 @@ import { TimerReset } from "lucide-react";
 import { useSiteFeatures } from "@olentra/site-features/react";
 import { Button, Modal } from "./DashboardUI";
 import { deadlineTime, extensionLabel, formatDeadline, isDeadlinePassed, previewExtension } from "@/lib/intern/application-deadline.mjs";
+import { isProgramAvailable } from "@/lib/intern/program-availability.mjs";
 import ui from "./pages.module.css";
 import styles from "./settings.module.css";
 
@@ -20,7 +21,7 @@ const QUICK = [
  * then see an "Applications extended" banner, plus a note that applications
  * received so far are under review.
  */
-export default function ExtendApplications({ settings, commands, notify }) {
+export default function ExtendApplications({ settings, programs = [], commands, notify }) {
   const { features } = useSiteFeatures();
   const [amount, setAmount] = useState(2);
   const [unit, setUnit] = useState("days");
@@ -30,10 +31,13 @@ export default function ExtendApplications({ settings, commands, notify }) {
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(timer); }, []);
 
   const current = settings.applicationDeadline;
-  const closed = isDeadlinePassed(current, now);
-  const preview = previewExtension(current, amount, unit, now);
+  const programOn = settings.programEnabled === true;
+  const closed = !programOn || isDeadlinePassed(current, now);
+  const preview = previewExtension(current, amount, unit, now, programOn);
   const extension = settings.deadlineExtension;
-  const switchedOff = !settings.programEnabled || features?.applications === false || features?.internships === false;
+  // Reopening switches the program on; these other switches it can't change.
+  const siteSwitchOff = features?.applications === false || features?.internships === false;
+  const noOpenTrack = !programs.some((program) => isProgramAvailable(program, { ...settings, programEnabled: true }));
 
   async function extend() {
     if (busy || preview.error) return;
@@ -55,16 +59,16 @@ export default function ExtendApplications({ settings, commands, notify }) {
         <div>
           <h3 id="extend-heading" className={styles.subheading}>Extend applications</h3>
           <p className={styles.helper}>
-            Give applicants more time without changing the deadline by hand. {closed ? "Applications are closed, so this reopens them from now." : "The extra time is added to the current deadline."} Visitors see an “Applications extended” banner on every page and a note that applications received so far are under review.
+            Give applicants more time without changing the deadline by hand. {closed ? `Applications are closed, so this reopens them from now${programOn ? "" : " and switches the program on"}.` : "The extra time is added to the current deadline."} Visitors see an “Applications extended” banner on every page and a note that applications received so far are under review.
           </p>
         </div>
       </div>
-      {deadlineTime(current) === null ? (
-        <p className={styles.deadlineStatus} data-tone="idle">There’s no deadline, so applications stay open while the program is enabled. Set a deadline above to use extensions.</p>
+      {programOn && deadlineTime(current) === null ? (
+        <p className={styles.deadlineStatus} data-tone="idle">Applications are open with no end date, so there’s nothing to extend. Set a deadline above if you want one.</p>
       ) : (
         <>
           <p className={styles.deadlineStatus} data-tone={closed ? "error" : "ok"} role="status">
-            {closed ? `Closed since ${formatDeadline(deadlineTime(current))}.` : `Open until ${formatDeadline(deadlineTime(current))}.`}
+            {!programOn ? "Closed: the internship program is switched off." : closed ? `Closed since ${formatDeadline(deadlineTime(current))}.` : `Open until ${formatDeadline(deadlineTime(current))}.`}
             {extension ? ` Currently extended by ${extensionLabel(extension)}.` : ""}
           </p>
           <div className={styles.deadlineControls}>
@@ -79,10 +83,11 @@ export default function ExtendApplications({ settings, commands, notify }) {
           <p className={styles.deadlineStatus} data-tone={preview.error ? "error" : "ok"} role="status">
             {preview.error || `New deadline: ${formatDeadline(preview.deadline)}${preview.reopened ? " · reopens applications now" : ""}.`}
           </p>
-          {switchedOff && !preview.error && (
-            <p className={styles.deadlineStatus} data-tone="error">
-              Applications are also switched off{!settings.programEnabled ? " (Enable Internship Program, above)" : " in the company workspace’s site switches"}. Turn that on too, or the window stays closed.
-            </p>
+          {!preview.error && siteSwitchOff && (
+            <p className={styles.deadlineStatus} data-tone="error">The website’s Applications switch is off in the company workspace. Turn it on too, or the window stays closed.</p>
+          )}
+          {!preview.error && noOpenTrack && (
+            <p className={styles.deadlineStatus} data-tone="error">No internship track is open (check the Program tab: enabled, fee set, matching internship type). Fix that too, or the form won’t show.</p>
           )}
           <div>
             <Button type="button" disabled={Boolean(preview.error) || busy} onClick={() => setConfirming(true)}>
@@ -95,7 +100,7 @@ export default function ExtendApplications({ settings, commands, notify }) {
         open={confirming}
         onOpenChange={(open) => { if (!busy) setConfirming(open); }}
         title={closed ? `Reopen applications for ${extensionLabel({ amount, unit })}?` : `Extend applications by ${extensionLabel({ amount, unit })}?`}
-        description={preview.error ? "" : `Applications will be open until ${formatDeadline(preview.deadline)}. Every page of the website shows an “Applications extended” bar, and the careers page shows a banner with the new deadline and a note that applications received so far are under review. Staff get a notification.`}
+        description={preview.error ? "" : `${!programOn ? "The internship program will be switched on. " : ""}Applications will be open until ${formatDeadline(preview.deadline)}. Every page of the website shows an “Applications extended” bar, and the careers page shows a banner with the new deadline and a note that applications received so far are under review. Staff get a notification.`}
       >
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
           <Button variant="secondary" type="button" disabled={busy} onClick={() => setConfirming(false)}>Cancel</Button>

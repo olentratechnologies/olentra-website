@@ -270,11 +270,12 @@ export function createCommunications({ collection, transact }: Options) {
       if (!isAdmin(account)) throw new DomainError("FORBIDDEN", "Only an admin can extend applications.");
       return transact(key, account, { method, params }, async session => {
         const config = await settings.findOne({ _id: "program" }, { session });
-        const plan = planDeadlineExtension(config?.applicationDeadline, params.amount, params.unit);
+        const plan = planDeadlineExtension(config?.applicationDeadline, params.amount, params.unit, Date.now(), config?.programEnabled === true);
         const extendedOn = new Date().toISOString();
         const extension = { ...plan, extendedOn, extendedBy: account.name || "Admin" };
         const history = [...(Array.isArray(config?.deadlineExtensions) ? config.deadlineExtensions : []), extension].slice(-20);
-        await settings.updateOne({ _id: "program" }, { $set: { applicationDeadline: plan.deadline, deadlineExtension: extension, deadlineExtensions: history } }, { session });
+        // Reopening also switches the program back on, so the window really is open.
+        await settings.updateOne({ _id: "program" }, { $set: { applicationDeadline: plan.deadline, deadlineExtension: extension, deadlineExtensions: history, programEnabled: true } }, { session });
         const label = `${plan.amount} ${plan.amount === 1 ? plan.unit.slice(0, -1) : plan.unit}`;
         const until = new Date(plan.deadline).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) + " IST";
         const title = plan.reopened ? `Applications reopened for ${label}` : `Applications extended by ${label}`;

@@ -158,7 +158,7 @@ export default function SettingsPage() {
         {(() => { const summary = deadlineSummary(deadline, data.settings.applicationDeadline); return <p className={styles.deadlineStatus} data-tone={summary.tone} role="status">{summary.text}</p>; })()}
       </section>
       <div className={styles.divider}/>
-      <ExtendApplications settings={data.settings} commands={commands} notify={notify}/>
+      <ExtendApplications settings={data.settings} programs={data.programs} commands={commands} notify={notify}/>
       <div className={styles.divider}/><h3 className={styles.subheading}>Internship duration</h3>
       <p className={styles.helper}>New offers use this duration. Each student's start date is chosen when preparing their offer. Issued offers keep their confirmed dates.</p>
       {!parseDuration(duration) && <p role="alert">The previous duration “{duration}” needs review. Choose a precise quantity and unit before sending new offers.</p>}
