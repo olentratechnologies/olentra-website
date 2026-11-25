@@ -107,3 +107,179 @@
   font-size: 12px;
   color: var(--ad-blue, #1768ed);
 }
+
+/* A wider dialog, so search, filters and the list have room. */
+.wide[role="dialog"] {
+  width: min(52rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.toolbar > select {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 190px;
+}
+.searchBox {
+  position: relative;
+  flex: 1 1 260px;
+  display: flex;
+  align-items: center;
+  color: var(--ad-subtle, #526b96);
+}
+.searchBox svg {
+  position: absolute;
+  left: 11px;
+  pointer-events: none;
+}
+.modal .searchBox input {
+  padding-left: 34px;
+}
+.filters {
+  border: 1px solid var(--ad-border, #c9d9fa);
+  border-radius: 10px;
+  padding: 0 12px;
+}
+.filters summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ad-muted, #254577);
+  cursor: pointer;
+}
+.filterBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 2px 0 14px;
+}
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ad-subtle, #526b96);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chips button,
+.bulkActions button {
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--ad-border, #c9d9fa);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ad-muted, #254577);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.chips button small {
+  margin-left: 4px;
+  opacity: 0.7;
+}
+.chips button[aria-pressed="true"] {
+  border-color: var(--ad-blue, #1768ed);
+  background: color-mix(in srgb, var(--ad-blue, #1768ed) 14%, transparent);
+  color: var(--ad-blue, #1768ed);
+}
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.filterGrid > label:not(.check) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ad-subtle, #526b96);
+}
+.linkButton {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ad-blue, #1768ed);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.bulkActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.bulkActions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.topN {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.modal .topN input {
+  width: 64px;
+  min-height: 28px;
+  padding: 3px 8px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ad-subtle, #526b96);
+  white-space: normal;
+}
+.meta svg {
+  flex-shrink: 0;
+  color: var(--ad-blue, #1768ed);
+}
+.rowEnd {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.list {
+  max-height: 340px;
+}
+.list .name small {
+  display: inline;
+}
+@media (max-width: 720px) {
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .list li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .rowEnd {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
