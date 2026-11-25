@@ -354,6 +354,8 @@ test("admins can submit a test application while applications are closed", async
     const recruiter = { id: "test-recruiter", role: "company", staffRole: "recruiter", name: "Recruiter", email: "test-recruiter@example.test", applicationId: null, sessionVersion: 1, permissions: ["applications.read", "applications.review"] } as any;
     await expect(domain.execute("application.submitTest", input, recruiter, `test-apply-${randomUUID()}`)).rejects.toMatchObject({ code: "FORBIDDEN" });
     const admin = { id: "test-admin", role: "company", staffRole: "admin", name: "Admin", email: "test-admin@example.test", applicationId: null, sessionVersion: 1 } as any;
+    // Staff writes check the account still exists with the same role.
+    await domain.collection("accounts").updateOne({ _id: admin.id }, { $setOnInsert: { role: "company", staffRole: "admin", name: admin.name, email: admin.email, sessionVersion: 1 } }, { upsert: true });
     const result = await domain.execute("application.submitTest", input, admin, `test-apply-${randomUUID()}`) as any;
     expect(result).toMatchObject({ received: true });
     const saved = await domain.collection("applications").findOne({ _id: result.applicationId });
