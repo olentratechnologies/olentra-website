@@ -2,6 +2,7 @@
 
 import ProjectPlan from "../ProjectPlan";
 import { InternProjectLinks, TaskLinks } from "../ProjectLinks";
+import TaskDescription from "../TaskDescription";
 import { MyTeamCard } from "./MyTeam";
 
 import { useState } from "react";
@@ -398,7 +399,7 @@ export function PortalProjectDetail({ projectId }) {
                                 </span>
                               )}
                             </h3>
-                            <p>{task.description}</p>
+                            <TaskDescription text={task.description} />
                             <TaskLinks links={task.links} />
                           </div>
                           <Status value={task.status} />

@@ -5,6 +5,7 @@ import LoadingIndicator from "@olentra/ui/LoadingIndicator";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TaskLinks, TaskLinksField } from "../ProjectLinks";
+import TaskDescription from "../TaskDescription";
 import {
   ArrowRight,
   CalendarDays,
@@ -804,9 +805,10 @@ export function TaskEditor({ task, onSave, onCancel, busy }) {
             setForm({ ...form, description: event.target.value })
           }
           required
-          rows={3}
+          rows={8}
           maxLength={3000}
         />
+        <span className={styles.hint}>Tip: a blank line starts a new paragraph, “1. Title” on its own line starts a step, and lines starting with “- ” become bullets. **Bold** works too.</span>
       </label>
       <label>
         Due date
@@ -1195,7 +1197,6 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
             <label className={styles.fullWidth}>
               Description
               <textarea
-                rows={3}
                 value={form.description}
                 onChange={(event) =>
                   setForm({ ...form, description: event.target.value })
@@ -1204,7 +1205,9 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
                 required
                 minLength={10}
                 maxLength={3000}
+                rows={8}
               />
+              <span className={styles.hint}>Tip: a blank line starts a new paragraph, “1. Title” on its own line starts a step, and lines starting with “- ” become bullets. **Bold** works too.</span>
             </label>
             <label>
               Due date
@@ -1269,7 +1272,7 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
                     <h3>{task.title}</h3>
                     <StatusBadge status={task.status} />
                   </div>
-                  <p>{task.description}</p>
+                  <TaskDescription text={task.description} />
                   <TaskLinks links={task.links} />
                   <div className={styles.taskMeta}>
                     <span>

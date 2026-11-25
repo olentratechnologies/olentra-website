@@ -1,0 +1,110 @@
+/* Task instructions, in both the staff dashboard (dark or light) and the intern portal.
+   Colours inherit from the surrounding card so it fits either theme. */
+.wrap {
+  min-width: 0;
+  margin: 10px 0 4px;
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.collapsed {
+  max-height: 13.5em;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 62%, transparent);
+  mask-image: linear-gradient(180deg, #000 62%, transparent);
+}
+.paragraph {
+  margin: 0;
+  opacity: 0.92;
+}
+.heading {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 -2px;
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.body > .step:first-child {
+  margin-top: 0;
+}
+.stepNumber {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ad-blue, #2563eb) 16%, transparent);
+  color: var(--ad-blue, #2563eb);
+  font-size: 12px;
+  font-weight: 800;
+}
+/* Content under a step lines up with the step's text, not its number. */
+.step ~ .paragraph,
+.step ~ .list {
+  margin-left: 34px;
+}
+.list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  opacity: 0.92;
+}
+.list li::marker {
+  color: var(--ad-blue, #2563eb);
+}
+.body code {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+.body a {
+  color: var(--ad-blue, #2563eb);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ad-blue, #2563eb);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .step ~ .paragraph,
+  .step ~ .list {
+    margin-left: 0;
+  }
+}

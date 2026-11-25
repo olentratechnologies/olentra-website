@@ -2,6 +2,7 @@
 
 import ProjectPlan from "../ProjectPlan";
 import { StaffProjectLinks, TaskLinks } from "../ProjectLinks";
+import TaskDescription from "../TaskDescription";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -1118,7 +1119,7 @@ function AssignedTasks({ applicationId, applicant, canManage, canReadSubmissions
                 <h3>{task.title}</h3>
                 <StatusBadge status={task.status} />
               </div>
-              {task.description && <p>{task.description}</p>}
+              {task.description && <TaskDescription text={task.description} />}
               <TaskLinks links={task.links} />
               <div className={styles.projectFooter}>
                 {canManage && <>
