@@ -1,9 +1,14 @@
-/* The careers page's "extended window" notice. Light theme, like the page. */
+/* The careers page's "extended window" notice. Light theme, like the page.
+   Padding (not margin) clears the fixed navbar: a top margin would collapse
+   through the page and expose the site's dark background above it. */
+.wrap {
+  padding-top: 104px;
+}
 .banner {
   position: relative;
   width: calc(100% - 80px);
   max-width: 1152px;
-  margin: 104px auto 0;
+  margin: 0 auto;
   border-radius: 22px;
   overflow: hidden;
   color: #080e48;
@@ -109,9 +114,11 @@
   color: #0b6b50;
 }
 @media (max-width: 767px) {
+  .wrap {
+    padding-top: 88px;
+  }
   .banner {
     width: calc(100% - 32px);
-    margin-top: 88px;
     border-radius: 18px;
   }
   .main {

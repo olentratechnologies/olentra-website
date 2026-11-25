@@ -25,6 +25,7 @@ export default function ExtendedWindowBanner({ extension, deadline }) {
   if (!extension || time === null || time <= now) return null;
   const previous = deadlineTime(extension.previousDeadline);
   return (
+    <div className={styles.wrap}>
     <section className={styles.banner} aria-labelledby="extended-window-title" data-theme="light">
       <div className={styles.main}>
         <span className={styles.icon} aria-hidden="true"><TimerReset size={22} /></span>
@@ -48,5 +49,6 @@ export default function ExtendedWindowBanner({ extension, deadline }) {
         </p>
       </div>
     </section>
+    </div>
   );
 }
