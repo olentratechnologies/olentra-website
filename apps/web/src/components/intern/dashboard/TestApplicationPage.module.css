@@ -63,6 +63,8 @@
   font-size: 13px;
   color: var(--ad-muted, #254577);
   text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .success {
   display: flex;
