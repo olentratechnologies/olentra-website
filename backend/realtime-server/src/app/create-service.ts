@@ -431,6 +431,11 @@ export function createRealtimeServer(options: RealtimeServerOptions = {}) {
         if (url.pathname === AUTH_PATHS.session && request.method === "GET") return await runtime.authRoutes.session(request, origin);
         if (url.pathname === AUTH_PATHS.changePassword && request.method === "POST") return await runtime.authRoutes.changePassword(request, origin);
         if (url.pathname === SITE_FEATURES_PATH && request.method === "GET") return sendJson({ ok: true, data: await runtime.siteFeatures.read() }, origin);
+        // The application window for the website's site-wide "applications extended" bar.
+        if (url.pathname === "/intern/public/window" && request.method === "GET") {
+          const { settings } = await runtime.domain.execute("intern.public", {}, null, "") as { settings: { programEnabled: boolean; applicationDeadline: string | null; deadlineExtension: unknown } };
+          return sendJson({ ok: true, data: { programEnabled: settings.programEnabled, applicationDeadline: settings.applicationDeadline, deadlineExtension: settings.deadlineExtension } }, origin);
+        }
         if (url.pathname === SITE_FEATURES_PATH && request.method === "PUT") {
           // Only owners and workspace administrators may change live website switches.
           const token = bearerToken(request);

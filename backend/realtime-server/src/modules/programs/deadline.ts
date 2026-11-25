@@ -23,3 +23,33 @@ export function parseDeadlinePatch(value: unknown, now = Date.now()): string | n
   if (time - now > MAX_AHEAD_MS) throw new DomainError("INVALID_REQUEST", "Choose an application deadline within the next two years.");
   return deadline;
 }
+
+export type ExtensionUnit = "hours" | "days";
+/** What visitors see about an extended application window. */
+export type PublicDeadlineExtension = { amount: number; unit: ExtensionUnit; previousDeadline: string; deadline: string; reopened: boolean; extendedOn: string };
+const UNIT_MS: Record<ExtensionUnit, number> = { hours: 60 * 60 * 1000, days: 24 * 60 * 60 * 1000 };
+const UNIT_LIMIT: Record<ExtensionUnit, number> = { hours: 720, days: 60 };
+
+/**
+ * Works out a deadline extension. A window that is still open gets the time
+ * added to its current deadline; a closed window reopens, counted from now.
+ */
+export function planDeadlineExtension(currentDeadline: unknown, amount: unknown, unit: unknown, now = Date.now()) {
+  const current = normalizeDeadline(currentDeadline);
+  if (!current) throw new DomainError("INVALID_REQUEST", "Set an application deadline in Settings first; without one, applications have no end date to extend.");
+  if (unit !== "hours" && unit !== "days") throw new DomainError("INVALID_REQUEST", "Extend by hours or days.");
+  const count = Number(amount);
+  if (!Number.isSafeInteger(count) || count < 1 || count > UNIT_LIMIT[unit]) throw new DomainError("INVALID_REQUEST", `Extend by 1 to ${UNIT_LIMIT[unit]} ${unit}.`);
+  const reopened = Date.parse(current) <= now;
+  const base = reopened ? now : Date.parse(current);
+  const deadline = new Date(base + count * UNIT_MS[unit]).toISOString();
+  if (Date.parse(deadline) - now > MAX_AHEAD_MS) throw new DomainError("INVALID_REQUEST", "Choose an application deadline within the next two years.");
+  return { amount: count, unit: unit as ExtensionUnit, previousDeadline: current, deadline, reopened };
+}
+
+/** The extension visitors should see: only while it still sets the current deadline. */
+export function activeDeadlineExtension(config: any): PublicDeadlineExtension | null {
+  const extension = config?.deadlineExtension, deadline = normalizeDeadline(config?.applicationDeadline);
+  if (!extension || !deadline || normalizeDeadline(extension.deadline) !== deadline) return null;
+  return { amount: Number(extension.amount), unit: extension.unit === "hours" ? "hours" : "days", previousDeadline: String(extension.previousDeadline), deadline, reopened: Boolean(extension.reopened), extendedOn: String(extension.extendedOn) };
+}

@@ -59,3 +59,28 @@ export function resultsBy(time, days = REVIEW_DAYS) {
 export function formatDay(time, locale) {
   return new Date(time).toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
+
+/** Most an application window can be extended by in one go (matches the server). */
+export const EXTENSION_LIMITS = { hours: 720, days: 60 };
+const EXTENSION_UNIT_MS = { hours: 3_600_000, days: 86_400_000 };
+
+/**
+ * Previews an extension the way the server applies it: an open window gets
+ * the time added to its deadline; a closed one reopens, counted from now.
+ */
+export function previewExtension(currentDeadline, amount, unit, now = Date.now()) {
+  const current = deadlineTime(currentDeadline);
+  if (current === null) return { error: "Set an application deadline first; without one, applications have no end date to extend." };
+  if (!(unit in EXTENSION_UNIT_MS)) return { error: "Extend by hours or days." };
+  const count = Number(amount);
+  if (!Number.isInteger(count) || count < 1 || count > EXTENSION_LIMITS[unit]) return { error: `Extend by 1 to ${EXTENSION_LIMITS[unit]} ${unit}.` };
+  const reopened = current <= now;
+  const deadline = (reopened ? now : current) + count * EXTENSION_UNIT_MS[unit];
+  return { deadline, reopened, error: "" };
+}
+
+/** "2 days", "1 hour". */
+export function extensionLabel({ amount, unit }) {
+  const count = Number(amount);
+  return `${count} ${count === 1 ? String(unit).replace(/s$/, "") : unit}`;
+}

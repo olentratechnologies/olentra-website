@@ -234,3 +234,31 @@ test("a status path is validated and final steps stay admin-only", async () => {
   await expect(domain.execute("application.update", { id: items[0]!.id, path: ["Shortlisted", "Shortlisted"], expectedVersion: 1 }, admin, `path-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   expect((await domain.collection("applications").findOne({ _id: items[0]!.id }))?.status).toBe("Applied");
 });
+
+test("admins extend the application window by hours or days and visitors see it", async () => {
+  const hour = 60 * 60 * 1000;
+  await domain.collection("settings").updateOne({ _id: "program" }, { $set: { applicationDeadline: new Date(Date.now() - hour).toISOString() }, $unset: { deadlineExtension: "", deadlineExtensions: "" } });
+  // Closed: reopens counted from now.
+  const reopened = await domain.execute("program.extendDeadline", { amount: 2, unit: "hours" }, admin, `extend-${randomUUID()}`) as any;
+  expect(reopened.deadlineExtension).toMatchObject({ amount: 2, unit: "hours", reopened: true });
+  expect(Math.abs(Date.parse(reopened.applicationDeadline) - (Date.now() + 2 * hour))).toBeLessThan(60_000);
+  // Still open: added to the current deadline.
+  const extended = await domain.execute("program.extendDeadline", { amount: 1, unit: "days" }, admin, `extend-${randomUUID()}`) as any;
+  expect(Date.parse(extended.applicationDeadline) - Date.parse(reopened.applicationDeadline)).toBe(24 * hour);
+  expect(extended.deadlineExtension).toMatchObject({ amount: 1, unit: "days", reopened: false, previousDeadline: reopened.applicationDeadline });
+  // Visitors see the extension, without who made it.
+  const visible = await domain.execute("intern.public", {}, null, "") as any;
+  expect(visible.settings.applicationDeadline).toBe(extended.applicationDeadline);
+  expect(visible.settings.deadlineExtension).toMatchObject({ amount: 1, unit: "days", deadline: extended.applicationDeadline });
+  expect(visible.settings.deadlineExtension.extendedBy).toBeUndefined();
+  // Recorded for staff.
+  expect(await domain.collection("staff_audit").countDocuments({ action: "program.deadlineExtended" })).toBeGreaterThanOrEqual(2);
+  expect(await domain.collection("notifications").findOne({ recipientRole: "company", title: "Applications extended by 1 day" })).not.toBeNull();
+  // Only admins, and only sensible amounts.
+  await expect(domain.execute("program.extendDeadline", { amount: 1, unit: "days" }, recruiter, `extend-${randomUUID()}`)).rejects.toMatchObject({ code: "FORBIDDEN" });
+  await expect(domain.execute("program.extendDeadline", { amount: 0, unit: "days" }, admin, `extend-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  await expect(domain.execute("program.extendDeadline", { amount: 3, unit: "weeks" }, admin, `extend-${randomUUID()}`)).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  // A deadline set by hand is a new window, so the "extended" banner goes away.
+  await domain.execute("settings.update", { patch: { applicationDeadline: new Date(Date.now() + 5 * 24 * hour).toISOString() } }, admin, `extend-${randomUUID()}`);
+  expect(((await domain.execute("intern.public", {}, null, "")) as any).settings.deadlineExtension).toBeNull();
+});

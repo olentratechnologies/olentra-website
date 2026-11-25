@@ -1227,3 +1227,7 @@
   .reviewSteps li[data-state="current"] .reviewMarker { animation: reviewPulse 2.4s ease-in-out infinite; }
 }
 @keyframes reviewPulse { 0%, 100% { box-shadow: 0 0 0 5px #315fe91f; } 50% { box-shadow: 0 0 0 9px #315fe90d; } }
+/* The extended-window banner already clears the navbar, so the hero needs less top space. */
+.heroAfterNotice .heroInner {
+  padding-top: 48px;
+}

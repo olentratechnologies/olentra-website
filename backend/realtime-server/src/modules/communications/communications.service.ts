@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { MongoClientBulkWriteError, MongoServerError, type ClientBulkWriteModel, type ClientSession, type Collection, type Document } from "mongodb";
 import { validateRubric } from "../reviews/reviews.service";
 import { validateChecklist } from "../onboarding/documents";
-import { parseDeadlinePatch } from "../programs/deadline";
+import { parseDeadlinePatch, planDeadlineExtension } from "../programs/deadline";
+import { auditDecision } from "../audit/decision-audit";
 import { isInternshipDuration, MAX_DURATION_LENGTH } from "../programs/opportunities.mjs";
 import { DomainError } from "../../shared/errors";
 import type { Principal } from "../../shared/principal";
@@ -24,7 +25,7 @@ export function createCommunications({ collection, transact }: Options) {
   // Choose the path before a transaction begins; never retry an ambiguous
   // bulk-write failure through a second execution path.
   let clientBulkWrite = false;
-  const methods = new Set(["message.send", "message.list", "announcement.send", "notification.list", "notification.markRead", "settings.update", "activity.add", "analytics.get"]);
+  const methods = new Set(["message.send", "message.list", "announcement.send", "notification.list", "notification.markRead", "settings.update", "program.extendDeadline", "activity.add", "analytics.get"]);
   const signedIn = (actor: Principal | null): Principal => { if (!actor) throw new DomainError("UNAUTHENTICATED", "Sign in to continue."); return actor; };
   const staff = (actor: Principal | null): Principal => { if (actor?.role !== "company") throw new DomainError("FORBIDDEN", "Company access is required."); return actor; };
   async function initialize() {
@@ -262,6 +263,28 @@ export function createCommunications({ collection, transact }: Options) {
       if (!title || title.length > 140 || detail.length > 3000) throw new DomainError("INVALID_REQUEST", "Enter a valid activity title and details.");
       return transact(key, account, { method, params }, async session => { await addActivity(session, title, detail, applicationId, str(params.icon) || "application", str(params.tone) || "blue"); await changed(session); return true; });
     }
+    if (method === "program.extendDeadline") {
+      // Reopens or lengthens the application window by some hours or days.
+      // Visitors then see an "Applications extended" banner until it closes.
+      const account = staff(actor);
+      if (!isAdmin(account)) throw new DomainError("FORBIDDEN", "Only an admin can extend applications.");
+      return transact(key, account, { method, params }, async session => {
+        const config = await settings.findOne({ _id: "program" }, { session });
+        const plan = planDeadlineExtension(config?.applicationDeadline, params.amount, params.unit);
+        const extendedOn = new Date().toISOString();
+        const extension = { ...plan, extendedOn, extendedBy: account.name || "Admin" };
+        const history = [...(Array.isArray(config?.deadlineExtensions) ? config.deadlineExtensions : []), extension].slice(-20);
+        await settings.updateOne({ _id: "program" }, { $set: { applicationDeadline: plan.deadline, deadlineExtension: extension, deadlineExtensions: history } }, { session });
+        const label = `${plan.amount} ${plan.amount === 1 ? plan.unit.slice(0, -1) : plan.unit}`;
+        const until = new Date(plan.deadline).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) + " IST";
+        const title = plan.reopened ? `Applications reopened for ${label}` : `Applications extended by ${label}`;
+        await addNotice(session, { recipientRole: "company", applicationId: null, title, body: `${account.name || "An admin"} ${plan.reopened ? "reopened" : "extended"} the application window. Applications are now open until ${until}.`, href: "/intern/dashboard/settings" });
+        await addActivity(session, title, `Open until ${until}.`, null, "settings");
+        await auditDecision(collection("staff_audit"), session, account, "program.deadlineExtended", "program", { from: plan.previousDeadline, to: plan.deadline, amount: plan.amount, unit: plan.unit, reopened: plan.reopened });
+        await changed(session, [], true);
+        return { applicationDeadline: plan.deadline, deadlineExtension: extension };
+      });
+    }
     if (method === "settings.update") {
       const account = staff(actor), patch = params.patch;
       if (!patch || typeof patch !== "object" || Array.isArray(patch)) throw new DomainError("INVALID_REQUEST", "Provide valid settings.");
@@ -291,7 +314,11 @@ export function createCommunications({ collection, transact }: Options) {
         if (days !== null && (!Number.isSafeInteger(days) || days < 30 || days > 3650)) throw new DomainError("INVALID_REQUEST", "Keep data for between 30 and 3,650 days, or turn automatic deletion off.");
         values.retentionDays = days;
       }
-      if (patch.applicationDeadline !== undefined) values.applicationDeadline = parseDeadlinePatch(patch.applicationDeadline);
+      if (patch.applicationDeadline !== undefined) {
+        values.applicationDeadline = parseDeadlinePatch(patch.applicationDeadline);
+        // A deadline set by hand is a new window, not an extension: stop showing the "extended" banner.
+        values.deadlineExtension = null;
+      }
       if (patch.onboardingLeadDays !== undefined) { const days = Number(patch.onboardingLeadDays); if (!Number.isInteger(days) || days < 0 || days > 30) throw new DomainError("INVALID_REQUEST", "Set an onboarding lead time of 0 to 30 days."); values.onboardingLeadDays = days; }
       if (patch.maxStipend !== undefined) { const amount = Number(patch.maxStipend); if (!Number.isSafeInteger(amount) || amount < 0 || amount > 1000000) throw new DomainError("INVALID_REQUEST", "Enter a valid stipend."); values.maxStipend = amount; }
       if (patch.emailNotifications === true || (patch.integrations && Object.values(patch.integrations).some(Boolean))) throw new DomainError("UNAVAILABLE", "Email notifications and external integrations are not configured.");

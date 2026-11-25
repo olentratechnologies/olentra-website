@@ -8,6 +8,7 @@ import { isProgramAvailable, normalizeCompensationMode } from "@/lib/intern/prog
 import ui from "./pages.module.css";
 import styles from "./settings.module.css";
 import TemplatesSettings from "./TemplatesSettings";
+import ExtendApplications from "./ExtendApplications";
 import ResourcesSettings from "./ResourcesSettings";
 import { deadlineTime, formatDeadline, fromLocalInputValue, timeRemaining, toLocalInputValue } from "@/lib/intern/application-deadline.mjs";
 import { parseDuration, durationLabel } from "@/lib/intern/schedule.mjs";
@@ -156,6 +157,8 @@ export default function SettingsPage() {
         </div>
         {(() => { const summary = deadlineSummary(deadline, data.settings.applicationDeadline); return <p className={styles.deadlineStatus} data-tone={summary.tone} role="status">{summary.text}</p>; })()}
       </section>
+      <div className={styles.divider}/>
+      <ExtendApplications settings={data.settings} commands={commands} notify={notify}/>
       <div className={styles.divider}/><h3 className={styles.subheading}>Internship duration</h3>
       <p className={styles.helper}>New offers use this duration. Each student's start date is chosen when preparing their offer. Issued offers keep their confirmed dates.</p>
       {!parseDuration(duration) && <p role="alert">The previous duration “{duration}” needs review. Choose a precise quantity and unit before sending new offers.</p>}

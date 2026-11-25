@@ -24,6 +24,7 @@ import { authorizeResumeUpload, saveAttachment } from "@/lib/intern-attachments.
 import ResumeSecurityCheck, { resumeSecuritySiteKey } from "./ResumeSecurityCheck";
 import { isProgramAvailable, matchesCompensationMode, resolveProgramSelection } from "@/lib/intern/program-availability.mjs";
 import styles from "./intern.module.css";
+import ExtendedWindowBanner from "./ExtendedWindowBanner";
 import InternInsights from "./InternInsights";
 import SuccessStories from "./SuccessStories";
 import InternFaq from "./InternFaq";
@@ -193,6 +194,8 @@ export default function InternLanding() {
   // Applications were closed on purpose (deadline passed, applications switched off or no track open),
   // as opposed to the service being unavailable or the form still loading.
   const reviewing = Boolean(connected && data.opportunities && (deadlineClosed || !features.applications || !availablePrograms.length));
+  // An admin extended the window and it's still open: show the "extended window" banner.
+  const extendedWindow = Boolean(canApply && data.settings.deadlineExtension && data.settings.deadlineExtension.deadline === data.settings.applicationDeadline);
   const canApplyRef = useRef(canApply);
   canApplyRef.current = canApply;
   const [trackChoice, setTrackChoice] = useState("");
@@ -579,8 +582,9 @@ export default function InternLanding() {
     <div className={styles.page}>
       <BackgroundWaves />
       <main className={styles.main}>
+        {extendedWindow && <ExtendedWindowBanner extension={data.settings.deadlineExtension} deadline={data.settings.applicationDeadline} />}
         <Feature name="careers.hero"><section
-          className={styles.hero}
+          className={`${styles.hero} ${extendedWindow ? styles.heroAfterNotice : ""}`}
           data-theme="light"
           aria-labelledby="intern-title"
         >

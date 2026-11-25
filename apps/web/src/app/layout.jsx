@@ -5,6 +5,7 @@ import Providers from "./providers";
 import Loader from "../components/Loader";
 import DailySupplyWelcome from "../components/welcome/DailySupplyWelcome";
 import VisitorTracker from "@olentra/realtime/VisitorTracker";
+import ApplicationsExtendedBar from "@/components/intern/ApplicationsExtendedBar";
 import { companyInfo } from "@/data/company";
 import { siteConfig } from "@/lib/site";
 import "lenis/dist/lenis.css";
@@ -114,6 +115,7 @@ export default async function RootLayout({ children }) {
         <Loader isInitialLoad={true} />
         <DailySupplyWelcome />
         <VisitorTracker />
+        <ApplicationsExtendedBar />
         </SiteFeatureGate></Providers></SiteFeaturesProvider>
       </body>
     </html>
