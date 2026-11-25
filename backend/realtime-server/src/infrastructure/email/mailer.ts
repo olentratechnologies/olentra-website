@@ -235,7 +235,7 @@ export function createInternshipMailer(deliveryToken = EMAIL_DELIVERY_TOKEN, del
     }
     if (id === "selected" || id === "direct-enrolled") {
       buttons.push({ label: "Activate your internship portal", url: options.portalUrl });
-      details.push("Single-use link · Expires in 24 hours. If it expires, request a new sign-in link.");
+      details.push("This button works once and expires in 24 hours. If it has expired, request a new sign-in link on the Olentra intern login page.");
     }
     // An instant offer reads like a formal offer; its button is a one-time sign-in link, since the candidate has no portal access yet.
     if (id === "instant-offer") {
