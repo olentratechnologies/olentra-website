@@ -22,3 +22,5 @@ yarn-error.log*
 
 # Local Groq API experiments (holds an API key in .env)
 /bun-GroqCloud-test/
+.next.old
+.next.new

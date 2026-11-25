@@ -1,0 +1,13 @@
+[Unit]
+Description=Olentra auto-deploy (pulls main and rebuilds what changed)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/olentra-website
+Environment=HOME=/home/ubuntu
+ExecStart=/home/ubuntu/olentra-website/scripts/deploy/autodeploy.sh
+TimeoutStartSec=30min
+Nice=5

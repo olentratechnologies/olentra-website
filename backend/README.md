@@ -86,12 +86,10 @@ database.
 Each service has a local Dockerfile and `.dockerignore`. These are packaging
 and healthcheck baselines only; they do not invent a new cloud target.
 
-The Oracle Cloud workflow is
-`.github/workflows/deploy-realtime-server.yml`. It connects over SSH, updates
-the `main` checkout, installs the Bun lockfile, builds the service, creates or
-updates the `olentra-realtime` systemd unit, restarts the process, and checks
-`/health` plus `/intern/health`. The deployment host must have Git, Bun, sudo,
-systemd, and curl. Configure the production environment once at
-`backend/realtime-server/.env` in the host checkout, or at
-`/etc/olentra/realtime-server.env`; the workflow never commits or transmits
-those runtime secrets.
+Production runs on the OCI Ampere server and deploys itself. The
+`olentra-autodeploy` systemd timer runs `scripts/deploy/autodeploy.sh` every
+minute: when `main` has a new commit whose GitHub checks all passed, it pulls
+it, rebuilds only the apps that commit touched, restarts them, checks their
+health and puts the previous build back if a check fails. See
+`scripts/deploy/README.md`. `.github/workflows/deploy-realtime-server.yml`
+now only runs the realtime tests and typecheck; it no longer deploys.
