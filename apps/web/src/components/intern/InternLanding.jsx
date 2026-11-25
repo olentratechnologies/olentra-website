@@ -1188,7 +1188,8 @@ export default function InternLanding() {
           </div>}
         </section>
       </main>
-      {data.settings.programEnabled && features.applications && (
+      {/* The extended-window banner has its own countdown, so the floating one would only cover it. */}
+      {data.settings.programEnabled && features.applications && !extendedWindow && (
         <ApplicationCountdown deadline={data.settings.applicationDeadline} />
       )}
       {canApply && launchPhase !== "idle" && (
