@@ -1,3 +1,4 @@
+import { listOffers } from "./offer-list";
 import { createOfferSchedules } from "./offer-schedules";
 import type { Outbox } from "../outbox/outbox";
 import { randomUUID } from "node:crypto";
@@ -88,7 +89,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
   const events = collection("events"), notifications = collection("notifications"), activity = collection("activity"), offers = collection("offers"), onboarding = collection("onboarding"), interns = collection("interns"), projects = collection("projects"), tasks = collection("tasks"), submissions = collection("submissions"), certificates = collection("certificates"), interviews = collection("interviews");
   const plans = collection("project_plans");
   const schedules = createOfferSchedules(collection);
-  const names = new Set(["task.createMany", "project.link.save", "project.link.delete", "project.link.access", "offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.remind", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.plan.get", "project.plan.save", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
+  const names = new Set(["offer.list", "task.createMany", "project.link.save", "project.link.delete", "project.link.access", "offer.enrollDirect", "offer.preview", "offer.versions", "offer.revise", "offer.revision.accept", "offer.revision.decline", "offer.revision.withdraw","intern.assignMentor", "onboarding.document", "onboarding.reviewDocument", "offer.remind", "offer.extend", "application.withdraw", "interview.cancel", "offer.send", "offer.accept", "offer.decline", "onboarding.save", "onboarding.submit", "onboarding.approve", "profile.update", "project.plan.get", "project.plan.save", "project.create", "project.assign", "project.update", "project.delete", "task.remind", "task.create", "task.update", "task.delete", "task.start", "submission.create", "submission.review", "intern.update", "certificate.generate", "interview.schedule"]);
   async function initialize() {
     await Promise.all([
       schedules.initialize(),
@@ -136,6 +137,7 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
       if (!project) throw new DomainError("NOT_FOUND", "Project unavailable.");
       return { markdown: project.plan?.markdown ?? "", revision: project.plan?.revision ?? 0, ...(actor.role === "intern" ? {} : { visibleToInterns: project.planHidden !== true }) };
     }
+    if (method === "offer.list") return listOffers(collection, p, isAdmin(actor));
     if (["offer.preview", "offer.versions"].includes(method)) return schedules.execute(method, p, actor);
     return transact(key, actor, { method, params: p }, async session => {
       const result = await (async () => {

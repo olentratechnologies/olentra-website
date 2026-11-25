@@ -271,3 +271,17 @@ test("admins extend the application window by hours or days and visitors see it"
   await domain.execute("settings.update", { patch: { applicationDeadline: new Date(Date.now() + 5 * 24 * hour).toISOString() } }, admin, `extend-${randomUUID()}`);
   expect(((await domain.execute("intern.public", {}, null, "")) as any).settings.deadlineExtension).toBeNull();
 });
+
+test("admins list every generated offer; other staff can't", async () => {
+  const [item] = await seed(1, "offer-list");
+  const future = new Date(Date.now() + 5 * 86_400_000).toISOString();
+  await domain.collection("offers").insertOne({ _id: `OFR-${randomUUID()}`, applicationId: item!.id, status: "Sent", currentVersion: 2, expiresOn: future } as any);
+  await domain.collection("offer_versions").insertMany([
+    { _id: `${item!.id}:v1`, applicationId: item!.id, version: 1, status: "Sent", sentOn: "2026-11-01T00:00:00.000Z", stipend: 0 },
+    { _id: `${item!.id}:v2`, applicationId: item!.id, version: 2, status: "Sent", route: "instant", sentOn: "2026-11-02T00:00:00.000Z", expiresOn: future, stipend: 5000 },
+  ] as any[]);
+  const listed = await domain.execute("offer.list", { search: "offer-list-0" }, admin, "") as any;
+  expect(listed.items.map((row: any) => [row.version, row.type, row.status])).toEqual([[2, "instant", "Open"], [1, "formal", "Superseded"]]);
+  expect(listed.items[0]).toMatchObject({ name: "Bulk 0", current: true, stipend: 5000 });
+  await expect(domain.execute("offer.list", {}, recruiter, "")).rejects.toMatchObject({ code: "FORBIDDEN" });
+});

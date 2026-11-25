@@ -14,7 +14,7 @@ export function canOpenInternSection(account, section) {
     case "projects": return can("projects.read") || can("projects.summary");
     case "teams": return can("teams.read") || can("projects.read");
     case "certificates": return can("certificates.read");
-    case "settings": case "staff": case "custom-email": return account?.staffRole === "admin";
+    case "settings": case "staff": case "custom-email": case "offers": return account?.staffRole === "admin";
     default: return false;
   }
 }

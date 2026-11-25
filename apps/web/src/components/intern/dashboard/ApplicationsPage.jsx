@@ -660,6 +660,7 @@ export default function ApplicationsPage() {
           <ArrowDownToLine size={16} />
           {exporting ? "Exporting…" : `Export ${result.total > filtered.length ? `all ${result.total.toLocaleString()}` : "CSV"}`}
         </Button>
+        {isAdmin && <Link href="/intern/dashboard/offers" className={styles.testApplyLink} title="Every offer generated: formal, instant and direct enrolments">View offers</Link>}
         {isAdmin && <Link href="/intern/dashboard/applications/test-application" className={styles.testApplyLink} title="Apply as a test candidate, even while applications are closed">Test application</Link>}
         {isAdmin && <Button variant="danger" disabled={bulkBusy || loadingDeletion} onClick={() => void prepareDeletion(true)}>{loadingDeletion ? "Loading applications…" : "Delete all"}</Button>}
         <FilterMenu>

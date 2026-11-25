@@ -19,6 +19,7 @@ import {
   Check,
   ChevronDown,
   ClipboardCheck,
+  FileSignature,
   Mail,
   Download,
   House,
@@ -65,6 +66,7 @@ const icons = {
   send: Send,
   application: ClipboardCheck,
   team: UsersRound,
+  offer: FileSignature,
 };
 
 function BackgroundWaves() {
