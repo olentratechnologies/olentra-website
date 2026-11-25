@@ -38,7 +38,7 @@ import { useInternQuery } from "../useInternQuery";
 import AssignmentEditor, { AssignExistingProject } from "./AssignmentEditor";
 import QueryStatus from "./QueryStatus";
 import ResumeViewer from "./ResumeViewer";
-import { ApplicantNextAction, ApplicantWorkflow } from "./CompanyWorkflow";
+import { ApplicantNextAction, ApplicantSubmissions, ApplicantWorkflow } from "./CompanyWorkflow";
 import StaffAccountControls from "./StaffAccountControls";
 import EraseApplicantPanel from "./EraseApplicantPanel";
 import ApplicantScorePanel from "./ApplicantScorePanel";
@@ -818,7 +818,7 @@ export default function ApplicantDetailPage({ applicationId }) {
         </div>
       )}
 
-      {tab === "projects" && canTasks && <AssignedTasks key={applicationId} applicationId={applicationId} canManage={canManageTasks && activeIntern} onEdit={setEditor} />}
+      {tab === "projects" && canTasks && <AssignedTasks key={applicationId} applicationId={applicationId} applicant={application} canManage={canManageTasks && activeIntern} canReadSubmissions={hasStaffPermission(account, "submissions.read")} onEdit={setEditor} />}
 
       {tab === "projects" && canProjects && (
         <Panel>
@@ -1058,7 +1058,12 @@ function TaskReminderButton({ taskId }) {
   return <Button variant="secondary" disabled={busy} onClick={remind}>{busy ? "Queuing…" : "Send reminder"}</Button>;
 }
 
-function AssignedTasks({ applicationId, canManage, onEdit }) {
+// Tasks whose work has been handed in at least once.
+const SUBMITTED_STATUSES = ["Under review", "Changes requested", "Approved"];
+
+function AssignedTasks({ applicationId, applicant, canManage, canReadSubmissions, onEdit }) {
+  const [view, setView] = useState("tasks");
+  const [focusTaskId, setFocusTaskId] = useState(null);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const query = useInternQuery("task.list", { applicationId, page, pageSize, sortField: "dueOn", sortDirection: "asc" });
@@ -1069,9 +1074,23 @@ function AssignedTasks({ applicationId, canManage, onEdit }) {
   return (
     <Panel>
       <div className={styles.sectionTitleRow}>
-        <h2 className={styles.panelHeading}>Assigned tasks</h2>
+        <h2 className={styles.panelHeading}>Tasks & submissions</h2>
         {listing && <span>{listing.total} assigned</span>}
       </div>
+      {canReadSubmissions && (
+        <Tabs
+          items={[
+            { id: "tasks", label: "Assigned tasks", count: listing?.total },
+            { id: "submissions", label: "Submissions", count: listing ? listing.items.filter(task => SUBMITTED_STATUSES.includes(task.status)).length : undefined },
+          ]}
+          value={view}
+          onChange={value => { setView(value); setFocusTaskId(null); }}
+          label="Intern tasks"
+        />
+      )}
+      {view === "submissions" && canReadSubmissions ? (
+        <ApplicantSubmissions applicationId={applicationId} applicant={applicant} focusTaskId={focusTaskId} />
+      ) : (<>
       <QueryStatus query={query} label="assigned tasks" />
       {listing?.total === 0 && <EmptyState title="No tasks assigned yet" description="Tasks assigned to this intern will appear here." />}
       {listing?.items.length > 0 && (
@@ -1090,14 +1109,19 @@ function AssignedTasks({ applicationId, canManage, onEdit }) {
                   <Button variant="secondary" onClick={() => onEdit({ kind: "task", action: "edit", record: task })}>Edit task</Button>
                   <Button variant="ghost" onClick={() => onEdit({ kind: "task", action: "delete", record: task })}>Delete task</Button>
                 </>}
+                {canReadSubmissions && SUBMITTED_STATUSES.includes(task.status) && (
+                  <Button variant="secondary" onClick={() => { setFocusTaskId(task.id); setView("submissions"); }}>View submission</Button>
+                )}
                 {task.project?.name && <span>{task.project.name}</span>}
                 {task.dueOn && <span>Due {formatDate(task.dueOn)}</span>}
+                {task.required && <span>Required</span>}
               </div>
             </article>
           ))}
         </div>
       )}
       {listing && <Pagination page={page} pageSize={pageSize} total={listing.total} onChange={setPage} />}
+      </>)}
     </Panel>
   );
 }

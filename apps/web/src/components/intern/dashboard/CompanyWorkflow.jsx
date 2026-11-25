@@ -1351,3 +1351,101 @@ export function ProjectWorkflow({ projectId, projectRecord, directoryPeople, act
     </section>
   );
 }
+
+/**
+ * One intern's submitted work across all their projects, reviewed the same
+ * way as on a project's "Submissions" tab. Used on the intern's own page.
+ */
+export function ApplicantSubmissions({ applicationId, applicant, focusTaskId }) {
+  const { data, account, commands, notify } = useInternship();
+  const canReadSubmissions = hasStaffPermission(account, "submissions.read");
+  const [tasks, setTasks] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [histories, setHistories] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!canReadSubmissions) { setLoading(false); return undefined; }
+    let live = true;
+    setLoading(true);
+    setError("");
+    (async () => {
+      try {
+        const result = await commands.listTasks({ applicationId, page: 1, pageSize: 100, sortField: "dueOn", sortDirection: "asc" });
+        if (!live) return;
+        if (!result.ok) { setError(result.error); return; }
+        const lists = await Promise.all(result.data.items.map(task => commands.listSubmissions({ taskId: task.id, page: 1, pageSize: 100, sortField: "version", sortDirection: "desc" })));
+        if (!live) return;
+        const failure = lists.find(list => !list.ok);
+        if (failure) { setError(failure.error); return; }
+        setTasks(result.data.items);
+        setSubmissions(lists.flatMap(list => list.data.items));
+        setHistories(Object.fromEntries(result.data.items.map((task, index) => [task.id, { page: 1, total: lists[index]?.data.total || 0, loading: false }])));
+      } catch {
+        if (live) setError("Unable to load this intern’s submissions. Please try again.");
+      } finally {
+        if (live) setLoading(false);
+      }
+    })();
+    return () => { live = false; };
+  }, [applicationId, commands, data.tasks, data.submissions, canReadSubmissions]);
+  // "View submission" on a task brings its review card into view.
+  useEffect(() => {
+    if (!focusTaskId || loading) return;
+    document.getElementById(`submission-${focusTaskId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [focusTaskId, loading]);
+  async function loadOlderVersions(taskId) {
+    const current = histories[taskId];
+    if (!current || current.loading) return;
+    setHistories(old => ({ ...old, [taskId]: { ...old[taskId], loading: true } }));
+    const result = await commands.listSubmissions({ taskId, page: current.page + 1, pageSize: 100, sortField: "version", sortDirection: "desc" });
+    if (!result.ok) { setError(result.error); setHistories(old => ({ ...old, [taskId]: { ...old[taskId], loading: false } })); return; }
+    setSubmissions(old => { const ids = new Set(old.map(row => row.id)); return [...old, ...result.data.items.filter(row => !ids.has(row.id))]; });
+    setHistories(old => ({ ...old, [taskId]: { page: current.page + 1, total: result.data.total, loading: false } }));
+  }
+  async function reviewSubmission(id, decision) {
+    if (busy) return false;
+    setBusy(true);
+    try {
+      return await perform(
+        () => commands.reviewSubmission(id, decision),
+        notify,
+        decision.decision === "Approved"
+          ? "Submission approved. The intern has been notified."
+          : "Feedback sent. The intern can submit a new version.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (!canReadSubmissions) return <EmptyState title="Submissions are hidden" description="Your staff role can’t view submitted work." />;
+  const submittedTasks = tasks.filter(task => submissions.some(submission => submission.taskId === task.id));
+  return (
+    // `workflow` gives the review cards the same styling as on the project page.
+    <div className={`${styles.workflow} ${styles.tabBody}`} style={{ marginTop: 12 }}>
+      {error && <p role="alert">{error}</p>}
+      {loading && <LoadingIndicator label="Loading submissions…" compact={submittedTasks.length > 0} />}
+      {submittedTasks.length ? (
+        <div className={styles.taskList}>
+          {submittedTasks.map(task => (
+            <div id={`submission-${task.id}`} key={task.id}>
+              <SubmissionReview
+                task={task}
+                submissions={submissions.filter(submission => submission.taskId === task.id)}
+                applicant={applicant || task.application}
+                busy={busy}
+                onReview={reviewSubmission}
+                notify={notify}
+                history={histories[task.id]}
+                loadMore={() => loadOlderVersions(task.id)}
+              />
+            </div>
+          ))}
+        </div>
+      ) : !loading && !error ? (
+        <EmptyState title="No submissions yet" description="Work this intern submits on any project will appear here for review." />
+      ) : null}
+    </div>
+  );
+}
