@@ -7,6 +7,8 @@ import { useDashboard } from "./DashboardProvider";
 import { useInternQuery, useInternSearch } from "../useInternQuery";
 import QueryStatus from "./QueryStatus";
 import { Avatar, Button, EmptyState, FilterMenu, Modal, PageHeader, Pagination, Panel, SearchBox, StatCards, StatusBadge, Tabs, exportCsv, formatDate } from "./DashboardUI";
+import { ScheduleBadge, ScheduleBanner, ScheduleEntry, useScheduleView } from "./ScheduleSplit";
+import { scheduleLabel, scheduleParams } from "@/lib/intern/schedule-split.mjs";
 import { buildOfferLetterPdfBytes, downloadOfferLetterPdf } from "@/lib/intern/offer-letter-pdf.js";
 import common from "./pages.module.css";
 import styles from "./offers.module.css";
@@ -36,8 +38,36 @@ function letterDetails(row) {
   };
 }
 
-/** Every offer the program has generated: formal, instant and direct enrolments, all versions. Admin only. */
+/** Offers are viewed as Full-time or Part-time (or All), chosen first. */
 export default function OffersPage() {
+  const { account } = useDashboard();
+  const [view, chooseView] = useScheduleView();
+  const isAdmin = account?.role === "company" && account?.staffRole === "admin";
+  if (!isAdmin) return <div className={common.page}><PageHeader title="Offers" description="Only admins can view offers." /></div>;
+  if (!view) {
+    return (
+      <div className={common.page}>
+        <ScheduleEntry
+          title="Offers"
+          description="Choose which offers to look at: formal, instant and direct enrolments, all versions."
+          noun="offers"
+          method="offer.list"
+          details={(result) => [
+            ["waiting", result.counts?.statuses?.Open || 0],
+            ["accepted", result.counts?.statuses?.Accepted || 0],
+            ["declined", result.counts?.statuses?.Declined || 0],
+            ["expired", result.counts?.statuses?.Expired || 0],
+          ]}
+          onChoose={chooseView}
+        />
+      </div>
+    );
+  }
+  return <OffersWorkspace key={view} view={view} chooseView={chooseView} />;
+}
+
+/** Every offer the program has generated: formal, instant and direct enrolments, all versions. Admin only. */
+function OffersWorkspace({ view, chooseView }) {
   const { account } = useDashboard();
   const isAdmin = account?.role === "company" && account?.staffRole === "admin";
   const [status, setStatus] = useState("all");
@@ -50,9 +80,9 @@ export default function OffersPage() {
   const pageSize = 25;
   const [letter, setLetter] = useState(null); // { row, url }
 
-  const params = { search: debounced, ...(status === "all" ? {} : { status }), ...(type === "all" ? {} : { type }), sort, currentOnly };
+  const params = { ...scheduleParams(view), search: debounced, ...(status === "all" ? {} : { status }), ...(type === "all" ? {} : { type }), sort, currentOnly };
   const query = useInternQuery("offer.list", { ...params, page, pageSize }, { enabled: isAdmin });
-  const totals = useInternQuery("offer.list", { pageSize: 1 }, { enabled: isAdmin });
+  const totals = useInternQuery("offer.list", { ...scheduleParams(view), pageSize: 1 }, { enabled: isAdmin });
   const listing = query.data;
   const counts = listing?.counts || { statuses: {}, types: {}, all: 0 };
   const overall = totals.data?.counts?.statuses || {};
@@ -74,7 +104,8 @@ export default function OffersPage() {
 
   return (
     <div className={common.page}>
-      <PageHeader title="Offers" description="Every offer generated: formal offers, instant offers and direct enrolments, including revised versions.">
+      <ScheduleBanner view={view} noun="offers" onChoose={chooseView} />
+      <PageHeader title={view === "all" ? "Offers" : `${scheduleLabel(view)} offers`} description="Every offer generated: formal offers, instant offers and direct enrolments, including revised versions.">
         <OfferExport params={params} disabled={!listing?.total} />
       </PageHeader>
       <QueryStatus query={totals} label="offer totals" compact />
@@ -126,7 +157,7 @@ export default function OffersPage() {
                     <td>
                       <Link className={common.personCell} href={`/intern/dashboard/applications/${row.applicationId}`}>
                         <Avatar person={{ name: row.name }} size={32} />
-                        <span><strong>{row.name || "Applicant"}</strong><small>{row.email}</small></span>
+                        <span><strong>{row.name || "Applicant"} {view === "all" && <ScheduleBadge schedule={row.scheduleId} />}</strong><small>{row.email}</small></span>
                       </Link>
                     </td>
                     <td>
@@ -176,9 +207,9 @@ export default function OffersPage() {
   );
 }
 
-const EXPORT_COLUMNS = ["Applicant", "Email", "Application ID", "Type", "Version", "Current", "Status", "Start", "End", "Duration", "Stipend", "Sent", "Respond by", "Decided"];
+const EXPORT_COLUMNS = ["Applicant", "Email", "Application ID", "Schedule", "Type", "Version", "Current", "Status", "Start", "End", "Duration", "Stipend", "Sent", "Respond by", "Decided"];
 function exportRow(row) {
-  return [row.name, row.email, row.applicationId, TYPE_LABELS[row.type], row.version, row.current ? "Yes" : "No", row.status, row.startOn || "", row.endOn || "", row.durationLabel || "", row.stipend || 0, row.sentOn || "", row.expiresOn || "", row.decidedOn || ""];
+  return [row.name, row.email, row.applicationId, scheduleLabel(row.scheduleId), TYPE_LABELS[row.type], row.version, row.current ? "Yes" : "No", row.status, row.startOn || "", row.endOn || "", row.durationLabel || "", row.stipend || 0, row.sentOn || "", row.expiresOn || "", row.decidedOn || ""];
 }
 
 /** Exports every offer matching the current filters (all pages). */

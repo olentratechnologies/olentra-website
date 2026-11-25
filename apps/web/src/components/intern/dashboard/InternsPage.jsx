@@ -37,8 +37,34 @@ import ui from "./pages.module.css";
 import styles from "./analytics.module.css";
 import TemplatePicker from "./TemplatePicker";
 import InternCheckins from "./InternCheckins";
+import { ScheduleBadge, ScheduleBanner, ScheduleEntry, useScheduleView } from "./ScheduleSplit";
+import { scheduleLabel, scheduleParams } from "@/lib/intern/schedule-split.mjs";
 
+/** Interns are viewed as Full-time or Part-time (or All), chosen first. */
 export default function InternsPage() {
+  const [view, chooseView] = useScheduleView();
+  if (!view) {
+    return (
+      <div className={ui.page}>
+        <ScheduleEntry
+          title="Interns"
+          description="Choose which interns to manage. Messages, projects and certificates then apply only to that group."
+          noun="interns"
+          method="intern.list"
+          params={{ status: "all" }}
+          details={(result) => [
+            ["active", result.counts?.statuses?.Active || 0],
+            ["completed", result.counts?.statuses?.Completed || 0],
+          ]}
+          onChoose={chooseView}
+        />
+      </div>
+    );
+  }
+  return <InternsWorkspace key={view} view={view} chooseView={chooseView} />;
+}
+
+function InternsWorkspace({ view, chooseView }) {
   const { data, query = "", notify, updateIntern, commands, account } = useDashboard();
   const isAdmin = account?.staffRole === "admin";
   const canApplications = hasStaffPermission(account, "applications.read");
@@ -57,7 +83,7 @@ export default function InternsPage() {
 
   const debouncedSearch = useInternSearch(search);
   const debouncedQuery = useInternSearch(query);
-  const params = { search: debouncedSearch, query: debouncedQuery, programId: track, batch };
+  const params = { ...scheduleParams(view), search: debouncedSearch, query: debouncedQuery, programId: track, batch };
   const listQuery = useInternQuery("intern.list", { ...params, status: tab, page, pageSize, sortField: sort.key, sortDirection: sort.direction });
   const summaryQuery = useInternQuery("intern.list", { ...params, status: "all", page: 1, pageSize: 1 });
   const listing = listQuery.data || { items: [], total: 0 };
@@ -176,8 +202,9 @@ export default function InternsPage() {
 
   return (
     <div className={ui.page}>
+      <ScheduleBanner view={view} noun="interns" onChoose={chooseView} />
       <PageHeader
-        title="Interns"
+        title={view === "all" ? "Interns" : `${scheduleLabel(view)} interns`}
         description="Manage your active and completed interns"
       >
         <div className={styles.headerActions}>
@@ -298,7 +325,7 @@ export default function InternsPage() {
                     >
                       <Avatar person={intern} size={34} />
                       <span>
-                        <strong>{intern.name}</strong>
+                        <strong>{intern.name} {view === "all" && <ScheduleBadge schedule={intern.schedule} />}</strong>
                         <small>{intern.email}</small>
                       </span>
                     </Link> : <div className={styles.internPerson}><Avatar person={intern} size={34}/><span><strong>{intern.name}</strong><small>{intern.email}</small></span></div>}

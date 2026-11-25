@@ -43,6 +43,8 @@ import { ApplicantNextAction, ApplicantSubmissions, ApplicantWorkflow } from "./
 import StaffAccountControls from "./StaffAccountControls";
 import EraseApplicantPanel from "./EraseApplicantPanel";
 import ApplicantScorePanel from "./ApplicantScorePanel";
+import { ScheduleBadge } from "./ScheduleSplit";
+import { scheduleLabel } from "@/lib/intern/schedule-split.mjs";
 import AiReviewPanel from "./AiReviewPanel";
 import TemplatePicker from "./TemplatePicker";
 import { toEmbed } from "@/lib/intern/video-embed.mjs";
@@ -578,6 +580,7 @@ export default function ApplicantDetailPage({ applicationId }) {
           </p>
           <div className={styles.profileMeta}>
             <TrackBadge programId={application.programId} />
+            <ScheduleBadge schedule={application.schedule} />
             <StatusBadge status={application.status} />
             {application.test && <span className={styles.testBadge} title="Submitted by an admin as a test">Test application</span>}
             {application.bookmarked && bookmarks.isBookmarked(application) && (
@@ -726,7 +729,7 @@ export default function ApplicantDetailPage({ applicationId }) {
                 </div>
               </div>
               <p className={styles.reviewDescription}>
-                Review candidate background and choose an admissions decision. Approving marks the applicant Selected and emails them a “You’re selected” message with a link to sign in to their portal. Send the offer afterwards.
+                Review candidate background and choose an admissions decision. Approving marks this {scheduleLabel(application.schedule) ? `${scheduleLabel(application.schedule).toLowerCase()} ` : ""}applicant Selected and emails them a “You’re selected” message with a link to sign in to their portal. Send the offer afterwards.
               </p>
               {["Applied", "Under Review", "Shortlisted"].includes(application.status) && (
                 <div style={{ display: "flex", gap: "8px", margin: "16px 0", flexWrap: "wrap" }}>

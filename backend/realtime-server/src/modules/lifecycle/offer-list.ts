@@ -21,6 +21,8 @@ export type OfferRow = {
   email: string;
   college: string;
   program: string;
+  /** The applicant's schedule: "full_time", "part_time" or "" when unknown. */
+  scheduleId: string;
   startOn: string | null;
   endOn: string | null;
   durationLabel: string;
@@ -67,6 +69,7 @@ export function offerRows(offers: any[], versions: any[], applications: Map<stri
       email: text(source.email) || text(app.email),
       college: text(source.college) || text(app.college),
       program: text(source.program) || text(app.program),
+      scheduleId: text(app.schedule),
       startOn: text(source.startOn) || null,
       endOn: text(source.endOn) || null,
       durationLabel: text(source.durationLabel),
@@ -127,8 +130,12 @@ export function pageOfferRows(rows: OfferRow[], params: Record<string, any>) {
   const status = OFFER_STATUSES.includes(params.status) ? params.status as OfferStatus : null;
   const type = OFFER_TYPES.includes(params.type) ? params.type as OfferType : null;
   const currentOnly = params.currentOnly === true || params.currentOnly === "true";
+  const schedule = params.schedule === "full_time" || params.schedule === "part_time" ? params.schedule : null;
+  const schedules: Record<string, number> = {};
+  for (const row of rows) if (row.scheduleId && (!currentOnly || row.current)) schedules[row.scheduleId] = (schedules[row.scheduleId] || 0) + 1;
   const matching = rows.filter((row) => {
     if (currentOnly && !row.current) return false;
+    if (schedule && row.scheduleId !== schedule) return false;
     if (!terms.length) return true;
     const haystack = `${row.name} ${row.email} ${row.college} ${row.program} ${row.applicationId}`.toLowerCase();
     return terms.every((term) => haystack.includes(term));
@@ -142,7 +149,7 @@ export function pageOfferRows(rows: OfferRow[], params: Record<string, any>) {
   filtered.sort(SORTS[params.sort] || SORTS.newest);
   const pageSize = Math.max(1, Math.min(100, Math.floor(Number(params.pageSize) || 25)));
   const page = Math.max(1, Math.floor(Number(params.page) || 1));
-  return { items: filtered.slice((page - 1) * pageSize, page * pageSize), total: filtered.length, page, pageSize, counts: { statuses, types, all: matching.length } };
+  return { items: filtered.slice((page - 1) * pageSize, page * pageSize), total: filtered.length, page, pageSize, counts: { statuses, types, schedules, all: matching.length } };
 }
 
 /** `offer.list`: admin only. */
@@ -153,6 +160,6 @@ export async function listOffers(collection: (name: string) => any, params: Reco
     collection("offer_versions").find({}).limit(50_000).toArray(),
   ]);
   const ids = [...new Set([...offers, ...versions].map((row: any) => String(row.applicationId || "")).filter(Boolean))];
-  const apps = await collection("applications").find({ _id: { $in: ids } }, { projection: { name: 1, email: 1, college: 1, program: 1 } }).toArray();
+  const apps = await collection("applications").find({ _id: { $in: ids } }, { projection: { name: 1, email: 1, college: 1, program: 1, schedule: 1 } }).toArray();
   return pageOfferRows(offerRows(offers, versions, new Map(apps.map((app: any) => [String(app._id), app]))), params);
 }

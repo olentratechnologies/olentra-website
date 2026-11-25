@@ -285,3 +285,16 @@ test("admins list every generated offer; other staff can't", async () => {
   expect(listed.items[0]).toMatchObject({ name: "Bulk 0", current: true, stipend: 5000 });
   await expect(domain.execute("offer.list", {}, recruiter, "")).rejects.toMatchObject({ code: "FORBIDDEN" });
 });
+
+test("applications filter and count by full-time or part-time", async () => {
+  const items = await seed(3, "schedule-split");
+  await domain.collection("applications").updateOne({ _id: items[0]!.id }, { $set: { schedule: "full_time" } });
+  await domain.collection("applications").updateMany({ _id: { $in: [items[1]!.id, items[2]!.id] } }, { $set: { schedule: "part_time" } });
+  const all = await domain.execute("application.list", { search: "schedule-split-", pageSize: 1, facets: true }, admin) as any;
+  expect(all.counts.schedules).toEqual({ full_time: 1, part_time: 2 });
+  const partTime = await domain.execute("application.list", { search: "schedule-split-", schedule: "part_time" }, admin) as any;
+  expect(partTime.items.map((row: any) => row.id).sort()).toEqual([items[1]!.id, items[2]!.id].sort());
+  expect(partTime.items.every((row: any) => row.schedule === "part_time")).toBe(true);
+  // Anything else is ignored rather than hiding everything.
+  expect(((await domain.execute("application.list", { search: "schedule-split-", schedule: "weekends" }, admin)) as any).total).toBe(3);
+});

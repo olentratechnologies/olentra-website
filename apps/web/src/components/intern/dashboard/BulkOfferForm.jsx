@@ -5,6 +5,7 @@ import { Button } from "./DashboardUI";
 import { completionDate, displayDate, durationLabel, civilToday } from "@/lib/intern/schedule.mjs";
 import { decisionDeadline, earliestStartDate, formatDeadline, maxOpenDays, normalizeLeadDays } from "@/lib/intern/offer-policy.mjs";
 import { confirmsOffers, offerConfirmPhrase, runBulk } from "@/lib/intern/bulk.mjs";
+import { describeApplicants } from "@/lib/intern/schedule-split.mjs";
 import styles from "./applicant.module.css";
 import own from "./SelectByScoreDialog.module.css";
 
@@ -119,9 +120,12 @@ export default function BulkOfferForm({ rows, commands, data, notify, onDone, on
   return (
     <form className={`${styles.modalForm} ${own.modal}`} onSubmit={preview ? send : review}>
       <p className={own.summary}>
-        <span><strong>{pending.length}</strong> {pending.length === 1 ? "applicant" : "applicants"} will get the formal offer</span>
+        <span><strong>{describeApplicants(pending)}</strong> will get the formal offer</span>
         {sentCount > 0 && <small>{sentCount} already sent</small>}
       </p>
+      {new Set(pending.map((row) => row.schedule).filter(Boolean)).size > 1 && (
+        <p className={styles.fieldError} role="alert">This batch mixes full-time and part-time applicants. They’ll all get the same start date and stipend; each letter states the student’s own schedule. To keep them apart, send offers from the Full-time and Part-time views separately.</p>
+      )}
       {failures.length > 0 && (
         <div className={own.failures} role="alert">
           These offers were not sent:
@@ -158,7 +162,7 @@ export default function BulkOfferForm({ rows, commands, data, notify, onDone, on
           <div className={own.failures} style={{ borderColor: "var(--ad-border-strong, #7aafff)" }} role="status">
             <strong>Check before sending</strong>
             <p className={own.note}>
-              {pending.length} offers · {preview.durationLabel} · {displayDate(preview.startOn)} to {displayDate(preview.endOn)} · ₹{stipendValue.toLocaleString("en-IN")}/month · respond by {formatDeadline(preview.expiresOn)}.
+              {describeApplicants(pending)} · {preview.durationLabel} · {displayDate(preview.startOn)} to {displayDate(preview.endOn)} · ₹{stipendValue.toLocaleString("en-IN")}/month · respond by {formatDeadline(preview.expiresOn)}.
               Each student gets the “Your Olentra internship offer” email and accepts or declines in their portal.
             </p>
           </div>

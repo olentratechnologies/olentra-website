@@ -36,8 +36,8 @@ export const SELECTABLE_FROM = ["Applied", "Under Review", "Shortlisted"];
 /** Statuses a reviewer may set in bulk; final decisions (select, reject) stay admin-only, mirroring the server. */
 export function bulkActionsFor({ isAdmin }) {
   return [
-    { status: "Under Review", label: "Move to under review" },
-    { status: "Shortlisted", label: "Shortlist" },
+    { status: "Under Review", label: "Move to under review", confirm: true },
+    { status: "Shortlisted", label: "Shortlist", confirm: true },
     ...(isAdmin ? [
       { status: "Selected", label: "Select", path: SELECT_PATH, confirm: true },
       { status: "Rejected", label: "Reject", danger: true, confirm: true },

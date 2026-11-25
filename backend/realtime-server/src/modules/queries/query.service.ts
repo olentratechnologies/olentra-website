@@ -9,7 +9,7 @@ type CollectionOf = (name: string) => Collection<Row>;
 const str = (v: unknown) => typeof v === "string" ? v.trim().slice(0, 120) : "";
 const escaped = (v: string) => v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const number = (v: unknown, fallback: number, max: number) => { const n = Number(v); return Number.isFinite(n) ? Math.max(1, Math.min(max, Math.floor(n))) : fallback; };
-const personProjection = { _id: 1, name: 1, email: 1, program: 1, programId: 1, college: 1, status: 1, initials: 1, avatarColor: 1, appliedOn: 1, accountId: 1 };
+const personProjection = { _id: 1, name: 1, email: 1, program: 1, programId: 1, college: 1, schedule: 1, status: 1, initials: 1, avatarColor: 1, appliedOn: 1, accountId: 1 };
 const plain = (record: any): any => {
   if (!record || typeof record !== "object") return record;
   if (Array.isArray(record)) return record.map(plain);
@@ -70,7 +70,10 @@ export function createInternshipQueries(collection: CollectionOf) {
       if (str(params.batch) && params.batch !== "all") initialFilters.push({ batch: str(params.batch) });
       if (params.eligible === true) initialFilters.push({ status: "Completed" });
       if (initialFilters.length) pipeline.push({ $match: { $and: initialFilters } });
-      pipeline.push(...joinApplication(), { $lookup: { from: name("projects"), localField: "applicationId", foreignField: "team", pipeline: [{ $project: { _id: 1, name: 1, status: 1, program: 1 } }], as: "projects" } });
+      pipeline.push(...joinApplication());
+      // Full-time and part-time interns are worked on separately in the dashboard.
+      if (params.schedule === "full_time" || params.schedule === "part_time") pipeline.push({ $match: { "application.schedule": params.schedule } });
+      pipeline.push({ $lookup: { from: name("projects"), localField: "applicationId", foreignField: "team", pipeline: [{ $project: { _id: 1, name: 1, status: 1, program: 1 } }], as: "projects" } });
       searchFields = ["application.name", "application.email", "application.program", "batch", "status", "projects.name"];
       sortFields = { name: "application.name", email: "application.email", program: "application.program", batch: "batch", project: "projects.name", status: "status", joinedOn: "joinedOn" };
       programField = "application.programId";
@@ -133,7 +136,7 @@ export function createInternshipQueries(collection: CollectionOf) {
       total: [...selected, { $count: "count" }],
       statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }],
       programs: [{ $group: { _id: `$${programField}`, count: { $sum: 1 } } }],
-      ...(method === "intern.list" ? { batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }] } : {}),
+      ...(method === "intern.list" ? { batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }], schedules: [{ $group: { _id: "$application.schedule", count: { $sum: 1 } } }] } : {}),
     } });
     const [result] = await collection(table).aggregate(pipeline, { allowDiskUse: true }).toArray();
     const items = (result?.items || []).map(plain).map((row: any) => {
@@ -141,7 +144,7 @@ export function createInternshipQueries(collection: CollectionOf) {
       if (method === "certificate.list" && !can(actor, "interns.read")) { delete row.application; delete row.intern; }
       return row;
     });
-    return { items, total: result?.total?.[0]?.count || 0, page, pageSize, counts: { statuses: Object.fromEntries((result?.statuses || []).filter((row: any) => row._id != null).map((row: any) => [row._id, row.count])), programs: Object.fromEntries((result?.programs || []).filter((row: any) => row._id != null).map((row: any) => [row._id, row.count])) }, batches: (result?.batches || []).map((row: any) => row._id).filter(Boolean) };
+    return { items, total: result?.total?.[0]?.count || 0, page, pageSize, counts: { statuses: Object.fromEntries((result?.statuses || []).filter((row: any) => row._id != null).map((row: any) => [row._id, row.count])), programs: Object.fromEntries((result?.programs || []).filter((row: any) => row._id != null).map((row: any) => [row._id, row.count])), ...(result?.schedules ? { schedules: Object.fromEntries(result.schedules.filter((row: any) => row._id).map((row: any) => [row._id, row.count])) } : {}) }, batches: (result?.batches || []).map((row: any) => row._id).filter(Boolean) };
   }
   return { supports: (method: string) => names.has(method), execute };
 }

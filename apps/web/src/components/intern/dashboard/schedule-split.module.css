@@ -1,0 +1,174 @@
+/* Full-time is warm amber, part-time is violet, so the two are never confused. */
+.entry {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.entryHead h1 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: -0.5px;
+  color: var(--ad-text, #17385f);
+}
+.entryHead p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--ad-subtle, #526b96);
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+@media (max-width: 760px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+.card {
+  --tone: #d97706;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 250px;
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--ad-border, #c9d9fa));
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--tone) 16%, transparent), transparent 55%),
+    var(--ad-panel, #fff);
+  color: var(--ad-text, #17385f);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.card[data-schedule="part_time"] {
+  --tone: #7c3aed;
+}
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--tone);
+  box-shadow: 0 18px 40px -24px color-mix(in srgb, var(--tone) 70%, transparent);
+  outline: none;
+}
+.cardIcon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--tone) 16%, transparent);
+  color: var(--tone);
+}
+.cardTitle {
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.cardBlurb {
+  font-size: 13px;
+  color: var(--ad-subtle, #526b96);
+}
+.cardCount {
+  margin-top: 4px;
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--tone);
+}
+.cardDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12.5px;
+  color: var(--ad-subtle, #526b96);
+}
+.cardDetails b {
+  color: var(--ad-text, #17385f);
+}
+.cardGo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--tone);
+}
+.all {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ad-subtle, #526b96);
+}
+.all button,
+.switches button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ad-blue, #2563eb);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.banner {
+  --tone: #d97706;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+  border-left: 5px solid var(--tone);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tone) 10%, transparent);
+  color: var(--ad-text, #17385f);
+}
+.banner[data-schedule="part_time"] {
+  --tone: #7c3aed;
+}
+.banner[data-schedule="all"] {
+  --tone: #64748b;
+}
+.banner p {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  font-size: 13.5px;
+}
+.banner p svg {
+  color: var(--tone);
+}
+.banner strong {
+  color: var(--tone);
+}
+.switches {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12.5px;
+}
+.badge {
+  --tone: #d97706;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tone) 15%, transparent);
+  color: var(--tone);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.badge[data-schedule="part_time"] {
+  --tone: #7c3aed;
+}

@@ -328,6 +328,8 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const filter: Document = {};
       if (params.status && params.status !== "all") filter.status = str(params.status);
       if (params.programId && params.programId !== "all") filter.programId = str(params.programId);
+      // Full-time and part-time applications are worked on separately in the dashboard.
+      if (params.schedule === "full_time" || params.schedule === "part_time") filter.schedule = params.schedule;
       if (params.batch && params.batch !== "all") filter.batch = str(params.batch).slice(0, 120);
       Object.assign(filter, videoFilter(params.video));
       if (params.assignee === "me") filter.assignedTo = actor!.id;
@@ -363,7 +365,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const [rows, total, aggregate] = await Promise.all([
         applications.find(filter).sort(applicationSort(sortField, direction, params.videosFirst)).skip((page - 1) * limit).limit(limit).toArray(), applications.countDocuments(filter),
         // Counts are only computed when asked for; the list itself doesn't need them.
-        params.facets !== true ? Promise.resolve(null) : applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], bookmarked: [{ $match: { bookmarked: true } }, { $count: "count" }], aiRecommendations: [{ $match: { aiRecommendation: { $type: "string" } } }, { $group: { _id: "$aiRecommendation", count: { $sum: 1 } } }], aiPending: [{ $match: { aiReviewStatus: "pending" } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
+        params.facets !== true ? Promise.resolve(null) : applications.aggregate([{ $match: filter }, { $facet: { statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }], schedules: [{ $group: { _id: "$schedule", count: { $sum: 1 } } }], programs: [{ $group: { _id: "$programId", count: { $sum: 1 } } }], batches: [{ $group: { _id: "$batch" } }, { $sort: { _id: 1 } }], withVideo: [{ $match: { hasVideo: true } }, { $count: "count" }], bookmarked: [{ $match: { bookmarked: true } }, { $count: "count" }], aiRecommendations: [{ $match: { aiRecommendation: { $type: "string" } } }, { $group: { _id: "$aiRecommendation", count: { $sum: 1 } } }], aiPending: [{ $match: { aiReviewStatus: "pending" } }, { $count: "count" }], skills: [{ $unwind: "$skills" }, { $match: { skills: { $type: "string", $ne: "" } } }, { $group: { _id: { $toLower: { $trim: { input: "$skills" } } }, name: { $first: { $trim: { input: "$skills" } } }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }, { $limit: 30 }] } }]).toArray(),
       ]);
       const openOffers = isAdmin(actor) && rows.length && !params.facets ? await collection("offers").find({
         applicationId: { $in: rows.map(row => row._id) }, status: "Sent", expiresOn: { $gt: new Date().toISOString() },
@@ -376,7 +378,7 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
         } } : {}) };
       });
       if (!aggregate) return { items, total, page, pageSize: limit };
-      return { items, total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, bookmarked: aggregate[0]?.bookmarked?.[0]?.count || 0, aiRecommendations: Object.fromEntries((aggregate[0]?.aiRecommendations || []).map((item: any) => [item._id, item.count])), aiPending: aggregate[0]?.aiPending?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) }, batches: (aggregate[0]?.batches || []).map((item: any) => item._id).filter(Boolean) };
+      return { items, total, page, pageSize: limit, counts: { statuses: Object.fromEntries((aggregate[0]?.statuses || []).map((item: any) => [item._id, item.count])), schedules: Object.fromEntries((aggregate[0]?.schedules || []).filter((item: any) => item._id).map((item: any) => [item._id, item.count])), programs: Object.fromEntries((aggregate[0]?.programs || []).map((item: any) => [item._id, item.count])), withVideo: aggregate[0]?.withVideo?.[0]?.count || 0, bookmarked: aggregate[0]?.bookmarked?.[0]?.count || 0, aiRecommendations: Object.fromEntries((aggregate[0]?.aiRecommendations || []).map((item: any) => [item._id, item.count])), aiPending: aggregate[0]?.aiPending?.[0]?.count || 0, skills: (aggregate[0]?.skills || []).map((item: any) => ({ name: item.name, count: item.count })) }, batches: (aggregate[0]?.batches || []).map((item: any) => item._id).filter(Boolean) };
     }
     if (method === "application.get") {
       if (!actor) throw new DomainError("UNAUTHENTICATED", "Sign in to view applications.");

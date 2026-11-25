@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Github, Search, SlidersHorizontal, Star, Video } from "lucide-react";
 import { AI_RECOMMENDATIONS, AiRecommendationBadge, Button, Modal, StatusBadge, formatDate } from "./DashboardUI";
+import { describeApplicants, scheduleLabel, scheduleParams } from "@/lib/intern/schedule-split.mjs";
+import { ScheduleBadge } from "./ScheduleSplit";
 import { CANDIDATE_SORTS, EMPTY_CANDIDATE_VIEW, activeFilterCount, countBy, viewCandidates } from "@/lib/intern/candidate-view.mjs";
 import { SELECTABLE_FROM, SELECT_PATH, eligibleForSelection, parseMinScore, runBulkRequests } from "@/lib/intern/bulk.mjs";
 import { fetchAllPages } from "@/lib/intern/application-export.mjs";
@@ -18,7 +20,9 @@ const errorText = (error, fallback) => (typeof error === "string" ? error : erro
  * just the visible one) and selects them in one go. Each applicant moves
  * through Under Review and Shortlisted to Selected and gets one email.
  */
-export default function SelectByScoreDialog({ open, onOpenChange, commands, data, programId = "all", trackLabel = "", notify, onDone }) {
+export default function SelectByScoreDialog({ open, onOpenChange, commands, data, programId = "all", schedule = "all", trackLabel = "", notify, onDone }) {
+  // Full-time or part-time only, when the Applications page is scoped to one.
+  const scheduleName = scheduleLabel(schedule).toLowerCase();
   const [minScore, setMinScore] = useState(DEFAULT_MIN_SCORE);
   const [fromStatuses, setFromStatuses] = useState(SELECTABLE_FROM);
   const [matches, setMatches] = useState(null); // null until the first search finishes
@@ -69,7 +73,7 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
     setLoading(true);
     setLoadError("");
     try {
-      const track = programId && programId !== "all" ? { programId } : {};
+      const track = { ...(programId && programId !== "all" ? { programId } : {}), ...scheduleParams(schedule) };
       const lists = await Promise.all(fromStatuses.map((status) => fetchAllPages((page) => commands.listApplications({
         ...track, status, aiScoreMin: score, page, pageSize: 100, sortField: "aiScore", sortDirection: "desc",
       }))));
@@ -148,16 +152,16 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
       open={open}
       className={own.wide}
       onOpenChange={(next) => { if (!running) onOpenChange(next); }}
-      title={stage === "offer" ? "Send the formal offer" : "Select applicants by AI score"}
+      title={stage === "offer" ? `Send the formal offer${scheduleName ? ` to ${scheduleName} applicants` : ""}` : `Select ${scheduleName ? `${scheduleName} ` : ""}applicants by AI score`}
       description={stage === "offer"
         ? "Everyone gets the same offer terms. Each student receives the “Your Olentra internship offer” email and accepts or declines in their portal before the deadline."
-        : `Find every application${trackLabel ? ` for ${trackLabel}` : ""} at or above an AI score and select them together. Each applicant moves through Under review and Shortlisted to Selected, and gets one “You’re selected” email with a link to sign in to their portal. You can send them the formal offer right after.`}
+        : `Find every ${scheduleName ? `${scheduleName} ` : ""}application${trackLabel ? ` for ${trackLabel}` : ""} at or above an AI score and select them together. Each applicant moves through Under review and Shortlisted to Selected, and gets one “You’re selected” email with a link to sign in to their portal. You can send them the formal offer right after.`}
     >
       {stage === "offer" ? (
         <BulkOfferForm rows={selectedRows} commands={commands} data={data} notify={notify} onDone={onDone} onClose={() => onOpenChange(false)} closeLabel="Not now" />
       ) : stage === "offerPrompt" ? (
         <div className={styles.modalForm}>
-          <p className={own.summary}><span><strong>{selectedRows.length}</strong> {selectedRows.length === 1 ? "applicant" : "applicants"} selected and emailed.</span></p>
+          <p className={own.summary}><span><strong>{describeApplicants(selectedRows)}</strong> selected and emailed.</span></p>
           <p className={own.note}>Send them the formal offer now? You choose one start date, stipend and response window for everyone; each student then accepts or declines in their portal.</p>
           <div className={styles.modalActions}>
             <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>Not now</Button>
@@ -195,7 +199,7 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
         {matches && !loading && (
           <>
             <p className={own.summary}>
-              <span><strong>{chosen.length}</strong> of {matches.length} matching {matches.length === 1 ? "applicant" : "applicants"} will be selected</span>
+              <span><strong>{chosen.length}</strong> of {matches.length} matching {scheduleName ? `${scheduleName} ` : ""}{matches.length === 1 ? "applicant" : "applicants"} will be selected</span>
               {matches.length > 0 && <small>Showing {shown.length}{shown.length !== matches.length ? ` of ${matches.length}` : ""}</small>}
             </p>
             {matches.length > 0 && (
@@ -272,13 +276,14 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
                         <span className={own.name} title={row.email}>
                           {row.name}<small>{row.email}</small>
                           <span className={own.meta}>
-                            {[row.college, row.schedule === "full_time" ? "Full-time" : row.schedule === "part_time" ? "Part-time" : "", row.appliedOn ? `Applied ${formatDate(row.appliedOn)}` : ""].filter(Boolean).join(" · ")}
+                            {[row.college, row.appliedOn ? `Applied ${formatDate(row.appliedOn)}` : ""].filter(Boolean).join(" · ")}
                             {(row.hasVideo || row.videoUrl) && <Video size={12} aria-label="Intro video" />}
                             {row.github && <Github size={12} aria-label="GitHub" />}
                             {row.bookmarked && <Star size={12} aria-label="Bookmarked" fill="currentColor" />}
                           </span>
                         </span>
                         <span className={own.rowEnd}>
+                          <ScheduleBadge schedule={row.schedule} />
                           <span className={own.score}>{row.aiScore.toFixed(1)}</span>
                           <AiRecommendationBadge application={row} />
                           <StatusBadge status={row.status} />
@@ -311,7 +316,7 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
             )}
             {chosen.length > 0 && (
               <label>
-                Type {confirmPhrase} to select and email {chosen.length === 1 ? "this applicant" : `all ${chosen.length} ticked applicants`}
+                Type {confirmPhrase} to select and email {describeApplicants(chosen)}
                 <input autoComplete="off" spellCheck={false} value={phrase} disabled={running} onChange={(event) => setPhrase(event.target.value)} />
               </label>
             )}

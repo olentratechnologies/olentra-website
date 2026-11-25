@@ -46,6 +46,8 @@ import { civilDaysBetween, deadlineDay, decisionDeadline, earliestStartDate, for
 const OPEN_FOR_OPTIONS = [1, 2, 3, 5, 7, 10, 14, 30];
 const EXTEND_OPTIONS = [1, 2, 3, 5, 7, 10, 14, 30];
 import OnboardingDocumentsReview from "./OnboardingDocumentsReview";
+import { ScheduleBadge } from "./ScheduleSplit";
+import { scheduleLabel } from "@/lib/intern/schedule-split.mjs";
 
 function localDate(days = 0) {
   const date = new Date();
@@ -419,6 +421,11 @@ export function ApplicantWorkflow({ applicationId }) {
             </div>
           )}
           {offer && isAdmin && <OfferScheduleRevision application={application} offer={offer} admin />}
+          {(canEnrollDirect || canOffer) && scheduleLabel(application.schedule) && (
+            <p className={styles.scheduleNotice} data-schedule={application.schedule}>
+              <ScheduleBadge schedule={application.schedule} /> This applicant applied for a <strong>{scheduleLabel(application.schedule).toLowerCase()}</strong> internship. The offer and letter use this schedule.
+            </p>
+          )}
           {canEnrollDirect && (
             <fieldset className={styles.routeChooser}>
               <legend>How is this internship being given?</legend>

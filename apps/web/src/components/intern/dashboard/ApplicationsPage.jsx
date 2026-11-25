@@ -21,6 +21,8 @@ import { useInternship } from "@/components/intern/InternshipProvider";
 import { SELECTABLE_FROM, bulkActionsFor, canBulkUpdate, eligibleForOffer, runBulk, runBulkRequests } from "@/lib/intern/bulk.mjs";
 import BulkOfferForm from "./BulkOfferForm";
 import SelectByScoreDialog from "./SelectByScoreDialog";
+import { ScheduleBanner, ScheduleEntry, useScheduleView } from "./ScheduleSplit";
+import { describeApplicants, scheduleLabel, scheduleParams } from "@/lib/intern/schedule-split.mjs";
 import { burstFrom } from "@/lib/confetti.mjs";
 import {
   APPLICATION_EXPORT_COLUMNS,
@@ -100,7 +102,36 @@ function moveColumn(order, source, target) {
   return next;
 }
 
+/**
+ * Applications are worked on as Full-time or Part-time (or, deliberately, All):
+ * pick one first, so every list, selection and offer is clearly scoped.
+ */
 export default function ApplicationsPage() {
+  const [view, chooseView] = useScheduleView();
+  if (!view) {
+    return (
+      <div className={common.page}>
+        <ScheduleEntry
+          title="Applications"
+          description="Choose which applications to work on. Shortlisting, selecting and offers then apply only to that group."
+          noun="applications"
+          method="application.list"
+          params={{ facets: true }}
+          details={(result) => [
+            ["new", result.counts?.statuses?.Applied || 0],
+            ["shortlisted", result.counts?.statuses?.Shortlisted || 0],
+            ["selected", result.counts?.statuses?.Selected || 0],
+            ["joined", result.counts?.statuses?.Joined || 0],
+          ]}
+          onChoose={chooseView}
+        />
+      </div>
+    );
+  }
+  return <ApplicationsWorkspace key={view} view={view} chooseView={chooseView} />;
+}
+
+function ApplicationsWorkspace({ view, chooseView }) {
   const { data, query, setQuery, notify, updateApplication, account } = useDashboard();
   const canReview = hasStaffPermission(account, "applications.review");
   const canResume = hasStaffPermission(account, "resumes.read");
@@ -256,7 +287,7 @@ export default function ApplicationsPage() {
 
   const debouncedSearch = useInternSearch(search);
   const debouncedQuery = useInternSearch(query);
-  const queryParams = { ...aiFilters, search: debouncedSearch, query: debouncedQuery, status, programId: track, batch, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }), ...(bookmarkedOnly ? { bookmarked: true } : {}), ...(aiRecommendation === "all" ? {} : { aiRecommendation }) };
+  const queryParams = { ...aiFilters, ...scheduleParams(view), search: debouncedSearch, query: debouncedQuery, status, programId: track, batch, video, skill, dateFrom, dateTo, ...(assignee === "all" ? {} : { assignee }), ...(bookmarkedOnly ? { bookmarked: true } : {}), ...(aiRecommendation === "all" ? {} : { aiRecommendation }) };
   const listQuery = useInternQuery("application.list", { ...queryParams, page, pageSize, sortField: sort.key, sortDirection: sort.direction, videosFirst }, { enabled: !invalidDateRange });
   // Tab-count summary must NOT include programId — otherwise switching tracks
   // causes the facet response to be scoped to a single program and the other
@@ -652,9 +683,10 @@ export default function ApplicationsPage() {
 
   return (
     <div className={common.page}>
+      <ScheduleBanner view={view} noun="applications" onChoose={chooseView} />
       <PageHeader
-        title="Applications"
-        description="Manage and review all internship applications."
+        title={view === "all" ? "Applications" : `${scheduleLabel(view)} applications`}
+        description={view === "all" ? "Full-time and part-time applications together." : `Review and decide on ${scheduleLabel(view).toLowerCase()} applications only.`}
       >
         <Button variant="secondary" onClick={exportApplications} disabled={!listQuery.data || !filtered.length || invalidDateRange || exporting}>
           <ArrowDownToLine size={16} />
@@ -893,7 +925,7 @@ export default function ApplicationsPage() {
         <QueryStatus query={listQuery} label="applications"/>
         {selectedRows.length > 0 && (
           <div className={styles.bulkBar} role="toolbar" aria-label="Bulk actions">
-            <strong>{selectedRows.length} selected</strong>
+            <strong>{describeApplicants(selectedRows)} selected</strong>
             <div className={styles.bulkActions}>
               {isAdmin && <button type="button" className={styles.bulkButton} disabled={bulkBusy || !selectedRows.some(eligibleOffer)}
                 onClick={() => void remindOffers(selectedRows, true)}>Remind about offers ({selectedRows.filter(eligibleOffer).length} eligible)</button>}
@@ -1162,17 +1194,20 @@ export default function ApplicationsPage() {
       <Modal
         open={Boolean(confirmReject)}
         onOpenChange={(open) => !open && !bulkBusy && setConfirmReject(null)}
-        title={`${confirmReject?.action.status === "Selected" ? "Select" : "Reject"} ${selectedRows.length} ${selectedRows.length === 1 ? "applicant" : "applicants"}?`}
-        description={confirmReject?.action.status === "Selected"
-          ? "Each applicant moves through Under review and Shortlisted to Selected, and gets one “You’re selected” email with a link to sign in to their portal. Applicants who already have a final decision are skipped. Send offers afterwards from each applicant’s page."
-          : "Each applicant is notified in their portal that their application was not selected. You can change a decision later from the applicant’s page."}
+        title={confirmReject ? `${({ "Under Review": "Move", Shortlisted: "Shortlist", Selected: "Select", Rejected: "Reject" })[confirmReject.action.status] || "Update"} ${describeApplicants(selectedRows)}${confirmReject.action.status === "Under Review" ? " to under review" : ""}?` : ""}
+        description={({
+          "Under Review": "They move to Under review. No email is sent.",
+          Shortlisted: "Each applicant gets the “You’ve been shortlisted” email.",
+          Selected: "Each applicant moves through Under review and Shortlisted to Selected, and gets one “You’re selected” email with a link to sign in to their portal. Applicants who already have a final decision are skipped. Send offers afterwards.",
+          Rejected: "Each applicant is notified in their portal that their application was not selected. You can change a decision later from the applicant’s page.",
+        })[confirmReject?.action.status] || ""}
       >
         <div className={styles.modalActions}>
           <Button variant="secondary" type="button" disabled={bulkBusy} onClick={() => setConfirmReject(null)}>
             Cancel
           </Button>
           <Button type="button" disabled={bulkBusy} onClick={() => applyBulk(confirmReject.action, confirmReject.trigger)}>
-            {confirmReject?.action.status === "Selected" ? (bulkBusy ? "Selecting…" : "Select and email") : (bulkBusy ? "Rejecting…" : "Reject applicants")}
+            {bulkBusy ? "Saving…" : ({ "Under Review": "Move to under review", Shortlisted: "Shortlist and email", Selected: "Select and email", Rejected: "Reject applicants" })[confirmReject?.action.status] || "Confirm"}
           </Button>
         </div>
       </Modal>
@@ -1183,6 +1218,7 @@ export default function ApplicationsPage() {
           commands={commands}
           data={data}
           programId={track}
+          schedule={view}
           trackLabel={track !== "all" ? trackTabs.find((tab) => tab.id === track)?.label || "" : ""}
           notify={notify}
           onDone={() => { setSelected(new Set()); setBoardVersion((value) => value + 1); refreshListsRef.current?.(); }}
@@ -1192,7 +1228,7 @@ export default function ApplicationsPage() {
         <Modal
           open={Boolean(offerRows)}
           onOpenChange={(open) => { if (!open) setOfferRows(null); }}
-          title="Send the formal offer"
+          title={offerRows ? `Send the formal offer to ${describeApplicants(offerRows)}` : "Send the formal offer"}
           description="Everyone gets the same offer terms. Each student receives the “Your Olentra internship offer” email and accepts or declines in their portal before the deadline."
         >
           {offerRows && (

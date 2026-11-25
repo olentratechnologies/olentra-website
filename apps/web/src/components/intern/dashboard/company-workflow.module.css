@@ -606,3 +606,20 @@
 .reminderNote p { margin: 0; }
 .reminderNote strong { color: var(--ad-text, #071443); }
 .reminderNote .formActions { margin-top: 8px; flex-wrap: wrap; }
+/* Makes the applicant's schedule unmissable right where offers are given. */
+.scheduleNotice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #d97706 40%, transparent);
+  background: color-mix(in srgb, #d97706 9%, transparent);
+  font-size: 13px;
+}
+.scheduleNotice[data-schedule="part_time"] {
+  border-color: color-mix(in srgb, #7c3aed 40%, transparent);
+  background: color-mix(in srgb, #7c3aed 9%, transparent);
+}

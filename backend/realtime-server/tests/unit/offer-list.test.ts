@@ -55,11 +55,21 @@ test("filtering, counting, searching and paging", () => {
   );
   const all = pageOfferRows(rows, {});
   expect(all.items.map((row) => row.id)).toEqual(["B:v1", "A:v1"]); // newest first
-  expect(all.counts).toEqual({ statuses: { Open: 1, Accepted: 1 }, types: { formal: 1, instant: 1 }, all: 2 });
+  expect(all.counts).toEqual({ statuses: { Open: 1, Accepted: 1 }, types: { formal: 1, instant: 1 }, schedules: {}, all: 2 });
   const instant = pageOfferRows(rows, { type: "instant" });
   expect(instant.items.map((row) => row.id)).toEqual(["B:v1"]);
   expect(instant.counts.statuses).toEqual({ Accepted: 1 });
   expect(pageOfferRows(rows, { search: "ash" }).items.map((row) => row.id)).toEqual(["A:v1"]);
   expect(pageOfferRows(rows, { status: "Open" }).total).toBe(1);
   expect(pageOfferRows(rows, { pageSize: 1, page: 2 }).items.map((row) => row.id)).toEqual(["A:v1"]);
+});
+
+test("offers split by the applicant's schedule", () => {
+  const people = new Map([["A", { name: "Asha", schedule: "full_time" }], ["B", { name: "Bilal", schedule: "part_time" }]]);
+  const rows = offerRows([], [{ applicationId: "A", version: 1, decision: "Accepted" }, { applicationId: "B", version: 1, decision: "Accepted" }], people, now);
+  expect(rows.map((row) => row.scheduleId).sort()).toEqual(["full_time", "part_time"]);
+  const partTime = pageOfferRows(rows, { schedule: "part_time" });
+  expect(partTime.items.map((row) => row.applicationId)).toEqual(["B"]);
+  expect(partTime.counts.schedules).toEqual({ full_time: 1, part_time: 1 });
+  expect(partTime.counts.all).toBe(1);
 });
