@@ -1,7 +1,7 @@
 "use client";
 
 import ProjectPlan from "../ProjectPlan";
-import { TaskLinks } from "../ProjectLinks";
+import { StaffProjectLinks, TaskLinks } from "../ProjectLinks";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -159,6 +159,8 @@ export default function ApplicantDetailPage({ applicationId }) {
 
   const [linkedProjectPage, setLinkedProjectPage] = useState(1);
   const [editor, setEditor] = useState(null);
+  // The project whose repositories and links are open in the Resources dialog.
+  const [resourcesProjectId, setResourcesProjectId] = useState(null);
   const canManageProjects = canProjects && hasStaffPermission(account, "projects.manage");
   const canManageTasks = canTasks && hasStaffPermission(account, "tasks.manage");
   const activeIntern = data.interns?.some(intern => intern.applicationId === applicationId && intern.status === "Active");
@@ -860,6 +862,7 @@ export default function ApplicantDetailPage({ applicationId }) {
                   </div>
                   <div className={styles.projectFooter}>
                     <span>{project.team?.length || 0} team members</span>
+                    <Button variant="secondary" onClick={() => setResourcesProjectId(project.id)}>Resources ({(project.links || []).length})</Button>
                     {canManageTasks && activeIntern && <Button onClick={() => setEditor({ kind: "task", action: "create", project })}>Assign task</Button>}
                     {canManageProjects && <>
                       <Button variant="secondary" onClick={() => setEditor({ kind: "project", action: "edit", record: project })}>Edit project</Button>
@@ -884,6 +887,19 @@ export default function ApplicantDetailPage({ applicationId }) {
         </Panel>
       )}
 
+      {(() => {
+        const project = linkedProjects.find((item) => item.id === resourcesProjectId);
+        return (
+          <Modal
+            open={Boolean(project)}
+            onOpenChange={(open) => { if (!open) { setResourcesProjectId(null); void projectQuery.refresh(); } }}
+            title={project ? `${project.name}: resources` : "Resources"}
+            description="Repositories and links for this project, the same as the project’s Resources tab. Repository invites go out automatically once an intern connects GitHub."
+          >
+            {project && <StaffProjectLinks project={project} members={project.members?.length ? project.members : [application]} canEdit={canManageProjects} onNotify={notify} />}
+          </Modal>
+        );
+      })()}
       {editor?.action === "assign" && <AssignExistingProject application={application} onClose={() => setEditor(null)} />}
       {editor && editor.action !== "assign" && <AssignmentEditor editor={editor} application={application} onClose={() => setEditor(null)} />}
 
