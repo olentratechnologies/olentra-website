@@ -283,3 +283,35 @@
     justify-content: flex-start;
   }
 }
+/* Shown when ticked applicants are hidden by search or filters, so nobody is emailed by surprise. */
+.warning {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, #e0a100 55%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, #e0a100 12%, transparent);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ad-text, #17385f);
+}
+.warning p {
+  flex: 1 1 320px;
+  margin: 0;
+}
+.warning button {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #e0a100;
+  color: #1d1400;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -54,6 +54,9 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
   const deselectShown = () => updateExcluded((next) => shown.forEach((row) => next.add(row.id)));
   const invertShown = () => updateExcluded((next) => shown.forEach((row) => (next.has(row.id) ? next.delete(row.id) : next.add(row.id))));
   const selectEveryone = () => { setExcluded(new Set()); setPhrase(""); };
+  // Tick exactly the rows shown and untick everyone else (e.g. after searching for one person).
+  const selectOnlyShown = () => { const keep = new Set(shown.map((row) => row.id)); setExcluded(new Set((matches || []).filter((row) => !keep.has(row.id)).map((row) => row.id))); setPhrase(""); };
+  const hiddenChosen = chosen.length - shownChosen;
   const deselectEveryone = () => { setExcluded(new Set((matches || []).map((row) => row.id))); setPhrase(""); };
   function selectTop() {
     const count = Math.max(0, Math.floor(Number(topN) || 0));
@@ -249,6 +252,7 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
                     {shownChosen} of {shown.length} shown ticked
                   </label>
                   <div className={own.bulkActions}>
+                    <button type="button" disabled={running || !shown.length} onClick={selectOnlyShown} title="Tick only the applicants shown and untick everyone else">Only these {shown.length}</button>
                     <button type="button" disabled={running || !shown.length} onClick={selectShown}>Select shown</button>
                     <button type="button" disabled={running || !shown.length} onClick={deselectShown}>Deselect shown</button>
                     <button type="button" disabled={running || !shown.length} onClick={invertShown}>Invert shown</button>
@@ -285,7 +289,15 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
                 ) : (
                   <p className={own.note}>No applicants match this search and these filters. {filterCount ? "Try clearing the filters." : ""}</p>
                 )}
-                {chosen.length > shownChosen && <p className={own.note}>{chosen.length - shownChosen} ticked {chosen.length - shownChosen === 1 ? "applicant is" : "applicants are"} hidden by the current search or filters and will still be selected.</p>}
+                {hiddenChosen > 0 && (
+                  <div className={own.warning} role="alert">
+                    <p>
+                      <strong>{hiddenChosen} more ticked {hiddenChosen === 1 ? "applicant is" : "applicants are"} hidden by your search or filters.</strong>{" "}
+                      They will be selected and emailed too: {chosen.length} in total, not just the {shownChosen} shown.
+                    </p>
+                    <button type="button" disabled={running || !shown.length} onClick={selectOnlyShown}>Select only the {shown.length} shown</button>
+                  </div>
+                )}
               </>
             )}
             {unscored > 0 && <p className={own.note}>{unscored} {unscored === 1 ? "application has" : "applications have"} no AI score yet and {unscored === 1 ? "isn’t" : "aren’t"} included. Use “Score all unscored” first if you want them considered.</p>}
@@ -299,7 +311,7 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
             )}
             {chosen.length > 0 && (
               <label>
-                Type {confirmPhrase} to confirm
+                Type {confirmPhrase} to select and email {chosen.length === 1 ? "this applicant" : `all ${chosen.length} ticked applicants`}
                 <input autoComplete="off" spellCheck={false} value={phrase} disabled={running} onChange={(event) => setPhrase(event.target.value)} />
               </label>
             )}
