@@ -41,7 +41,6 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
 
   // What the list shows (search, filters, sort). Ticks are kept in `excluded`, independent of the view.
   const [view, setView] = useState(EMPTY_CANDIDATE_VIEW);
-  const [topN, setTopN] = useState("10");
   const score = parseMinScore(minScore);
   const chosen = (matches || []).filter((row) => !excluded.has(row.id));
   const confirmPhrase = `SELECT ${chosen.length}`;
@@ -62,10 +61,6 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
   const selectOnlyShown = () => { const keep = new Set(shown.map((row) => row.id)); setExcluded(new Set((matches || []).filter((row) => !keep.has(row.id)).map((row) => row.id))); setPhrase(""); };
   const hiddenChosen = chosen.length - shownChosen;
   const deselectEveryone = () => { setExcluded(new Set((matches || []).map((row) => row.id))); setPhrase(""); };
-  function selectTop() {
-    const count = Math.max(0, Math.floor(Number(topN) || 0));
-    updateExcluded((next) => shown.forEach((row, index) => (index < count ? next.delete(row.id) : next.add(row.id))));
-  }
 
   async function search({ onlyIds } = {}) {
     if (score == null || !fromStatuses.length) return;
@@ -262,10 +257,6 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
                     <button type="button" disabled={running || !shown.length} onClick={invertShown}>Invert shown</button>
                     <button type="button" disabled={running} onClick={selectEveryone}>Select all {matches.length}</button>
                     <button type="button" disabled={running} onClick={deselectEveryone}>Deselect all</button>
-                    <span className={own.topN}>
-                      <button type="button" disabled={running || !shown.length} onClick={selectTop}>Keep top</button>
-                      <input type="number" min="1" max={shown.length || 1} aria-label="How many of the shown applicants to keep" value={topN} onChange={(event) => setTopN(event.target.value)} />
-                    </span>
                   </div>
                 </div>
                 {shown.length ? (
