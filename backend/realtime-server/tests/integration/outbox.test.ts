@@ -314,14 +314,19 @@ test("manual offer reminders share deadline coverage with the scheduler and supp
 });
 
 test("sent emails land on the applicant's email timeline; unsent ones don't", async () => {
+  // Earlier tests swap the hooks; this one needs confirmations and sign-in links to send.
+  domain.setHooks({
+    async sendApplicationConfirmation(to) { sent.push({ type: "confirmation", to }); },
+    async sendMagicLink(to) { sent.push({ type: "magic-link", to }); },
+  });
   const email = `outbox-log-${randomUUID()}@example.test`;
   await apply(email, `outbox-log-${randomUUID().slice(0, 8)}`);
   const application = await domain.collection("applications").findOne({ email });
   const applicationId = String(application!._id);
-  await domain.processOutbox();
+  await domain.processOutbox(100);
   // A magic link for someone who isn't selected is skipped on purpose and must not be logged as sent.
   await domain.collection("outbox").insertOne({ _id: `MAIL-${randomUUID()}`, type: "magicLink", payload: { to: email, name: "Outbox Candidate", applicationId }, status: "pending", attempts: 0, nextAttemptAt: new Date(0), leaseUntil: null, createdAt: new Date() } as any);
-  await domain.processOutbox();
+  await domain.processOutbox(100);
   const admin = { id: "log-admin", role: "company", staffRole: "admin", name: "Admin", email: "log-admin@example.test", applicationId: null, sessionVersion: 1 } as any;
   const { items } = await domain.execute("application.emails", { applicationId }, admin, "") as any;
   expect(items).toEqual([expect.objectContaining({ label: "Application received", to: email, status: "sent" })]);
