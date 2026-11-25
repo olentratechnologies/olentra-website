@@ -21,6 +21,7 @@ import { useInternship } from "@/components/intern/InternshipProvider";
 import { SELECTABLE_FROM, bulkActionsFor, canBulkUpdate, eligibleForOffer, runBulk, runBulkRequests } from "@/lib/intern/bulk.mjs";
 import BulkOfferForm from "./BulkOfferForm";
 import SelectByScoreDialog from "./SelectByScoreDialog";
+import selectByScoreStyles from "./SelectByScoreDialog.module.css";
 import { ScheduleBanner, ScheduleEntry, useScheduleView } from "./ScheduleSplit";
 import { describeApplicants, scheduleLabel, scheduleParams } from "@/lib/intern/schedule-split.mjs";
 import { burstFrom } from "@/lib/confetti.mjs";
@@ -529,6 +530,23 @@ function ApplicationsWorkspace({ view, chooseView }) {
   const [selectByScoreOpen, setSelectByScoreOpen] = useState(false);
   // Rows frozen when "Send offer" is clicked, so the form keeps its list while the table refreshes.
   const [offerRows, setOfferRows] = useState(null);
+  // Selected applicants in this view who still need an offer (none open or accepted).
+  const waitingQuery = useInternQuery("application.list", { ...scheduleParams(view), status: "Selected", withoutOffer: true, page: 1, pageSize: 1 }, { enabled: isAdmin });
+  const waitingCount = waitingQuery.data?.total || 0;
+  const [loadingWaiting, setLoadingWaiting] = useState(false);
+  async function openWaitingOffers() {
+    if (loadingWaiting) return;
+    setLoadingWaiting(true);
+    try {
+      const { items } = await fetchAllPages((page) => commands.listApplications({ ...scheduleParams(view), status: "Selected", withoutOffer: true, page, pageSize: 100, sortField: "aiScore", sortDirection: "desc" }));
+      if (!items.length) { notify("Everyone selected here already has an offer."); return; }
+      setOfferRows(items);
+    } catch (error) {
+      notify(error?.message || "Couldn’t load the applicants waiting for an offer.");
+    } finally {
+      setLoadingWaiting(false);
+    }
+  }
   async function scoreAllUnscored() {
     if (scoringAll) return;
     setScoringAll(true);
@@ -692,6 +710,11 @@ function ApplicationsWorkspace({ view, chooseView }) {
           <ArrowDownToLine size={16} />
           {exporting ? "Exporting…" : `Export ${result.total > filtered.length ? `all ${result.total.toLocaleString()}` : "CSV"}`}
         </Button>
+        {isAdmin && waitingCount > 0 && (
+          <Button onClick={() => void openWaitingOffers()} disabled={loadingWaiting} title={`Selected ${view === "all" ? "" : `${scheduleLabel(view).toLowerCase()} `}applicants who don’t have an offer yet`}>
+            {loadingWaiting ? "Loading…" : `Offers waiting (${waitingCount})`}
+          </Button>
+        )}
         {isAdmin && <Link href="/intern/dashboard/offers" className={styles.testApplyLink} title="Every offer generated: formal, instant and direct enrolments">View offers</Link>}
         {isAdmin && <Link href="/intern/dashboard/applications/test-application" className={styles.testApplyLink} title="Apply as a test candidate, even while applications are closed">Test application</Link>}
         {/* "Delete all" removes every application, so it's only offered in the All view, never inside Full-time or Part-time. */}
@@ -1228,9 +1251,10 @@ function ApplicationsWorkspace({ view, chooseView }) {
       {isAdmin && (
         <Modal
           open={Boolean(offerRows)}
+          className={selectByScoreStyles.wide}
           onOpenChange={(open) => { if (!open) setOfferRows(null); }}
-          title={offerRows ? `Send the formal offer to ${describeApplicants(offerRows)}` : "Send the formal offer"}
-          description="Everyone gets the same offer terms. Each student receives the “Your Olentra internship offer” email and accepts or declines in their portal before the deadline."
+          title={offerRows ? `Send offers to ${describeApplicants(offerRows)}` : "Send offers"}
+          description="Choose who, the offer type (formal, instant or direct enrolment) and the terms, preview the letter, then send. You can go back at every step; nothing is sent until the last one."
         >
           {offerRows && (
             <BulkOfferForm
@@ -1238,12 +1262,14 @@ function ApplicationsWorkspace({ view, chooseView }) {
               commands={commands}
               data={data}
               notify={notify}
+              schedule={view}
               onClose={() => setOfferRows(null)}
               onDone={(sent) => {
                 const sentIds = new Set(sent.map((row) => row.id));
                 setSelected((current) => new Set([...current].filter((id) => !sentIds.has(id))));
                 setBoardVersion((value) => value + 1);
                 refreshListsRef.current?.();
+                void waitingQuery.refresh();
               }}
             />
           )}

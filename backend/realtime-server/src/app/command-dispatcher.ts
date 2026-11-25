@@ -361,6 +361,12 @@ export function createInternshipDomain({ db, client, prefix = "intern_", intakeO
       const from = str(params.dateFrom), to = str(params.dateTo);
       if ((from && !/^\d{4}-\d{2}-\d{2}$/.test(from)) || (to && !/^\d{4}-\d{2}-\d{2}$/.test(to)) || (from && to && from > to)) throw new DomainError("INVALID_REQUEST", "Choose a valid application date range.");
       if (from || to) filter.appliedOn = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
+      // "Still needs an offer": leave out anyone whose offer is open (Sent, even past its deadline,
+      // still blocks a new one) or Accepted. Declined or withdrawn offers can be offered again.
+      if (params.withoutOffer === true || params.withoutOffer === "true") {
+        const offered = await collection("offers").distinct("applicationId", { status: { $in: ["Sent", "Accepted"] } });
+        filter._id = { $nin: offered };
+      }
       const allowed = ["name", "program", "college", "appliedOn", "status", "score", "aiScore"], sortField = allowed.includes(params.sortField) ? params.sortField : "appliedOn", direction = params.sortDirection === "asc" ? 1 : -1;
       const [rows, total, aggregate] = await Promise.all([
         applications.find(filter).sort(applicationSort(sortField, direction, params.videosFirst)).skip((page - 1) * limit).limit(limit).toArray(), applications.countDocuments(filter),

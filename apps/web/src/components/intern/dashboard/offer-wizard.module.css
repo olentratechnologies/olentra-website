@@ -1,0 +1,140 @@
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--ad-subtle, #526b96);
+}
+.steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.steps span {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--ad-border, #c9d9fa);
+  font-size: 11px;
+  font-weight: 700;
+}
+.steps li[data-state="current"] {
+  color: var(--ad-text, #17385f);
+  font-weight: 700;
+}
+.steps li[data-state="current"] span {
+  border-color: var(--ad-blue, #2563eb);
+  background: var(--ad-blue, #2563eb);
+  color: #fff;
+}
+.steps li[data-state="done"] span {
+  border-color: #0d9488;
+  background: #0d9488;
+  color: #fff;
+}
+.kinds {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.kinds legend {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ad-text, #17385f);
+}
+.kind {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--ad-border, #c9d9fa);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.kind[data-selected="true"] {
+  border-color: var(--ad-blue, #2563eb);
+  background: color-mix(in srgb, var(--ad-blue, #2563eb) 8%, transparent);
+}
+.kinds .kind input {
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  margin-top: 2px;
+  accent-color: var(--ad-blue, #2563eb);
+}
+.kind span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--ad-text, #17385f);
+}
+.kind small {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ad-subtle, #526b96);
+}
+.email {
+  font-style: italic;
+}
+.reviewCard {
+  padding: 14px 16px;
+  border: 1px solid var(--ad-border-strong, #7aafff);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--ad-text, #17385f);
+}
+.reviewCard dl {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+.reviewCard dl > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+}
+.reviewCard dt {
+  color: var(--ad-subtle, #526b96);
+}
+.reviewCard dd {
+  margin: 0;
+}
+.letterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+.letterRow label {
+  flex: 1 1 240px;
+}
+.letter {
+  width: 100%;
+  height: 520px;
+  border: 1px solid var(--ad-border, #c9d9fa);
+  border-radius: 10px;
+  background: #fff;
+}
+.names {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.8;
+}
+.textLink {
+  margin-right: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ad-blue, #2563eb);
+  text-decoration: none;
+}

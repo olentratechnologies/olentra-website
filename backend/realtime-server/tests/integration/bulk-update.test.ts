@@ -298,3 +298,17 @@ test("applications filter and count by full-time or part-time", async () => {
   // Anything else is ignored rather than hiding everything.
   expect(((await domain.execute("application.list", { search: "schedule-split-", schedule: "weekends" }, admin)) as any).total).toBe(3);
 });
+
+test("withoutOffer lists selected applicants who still need an offer", async () => {
+  const items = await seed(4, "needs-offer");
+  await domain.collection("applications").updateMany({ _id: { $in: items.map(item => item.id) } }, { $set: { status: "Selected" } });
+  await domain.collection("offers").insertMany([
+    { _id: `OFR-${randomUUID()}`, applicationId: items[0]!.id, status: "Sent", expiresOn: new Date(Date.now() - 86_400_000).toISOString() },
+    { _id: `OFR-${randomUUID()}`, applicationId: items[1]!.id, status: "Accepted" },
+    { _id: `OFR-${randomUUID()}`, applicationId: items[2]!.id, status: "Declined" },
+  ] as any[]);
+  const waiting = await domain.execute("application.list", { search: "needs-offer-", status: "Selected", withoutOffer: true, pageSize: 100, facets: true }, admin) as any;
+  expect(waiting.items.map((row: any) => row.id).sort()).toEqual([items[2]!.id, items[3]!.id].sort());
+  expect(waiting.total).toBe(2);
+  expect(waiting.counts.statuses.Selected).toBe(2);
+});

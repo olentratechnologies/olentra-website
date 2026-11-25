@@ -153,11 +153,11 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, data
         : `Find every ${scheduleName ? `${scheduleName} ` : ""}application${trackLabel ? ` for ${trackLabel}` : ""} at or above an AI score and select them together. Each applicant moves through Under review and Shortlisted to Selected, and gets one “You’re selected” email with a link to sign in to their portal. You can send them the formal offer right after.`}
     >
       {stage === "offer" ? (
-        <BulkOfferForm rows={selectedRows} commands={commands} data={data} notify={notify} onDone={onDone} onClose={() => onOpenChange(false)} closeLabel="Not now" />
+        <BulkOfferForm rows={selectedRows} commands={commands} data={data} notify={notify} onDone={onDone} onClose={() => onOpenChange(false)} onBack={() => setStage("offerPrompt")} schedule={schedule} closeLabel="Not now" />
       ) : stage === "offerPrompt" ? (
         <div className={styles.modalForm}>
           <p className={own.summary}><span><strong>{describeApplicants(selectedRows)}</strong> selected and emailed.</span></p>
-          <p className={own.note}>Send them the formal offer now? You choose one start date, stipend and response window for everyone; each student then accepts or declines in their portal.</p>
+          <p className={own.note}>Send them an offer now? Choose a formal offer, an instant offer or direct enrolment, set the terms once for everyone, preview the letter, then send. You can go back at every step.</p>
           <div className={styles.modalActions}>
             <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>Not now</Button>
             <Button type="button" onClick={() => setStage("offer")}>Send offers</Button>
