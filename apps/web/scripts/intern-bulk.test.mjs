@@ -86,3 +86,19 @@ test("the minimum score accepts 0 to 10 only", async () => {
   assert.equal(parseMinScore("-1"), null);
   assert.equal(parseMinScore("abc"), null);
 });
+
+test("only Selected applicants without an open offer can get a bulk offer", async () => {
+  const { eligibleForOffer } = await import("../src/lib/intern/bulk.mjs");
+  assert.equal(eligibleForOffer({ status: "Selected" }), true);
+  assert.equal(eligibleForOffer({ status: "Selected", offerReminder: { expiresOn: "2030-01-01" } }), false);
+  for (const status of ["Applied", "Under Review", "Shortlisted", "Joined", "Rejected"]) assert.equal(eligibleForOffer({ status }), false);
+  assert.equal(eligibleForOffer(null), false);
+});
+
+test("sending offers needs the exact count typed", async () => {
+  const { confirmsOffers, offerConfirmPhrase } = await import("../src/lib/intern/bulk.mjs");
+  assert.equal(offerConfirmPhrase(15), "OFFER 15");
+  assert.equal(confirmsOffers("offer 15 ", 15), true);
+  assert.equal(confirmsOffers("OFFER 14", 15), false);
+  assert.equal(confirmsOffers("", 0), false);
+});

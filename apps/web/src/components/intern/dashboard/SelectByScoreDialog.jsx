@@ -6,6 +6,7 @@ import { SELECTABLE_FROM, SELECT_PATH, eligibleForSelection, parseMinScore, runB
 import { fetchAllPages } from "@/lib/intern/application-export.mjs";
 import styles from "./applicant.module.css";
 import own from "./SelectByScoreDialog.module.css";
+import BulkOfferForm from "./BulkOfferForm";
 
 const DEFAULT_MIN_SCORE = "9";
 const errorText = (error, fallback) => (typeof error === "string" ? error : error?.message || fallback);
@@ -15,7 +16,7 @@ const errorText = (error, fallback) => (typeof error === "string" ? error : erro
  * just the visible one) and selects them in one go. Each applicant moves
  * through Under Review and Shortlisted to Selected and gets one email.
  */
-export default function SelectByScoreDialog({ open, onOpenChange, commands, programId = "all", trackLabel = "", notify, onDone }) {
+export default function SelectByScoreDialog({ open, onOpenChange, commands, data, programId = "all", trackLabel = "", notify, onDone }) {
   const [minScore, setMinScore] = useState(DEFAULT_MIN_SCORE);
   const [fromStatuses, setFromStatuses] = useState(SELECTABLE_FROM);
   const [matches, setMatches] = useState(null); // null until the first search finishes
@@ -28,6 +29,9 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, prog
   const [progress, setProgress] = useState(0);
   const [failures, setFailures] = useState([]);
   const searchId = useRef(0);
+  // After selecting, the same dialog can send these applicants the formal offer.
+  const [stage, setStage] = useState("pick"); // pick → offerPrompt → offer
+  const [selectedRows, setSelectedRows] = useState([]);
 
   const score = parseMinScore(minScore);
   const chosen = (matches || []).filter((row) => !excluded.has(row.id));
@@ -62,6 +66,8 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, prog
   // Search as soon as the dialog opens; later searches run from the button.
   useEffect(() => {
     if (!open) return;
+    setStage("pick");
+    setSelectedRows([]);
     setFailures([]);
     setProgress(0);
     void search();
@@ -92,6 +98,7 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, prog
         }
       });
       setFailures(failed);
+      setSelectedRows((current) => [...current, ...succeeded.map((row) => ({ ...row, status: "Selected" }))]);
       notify(`${succeeded.length} ${succeeded.length === 1 ? "applicant" : "applicants"} selected and emailed.${failed.length ? ` ${failed.length} could not be selected; see the details.` : ""}`);
       onDone?.();
       if (failed.length) {
@@ -99,6 +106,8 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, prog
         setMatches(failed.map(({ item }) => item));
         setExcluded(new Set());
         setPhrase("");
+      } else if (succeeded.length) {
+        setStage("offerPrompt");
       } else {
         onOpenChange(false);
         setMatches(null);
@@ -112,9 +121,23 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, prog
     <Modal
       open={open}
       onOpenChange={(next) => { if (!running) onOpenChange(next); }}
-      title="Select applicants by AI score"
-      description={`Find every application${trackLabel ? ` for ${trackLabel}` : ""} at or above an AI score and select them together. Each applicant moves through Under review and Shortlisted to Selected, and gets one “You’re selected” email with a link to sign in to their portal. Offers are sent separately.`}
+      title={stage === "offer" ? "Send the formal offer" : "Select applicants by AI score"}
+      description={stage === "offer"
+        ? "Everyone gets the same offer terms. Each student receives the “Your Olentra internship offer” email and accepts or declines in their portal before the deadline."
+        : `Find every application${trackLabel ? ` for ${trackLabel}` : ""} at or above an AI score and select them together. Each applicant moves through Under review and Shortlisted to Selected, and gets one “You’re selected” email with a link to sign in to their portal. You can send them the formal offer right after.`}
     >
+      {stage === "offer" ? (
+        <BulkOfferForm rows={selectedRows} commands={commands} data={data} notify={notify} onDone={onDone} onClose={() => onOpenChange(false)} closeLabel="Not now" />
+      ) : stage === "offerPrompt" ? (
+        <div className={styles.modalForm}>
+          <p className={own.summary}><span><strong>{selectedRows.length}</strong> {selectedRows.length === 1 ? "applicant" : "applicants"} selected and emailed.</span></p>
+          <p className={own.note}>Send them the formal offer now? You choose one start date, stipend and response window for everyone; each student then accepts or declines in their portal.</p>
+          <div className={styles.modalActions}>
+            <Button variant="secondary" type="button" onClick={() => onOpenChange(false)}>Not now</Button>
+            <Button type="button" onClick={() => setStage("offer")}>Send offers</Button>
+          </div>
+        </div>
+      ) : (
       <form className={`${styles.modalForm} ${own.modal}`} onSubmit={run}>
         <label>
           Minimum AI score (0–10)
@@ -165,6 +188,7 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, prog
                 These applicants were not selected:
                 <ul>{failures.map(({ item, error }) => <li key={item.id}>{item.name}: {error}</li>)}</ul>
                 <Button type="button" variant="secondary" disabled={running || loading} onClick={() => void search({ onlyIds: new Set(failures.map(({ item }) => item.id)) })}>Refresh and try again</Button>
+                {selectedRows.length > 0 && <Button type="button" variant="secondary" disabled={running || loading} onClick={() => setStage("offer")}>Skip these and send offers to the {selectedRows.length} selected</Button>}
               </div>
             )}
             {chosen.length > 0 && (
@@ -183,6 +207,7 @@ export default function SelectByScoreDialog({ open, onOpenChange, commands, prog
           </Button>
         </div>
       </form>
+      )}
     </Modal>
   );
 }

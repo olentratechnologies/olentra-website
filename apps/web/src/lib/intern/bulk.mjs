@@ -86,3 +86,16 @@ export async function runBulkRequests(items, send, chunkSize = 25) {
     failed: items.flatMap((item) => (outcome.get(item.id)?.ok ? [] : [{ item, error: outcome.get(item.id)?.error }])),
   };
 }
+
+/** Whether a formal offer can be sent in bulk: the applicant is Selected and has no offer open yet. */
+export function eligibleForOffer(application) {
+  return Boolean(application) && application.status === "Selected" && !application.offerReminder;
+}
+
+/** The phrase an admin types to confirm sending `count` offers. */
+export const offerConfirmPhrase = (count) => `OFFER ${count}`;
+
+/** Whether the typed text confirms sending `count` offers (case and outer spaces don't matter). */
+export function confirmsOffers(typed, count) {
+  return count > 0 && String(typed || "").trim().toUpperCase() === offerConfirmPhrase(count);
+}

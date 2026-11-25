@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { useDashboard } from "./DashboardProvider";
 import { useInternship } from "@/components/intern/InternshipProvider";
-import { SELECTABLE_FROM, bulkActionsFor, canBulkUpdate, runBulk, runBulkRequests } from "@/lib/intern/bulk.mjs";
+import { SELECTABLE_FROM, bulkActionsFor, canBulkUpdate, eligibleForOffer, runBulk, runBulkRequests } from "@/lib/intern/bulk.mjs";
+import BulkOfferForm from "./BulkOfferForm";
 import SelectByScoreDialog from "./SelectByScoreDialog";
 import { burstFrom } from "@/lib/confetti.mjs";
 import {
@@ -495,6 +496,8 @@ export default function ApplicationsPage() {
   // An in-page dialog, not window.confirm: some embedded browsers silently answer "cancel".
   const [confirmScoreAll, setConfirmScoreAll] = useState(false);
   const [selectByScoreOpen, setSelectByScoreOpen] = useState(false);
+  // Rows frozen when "Send offer" is clicked, so the form keeps its list while the table refreshes.
+  const [offerRows, setOfferRows] = useState(null);
   async function scoreAllUnscored() {
     if (scoringAll) return;
     setScoringAll(true);
@@ -891,6 +894,9 @@ export default function ApplicationsPage() {
             <div className={styles.bulkActions}>
               {isAdmin && <button type="button" className={styles.bulkButton} disabled={bulkBusy || !selectedRows.some(eligibleOffer)}
                 onClick={() => void remindOffers(selectedRows, true)}>Remind about offers ({selectedRows.filter(eligibleOffer).length} eligible)</button>}
+              {isAdmin && <button type="button" className={styles.bulkButton} disabled={bulkBusy || !selectedRows.some(eligibleForOffer)}
+                title="Send the formal offer to selected applicants who don’t have one yet"
+                onClick={() => setOfferRows(selectedRows.filter(eligibleForOffer))}>Send offer ({selectedRows.filter(eligibleForOffer).length} eligible)</button>}
               {bulkActionsFor({ isAdmin }).map((action) => (
                 <button
                   key={action.status}
@@ -1172,11 +1178,36 @@ export default function ApplicationsPage() {
           open={selectByScoreOpen}
           onOpenChange={setSelectByScoreOpen}
           commands={commands}
+          data={data}
           programId={track}
           trackLabel={track !== "all" ? trackTabs.find((tab) => tab.id === track)?.label || "" : ""}
           notify={notify}
           onDone={() => { setSelected(new Set()); setBoardVersion((value) => value + 1); refreshListsRef.current?.(); }}
         />
+      )}
+      {isAdmin && (
+        <Modal
+          open={Boolean(offerRows)}
+          onOpenChange={(open) => { if (!open) setOfferRows(null); }}
+          title="Send the formal offer"
+          description="Everyone gets the same offer terms. Each student receives the “Your Olentra internship offer” email and accepts or declines in their portal before the deadline."
+        >
+          {offerRows && (
+            <BulkOfferForm
+              rows={offerRows}
+              commands={commands}
+              data={data}
+              notify={notify}
+              onClose={() => setOfferRows(null)}
+              onDone={(sent) => {
+                const sentIds = new Set(sent.map((row) => row.id));
+                setSelected((current) => new Set([...current].filter((id) => !sentIds.has(id))));
+                setBoardVersion((value) => value + 1);
+                refreshListsRef.current?.();
+              }}
+            />
+          )}
+        </Modal>
       )}
       {canResume && <ResumeViewer application={resumeApplication} open={Boolean(resumeApplication)} onOpenChange={(open) => !open && setResumeApplication(null)} />}
     </div>
