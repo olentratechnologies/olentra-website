@@ -1101,6 +1101,10 @@
   background: color-mix(in srgb, var(--ad-panel-alt, #edf2fc) 50%, transparent);
   color: var(--ad-subtle, #8295b2);
 }
+.field input:disabled,
+.field textarea:disabled {
+  cursor: not-allowed;
+}
 .formActions {
   display: flex;
   align-items: center;

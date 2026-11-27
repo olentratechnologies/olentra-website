@@ -48,6 +48,13 @@ test("an instant offer selects the applicant and stays open until the start day 
   expect((await domain.collection("applications").findOne({ _id: "OL-INSTANT-1" })).status).toBe("Joined");
   expect(await domain.collection("interns").findOne({ applicationId: "OL-INSTANT-1" })).toMatchObject({ status: "Active", route: "instant", startOn: civilToday() });
   expect(await domain.collection("outbox").findOne({ "payload.applicationId": "OL-INSTANT-1", "payload.status": "offer-accepted" })).toBeTruthy();
+
+  // Joined straight from an instant offer, the intern still has to fill in onboarding.
+  await domain.collection("files").insertOne({ _id: "instant-resume", kind: "resume", status: "ready", ownerApplicationId: "OL-INSTANT-1" });
+  const details = { phone: "123456", college: "Test College", location: "Test City", skills: ["React"], acknowledged: true, resumeAttachmentId: "instant-resume" };
+  expect(await domain.execute("onboarding.save", { applicationId: "OL-INSTANT-1", details }, student("OL-INSTANT-1"), req())).toMatchObject({ status: "Draft", phone: "123456" });
+  expect(await domain.execute("onboarding.submit", { applicationId: "OL-INSTANT-1" }, student("OL-INSTANT-1"), req())).toMatchObject({ status: "Submitted" });
+  await expect(domain.execute("onboarding.save", { applicationId: "OL-INSTANT-1", details }, student("OL-INSTANT-1"), req())).rejects.toMatchObject({ code: "CONFLICT" });
 }, 30000);
 
 test("declining an instant offer leaves no intern, and past start dates are refused", async () => {

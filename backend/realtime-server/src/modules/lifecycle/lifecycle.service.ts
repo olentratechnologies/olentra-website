@@ -196,7 +196,8 @@ export function createLifecycle({ collection, transact, outbox, onResumeChanged 
       }
       if (method === "onboarding.save" || method === "onboarding.submit") {
         const applicationId = required(p.applicationId, "application"); own(actor, applicationId);
-        const app = await applications.findOne({ _id: applicationId, status: "Selected" }, opts); const offer = await offers.findOne({ applicationId, status: "Accepted" }, opts); const old = await onboarding.findOne({ applicationId }, opts);
+        // Instant and direct offers mark the application Joined before onboarding is filled in.
+        const app = await applications.findOne({ _id: applicationId, status: { $in: ["Selected", "Joined"] } }, opts); const offer = await offers.findOne({ applicationId, status: "Accepted" }, opts); const old = await onboarding.findOne({ applicationId }, opts);
         if (!app || !offer || ["Submitted", "Approved"].includes(old?.status)) throw new DomainError("CONFLICT", "Accept your offer before completing onboarding.");
         const details = method === "onboarding.save" && p.details && typeof p.details === "object" ? p.details : {};
         const data: Row = { _id: old?._id || newId("ONB"), applicationId, phone: text(details.phone ?? old?.phone ?? app.phone).slice(0, 100), college: text(details.college ?? old?.college ?? app.college).slice(0, 200), location: text(details.location ?? old?.location ?? app.location).slice(0, 200), skills: Array.isArray(details.skills) ? details.skills.map(text).filter(Boolean).slice(0, 50) : old?.skills ?? app.skills ?? [], resumeAttachmentId: text(details.resumeAttachmentId ?? old?.resumeAttachmentId ?? app.resumeAttachmentId), acknowledged: details.acknowledged === undefined ? !!old?.acknowledged : details.acknowledged === true, status: method === "onboarding.submit" ? "Submitted" : "Draft" };

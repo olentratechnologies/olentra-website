@@ -56,9 +56,9 @@ function OnboardingForm({ application, onboarding }) {
   );
   const [uploading, setUploading] = useState(false);
   const action = useAction();
-  const locked =
-    ["Submitted", "Approved"].includes(onboarding?.status) ||
-    application.status === "Joined";
+  // Instant and direct offers join the intern before onboarding is done,
+  // so only the onboarding's own status decides whether it's still editable.
+  const locked = ["Submitted", "Approved"].includes(onboarding?.status);
   const reviewedResume =
     onboarding?.status === "Approved" && !values.resumeAttachmentId;
   const submitted = ["Submitted", "Approved"].includes(onboarding?.status);
