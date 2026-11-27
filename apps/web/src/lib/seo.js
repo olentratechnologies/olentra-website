@@ -6,9 +6,13 @@ export function buildMetadata({
   description,
   path = "/",
   keywords = [],
+  image: imageOverride,
 }) {
-  // Every page shares the same company card, including articles and products.
-  const image = siteConfig.ogImage;
+  // Every page shares the same company card unless a page passes its own image.
+  const image = imageOverride?.url || siteConfig.ogImage;
+  const imageWidth = imageOverride?.width || 1200;
+  const imageHeight = imageOverride?.height || 630;
+  const imageAlt = imageOverride?.alt || companyInfo.name;
   const canonical = absoluteUrl(path);
   const resolvedTitle = title ? `${title} | ${companyInfo.name}` : siteConfig.defaultTitle;
 
@@ -29,9 +33,9 @@ export function buildMetadata({
       images: [
         {
           url: absoluteUrl(image),
-          width: 1200,
-          height: 630,
-          alt: companyInfo.name,
+          width: imageWidth,
+          height: imageHeight,
+          alt: imageAlt,
         },
       ],
     },

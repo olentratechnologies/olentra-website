@@ -4,11 +4,19 @@ import { founders } from "@/data/founders";
 import { buildMetadata, breadcrumbSchema, organizationSchema } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
 
+const leadFounder = founders.find((founder) => founder.id === "manideep");
+
 const pageMetadata = buildMetadata({
   title: "About",
   description:
     "Discover Olentra Technologies, our founders, shared vision, and the engineering principles behind our enterprise software, AI, and cloud platforms.",
   path: "/about",
+  image: {
+    url: leadFounder.image,
+    width: 877,
+    height: 877,
+    alt: leadFounder.imageAlt,
+  },
 });
 
 export const metadata = {
@@ -32,6 +40,13 @@ export default function AboutPage() {
           "@type": "AboutPage",
           name: "About Olentra Technologies",
           url: absoluteUrl("/about"),
+          image: absoluteUrl(leadFounder.image),
+          primaryImageOfPage: {
+            "@type": "ImageObject",
+            url: absoluteUrl(leadFounder.image),
+            width: 877,
+            height: 877,
+          },
           mainEntity: founders.map((founder) => ({
             "@type": "Person",
             name: founder.name,
